@@ -1,40 +1,39 @@
 package party
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/party/extra"
-	"aoe2DELanServer/session"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
+	"aoe2DELanServer/routes/game/party/shared"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func PeerUpdate(c *gin.Context) {
 	// TODO: What about isNonParticipants[]? observers? ai players?
-	adv, length, profileIds, raceIds, statGroupIds, teamIds := extra.ParseParameters(c)
+	adv, length, profileIds, raceIds, statGroupIds, teamIds := shared.ParseParameters(c)
 	if adv == nil {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*session.Info)
+	sess, _ := sessAny.(*models.Info)
 	currentUser := sess.GetUser()
 	// Only the host can update peers
 	if adv.GetHost().GetUser() != currentUser {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
-	users := make([]*user.User, length)
-	for i := 0; i < length; i++ {
-		u, ok := user.GetById(profileIds[i])
-		if !ok || u.GetStatId() != statGroupIds[i] {
-			c.JSON(http.StatusOK, j.A{2})
+	users := make([]*models.User, length)
+	for j := 0; j < length; j++ {
+		u, ok := models.GetUserById(profileIds[j])
+		if !ok || u.GetStatId() != statGroupIds[j] {
+			c.JSON(http.StatusOK, i.A{2})
 			return
 		}
-		users[i] = u
+		users[j] = u
 	}
 	for i, u := range users {
 		adv.UpdatePeer(u, raceIds[i], teamIds[i])
 	}
-	c.JSON(http.StatusOK, j.A{0})
+	c.JSON(http.StatusOK, i.A{0})
 }

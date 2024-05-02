@@ -1,9 +1,9 @@
 package advertisement
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/advertisement/extra"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
+	"aoe2DELanServer/routes/game/advertisement/shared"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"regexp"
@@ -12,7 +12,7 @@ import (
 var re *regexp.Regexp = nil
 
 func returnError(c *gin.Context) {
-	c.JSON(http.StatusOK, j.A{
+	c.JSON(http.StatusOK, i.A{
 		2,
 		0,
 		"",
@@ -21,7 +21,7 @@ func returnError(c *gin.Context) {
 		0,
 		0,
 		"",
-		j.A{},
+		i.A{},
 		0,
 		0,
 		nil,
@@ -41,16 +41,16 @@ func Host(c *gin.Context) {
 		return
 	}
 
-	var adv extra.AdvertisementHostRequest
+	var adv shared.AdvertisementHostRequest
 	if err := c.ShouldBind(&adv); err == nil {
-		u, ok := user.GetById(adv.HostId)
-		if !ok || extra.IsInAdvertisement(u) {
+		u, ok := models.GetUserById(adv.HostId)
+		if !ok || models.IsInAdvertisement(u) {
 			returnError(c)
 			return
 		}
-		storedAdv := extra.Store(&adv)
+		storedAdv := models.StoreAdvertisement(&adv)
 		c.JSON(http.StatusOK,
-			j.A{
+			i.A{
 				0,
 				storedAdv.GetId(),
 				"authtoken",

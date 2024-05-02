@@ -1,8 +1,8 @@
 package cloud
 
 import (
-	"aoe2DELanServer/asset"
-	"aoe2DELanServer/j"
+	"aoe2DELanServer/files"
+	i "aoe2DELanServer/internal"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,14 +13,14 @@ func GetFileURL(c *gin.Context) {
 	var names []string
 	err := json.Unmarshal([]byte(namesStr), &names)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}})
 		return
 	}
-	descriptions := make(j.A, len(names))
-	for i, name := range names {
-		fileData := asset.CloudFiles[name]
+	descriptions := make(i.A, len(names))
+	for j, name := range names {
+		fileData := files.CloudFiles[name]
 		finalPart := fileData.Key
-		descriptions[i] = j.A{
+		descriptions[j] = i.A{
 			name,
 			fileData.Length,
 			fileData.Id,
@@ -28,5 +28,5 @@ func GetFileURL(c *gin.Context) {
 			finalPart,
 		}
 	}
-	c.JSON(http.StatusOK, j.A{0, descriptions})
+	c.JSON(http.StatusOK, i.A{0, descriptions})
 }

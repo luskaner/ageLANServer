@@ -1,7 +1,7 @@
 package advertisement
 
 import (
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -9,6 +9,6 @@ import (
 func FindAdvertisements(c *gin.Context) {
 	// Only used to return online games so return nothing
 	c.JSON(http.StatusOK,
-		j.A{0, j.A{}, j.A{}},
+		i.A{0, i.A{}, i.A{}},
 	)
 }

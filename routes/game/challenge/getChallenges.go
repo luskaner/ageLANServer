@@ -1,10 +1,10 @@
 package challenge
 
 import (
-	"aoe2DELanServer/asset"
+	"aoe2DELanServer/files"
 	"github.com/gin-gonic/gin"
 )
 
 func GetChallenges(c *gin.Context) {
-	asset.ReturnSignedAsset("challenges.json", c, false)
+	files.ReturnSignedAsset("challenges.json", c, false)
 }

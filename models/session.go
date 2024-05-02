@@ -1,8 +1,7 @@
-package session
+package models
 
 import (
-	"aoe2DELanServer/rng"
-	"aoe2DELanServer/user"
+	internal "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"strings"
 	"sync"
@@ -12,7 +11,7 @@ import (
 type Info struct {
 	id     string
 	expiry time.Time
-	user   *user.User
+	user   *User
 }
 
 var userIdSession sync.Map
@@ -24,14 +23,14 @@ var anonymousPaths = map[string]bool{
 	"/game/news/getNews":           true,
 }
 
-func Middleware() gin.HandlerFunc {
+func SessionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !anonymousPaths[c.Request.URL.Path] && !strings.HasPrefix(c.Request.URL.Path, "/cloudfiles/") {
 			sessionID := c.Query("sessionID")
 			if sessionID == "" {
 				sessionID = c.PostForm("sessionID")
 			}
-			sess, ok := GetById(sessionID)
+			sess, ok := GetSessionById(sessionID)
 			if !ok {
 				c.JSON(401, gin.H{"error": "Unauthorized"})
 				c.Abort()
@@ -51,10 +50,10 @@ func generateSessionId() string {
 	for {
 		sessionId := make([]rune, 30)
 		for i := range sessionId {
-			sessionId[i] = sessionLetters[rng.Rng.Intn(len(sessionLetters))]
+			sessionId[i] = sessionLetters[internal.Rng.Intn(len(sessionLetters))]
 		}
 		sessionIdStr := string(sessionId)
-		if _, exists := GetById(sessionIdStr); !exists {
+		if _, exists := GetSessionById(sessionIdStr); !exists {
 			return sessionIdStr
 		}
 	}
@@ -64,12 +63,12 @@ func (sess *Info) GetId() string {
 	return sess.id
 }
 
-func (sess *Info) GetUser() *user.User {
+func (sess *Info) GetUser() *User {
 	return sess.user
 }
 
-func Create(user *user.User) string {
-	removeExpired()
+func CreateSession(user *User) string {
+	removeSessionsExpired()
 	session := &Info{
 		id:     generateSessionId(),
 		user:   user,
@@ -85,7 +84,7 @@ func (sess *Info) Delete() {
 	sessionStore.Delete(sess.id)
 }
 
-func GetById(sessionId string) (*Info, bool) {
+func GetSessionById(sessionId string) (*Info, bool) {
 	value, exists := sessionStore.Load(sessionId)
 	if exists {
 		session := value.(*Info)
@@ -99,7 +98,7 @@ func GetById(sessionId string) (*Info, bool) {
 	return nil, false
 }
 
-func GetByUser(user *user.User) (*Info, bool) {
+func GetSessionByUser(user *User) (*Info, bool) {
 	value, exists := userIdSession.Load(user.GetId())
 	if exists {
 		session := value.(*Info)
@@ -117,7 +116,7 @@ func (sess *Info) Expired() bool {
 	return time.Now().UTC().After(sess.expiry)
 }
 
-func removeExpired() {
+func removeSessionsExpired() {
 	sessionStore.Range(func(_, value interface{}) bool {
 		info := value.(*Info)
 		if info.Expired() {

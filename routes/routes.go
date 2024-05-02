@@ -2,13 +2,13 @@ package routes
 
 import (
 	"aoe2DELanServer/routes/cloudfiles"
-	achievement "aoe2DELanServer/routes/game/Achievement"
+	"aoe2DELanServer/routes/game/Achievement"
 	"aoe2DELanServer/routes/game/Challenge"
 	"aoe2DELanServer/routes/game/CommunityEvent"
 	"aoe2DELanServer/routes/game/Leaderboard"
 	"aoe2DELanServer/routes/game/account"
 	"aoe2DELanServer/routes/game/advertisement"
-	automatch2 "aoe2DELanServer/routes/game/automatch2"
+	"aoe2DELanServer/routes/game/automatch2"
 	"aoe2DELanServer/routes/game/chat"
 	"aoe2DELanServer/routes/game/clan"
 	"aoe2DELanServer/routes/game/cloud"
@@ -82,7 +82,7 @@ func Initialize(r *gin.Engine) {
 		}
 		automatch2Group := gameGroup.Group("/automatch2")
 		{
-			automatch2Group.GET("/getAutomatchMap", automatch2.GetAutomatchMap)
+			automatch2Group.GET("/getAutomatchMap", Automatch2.GetAutomatchMap)
 		}
 		AchievementGroup := gameGroup.Group("/Achievement")
 		{

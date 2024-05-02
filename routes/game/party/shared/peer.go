@@ -1,13 +1,13 @@
-package extra
+package shared
 
 import (
-	"aoe2DELanServer/routes/game/advertisement/extra"
+	"aoe2DELanServer/models"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
 
-func ParseParameters(c *gin.Context) (*extra.Advertisement, int, []int32, []int32, []int32, []int32) {
+func ParseParameters(c *gin.Context) (*models.Advertisement, int, []int32, []int32, []int32, []int32) {
 	profileIdsStr := c.PostForm("profile_ids")
 	var profileIds []int32
 	err := json.Unmarshal([]byte(profileIdsStr), &profileIds)
@@ -34,11 +34,11 @@ func ParseParameters(c *gin.Context) (*extra.Advertisement, int, []int32, []int3
 	}
 	advIdStr := c.PostForm("match_id")
 	advId, err := strconv.ParseUint(advIdStr, 10, 32)
-	var adv *extra.Advertisement
+	var adv *models.Advertisement
 	if err != nil {
 		advId = 0
 	} else {
-		adv, _ = extra.Get(uint32(advId))
+		adv, _ = models.GetAdvertisement(uint32(advId))
 	}
 	length := min(len(profileIds), len(raceIds), len(statGroupIds), len(teamIds))
 	return adv, length, profileIds, raceIds, statGroupIds, teamIds

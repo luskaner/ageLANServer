@@ -1,3 +1,3 @@
-package j
+package internal
 
 type A []interface{}

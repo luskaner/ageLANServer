@@ -1,10 +1,10 @@
-package asset
+package files
 
 import (
-	"aoe2DELanServer/asset/cloud"
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
+	"aoe2DELanServer/static"
 	"crypto/md5"
-	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
@@ -14,52 +14,40 @@ import (
 
 import "github.com/iancoleman/orderedmap"
 
-//go:embed files/*.json
-var content embed.FS
-
 var keyedFilenames = map[string]struct{}{
-	"configuration.json":     {},
-	"item_bundle_items.json": {},
-	"item_definitions.json":  {},
+	"login.json":           {},
+	"itemBundleItems.json": {},
+	"itemDefinitions.json": {},
 }
 
-var Files = make(map[string]j.A)
+var Config = make(map[string]i.A)
 var KeyedFiles = make(map[string]*orderedmap.OrderedMap)
-var CloudFiles CloudFilesIndexMap
-
-// var Achievements j.A
+var CloudFiles models.CloudFilesIndexMap
+var Cloud = make(map[string][]byte)
 
 func Initialize() {
-	dirEntries, _ := content.ReadDir("files")
+	initializeCloud()
+	initializeConfig()
+}
+
+func initializeConfig() {
+	dirEntries, _ := static.Config.ReadDir("config")
 	for _, entry := range dirEntries {
-		data, err := fs.ReadFile(content, "files/"+entry.Name())
+		data, err := fs.ReadFile(static.Config, "config/"+entry.Name())
 		if err != nil {
 			continue
 		}
 		switch entry.Name() {
-		case "cloudfiles_index.json":
+		case "cloudfilesIndex.json":
 			err = json.Unmarshal(data, &CloudFiles)
 			for i, fileInfo := range CloudFiles {
-				file := cloud.Files[i]
+				file := Cloud[i]
 				fileInfo.Length = len(file)
 				hash := md5.Sum(file)
 				hashSlice := hash[:]
 				fileInfo.Checksum = base64.StdEncoding.EncodeToString(hashSlice)
 				CloudFiles[i] = fileInfo
 			}
-			break
-		case "achievements.json":
-			var result j.A
-			err = json.Unmarshal(data, &result)
-			if err == nil {
-				Files[entry.Name()] = result
-			}
-			/*achievementsJson := result[1].([]interface{})
-			Achievements = make(j.A, len(achievementsJson))
-			for i, achievement := range achievementsJson {
-				achievementInfo := achievement.([]interface{})
-				Achievements[i] = j.A{uint32(achievementInfo[0].(float64)), uint64(achievementInfo[5].(float64))}
-			}*/
 			break
 		default:
 			name := entry.Name()
@@ -70,12 +58,22 @@ func Initialize() {
 					KeyedFiles[name] = &result
 				}
 			} else {
-				var result j.A
+				var result i.A
 				err = json.Unmarshal(data, &result)
 				if err == nil {
-					Files[name] = result
+					Config[name] = result
 				}
 			}
+		}
+	}
+}
+
+func initializeCloud() {
+	dirEntries, _ := static.Cloud.ReadDir("cloud")
+	for _, entry := range dirEntries {
+		data, err := fs.ReadFile(static.Cloud, "cloud/"+entry.Name())
+		if err == nil {
+			Cloud[entry.Name()] = data
 		}
 	}
 }
@@ -88,8 +86,8 @@ func ReturnSignedAsset(name string, c *gin.Context, keyedResponse bool) {
 		rawSignature, _ := response.(*orderedmap.OrderedMap).Get("dataSignature")
 		serverSignature = rawSignature.(string)
 	} else {
-		response = Files[name]
-		arrayResponse := response.(j.A)
+		response = Config[name]
+		arrayResponse := response.(i.A)
 		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
 	}
 	if c.Query("signature") != serverSignature {
@@ -99,8 +97,8 @@ func ReturnSignedAsset(name string, c *gin.Context, keyedResponse bool) {
 	if keyedResponse {
 		c.JSON(http.StatusOK, gin.H{"result": 0, "dataSignature": serverSignature})
 	} else {
-		emptyArrays := make(j.A, len(response.(j.A))-2)
-		ret := j.A{0}
+		emptyArrays := make(i.A, len(response.(i.A))-2)
+		ret := i.A{0}
 		ret = append(ret, emptyArrays...)
 		ret = append(ret, serverSignature)
 		c.JSON(http.StatusOK, ret)

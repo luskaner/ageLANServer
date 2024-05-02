@@ -1,8 +1,7 @@
-package user
+package models
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/keyLock"
+	i "aoe2DELanServer/internal"
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
@@ -26,8 +25,8 @@ var userStore = make(map[string]*User)
 var userIdToUserMap = make(map[int32]*User)
 var userStatIdToUserMap = make(map[int32]*User)
 var hasher = fnv.New64a()
-var Lock = keyLock.NewKeyMutex()
-var presenceLock = keyLock.NewKeyRWMutex()
+var Lock = i.NewKeyMutex()
+var presenceLock = i.NewKeyRWMutex()
 
 func generate(identifier string, isXbox bool, platformUserId uint64, alias string) *User {
 	_, _ = hasher.Write([]byte(identifier))
@@ -46,7 +45,7 @@ func generate(identifier string, isXbox bool, platformUserId uint64, alias strin
 	}
 }
 
-func GetOrCreate(isXbox bool, platformUserId uint64, alias string) *User {
+func GetOrCreateUser(isXbox bool, platformUserId uint64, alias string) *User {
 	identifier := getPlatformPath(isXbox, platformUserId)
 	Lock.Lock(identifier)
 	user, ok := userStore[identifier]
@@ -108,18 +107,18 @@ func (u *User) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func GetByStatId(id int32) (*User, bool) {
+func GetUserByStatId(id int32) (*User, bool) {
 	user, ok := userStatIdToUserMap[id]
 	return user, ok
 }
 
-func GetById(id int32) (*User, bool) {
+func GetUserById(id int32) (*User, bool) {
 	user, ok := userIdToUserMap[id]
 	return user, ok
 }
 
-func (u *User) GetExtraProfileInfo() j.A {
-	return j.A{
+func (u *User) GetExtraProfileInfo() i.A {
+	return i.A{
 		u.statId,
 		0,
 		0,
@@ -141,12 +140,12 @@ func (u *User) GetExtraProfileInfo() j.A {
 	}
 }
 
-func (u *User) GetProfileInfo(includePresence bool) j.A {
+func (u *User) GetProfileInfo(includePresence bool) i.A {
 	/*isSteamInt := 1
 	if u.isXbox {
 		isSteamInt = 0
 	}*/
-	profileInfo := j.A{
+	profileInfo := i.A{
 		time.Now().UTC().Unix() - rand.Int63n(300-50+1) + 50,
 		u.id,
 		u.GetPlatformPath(),
@@ -161,10 +160,10 @@ func (u *User) GetProfileInfo(includePresence bool) j.A {
 		nil,
 		strconv.FormatUint(u.platformUserId, 10),
 		u.GetPlatformId(),
-		j.A{},
+		i.A{},
 	}
 	if includePresence {
-		profileInfo = append(profileInfo, j.A{u.GetPresence(), nil, j.A{}}...)
+		profileInfo = append(profileInfo, i.A{u.GetPresence(), nil, i.A{}}...)
 	}
 	return profileInfo
 }
@@ -191,9 +190,9 @@ func getUsers() []*User {
 	return users
 }
 
-func GetProfileInfo(includePresence bool, matches func(user *User) bool) []j.A {
+func GetProfileInfo(includePresence bool, matches func(user *User) bool) []i.A {
 	users := getUsers()
-	var presenceData = make([]j.A, 0)
+	var presenceData = make([]i.A, 0)
 	for _, u := range users {
 		if matches(u) {
 			presenceData = append(presenceData, u.GetProfileInfo(includePresence))

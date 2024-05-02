@@ -1,7 +1,7 @@
 package party
 
 import (
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -18,5 +18,5 @@ func ReportMatch(c *gin.Context) {
 		}
 	}*/
 	// What else is needed to implement?
-	c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}, j.A{}, nil, j.A{}, j.A{}, j.A{}, j.A{}, j.A{}, j.A{}, 0, nil, j.A{}, j.A{}, j.A{}})
+	c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}, i.A{}, nil, i.A{}, i.A{}, i.A{}, i.A{}, i.A{}, i.A{}, 0, nil, i.A{}, i.A{}, i.A{}})
 }

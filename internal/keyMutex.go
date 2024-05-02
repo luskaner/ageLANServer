@@ -1,4 +1,4 @@
-package keyLock
+package internal
 
 import "sync"
 

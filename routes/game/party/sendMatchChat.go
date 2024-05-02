@@ -1,11 +1,9 @@
 package party
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/advertisement/extra"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/wss"
-	"aoe2DELanServer/session"
-	"aoe2DELanServer/user"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -22,37 +20,37 @@ type request struct {
 func SendMatchChat(c *gin.Context) {
 	var req request
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 
 	var toProfileIds []int32
 	err := json.Unmarshal([]byte(req.ToProfileIdsStr), &toProfileIds)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 
-	adv, ok := extra.Get(req.MatchID)
+	adv, ok := models.GetAdvertisement(req.MatchID)
 	if !ok {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 
 	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*session.Info)
+	sess, _ := sessAny.(*models.Info)
 	currentUser := sess.GetUser()
 
 	// Only peers within the match can send messages
 	// TODO: What about AI?
 	if _, ok := adv.GetPeer(currentUser); !ok {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 
-	receivers := make([]*user.User, len(toProfileIds))
+	receivers := make([]*models.User, len(toProfileIds))
 	for i, profileId := range toProfileIds {
-		receivers[i], _ = user.GetById(profileId)
+		receivers[i], _ = models.GetUserById(profileId)
 	}
 
 	message := adv.AddMessage(
@@ -65,14 +63,14 @@ func SendMatchChat(c *gin.Context) {
 
 	messageEncoded := message.Encode()
 	for _, receiver := range receivers {
-		receiverSession, ok := session.GetByUser(receiver)
+		receiverSession, ok := models.GetSessionByUser(receiver)
 		if !ok {
 			continue
 		}
 		go func() {
 			wss.SendMessage(
 				receiverSession.GetId(),
-				j.A{
+				i.A{
 					0,
 					"MatchReceivedChatMessage",
 					receiver.GetId(),
@@ -81,5 +79,5 @@ func SendMatchChat(c *gin.Context) {
 			)
 		}()
 	}
-	c.JSON(http.StatusOK, j.A{0})
+	c.JSON(http.StatusOK, i.A{0})
 }

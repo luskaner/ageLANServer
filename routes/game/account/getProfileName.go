@@ -1,9 +1,8 @@
 package account
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/session"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -12,13 +11,13 @@ import (
 func GetProfileName(c *gin.Context) {
 	profileIdsStr := c.Query("profile_ids")
 	if len(profileIdsStr) < 1 {
-		c.JSON(http.StatusOK, j.A{2, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}})
 		return
 	}
 	var profileIds []int32
 	err := json.Unmarshal([]byte(profileIdsStr), &profileIds)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}})
 		return
 	}
 	profileIdsMap := make(map[int32]interface{}, len(profileIds))
@@ -26,14 +25,14 @@ func GetProfileName(c *gin.Context) {
 		profileIdsMap[platformId] = struct{}{}
 	}
 	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*session.Info)
+	sess, _ := sessAny.(*models.Info)
 	u := sess.GetUser()
-	profileInfo := user.GetProfileInfo(false, func(currentUser *user.User) bool {
+	profileInfo := models.GetProfileInfo(false, func(currentUser *models.User) bool {
 		if u == currentUser {
 			return false
 		}
 		_, ok := profileIdsMap[currentUser.GetId()]
 		return ok
 	})
-	c.JSON(http.StatusOK, j.A{0, profileInfo})
+	c.JSON(http.StatusOK, i.A{0, profileInfo})
 }

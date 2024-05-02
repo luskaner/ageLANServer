@@ -1,26 +1,24 @@
-package extra
+package models
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/keyLock"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
 )
 
 type Peer struct {
 	advertisement *Advertisement
-	user          *user.User
+	user          *User
 	race          int32
 	team          int32
-	invites       map[*user.User]interface{}
+	invites       map[*User]interface{}
 }
 
-var invitesLock = keyLock.NewKeyRWMutex()
+var invitesLock = i.NewKeyRWMutex()
 
 func (peer *Peer) GetAdvertisement() *Advertisement {
 	return peer.advertisement
 }
 
-func (peer *Peer) GetUser() *user.User {
+func (peer *Peer) GetUser() *User {
 	return peer.user
 }
 
@@ -32,8 +30,8 @@ func (peer *Peer) GetTeam() int32 {
 	return peer.team
 }
 
-func (peer *Peer) Encode() j.A {
-	return j.A{
+func (peer *Peer) Encode() i.A {
+	return i.A{
 		peer.advertisement.GetId(),
 		peer.user.GetId(),
 		-1,
@@ -44,21 +42,21 @@ func (peer *Peer) Encode() j.A {
 	}
 }
 
-func (peer *Peer) Invite(user *user.User) {
+func (peer *Peer) Invite(user *User) {
 	userId := user.GetId()
 	invitesLock.Lock(userId)
 	defer invitesLock.Unlock(userId)
 	peer.invites[user] = struct{}{}
 }
 
-func (peer *Peer) Uninvite(user *user.User) {
+func (peer *Peer) Uninvite(user *User) {
 	userId := user.GetId()
 	invitesLock.Lock(userId)
 	defer invitesLock.Unlock(userId)
 	delete(peer.invites, user)
 }
 
-func (peer *Peer) IsInvited(user *user.User) bool {
+func (peer *Peer) IsInvited(user *User) bool {
 	userId := user.GetId()
 	invitesLock.RLock(userId)
 	defer invitesLock.RUnlock(userId)

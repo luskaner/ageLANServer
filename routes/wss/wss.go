@@ -1,9 +1,8 @@
 package wss
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/keyLock"
-	"aoe2DELanServer/session"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
@@ -16,7 +15,7 @@ var upgrader = websocket.Upgrader{
 }
 var timeoutTime = 60 * time.Minute
 
-var lock = keyLock.NewKeyRWMutex()
+var lock = i.NewKeyRWMutex()
 var connections = make(map[string]*websocket.Conn)
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
@@ -29,14 +28,14 @@ func closeConn(conn *websocket.Conn, closeCode int, text string) {
 	}
 }
 
-func parseMessage(message gin.H, currentSession *session.Info) (bool, uint32, *session.Info) {
-	var sess *session.Info
+func parseMessage(message gin.H, currentSession *models.Info) (bool, uint32, *models.Info) {
+	var sess *models.Info
 	sess = nil
 	op := uint32(message["operation"].(float64))
 	if op == 0 {
 		sessionToken, ok := message["sessionToken"]
 		if ok {
-			sess, ok = session.GetById(sessionToken.(string))
+			sess, ok = models.GetSessionById(sessionToken.(string))
 			if ok {
 				return true, 0, sess
 			} else {
@@ -45,7 +44,7 @@ func parseMessage(message gin.H, currentSession *session.Info) (bool, uint32, *s
 		}
 	}
 	if currentSession != nil {
-		sess, _ = session.GetById(currentSession.GetId())
+		sess, _ = models.GetSessionById(currentSession.GetId())
 	}
 	return false, op, sess
 }
@@ -113,7 +112,7 @@ func Handle(c *gin.Context) {
 			if reset {
 				timeout.Reset(timeoutTime)
 			}
-		} else if _, ok := session.GetById(sessionToken); !ok {
+		} else if _, ok := models.GetSessionById(sessionToken); !ok {
 			break
 		} else {
 			// TODO: Handle other operations
@@ -127,7 +126,7 @@ func Handle(c *gin.Context) {
 	closeConn(conn, websocket.CloseNormalClosure, "Invalid message")
 }
 
-func SendMessage(sessionId string, message j.A) bool {
+func SendMessage(sessionId string, message i.A) bool {
 	lock.RLock(sessionId)
 
 	conn, ok := connections[sessionId]

@@ -1,8 +1,8 @@
 package advertisement
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/advertisement/extra"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,10 +13,10 @@ func GetAdvertisements(c *gin.Context) {
 	var advsIds []uint32
 	err := json.Unmarshal([]byte(matchIdsStr), &advsIds)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}})
 		return
 	}
-	advs := extra.FindAdvertisementsEncoded(func(adv *extra.Advertisement) bool {
+	advs := models.FindAdvertisementsEncoded(func(adv *models.Advertisement) bool {
 		for _, advId := range advsIds {
 			if adv.GetId() == advId {
 				return true
@@ -26,11 +26,11 @@ func GetAdvertisements(c *gin.Context) {
 	})
 	if advs == nil {
 		c.JSON(http.StatusOK,
-			j.A{0, j.A{}},
+			i.A{0, i.A{}},
 		)
 	} else {
 		c.JSON(http.StatusOK,
-			j.A{0, advs},
+			i.A{0, advs},
 		)
 	}
 }

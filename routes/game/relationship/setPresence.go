@@ -1,8 +1,8 @@
 package relationship
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/session"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -11,16 +11,16 @@ import (
 func SetPresence(c *gin.Context) {
 	presenceId, ok := c.GetPostForm("presence_id")
 	if !ok {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 	presence, err := strconv.Atoi(presenceId)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2})
+		c.JSON(http.StatusOK, i.A{2})
 		return
 	}
 	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*session.Info)
+	sess, _ := sessAny.(*models.Info)
 	sess.GetUser().SetPresence(int8(presence))
-	c.JSON(http.StatusOK, j.A{0})
+	c.JSON(http.StatusOK, i.A{0})
 }

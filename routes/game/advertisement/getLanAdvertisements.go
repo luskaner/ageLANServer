@@ -1,9 +1,8 @@
 package advertisement
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/advertisement/extra"
-	"aoe2DELanServer/session"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -28,19 +27,19 @@ type query struct {
 func GetLanAdvertisements(c *gin.Context) {
 	var q query
 	if err := c.ShouldBind(&q); err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
 		return
 	}
 	var lanServerGuids []string
 	err := json.Unmarshal([]byte(q.RelayRegions), &lanServerGuids)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
 		return
 	}
 	sessAny, _ := c.Get("session")
-	sess, ok := sessAny.(*session.Info)
+	sess, ok := sessAny.(*models.Info)
 	if !ok {
-		c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
 		return
 	}
 	lanServerGuidsMap := make(map[string]struct{}, len(lanServerGuids))
@@ -48,7 +47,7 @@ func GetLanAdvertisements(c *gin.Context) {
 		lanServerGuidsMap[guid] = struct{}{}
 	}
 	currentUser := sess.GetUser()
-	advs := extra.FindAdvertisementsEncoded(func(adv *extra.Advertisement) bool {
+	advs := models.FindAdvertisementsEncoded(func(adv *models.Advertisement) bool {
 		_, relayRegionMatches := lanServerGuidsMap[adv.GetRelayRegion()]
 		_, isPeer := adv.GetPeer(currentUser)
 		return adv.GetJoinable() &&
@@ -66,11 +65,11 @@ func GetLanAdvertisements(c *gin.Context) {
 	})
 	if advs == nil {
 		c.JSON(http.StatusOK,
-			j.A{0, j.A{}, j.A{}},
+			i.A{0, i.A{}, i.A{}},
 		)
 	} else {
 		c.JSON(http.StatusOK,
-			j.A{0, advs, j.A{}},
+			i.A{0, advs, i.A{}},
 		)
 	}
 }

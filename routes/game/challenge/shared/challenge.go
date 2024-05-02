@@ -1,10 +1,12 @@
-package extra
+package shared
 
-import "aoe2DELanServer/j"
+import (
+	i "aoe2DELanServer/internal"
+)
 
-func GetChallengeProgressData() j.A {
+func GetChallengeProgressData() i.A {
 	// TODO: Empty means all completed?
-	return j.A{
+	return i.A{
 		/*
 			j.A{26042944, 400000027, 0, 0, nil, nil, 1712162365},
 			j.A{26042945, 400000022, 0, 0, nil, nil, 1712162365},

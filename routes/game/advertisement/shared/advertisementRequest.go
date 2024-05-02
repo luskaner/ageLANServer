@@ -1,4 +1,4 @@
-package extra
+package shared
 
 type ModDllRequest struct {
 	File     string `form:"moddllfile"`
@@ -20,7 +20,7 @@ type PasswordRequest struct {
 	Enabled bool `form:"passworded"`
 }
 
-type AdvertisementJoinRequest struct {
+type AdvertisementBaseRequest struct {
 	Id                int64  `form:"advertisementid"`
 	AppBinaryChecksum uint32 `form:"appbinarychecksum"`
 	DataChecksum      uint32 `form:"datachecksum"`
@@ -58,7 +58,7 @@ type AdvertisementUpdateRequest struct {
 }
 
 type AdvertisementHostRequest struct {
-	AdvertisementJoinRequest
+	AdvertisementBaseRequest
 	Description       string `form:"description"`
 	AutomatchPollId   int32  `form:"automatchPoll_id"`
 	RelayRegion       string `form:"relayRegion"`

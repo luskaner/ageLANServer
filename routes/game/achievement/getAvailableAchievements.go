@@ -1,10 +1,10 @@
 package achievement
 
 import (
-	"aoe2DELanServer/asset"
+	"aoe2DELanServer/files"
 	"github.com/gin-gonic/gin"
 )
 
 func GetAvailableAchievements(c *gin.Context) {
-	asset.ReturnSignedAsset("achievements.json", c, false)
+	files.ReturnSignedAsset("achievements.json", c, false)
 }

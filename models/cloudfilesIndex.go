@@ -1,4 +1,4 @@
-package asset
+package models
 
 type CloudfilesIndex struct {
 	Id       int    `json:"id"`

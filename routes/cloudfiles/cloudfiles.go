@@ -1,9 +1,8 @@
 package cloudfiles
 
 import (
-	"aoe2DELanServer/asset"
-	"aoe2DELanServer/asset/cloud"
-	"aoe2DELanServer/routes/game/cloud/extra"
+	"aoe2DELanServer/files"
+	"aoe2DELanServer/models"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,7 +12,7 @@ import (
 
 func Cloudfiles(c *gin.Context) {
 	key := c.Param("key")[1:]
-	info, exists := extra.Get(c.Query("sig"))
+	info, exists := models.GetCredentials(c.Query("sig"))
 
 	if !exists {
 		c.Status(http.StatusUnauthorized)
@@ -21,7 +20,7 @@ func Cloudfiles(c *gin.Context) {
 	}
 
 	signatureKey := info.GetKey()
-	for filename, file := range asset.CloudFiles {
+	for filename, file := range files.CloudFiles {
 		if file.Key == key {
 			if file.Key != signatureKey {
 				c.Status(http.StatusForbidden)
@@ -45,7 +44,7 @@ func Cloudfiles(c *gin.Context) {
 			c.Header("x-ms-blob-type", "BlockBlob")
 			c.Header("x-ms-server-encrypted", "true")
 			c.Header("Date", time.Now().Format(time.RFC1123))
-			c.Data(http.StatusOK, file.Type, cloud.Files[filename])
+			c.Data(http.StatusOK, file.Type, files.Cloud[filename])
 			return
 		}
 	}

@@ -1,14 +1,14 @@
-package extra
+package models
 
 import (
-	"aoe2DELanServer/rng"
+	i "aoe2DELanServer/internal"
 	"crypto/sha256"
 	"encoding/base64"
 	"sync"
 	"time"
 )
 
-type Info struct {
+type Credentials struct {
 	signature string
 	key       string
 	expiry    time.Time
@@ -16,25 +16,25 @@ type Info struct {
 
 var store sync.Map
 
-func (info *Info) Delete() {
+func (info *Credentials) Delete() {
 	store.Delete(info.signature)
 }
 
 func generateSignature() string {
 	b := make([]byte, 32)
 	for {
-		rng.Rng.Read(b)
+		i.Rng.Read(b)
 		hash := sha256.Sum256(b)
 		sig := base64.StdEncoding.EncodeToString(hash[:])
-		if _, exists := Get(sig); !exists {
+		if _, exists := GetCredentials(sig); !exists {
 			return sig
 		}
 	}
 }
 
-func Create(key string) *Info {
-	removeExpired()
-	info := &Info{
+func CreateCredentials(key string) *Credentials {
+	removeCredentialsExpired()
+	info := &Credentials{
 		key:       key,
 		signature: generateSignature(),
 		expiry:    time.Now().UTC().Add(time.Minute * 5),
@@ -43,10 +43,10 @@ func Create(key string) *Info {
 	return info
 }
 
-func Get(signature string) (*Info, bool) {
+func GetCredentials(signature string) (*Credentials, bool) {
 	value, exists := store.Load(signature)
 	if exists {
-		info := value.(*Info)
+		info := value.(*Credentials)
 		if info.Expired() {
 			info.Delete()
 			exists = false
@@ -57,25 +57,25 @@ func Get(signature string) (*Info, bool) {
 	return nil, false
 }
 
-func (info *Info) Expired() bool {
+func (info *Credentials) Expired() bool {
 	return time.Now().UTC().After(info.expiry)
 }
 
-func (info *Info) GetExpiry() time.Time {
+func (info *Credentials) GetExpiry() time.Time {
 	return info.expiry
 }
 
-func (info *Info) GetSignature() string {
+func (info *Credentials) GetSignature() string {
 	return info.signature
 }
 
-func (info *Info) GetKey() string {
+func (info *Credentials) GetKey() string {
 	return info.key
 }
 
-func removeExpired() {
+func removeCredentialsExpired() {
 	store.Range(func(_, value interface{}) bool {
-		info := value.(*Info)
+		info := value.(*Credentials)
 		if info.Expired() {
 			info.Delete()
 		}

@@ -1,18 +1,17 @@
 package login
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/routes/game/advertisement/extra"
-	"aoe2DELanServer/session"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func Logout(c *gin.Context) {
 	sessAny, _ := c.Get("session")
-	sess := sessAny.(*session.Info)
+	sess := sessAny.(*models.Info)
 	u := sess.GetUser()
-	advs := extra.FindAdvertisementsOriginal(func(adv *extra.Advertisement) bool {
+	advs := models.FindAdvertisements(func(adv *models.Advertisement) bool {
 		_, found := adv.GetPeer(u)
 		return found
 	})
@@ -21,5 +20,5 @@ func Logout(c *gin.Context) {
 	}
 	u.SetPresence(0)
 	sess.Delete()
-	c.JSON(http.StatusOK, j.A{0})
+	c.JSON(http.StatusOK, i.A{0})
 }

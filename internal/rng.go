@@ -1,4 +1,4 @@
-package rng
+package internal
 
 import (
 	"math/rand"

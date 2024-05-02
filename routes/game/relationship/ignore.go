@@ -1,8 +1,8 @@
 package relationship
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -13,13 +13,13 @@ func Ignore(c *gin.Context) {
 	profileIdStr := c.PostForm("targetProfileID")
 	profileId, err := strconv.Atoi(profileIdStr)
 	if err != nil {
-		c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	u, ok := user.GetById(int32(profileId))
+	u, ok := models.GetUserById(int32(profileId))
 	if !ok {
-		c.JSON(http.StatusOK, j.A{2, j.A{}, j.A{}})
+		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	c.JSON(http.StatusOK, j.A{2, u.GetProfileInfo(false), j.A{}})
+	c.JSON(http.StatusOK, i.A{2, u.GetProfileInfo(false), i.A{}})
 }

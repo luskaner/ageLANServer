@@ -1,23 +1,23 @@
 package achievement
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/session"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func GetAchievements(c *gin.Context) {
 	sessAny, _ := c.Get("session")
-	sess := sessAny.(*session.Info)
+	sess := sessAny.(*models.Info)
 	c.JSON(http.StatusOK,
-		j.A{
+		i.A{
 			0,
-			j.A{
-				j.A{
+			i.A{
+				i.A{
 					sess.GetUser().GetId(),
 					// DO NOT RETURN ACHIEVEMENTS AS IT WILL *REALLY* GRANT THEM ON XBOX
-					j.A{},
+					i.A{},
 					// asset.Achievements,
 				},
 			},

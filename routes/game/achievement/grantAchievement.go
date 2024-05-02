@@ -1,7 +1,7 @@
 package achievement
 
 import (
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
@@ -10,7 +10,7 @@ import (
 func GrantAchievement(c *gin.Context) {
 	// DO NOT ALLOW THE CLIENT TO CLAIM ACHIEVEMENTS
 	c.JSON(http.StatusOK,
-		j.A{
+		i.A{
 			2,
 			time.Now().UTC().Unix(),
 		},

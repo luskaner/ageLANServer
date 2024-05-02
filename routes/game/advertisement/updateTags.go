@@ -1,7 +1,7 @@
 package advertisement
 
 import (
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -38,5 +38,5 @@ func UpdateTags(c *gin.Context) {
 	}
 	adv.UpdateTags(tags)*/
 	// Only used by findAdvertisements which does not return LAN games
-	c.JSON(http.StatusOK, j.A{0})
+	c.JSON(http.StatusOK, i.A{0})
 }

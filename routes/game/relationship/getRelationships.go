@@ -1,9 +1,8 @@
 package relationship
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/session"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -12,10 +11,10 @@ func GetRelationships(c *gin.Context) {
 	// As we don't have knowledge of friends, nor it is supposed to be many players on the server
 	// just return all online users as if they were friends
 	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*session.Info)
+	sess, _ := sessAny.(*models.Info)
 	currentUser := sess.GetUser()
-	profileInfo := user.GetProfileInfo(true, func(u *user.User) bool {
+	profileInfo := models.GetProfileInfo(true, func(u *models.User) bool {
 		return u != currentUser && u.GetPresence() > 0
 	})
-	c.JSON(http.StatusOK, j.A{0, j.A{}, j.A{}, j.A{}, j.A{}, profileInfo, j.A{}, j.A{}})
+	c.JSON(http.StatusOK, i.A{0, i.A{}, i.A{}, i.A{}, i.A{}, profileInfo, i.A{}, i.A{}})
 }

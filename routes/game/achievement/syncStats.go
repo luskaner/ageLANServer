@@ -1,7 +1,7 @@
 package achievement
 
 import (
-	"aoe2DELanServer/j"
+	i "aoe2DELanServer/internal"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -9,6 +9,6 @@ import (
 func SyncStats(c *gin.Context) {
 	// TODO: What does it do?
 	c.JSON(http.StatusOK,
-		j.A{2},
+		i.A{2},
 	)
 }

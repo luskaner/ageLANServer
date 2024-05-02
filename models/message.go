@@ -1,8 +1,7 @@
-package extra
+package models
 
 import (
-	"aoe2DELanServer/j"
-	"aoe2DELanServer/user"
+	i "aoe2DELanServer/internal"
 )
 
 type Message struct {
@@ -11,12 +10,12 @@ type Message struct {
 	broadcast       bool
 	content         string
 	typ             uint8
-	sender          *user.User
-	receivers       []*user.User
+	sender          *User
+	receivers       []*User
 }
 
 func (message *Message) GetAdvertisement() *Advertisement {
-	adv, _ := Get(message.advertisementId)
+	adv, _ := GetAdvertisement(message.advertisementId)
 	return adv
 }
 
@@ -36,16 +35,16 @@ func (message *Message) GetType() uint8 {
 	return message.typ
 }
 
-func (message *Message) GetSender() *user.User {
+func (message *Message) GetSender() *User {
 	return message.sender
 }
 
-func (message *Message) GetReceivers() []*user.User {
+func (message *Message) GetReceivers() []*User {
 	return message.receivers
 }
 
-func (message *Message) Encode() j.A {
-	return j.A{
+func (message *Message) Encode() i.A {
+	return i.A{
 		message.sender.GetId(),
 		message.content,
 		message.content,

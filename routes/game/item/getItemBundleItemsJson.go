@@ -1,10 +1,10 @@
 package item
 
 import (
-	"aoe2DELanServer/asset"
+	"aoe2DELanServer/files"
 	"github.com/gin-gonic/gin"
 )
 
 func GetItemBundleItemsJson(c *gin.Context) {
-	asset.ReturnSignedAsset("item_bundle_items.json", c, true)
+	files.ReturnSignedAsset("itemBundleItems.json", c, true)
 }
