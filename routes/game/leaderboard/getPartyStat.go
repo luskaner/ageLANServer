@@ -1,11 +1,12 @@
 package leaderboard
 
 import (
+	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/routes/game/leaderboard/shared"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func GetPartyStat(c *gin.Context) {
-	response := shared.GetStatGroups(c.Query("statsids"), false, true)
-	c.JSON(200, response)
+func GetPartyStat(w http.ResponseWriter, r *http.Request) {
+	response := shared.GetStatGroups(r.URL.Query().Get("statsids"), false, true)
+	i.JSON(&w, response)
 }

@@ -5,7 +5,7 @@ import (
 )
 
 type Message struct {
-	advertisementId uint32
+	advertisementId int32
 	time            int64
 	broadcast       bool
 	content         string

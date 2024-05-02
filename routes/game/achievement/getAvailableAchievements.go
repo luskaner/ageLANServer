@@ -2,9 +2,9 @@ package achievement
 
 import (
 	"aoe2DELanServer/files"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func GetAvailableAchievements(c *gin.Context) {
-	files.ReturnSignedAsset("achievements.json", c, false)
+func GetAvailableAchievements(w http.ResponseWriter, r *http.Request) {
+	files.ReturnSignedAsset("achievements.json", &w, r, false)
 }

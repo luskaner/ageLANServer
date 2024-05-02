@@ -2,15 +2,13 @@ package achievement
 
 import (
 	i "aoe2DELanServer/internal"
-	"aoe2DELanServer/models"
-	"github.com/gin-gonic/gin"
+	"aoe2DELanServer/middleware"
 	"net/http"
 )
 
-func GetAchievements(c *gin.Context) {
-	sessAny, _ := c.Get("session")
-	sess := sessAny.(*models.Info)
-	c.JSON(http.StatusOK,
+func GetAchievements(w http.ResponseWriter, r *http.Request) {
+	sess, _ := middleware.Session(r)
+	i.JSON(&w,
 		i.A{
 			0,
 			i.A{

@@ -2,9 +2,9 @@ package item
 
 import (
 	"aoe2DELanServer/files"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func GetItemDefinitionsJson(c *gin.Context) {
-	files.ReturnSignedAsset("itemDefinitions.json", c, true)
+func GetItemDefinitionsJson(w http.ResponseWriter, r *http.Request) {
+	files.ReturnSignedAsset("itemDefinitions.json", &w, r, true)
 }

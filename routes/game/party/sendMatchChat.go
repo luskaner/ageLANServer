@@ -2,49 +2,48 @@ package party
 
 import (
 	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/wss"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type request struct {
-	ToProfileIdsStr string `form:"to_profile_ids" binding:"required"`
-	MessageTypeID   uint8  `form:"messageTypeID"`
-	MatchID         uint32 `form:"match_id" binding:"required"`
-	Broadcast       bool   `form:"broadcast" binding:"required"`
-	Message         string `form:"message" binding:"required"`
+	ToProfileIdsStr string `schema:"to_profile_ids"`
+	MessageTypeID   uint8  `schema:"messageTypeID"`
+	MatchID         int32  `schema:"match_id"`
+	Broadcast       bool   `schema:"broadcast"`
+	Message         string `schema:"message"`
 }
 
-func SendMatchChat(c *gin.Context) {
+func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	var req request
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+	if err := i.Bind(r, &req); err != nil {
+		i.JSON(&w, i.A{2})
 		return
 	}
 
 	var toProfileIds []int32
 	err := json.Unmarshal([]byte(req.ToProfileIdsStr), &toProfileIds)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 
 	adv, ok := models.GetAdvertisement(req.MatchID)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 
-	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*models.Info)
+	sess, _ := middleware.Session(r)
 	currentUser := sess.GetUser()
 
 	// Only peers within the match can send messages
 	// TODO: What about AI?
 	if _, ok := adv.GetPeer(currentUser); !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 
@@ -79,5 +78,5 @@ func SendMatchChat(c *gin.Context) {
 			)
 		}()
 	}
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

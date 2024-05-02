@@ -4,18 +4,17 @@ import (
 	"aoe2DELanServer/files"
 	"aoe2DELanServer/models"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-func Cloudfiles(c *gin.Context) {
-	key := c.Param("key")[1:]
-	info, exists := models.GetCredentials(c.Query("sig"))
+func Cloudfiles(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("key")[1:]
+	info, exists := models.GetCredentials(r.URL.Query().Get("sig"))
 
 	if !exists {
-		c.Status(http.StatusUnauthorized)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -23,31 +22,32 @@ func Cloudfiles(c *gin.Context) {
 	for filename, file := range files.CloudFiles {
 		if file.Key == key {
 			if file.Key != signatureKey {
-				c.Status(http.StatusForbidden)
+				http.Error(w, "Incorrect signature", http.StatusForbidden)
 				return
 			}
 			lengthStr := strconv.Itoa(file.Length)
-			c.Header("Content-Length", lengthStr)
-			c.Header("Content-Type", file.Type)
-			c.Header("Content-MD5", file.Checksum)
-			c.Header("Last-Modified", file.Created)
-			c.Header("Accept-Range", "bytes")
-			c.Header("ETag", file.ETag)
-			c.Header("Server", "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0")
-			c.Header("x-ms-request-id", fmt.Sprintf("%d", time.Now().Unix()))
-			c.Header("x-ms-version", file.Version)
-			c.Header("x-ms-meta-filename", filename)
-			c.Header("x-ms-meta-ContentLength", lengthStr)
-			c.Header("x-ms-creation-time", file.Created)
-			c.Header("x-ms-lease-status", "unlocked")
-			c.Header("x-ms-lease-state", "available")
-			c.Header("x-ms-blob-type", "BlockBlob")
-			c.Header("x-ms-server-encrypted", "true")
-			c.Header("Date", time.Now().Format(time.RFC1123))
-			c.Data(http.StatusOK, file.Type, files.Cloud[filename])
+			w.Header().Set("Content-Length", lengthStr)
+			w.Header().Set("Content-Type", file.Type)
+			w.Header().Set("Content-MD5", file.Checksum)
+			w.Header().Set("Last-Modified", file.Created)
+			w.Header().Set("Accept-Range", "bytes")
+			w.Header().Set("ETag", file.ETag)
+			w.Header().Set("Server", "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0")
+			w.Header().Set("x-ms-request-id", fmt.Sprintf("%d", time.Now().Unix()))
+			w.Header().Set("x-ms-version", file.Version)
+			w.Header().Set("x-ms-meta-filename", filename)
+			w.Header().Set("x-ms-meta-ContentLength", lengthStr)
+			w.Header().Set("x-ms-creation-time", file.Created)
+			w.Header().Set("x-ms-lease-status", "unlocked")
+			w.Header().Set("x-ms-lease-state", "available")
+			w.Header().Set("x-ms-blob-type", "BlockBlob")
+			w.Header().Set("x-ms-server-encrypted", "true")
+			w.Header().Set("Date", time.Now().Format(time.RFC1123))
+			w.Header().Set("Content-Type", file.Type)
+			_, _ = w.Write(files.Cloud[filename])
 			return
 		}
 	}
 
-	c.Status(http.StatusNotFound)
+	http.Error(w, "Not Found", http.StatusNotFound)
 }

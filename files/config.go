@@ -7,12 +7,10 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
+	"github.com/wk8/go-ordered-map/v2"
 	"io/fs"
 	"net/http"
 )
-
-import "github.com/iancoleman/orderedmap"
 
 var keyedFilenames = map[string]struct{}{
 	"login.json":           {},
@@ -21,7 +19,7 @@ var keyedFilenames = map[string]struct{}{
 }
 
 var Config = make(map[string]i.A)
-var KeyedFiles = make(map[string]*orderedmap.OrderedMap)
+var KeyedFiles = make(map[string]*orderedmap.OrderedMap[string, any])
 var CloudFiles models.CloudFilesIndexMap
 var Cloud = make(map[string][]byte)
 
@@ -52,10 +50,10 @@ func initializeConfig() {
 		default:
 			name := entry.Name()
 			if _, keyed := keyedFilenames[name]; keyed {
-				var result orderedmap.OrderedMap
-				err = json.Unmarshal(data, &result)
+				var result = orderedmap.New[string, any]()
+				err = json.Unmarshal(data, result)
 				if err == nil {
-					KeyedFiles[name] = &result
+					KeyedFiles[name] = result
 				}
 			} else {
 				var result i.A
@@ -78,29 +76,29 @@ func initializeCloud() {
 	}
 }
 
-func ReturnSignedAsset(name string, c *gin.Context, keyedResponse bool) {
+func ReturnSignedAsset(name string, w *http.ResponseWriter, r *http.Request, keyedResponse bool) {
 	var serverSignature string
 	var response any
 	if keyedResponse {
 		response = KeyedFiles[name]
-		rawSignature, _ := response.(*orderedmap.OrderedMap).Get("dataSignature")
+		rawSignature, _ := response.(*orderedmap.OrderedMap[string, any]).Get("dataSignature")
 		serverSignature = rawSignature.(string)
 	} else {
 		response = Config[name]
 		arrayResponse := response.(i.A)
 		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
 	}
-	if c.Query("signature") != serverSignature {
-		c.JSON(http.StatusOK, response)
+	if r.URL.Query().Get("signature") != serverSignature {
+		i.JSON(w, response)
 		return
 	}
 	if keyedResponse {
-		c.JSON(http.StatusOK, gin.H{"result": 0, "dataSignature": serverSignature})
+		i.JSON(w, i.H{"result": 0, "dataSignature": serverSignature})
 	} else {
 		emptyArrays := make(i.A, len(response.(i.A))-2)
 		ret := i.A{0}
 		ret = append(ret, emptyArrays...)
 		ret = append(ret, serverSignature)
-		c.JSON(http.StatusOK, ret)
+		i.JSON(w, ret)
 	}
 }

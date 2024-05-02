@@ -2,22 +2,23 @@ package main
 
 import (
 	"aoe2DELanServer/files"
-	"aoe2DELanServer/models"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/routes"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/handlers"
 	"log"
+	"net/http"
+	"os"
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-	r.Use(models.SessionMiddleware())
-	err := r.SetTrustedProxies(nil)
-	if err != nil {
-		log.Println(err)
-		return
+	mux := http.NewServeMux()
+	routes.Initialize(mux)
+	sessionMux := middleware.SessionMiddleware(mux)
+	server := &http.Server{
+		Addr: ":443",
+		//Handler: handlers.RecoveryHandler()(handlers.LoggingHandler(os.Stdout, mux)),
+		Handler: handlers.LoggingHandler(os.Stdout, sessionMux),
 	}
 	files.Initialize()
-	routes.Initialize(r)
-	log.Fatal(r.RunTLS(":443", "static/certificates/cert.pem", "static/certificates/key.pem"))
+	log.Fatal(server.ListenAndServeTLS("static/certificates/cert.pem", "static/certificates/key.pem"))
 }

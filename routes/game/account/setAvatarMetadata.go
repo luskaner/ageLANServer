@@ -2,11 +2,10 @@ package account
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func SetAvatarMetadata(c *gin.Context) {
+func SetAvatarMetadata(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement
-	c.JSON(http.StatusOK, i.A{2, i.A{}})
+	i.JSON(&w, i.A{2, i.A{}})
 }

@@ -4,16 +4,15 @@ import (
 	"aoe2DELanServer/files"
 	i "aoe2DELanServer/internal"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func GetFileURL(c *gin.Context) {
-	namesStr := c.Query("names")
+func GetFileURL(w http.ResponseWriter, r *http.Request) {
+	namesStr := r.URL.Query().Get("names")
 	var names []string
 	err := json.Unmarshal([]byte(namesStr), &names)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2, i.A{}})
+		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
 	descriptions := make(i.A, len(names))
@@ -28,5 +27,5 @@ func GetFileURL(c *gin.Context) {
 			finalPart,
 		}
 	}
-	c.JSON(http.StatusOK, i.A{0, descriptions})
+	i.JSON(&w, i.A{0, descriptions})
 }

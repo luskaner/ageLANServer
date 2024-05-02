@@ -2,12 +2,11 @@ package advertisement
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func UpdatePlatformSessionID(c *gin.Context) {
-	c.JSON(http.StatusOK,
+func UpdatePlatformSessionID(w http.ResponseWriter, _ *http.Request) {
+	i.JSON(&w,
 		i.A{0},
 	)
 }

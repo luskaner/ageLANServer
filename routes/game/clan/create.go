@@ -2,11 +2,10 @@ package clan
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func Create(c *gin.Context) {
+func Create(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement in memory?
-	c.JSON(http.StatusOK, i.A{2, nil, nil, i.A{}})
+	i.JSON(&w, i.A{2, nil, nil, i.A{}})
 }

@@ -4,7 +4,8 @@ import (
 	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/routes/game/advertisement/shared"
 	"fmt"
-	orderedmapGeneric "github.com/elliotchance/orderedmap/v2"
+	"github.com/wk8/go-ordered-map/v2"
+	"math"
 	"sync"
 	"time"
 )
@@ -26,7 +27,7 @@ type Password struct {
 }
 
 type Advertisement struct {
-	id                uint32
+	id                int32
 	ip                string
 	automatchPollId   int32
 	relayRegion       string
@@ -55,13 +56,13 @@ type Advertisement struct {
 	state             int8
 	startTime         int64
 	chat              []Message
-	peers             *orderedmapGeneric.OrderedMap[*User, *Peer]
+	peers             *orderedmap.OrderedMap[*User, *Peer]
 	//tags              map[string]int32
 }
 
 var peers = make(map[*User]interface{})
 var hosts = make(map[*User]interface{})
-var advertisementStore = make(map[uint32]*Advertisement)
+var advertisementStore = make(map[int32]*Advertisement)
 var chatLock = sync.RWMutex{}
 var advLock = i.NewKeyRWMutex()
 var peerLock = i.NewKeyRWMutex()
@@ -97,7 +98,7 @@ func (adv *Advertisement) GetState() int8 {
 	return adv.state
 }
 
-func (adv *Advertisement) GetId() uint32 {
+func (adv *Advertisement) GetId() int32 {
 	advLock.RLock(adv.id)
 	defer advLock.RUnlock(adv.id)
 	return adv.id
@@ -175,7 +176,7 @@ func (adv *Advertisement) GetVersionFlags() uint32 {
 	return adv.versionFlags
 }
 
-func (adv *Advertisement) GetPeers() *orderedmapGeneric.OrderedMap[*User, *Peer] {
+func (adv *Advertisement) GetPeers() *orderedmap.OrderedMap[*User, *Peer] {
 	advLock.RLock(adv.id)
 	defer advLock.RUnlock(adv.id)
 	return adv.peers
@@ -198,9 +199,9 @@ func StoreAdvertisement(advFrom *shared.AdvertisementHostRequest) *Advertisement
 	if advFrom.Id != -1 {
 		return nil
 	}
-	var id uint32
+	var id int32
 	for {
-		id = i.Rng.Uint32()
+		id = i.Rng.Int31n(math.MaxInt32)
 		advLock.RLock(id)
 		_, exists := advertisementStore[id]
 		advLock.RUnlock(id)
@@ -213,13 +214,13 @@ func StoreAdvertisement(advFrom *shared.AdvertisementHostRequest) *Advertisement
 			adv.race = advFrom.Race
 			adv.team = advFrom.Team
 			adv.statGroup = advFrom.StatGroup
-			adv.peers = orderedmapGeneric.NewOrderedMap[*User, *Peer]()
+			adv.peers = orderedmap.New[*User, *Peer]()
 			//adv.tags = make(map[string]int32)
 			adv.chat = make([]Message, 0)
 			u, _ := GetUserById(advFrom.HostId)
 			adv.NewPeer(u, advFrom.Race, advFrom.Team)
 			adv.Update(&shared.AdvertisementUpdateRequest{
-				Id:                int64(adv.id),
+				Id:                adv.id,
 				AppBinaryChecksum: advFrom.AppBinaryChecksum,
 				DataChecksum:      advFrom.DataChecksum,
 				ModDll:            advFrom.ModDll,
@@ -276,7 +277,7 @@ func (adv *Advertisement) UpdateHost() bool {
 		update = false
 	}
 	if update {
-		adv.host = adv.peers.Front().Value
+		adv.host = adv.peers.Oldest().Value
 		return true
 	}
 	return false
@@ -321,7 +322,7 @@ func (adv *Advertisement) Update(advFrom *shared.AdvertisementUpdateRequest) {
 	adv.UpdateState(advFrom.State)
 }
 
-func GetAdvertisement(id uint32) (*Advertisement, bool) {
+func GetAdvertisement(id int32) (*Advertisement, bool) {
 	advLock.RLock(id)
 	adv, exists := advertisementStore[id]
 	advLock.RUnlock(id)
@@ -383,7 +384,7 @@ func (adv *Advertisement) Delete() {
 		removeHost(adv.host)
 		hostLock.Unlock(hostId)
 	}
-	for el := adv.peers.Front(); el != nil; el = el.Next() {
+	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		u := el.Key
 		id := u.GetId()
 		peerLock.Lock(id)
@@ -412,7 +413,7 @@ func (adv *Advertisement) UpdateState(state int8) {
 func (adv *Advertisement) EncodePeers() i.A {
 	var peers = make(i.A, adv.peers.Len())
 	i := 0
-	for el := adv.peers.Front(); el != nil; el = el.Next() {
+	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		p := el.Value
 		userId := el.Key.GetId()
 		peerLock.RLock(userId)

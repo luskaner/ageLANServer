@@ -2,46 +2,41 @@ package advertisement
 
 import (
 	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/models"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type modDll struct {
-	File     string `form:"modDLLFile"`
-	Checksum uint32 `form:"modDLLChecksum"`
+	File     string `schema:"modDLLFile"`
+	Checksum uint32 `schema:"modDLLChecksum"`
 }
 
 type query struct {
-	AppBinaryChecksum uint32 `form:"appBinaryChecksum"`
-	DataChecksum      uint32 `form:"dataChecksum"`
-	MatchType         uint8  `form:"matchType_id"`
+	AppBinaryChecksum uint32 `schema:"appBinaryChecksum"`
+	DataChecksum      uint32 `schema:"dataChecksum"`
+	MatchType         uint8  `schema:"matchType_id"`
 	ModDll            modDll
-	ModName           string `form:"modName"`
-	ModVersion        string `form:"modVersion"`
-	VersionFlags      uint32 `form:"versionFlags"`
-	RelayRegions      string `form:"lanServerGuids"`
+	ModName           string `schema:"modName"`
+	ModVersion        string `schema:"modVersion"`
+	VersionFlags      uint32 `schema:"versionFlags"`
+	RelayRegions      string `schema:"lanServerGuids"`
 }
 
-func GetLanAdvertisements(c *gin.Context) {
+func GetLanAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var q query
-	if err := c.ShouldBind(&q); err != nil {
-		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
+	if err := i.Bind(r, &q); err != nil {
+		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
 	var lanServerGuids []string
 	err := json.Unmarshal([]byte(q.RelayRegions), &lanServerGuids)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
+		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	sessAny, _ := c.Get("session")
-	sess, ok := sessAny.(*models.Info)
-	if !ok {
-		c.JSON(http.StatusOK, i.A{2, i.A{}, i.A{}})
-		return
-	}
+	sess, _ := middleware.Session(r)
 	lanServerGuidsMap := make(map[string]struct{}, len(lanServerGuids))
 	for _, guid := range lanServerGuids {
 		lanServerGuidsMap[guid] = struct{}{}
@@ -64,11 +59,11 @@ func GetLanAdvertisements(c *gin.Context) {
 			relayRegionMatches
 	})
 	if advs == nil {
-		c.JSON(http.StatusOK,
+		i.JSON(&w,
 			i.A{0, i.A{}, i.A{}},
 		)
 	} else {
-		c.JSON(http.StatusOK,
+		i.JSON(&w,
 			i.A{0, advs, i.A{}},
 		)
 	}

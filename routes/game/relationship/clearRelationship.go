@@ -2,11 +2,10 @@ package relationship
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func ClearRelationship(c *gin.Context) {
+func ClearRelationship(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement just in memory?
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

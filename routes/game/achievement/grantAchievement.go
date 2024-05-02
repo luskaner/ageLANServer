@@ -2,14 +2,13 @@ package achievement
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 )
 
-func GrantAchievement(c *gin.Context) {
+func GrantAchievement(w http.ResponseWriter, _ *http.Request) {
 	// DO NOT ALLOW THE CLIENT TO CLAIM ACHIEVEMENTS
-	c.JSON(http.StatusOK,
+	i.JSON(&w,
 		i.A{
 			2,
 			time.Now().UTC().Unix(),

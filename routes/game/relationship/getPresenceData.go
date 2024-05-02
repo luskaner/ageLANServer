@@ -2,9 +2,9 @@ package relationship
 
 import (
 	"aoe2DELanServer/files"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func GetPresenceData(c *gin.Context) {
-	files.ReturnSignedAsset("presenceData.json", c, false)
+func GetPresenceData(w http.ResponseWriter, r *http.Request) {
+	files.ReturnSignedAsset("presenceData.json", &w, r, false)
 }

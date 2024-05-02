@@ -5,27 +5,26 @@ import (
 	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/game/challenge/shared"
 	"aoe2DELanServer/routes/wss"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
-func UpdateState(c *gin.Context) {
-	stateStr := c.PostForm("state")
+func UpdateState(w http.ResponseWriter, r *http.Request) {
+	stateStr := r.PostFormValue("state")
 	state, err := strconv.ParseInt(stateStr, 10, 8)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
-	advStr := c.PostForm("advertisementid")
-	advId, err := strconv.ParseUint(advStr, 10, 32)
+	advStr := r.PostFormValue("advertisementid")
+	advId, err := strconv.ParseInt(advStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
-	adv, ok := models.GetAdvertisement(uint32(advId))
+	adv, ok := models.GetAdvertisement(int32(advId))
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	previousState := adv.GetState()
@@ -40,7 +39,7 @@ func UpdateState(c *gin.Context) {
 		challengeProgress := make([]i.A, peersLen)
 		sessionIds := make([]string, peersLen)
 		j := 0
-		for el := adv.GetPeers().Front(); el != nil; el = el.Next() {
+		for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
 			peer := el.Value
 			sess, ok := models.GetSessionByUser(peer.GetUser())
 			if !ok {
@@ -72,5 +71,5 @@ func UpdateState(c *gin.Context) {
 			}()
 		}
 	}
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

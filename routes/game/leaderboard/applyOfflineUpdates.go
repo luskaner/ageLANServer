@@ -2,11 +2,10 @@ package leaderboard
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func ApplyOfflineUpdates(c *gin.Context) {
+func ApplyOfflineUpdates(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement? which kind of updates?
-	c.JSON(http.StatusOK, i.A{0, i.A{}, i.A{}})
+	i.JSON(&w, i.A{0, i.A{}, i.A{}})
 }

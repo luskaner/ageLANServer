@@ -1,12 +1,12 @@
 package models
 
 type CloudfilesIndex struct {
-	Id       int    `json:"id"`
-	Key      string `json:"key"`
-	Type     string `json:"type"`
-	Version  string `json:"version"`
-	ETag     string `json:"etag"`
-	Created  string `json:"created"`
+	Id       int    `schema:"id"`
+	Key      string `schema:"key"`
+	Type     string `schema:"type"`
+	Version  string `schema:"version"`
+	ETag     string `schema:"etag"`
+	Created  string `schema:"created"`
 	Length   int
 	Checksum string
 }

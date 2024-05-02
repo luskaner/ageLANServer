@@ -2,11 +2,10 @@ package party
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func FinalizeReplayUpload(c *gin.Context) {
+func FinalizeReplayUpload(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement? in memory-only does not make much sense
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

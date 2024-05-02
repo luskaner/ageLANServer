@@ -4,16 +4,15 @@ import (
 	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/models"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func GetAdvertisements(c *gin.Context) {
-	matchIdsStr := c.Query("match_ids")
-	var advsIds []uint32
+func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
+	matchIdsStr := r.URL.Query().Get("match_ids")
+	var advsIds []int32
 	err := json.Unmarshal([]byte(matchIdsStr), &advsIds)
 	if err != nil {
-		c.JSON(http.StatusOK, i.A{2, i.A{}})
+		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
 	advs := models.FindAdvertisementsEncoded(func(adv *models.Advertisement) bool {
@@ -25,11 +24,11 @@ func GetAdvertisements(c *gin.Context) {
 		return false
 	})
 	if advs == nil {
-		c.JSON(http.StatusOK,
+		i.JSON(&w,
 			i.A{0, i.A{}},
 		)
 	} else {
-		c.JSON(http.StatusOK,
+		i.JSON(&w,
 			i.A{0, advs},
 		)
 	}

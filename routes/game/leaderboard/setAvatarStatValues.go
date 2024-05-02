@@ -2,11 +2,10 @@ package leaderboard
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func SetAvatarStatValues(c *gin.Context) {
+func SetAvatarStatValues(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement?
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

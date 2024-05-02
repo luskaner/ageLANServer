@@ -2,20 +2,19 @@ package account
 
 import (
 	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/models"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 )
 
-func FindProfiles(c *gin.Context) {
-	name := strings.ToLower(c.Query("name"))
+func FindProfiles(w http.ResponseWriter, r *http.Request) {
+	name := strings.ToLower(r.URL.Query().Get("name"))
 	if len(name) < 1 {
-		c.JSON(http.StatusOK, i.A{2, i.A{}})
+		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	sessAny, _ := c.Get("session")
-	sess, _ := sessAny.(*models.Info)
+	sess, _ := middleware.Session(r)
 	u := sess.GetUser()
 	profileInfo := models.GetProfileInfo(true, func(currentUser *models.User) bool {
 		if u == currentUser {
@@ -23,5 +22,5 @@ func FindProfiles(c *gin.Context) {
 		}
 		return strings.Contains(strings.ToLower(currentUser.GetAlias()), name)
 	})
-	c.JSON(http.StatusOK, i.A{0, profileInfo})
+	i.JSON(&w, i.A{0, profileInfo})
 }

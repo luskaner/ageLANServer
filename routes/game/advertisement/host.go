@@ -4,15 +4,14 @@ import (
 	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/game/advertisement/shared"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"regexp"
 )
 
 var re *regexp.Regexp = nil
 
-func returnError(c *gin.Context) {
-	c.JSON(http.StatusOK, i.A{
+func returnError(w *http.ResponseWriter) {
+	i.JSON(w, i.A{
 		2,
 		0,
 		"",
@@ -31,25 +30,25 @@ func returnError(c *gin.Context) {
 	})
 }
 
-func Host(c *gin.Context) {
+func Host(w http.ResponseWriter, r *http.Request) {
 	if re == nil {
 		re, _ = regexp.Compile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
 	}
 
-	if !re.MatchString(c.PostForm("relayRegion")) {
-		returnError(c)
+	if !re.MatchString(r.PostFormValue("relayRegion")) {
+		returnError(&w)
 		return
 	}
 
 	var adv shared.AdvertisementHostRequest
-	if err := c.ShouldBind(&adv); err == nil {
+	if err := i.Bind(r, &adv); err == nil {
 		u, ok := models.GetUserById(adv.HostId)
 		if !ok || models.IsInAdvertisement(u) {
-			returnError(c)
+			returnError(&w)
 			return
 		}
 		storedAdv := models.StoreAdvertisement(&adv)
-		c.JSON(http.StatusOK,
+		i.JSON(&w,
 			i.A{
 				0,
 				storedAdv.GetId(),
@@ -69,6 +68,6 @@ func Host(c *gin.Context) {
 			},
 		)
 	} else {
-		returnError(c)
+		returnError(&w)
 	}
 }

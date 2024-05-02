@@ -2,11 +2,10 @@ package item
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func SignItems(c *gin.Context) {
+func SignItems(w http.ResponseWriter, _ *http.Request) {
 	// FIXME: Implement, signature seems to be base64 encoded then encrypted
-	c.JSON(http.StatusOK, i.A{2, ""})
+	i.JSON(&w, i.A{2, ""})
 }

@@ -1,78 +1,78 @@
 package shared
 
 type ModDllRequest struct {
-	File     string `form:"moddllfile"`
-	Checksum uint32 `form:"moddllchecksum"`
+	File     string `schema:"moddllfile"`
+	Checksum uint32 `schema:"moddllchecksum"`
 }
 
 type ObserversRequest struct {
-	Enabled  bool   `form:"isObservable"`
-	Delay    bool   `form:"observerDelay"`
-	Password string `form:"observerPassword"`
+	Enabled  bool   `schema:"isObservable"`
+	Delay    bool   `schema:"observerDelay"`
+	Password string `schema:"observerPassword"`
 }
 
 type PasswordBaseRequest struct {
-	Value string `form:"password"`
+	Value string `schema:"password"`
 }
 
 type PasswordRequest struct {
 	PasswordBaseRequest
-	Enabled bool `form:"passworded"`
+	Enabled bool `schema:"passworded"`
 }
 
 type AdvertisementBaseRequest struct {
-	Id                int64  `form:"advertisementid"`
-	AppBinaryChecksum uint32 `form:"appbinarychecksum"`
-	DataChecksum      uint32 `form:"datachecksum"`
+	Id                int32  `schema:"advertisementid"`
+	AppBinaryChecksum uint32 `schema:"appbinarychecksum"`
+	DataChecksum      uint32 `schema:"datachecksum"`
 	ModDll            ModDllRequest
-	ModName           string `form:"modname"`
-	ModVersion        string `form:"modversion"`
-	Party             int32  `form:"party"`
-	Race              int32  `form:"race"`
-	Team              int32  `form:"team"`
-	VersionFlags      uint32 `form:"versionFlags"`
+	ModName           string `schema:"modname"`
+	ModVersion        string `schema:"modversion"`
+	Party             int32  `schema:"party"`
+	Race              int32  `schema:"race"`
+	Team              int32  `schema:"team"`
+	VersionFlags      uint32 `schema:"versionFlags"`
 }
 
 type AdvertisementUpdateRequest struct {
-	Id                int64  `form:"advertisementid"`
-	AppBinaryChecksum uint32 `form:"appbinarychecksum"`
-	DataChecksum      uint32 `form:"datachecksum"`
+	Id                int32  `schema:"advertisementid"`
+	AppBinaryChecksum uint32 `schema:"appbinarychecksum"`
+	DataChecksum      uint32 `schema:"datachecksum"`
 	ModDll            ModDllRequest
-	ModName           string `form:"modname"`
-	ModVersion        string `form:"modversion"`
-	VersionFlags      uint32 `form:"versionFlags"`
-	Description       string `form:"description"`
-	AutomatchPollId   int32  `form:"automatchPoll_id"`
-	MapName           string `form:"mapname"`
-	HostId            int32  `form:"hostid"`
+	ModName           string `schema:"modname"`
+	ModVersion        string `schema:"modversion"`
+	VersionFlags      uint32 `schema:"versionFlags"`
+	Description       string `schema:"description"`
+	AutomatchPollId   int32  `schema:"automatchPoll_id"`
+	MapName           string `schema:"mapname"`
+	HostId            int32  `schema:"hostid"`
 	Observers         ObserversRequest
 	Password          PasswordRequest
-	Visible           bool   `form:"visible"`
-	Joinable          bool   `form:"joinable"`
-	MatchType         uint8  `form:"matchtype"`
-	MaxPlayers        uint8  `form:"maxplayers"`
-	Options           string `form:"options"`
-	SlotInfo          string `form:"slotinfo"`
-	PlatformSessionId uint64 `form:"psnSessionID"`
-	State             int8   `form:"state"`
+	Visible           bool   `schema:"visible"`
+	Joinable          bool   `schema:"joinable"`
+	MatchType         uint8  `schema:"matchtype"`
+	MaxPlayers        uint8  `schema:"maxplayers"`
+	Options           string `schema:"options"`
+	SlotInfo          string `schema:"slotinfo"`
+	PlatformSessionId uint64 `schema:"psnSessionID"`
+	State             int8   `schema:"state"`
 }
 
 type AdvertisementHostRequest struct {
 	AdvertisementBaseRequest
-	Description       string `form:"description"`
-	AutomatchPollId   int32  `form:"automatchPoll_id"`
-	RelayRegion       string `form:"relayRegion"`
-	MapName           string `form:"mapname"`
-	HostId            int32  `form:"hostid"`
+	Description       string `schema:"description"`
+	AutomatchPollId   int32  `schema:"automatchPoll_id"`
+	RelayRegion       string `schema:"relayRegion"`
+	MapName           string `schema:"mapname"`
+	HostId            int32  `schema:"hostid"`
 	Observers         ObserversRequest
 	Password          PasswordRequest
-	Visible           bool   `form:"visible"`
-	StatGroup         int32  `form:"statgroup"`
-	Joinable          bool   `form:"joinable"`
-	MatchType         uint8  `form:"matchtype"`
-	MaxPlayers        uint8  `form:"maxplayers"`
-	Options           string `form:"options"`
-	SlotInfo          string `form:"slotinfo"`
-	PlatformSessionId uint64 `form:"psnSessionID"`
-	State             int8   `form:"state"`
+	Visible           bool   `schema:"visible"`
+	StatGroup         int32  `schema:"statgroup"`
+	Joinable          bool   `schema:"joinable"`
+	MatchType         uint8  `schema:"matchtype"`
+	MaxPlayers        uint8  `schema:"maxplayers"`
+	Options           string `schema:"options"`
+	SlotInfo          string `schema:"slotinfo"`
+	PlatformSessionId uint64 `schema:"psnSessionID"`
+	State             int8   `schema:"state"`
 }

@@ -2,9 +2,9 @@ package challenge
 
 import (
 	"aoe2DELanServer/files"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func GetChallenges(c *gin.Context) {
-	files.ReturnSignedAsset("challenges.json", c, false)
+func GetChallenges(w http.ResponseWriter, r *http.Request) {
+	files.ReturnSignedAsset("challenges.json", &w, r, false)
 }

@@ -2,11 +2,10 @@ package leaderboard
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func GetRecentMatchHistory(c *gin.Context) {
+func GetRecentMatchHistory(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement? just in memory does not make much sense
-	c.JSON(http.StatusOK, i.A{0, i.A{}})
+	i.JSON(&w, i.A{0, i.A{}})
 }

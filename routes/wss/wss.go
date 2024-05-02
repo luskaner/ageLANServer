@@ -3,9 +3,9 @@ package wss
 import (
 	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/models"
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -28,8 +28,8 @@ func closeConn(conn *websocket.Conn, closeCode int, text string) {
 	}
 }
 
-func parseMessage(message gin.H, currentSession *models.Info) (bool, uint32, *models.Info) {
-	var sess *models.Info
+func parseMessage(message i.H, currentSession *models.Session) (bool, uint32, *models.Session) {
+	var sess *models.Session
 	sess = nil
 	op := uint32(message["operation"].(float64))
 	if op == 0 {
@@ -49,8 +49,8 @@ func parseMessage(message gin.H, currentSession *models.Info) (bool, uint32, *mo
 	return false, op, sess
 }
 
-func Handle(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+func Handle(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
@@ -64,7 +64,7 @@ func Handle(c *gin.Context) {
 		}
 	})
 
-	var msg gin.H
+	var msg i.H
 	err = conn.ReadJSON(&msg)
 
 	if err != nil {

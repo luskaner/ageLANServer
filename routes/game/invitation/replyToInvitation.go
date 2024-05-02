@@ -2,45 +2,45 @@ package invitation
 
 import (
 	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/game/invitation/shared"
 	"aoe2DELanServer/routes/wss"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type replyRequest struct {
 	shared.Request
-	Accept    bool  `form:"invitationreply"`
-	InviterId int32 `form:"inviterid"`
+	Accept    bool  `schema:"invitationreply"`
+	InviterId int32 `schema:"inviterid"`
 }
 
-func ReplyToInvitation(c *gin.Context) {
+func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 	var q replyRequest
-	if err := c.ShouldBind(&q); err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+	if err := i.Bind(r, &q); err != nil {
+		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := c.Get("session")
-	u := sess.(*models.Info).GetUser()
+	sess, _ := middleware.Session(r)
+	u := sess.GetUser()
 	adv, ok := models.GetAdvertisement(q.AdvertisementId)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	inviter, ok := models.GetUserById(q.InviterId)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	peer, ok := adv.GetPeer(inviter)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	invited := peer.IsInvited(u)
 	if !invited {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	peer.Uninvite(u)
@@ -69,5 +69,5 @@ func ReplyToInvitation(c *gin.Context) {
 			)
 		}()
 	} // TODO: If the user is offline send it when it comes online
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

@@ -5,23 +5,22 @@ import (
 	i "aoe2DELanServer/internal"
 	"aoe2DELanServer/models"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
 type request struct {
-	AccountType    string `form:"accountType"`
-	PlatformUserId uint64 `form:"platformUserID"`
-	Alias          string `form:"alias"`
+	AccountType    string `schema:"accountType"`
+	PlatformUserId uint64 `schema:"platformUserID"`
+	Alias          string `schema:"alias"`
 }
 
-func Platformlogin(c *gin.Context) {
+func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	t := time.Now().UTC().Unix()
 	var req request
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusOK, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
+	if err := i.Bind(r, &req); err != nil {
+		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
 	t2 := t - rand.Int63n(3600*2-3600+1) + 3600
@@ -34,11 +33,12 @@ func Platformlogin(c *gin.Context) {
 	}
 	sessionId := models.CreateSession(u)
 	profileInfo := u.GetProfileInfo(false)
-	var config []i.A
-	var rawConfig = files.KeyedFiles["configuration.json"]
-	for _, key := range rawConfig.Keys() {
-		value, _ := rawConfig.Get(key)
-		config = append(config, i.A{key, value})
+	var rawConfig = files.KeyedFiles["login.json"]
+	var config = make([]i.A, rawConfig.Len())
+	j := 0
+	for el := rawConfig.Oldest(); el != nil; el = el.Next() {
+		config[j] = i.A{el.Key, el.Value}
+		j++
 	}
 	profileId := u.GetProfileId()
 	response := i.A{
@@ -104,9 +104,9 @@ func Platformlogin(c *gin.Context) {
 		i.A{i.A{"", nil, "127.0.0.1", 27012, 27112, 27212}},
 	}
 	expiration := time.Now().Add(time.Hour).UTC().Format(time.RFC1123)
-	c.Header("Set-Cookie", fmt.Sprintf("reliclink=%d; Expires=%s; Max-Age=3600", u.GetReliclink(), expiration))
-	c.Header("Request-Context", "appId=cid-v1:d21b644d-4116-48ea-a602-d6167fb46535")
-	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	c.Header("Expires", "Thu, 01 Jan 1970 00:00:00 GMT")
-	c.JSON(http.StatusOK, response)
+	w.Header().Set("Set-Cookie", fmt.Sprintf("reliclink=%d; Expires=%s; Max-Age=3600", u.GetReliclink(), expiration))
+	w.Header().Set("Request-Context", "appId=cid-v1:d21b644d-4116-48ea-a602-d6167fb46535")
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	w.Header().Set("Expires", "Thu, 01 Jan 1970 00:00:00 GMT")
+	i.JSON(&w, response)
 }

@@ -2,43 +2,43 @@ package invitation
 
 import (
 	i "aoe2DELanServer/internal"
+	"aoe2DELanServer/middleware"
 	"aoe2DELanServer/models"
 	"aoe2DELanServer/routes/wss"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type extendRequest struct {
 	cancelRequest
-	AdvertisementPassword string `form:"gatheringpassword"`
+	AdvertisementPassword string `schema:"gatheringpassword"`
 }
 
-func ExtendInvitation(c *gin.Context) {
+func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 	var q extendRequest
-	if err := c.ShouldBind(&q); err != nil {
-		c.JSON(http.StatusOK, i.A{2})
+	if err := i.Bind(r, &q); err != nil {
+		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := c.Get("session")
-	u := sess.(*models.Info).GetUser()
+	sess, _ := middleware.Session(r)
+	u := sess.GetUser()
 	adv, ok := models.GetAdvertisement(q.AdvertisementId)
 	if !ok || adv.GetPasswordValue() != q.AdvertisementPassword {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	peer, ok := adv.GetPeer(u)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	invitee, ok := models.GetUserById(q.UserId)
 	if !ok {
-		c.JSON(http.StatusOK, i.A{2})
+		i.JSON(&w, i.A{2})
 		return
 	}
 	invited := peer.IsInvited(invitee)
 	if invited {
-		c.JSON(http.StatusOK, i.A{0})
+		i.JSON(&w, i.A{0})
 		return
 	}
 	peer.Invite(invitee)
@@ -61,5 +61,5 @@ func ExtendInvitation(c *gin.Context) {
 			)
 		}()
 	} // TODO: If the user is offline send it when it comes online
-	c.JSON(http.StatusOK, i.A{0})
+	i.JSON(&w, i.A{0})
 }

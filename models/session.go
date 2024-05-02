@@ -1,14 +1,12 @@
 package models
 
 import (
-	internal "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
-	"strings"
+	"aoe2DELanServer/internal"
 	"sync"
 	"time"
 )
 
-type Info struct {
+type Session struct {
 	id     string
 	expiry time.Time
 	user   *User
@@ -16,31 +14,6 @@ type Info struct {
 
 var userIdSession sync.Map
 var sessionStore sync.Map
-var anonymousPaths = map[string]bool{
-	"/game/msstore/getStoreTokens": true,
-	"/game/login/platformlogin":    true,
-	"/wss/":                        true,
-	"/game/news/getNews":           true,
-}
-
-func SessionMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if !anonymousPaths[c.Request.URL.Path] && !strings.HasPrefix(c.Request.URL.Path, "/cloudfiles/") {
-			sessionID := c.Query("sessionID")
-			if sessionID == "" {
-				sessionID = c.PostForm("sessionID")
-			}
-			sess, ok := GetSessionById(sessionID)
-			if !ok {
-				c.JSON(401, gin.H{"error": "Unauthorized"})
-				c.Abort()
-				return
-			}
-			c.Set("session", sess)
-		}
-		c.Next()
-	}
-}
 
 var (
 	sessionLetters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
@@ -59,17 +32,17 @@ func generateSessionId() string {
 	}
 }
 
-func (sess *Info) GetId() string {
+func (sess *Session) GetId() string {
 	return sess.id
 }
 
-func (sess *Info) GetUser() *User {
+func (sess *Session) GetUser() *User {
 	return sess.user
 }
 
 func CreateSession(user *User) string {
 	removeSessionsExpired()
-	session := &Info{
+	session := &Session{
 		id:     generateSessionId(),
 		user:   user,
 		expiry: time.Now().UTC().Add(time.Hour),
@@ -79,15 +52,15 @@ func CreateSession(user *User) string {
 	return session.id
 }
 
-func (sess *Info) Delete() {
+func (sess *Session) Delete() {
 	userIdSession.Delete(sess.user.GetId())
 	sessionStore.Delete(sess.id)
 }
 
-func GetSessionById(sessionId string) (*Info, bool) {
+func GetSessionById(sessionId string) (*Session, bool) {
 	value, exists := sessionStore.Load(sessionId)
 	if exists {
-		session := value.(*Info)
+		session := value.(*Session)
 		if session.Expired() {
 			session.Delete()
 			exists = false
@@ -98,10 +71,10 @@ func GetSessionById(sessionId string) (*Info, bool) {
 	return nil, false
 }
 
-func GetSessionByUser(user *User) (*Info, bool) {
+func GetSessionByUser(user *User) (*Session, bool) {
 	value, exists := userIdSession.Load(user.GetId())
 	if exists {
-		session := value.(*Info)
+		session := value.(*Session)
 		if session.Expired() {
 			session.Delete()
 			exists = false
@@ -112,13 +85,13 @@ func GetSessionByUser(user *User) (*Info, bool) {
 	return nil, false
 }
 
-func (sess *Info) Expired() bool {
+func (sess *Session) Expired() bool {
 	return time.Now().UTC().After(sess.expiry)
 }
 
 func removeSessionsExpired() {
 	sessionStore.Range(func(_, value interface{}) bool {
-		info := value.(*Info)
+		info := value.(*Session)
 		if info.Expired() {
 			info.Delete()
 		}

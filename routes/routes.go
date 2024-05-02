@@ -2,150 +2,155 @@ package routes
 
 import (
 	"aoe2DELanServer/routes/cloudfiles"
-	"aoe2DELanServer/routes/game/Achievement"
-	"aoe2DELanServer/routes/game/Challenge"
-	"aoe2DELanServer/routes/game/CommunityEvent"
-	"aoe2DELanServer/routes/game/Leaderboard"
 	"aoe2DELanServer/routes/game/account"
+	"aoe2DELanServer/routes/game/achievement"
 	"aoe2DELanServer/routes/game/advertisement"
-	"aoe2DELanServer/routes/game/automatch2"
+	Automatch2 "aoe2DELanServer/routes/game/automatch2"
+	"aoe2DELanServer/routes/game/challenge"
 	"aoe2DELanServer/routes/game/chat"
 	"aoe2DELanServer/routes/game/clan"
 	"aoe2DELanServer/routes/game/cloud"
+	"aoe2DELanServer/routes/game/communityEvent"
 	"aoe2DELanServer/routes/game/invitation"
 	"aoe2DELanServer/routes/game/item"
+	"aoe2DELanServer/routes/game/leaderboard"
 	"aoe2DELanServer/routes/game/login"
 	"aoe2DELanServer/routes/game/news"
 	"aoe2DELanServer/routes/game/party"
 	"aoe2DELanServer/routes/game/relationship"
 	"aoe2DELanServer/routes/msstore"
 	"aoe2DELanServer/routes/wss"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func Initialize(r *gin.Engine) {
-	gameGroup := r.Group("/game")
-	{
-		itemGroup := gameGroup.Group("/item")
-		{
-			itemGroup.GET("/getItemBundleItemsJson", item.GetItemBundleItemsJson)
-			itemGroup.GET("/getItemDefinitionsJson", item.GetItemDefinitionsJson)
-			itemGroup.GET("/getItemLoadouts", item.GetItemLoadouts)
-			itemGroup.POST("/signItems", item.SignItems)
-			itemGroup.GET("/getInventoryByProfileIDs", item.GetInventoryByProfileIDs)
-		}
-		clanGroup := gameGroup.Group("/clan")
-		{
-			clanGroup.POST("/create", clan.Create)
-			clanGroup.GET("/find", clan.Find)
-		}
-		communityEventGroup := gameGroup.Group("/CommunityEvent")
-		{
-			communityEventGroup.GET("/getAvailableCommunityEvents", communityEvent.GetAvailableCommunityEvents)
-		}
-		challengeGroup := gameGroup.Group("/Challenge")
-		{
-			challengeGroup.GET("/getChallengeProgress", challenge.GetChallengeProgress)
-			challengeGroup.GET("/getChallenges", challenge.GetChallenges)
-		}
-		newsGroup := gameGroup.Group("/news")
-		{
-			newsGroup.GET("/getNews", news.GetNews)
-		}
-		loginGroup := gameGroup.Group("/login")
-		{
-			loginGroup.POST("/platformlogin", login.Platformlogin)
-			loginGroup.POST("/logout", login.Logout)
-		}
-		accountGroup := gameGroup.Group("/account")
-		{
-			accountGroup.POST("/setLanguage", account.SetLanguage)
-			accountGroup.POST("/setCrossplayEnabled", account.SetCrossplayEnabled)
-			accountGroup.POST("/setAvatarMetadata", account.SetAvatarMetadata)
-			accountGroup.POST("/FindProfilesByPlatformID", account.FindProfilesByPlatformID)
-			accountGroup.GET("/FindProfiles", account.FindProfiles)
-			accountGroup.GET("/getProfileName", account.GetProfileName)
-		}
-		LeaderboardGroup := gameGroup.Group("/Leaderboard")
-		{
-			LeaderboardGroup.POST("/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
-			LeaderboardGroup.GET("/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
-			LeaderboardGroup.GET("/getLeaderBoard", leaderboard.GetLeaderBoard)
-			LeaderboardGroup.GET("/getAvailableLeaderboards", leaderboard.GetAvailableLeaderboards)
-			LeaderboardGroup.GET("/getStatGroupsByProfileIDs", leaderboard.GetStatGroupsByProfileIDs)
-			LeaderboardGroup.GET("/getStatsForLeaderboardByProfileName", leaderboard.GetStatsForLeaderboardByProfileName)
-			LeaderboardGroup.GET("/getPartyStat", leaderboard.GetPartyStat)
-		}
-		leaderboardGroup := gameGroup.Group("/leaderboard")
-		{
-			leaderboardGroup.POST("/setAvatarStatValues", leaderboard.SetAvatarStatValues)
-		}
-		automatch2Group := gameGroup.Group("/automatch2")
-		{
-			automatch2Group.GET("/getAutomatchMap", Automatch2.GetAutomatchMap)
-		}
-		AchievementGroup := gameGroup.Group("/Achievement")
-		{
-			AchievementGroup.GET("/getAchievements", achievement.GetAchievements)
-			AchievementGroup.GET("/getAvailableAchievements", achievement.GetAvailableAchievements)
-		}
-		achievementGroup := gameGroup.Group("/achievement")
-		{
-			achievementGroup.POST("/grantAchievement", achievement.GrantAchievement)
-			achievementGroup.POST("/syncStats", achievement.SyncStats)
-		}
-		advertisementGroup := gameGroup.Group("/advertisement")
-		{
-			advertisementGroup.POST("/updatePlatformSessionID", advertisement.UpdatePlatformSessionID)
-			advertisementGroup.POST("/join", advertisement.Join)
-			advertisementGroup.POST("/updateTags", advertisement.UpdateTags)
-			advertisementGroup.POST("/update", advertisement.Update)
-			advertisementGroup.POST("/leave", advertisement.Leave)
-			advertisementGroup.POST("/host", advertisement.Host)
-			advertisementGroup.GET("/getLanAdvertisements", advertisement.GetLanAdvertisements)
-			advertisementGroup.GET("/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
-			advertisementGroup.GET("/getAdvertisements", advertisement.GetAdvertisements)
-			advertisementGroup.GET("/findAdvertisements", advertisement.FindAdvertisements)
-			advertisementGroup.POST("/updateState", advertisement.UpdateState)
-		}
-		chatGroup := gameGroup.Group("/chat")
-		{
-			chatGroup.GET("/getChatChannels", chat.GetChatChannels)
-			chatGroup.GET("/getOfflineMessages", chat.GetOfflineMessages)
-		}
-		relationshipGroup := gameGroup.Group("/relationship")
-		{
-			relationshipGroup.GET("/getRelationships", relationship.GetRelationships)
-			relationshipGroup.GET("/getPresenceData", relationship.GetPresenceData)
-			relationshipGroup.POST("/setPresence", relationship.SetPresence)
-			relationshipGroup.POST("/ignore", relationship.Ignore)
-			relationshipGroup.POST("/clearRelationship", relationship.ClearRelationship)
-		}
-		partyGroup := gameGroup.Group("/party")
-		{
-			partyGroup.POST("/peerAdd", party.PeerAdd)
-			partyGroup.POST("/peerUpdate", party.PeerUpdate)
-			partyGroup.POST("/sendMatchChat", party.SendMatchChat)
-			partyGroup.POST("/reportMatch", party.ReportMatch)
-			partyGroup.POST("/finalizeReplayUpload", party.FinalizeReplayUpload)
-			partyGroup.POST("/updateHost", party.UpdateHost)
-		}
-		invitationGroup := gameGroup.Group("/invitation")
-		{
-			invitationGroup.POST("/extendInvitation", invitation.ExtendInvitation)
-			invitationGroup.POST("/cancelInvitation", invitation.CancelInvitation)
-			invitationGroup.POST("/replyToInvitation", invitation.ReplyToInvitation)
-		}
-		cloudGroup := gameGroup.Group("/cloud")
-		{
-			cloudGroup.GET("/getFileURL", cloud.GetFileURL)
-			cloudGroup.GET("/getTempCredentials", cloud.GetTempCredentials)
-		}
-		msstoreGroup := gameGroup.Group("/msstore")
-		{
-			msstoreGroup.GET("/getStoreTokens", msstore.GetStoreTokens)
-		}
+type Group struct {
+	parent *Group
+	path   string
+}
+
+func (g *Group) fullPath() string {
+	if g.parent == nil {
+		return g.path
 	}
-	r.GET("/wss/", wss.Handle)
-	r.GET("/cloudfiles/*key", cloudfiles.Cloudfiles)
+	return g.parent.fullPath() + g.path
+}
+
+func (g *Group) Subgroup(path string) *Group {
+	return &Group{
+		parent: g,
+		path:   path,
+	}
+}
+
+func (g *Group) HandleFunc(mux *http.ServeMux, method string, path string, handler http.HandlerFunc) {
+	mux.HandleFunc(method+" "+g.fullPath()+path, handler)
+}
+
+func Initialize(mux *http.ServeMux) {
+	baseGroup := Group{
+		path: "",
+	}
+	gameGroup := baseGroup.Subgroup("/game")
+	itemGroup := gameGroup.Subgroup("/item")
+	itemGroup.HandleFunc(mux, "GET", "/getItemBundleItemsJson", item.GetItemBundleItemsJson)
+	itemGroup.HandleFunc(mux, "GET", "/getItemDefinitionsJson", item.GetItemDefinitionsJson)
+	itemGroup.HandleFunc(mux, "GET", "/getItemLoadouts", item.GetItemLoadouts)
+	itemGroup.HandleFunc(mux, "POST", "/signItems", item.SignItems)
+	itemGroup.HandleFunc(mux, "GET", "/getInventoryByProfileIDs", item.GetInventoryByProfileIDs)
+
+	clanGroup := gameGroup.Subgroup("/clan")
+	clanGroup.HandleFunc(mux, "POST", "/create", clan.Create)
+	clanGroup.HandleFunc(mux, "GET", "/find", clan.Find)
+
+	communityEventGroup := gameGroup.Subgroup("/CommunityEvent")
+	communityEventGroup.HandleFunc(mux, "GET", "/getAvailableCommunityEvents", communityEvent.GetAvailableCommunityEvents)
+
+	challengeGroup := gameGroup.Subgroup("/Challenge")
+	challengeGroup.HandleFunc(mux, "GET", "/getChallengeProgress", challenge.GetChallengeProgress)
+	challengeGroup.HandleFunc(mux, "GET", "/getChallenges", challenge.GetChallenges)
+
+	newsGroup := gameGroup.Subgroup("/news")
+	newsGroup.HandleFunc(mux, "GET", "/getNews", news.GetNews)
+
+	loginGroup := gameGroup.Subgroup("/login")
+	loginGroup.HandleFunc(mux, "POST", "/platformlogin", login.Platformlogin)
+	loginGroup.HandleFunc(mux, "POST", "/logout", login.Logout)
+
+	accountGroup := gameGroup.Subgroup("/account")
+	accountGroup.HandleFunc(mux, "POST", "/setLanguage", account.SetLanguage)
+	accountGroup.HandleFunc(mux, "POST", "/setCrossplayEnabled", account.SetCrossplayEnabled)
+	accountGroup.HandleFunc(mux, "POST", "/setAvatarMetadata", account.SetAvatarMetadata)
+	accountGroup.HandleFunc(mux, "POST", "/FindProfilesByPlatformID", account.FindProfilesByPlatformID)
+	accountGroup.HandleFunc(mux, "GET", "/FindProfiles", account.FindProfiles)
+	accountGroup.HandleFunc(mux, "GET", "/getProfileName", account.GetProfileName)
+
+	LeaderboardGroup := gameGroup.Subgroup("/Leaderboard")
+	LeaderboardGroup.HandleFunc(mux, "POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getLeaderBoard", leaderboard.GetLeaderBoard)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getAvailableLeaderboards", leaderboard.GetAvailableLeaderboards)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getStatGroupsByProfileIDs", leaderboard.GetStatGroupsByProfileIDs)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getStatsForLeaderboardByProfileName", leaderboard.GetStatsForLeaderboardByProfileName)
+	LeaderboardGroup.HandleFunc(mux, "GET", "/getPartyStat", leaderboard.GetPartyStat)
+
+	leaderboardGroup := gameGroup.Subgroup("/leaderboard")
+	leaderboardGroup.HandleFunc(mux, "POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
+
+	automatch2Group := gameGroup.Subgroup("/automatch2")
+	automatch2Group.HandleFunc(mux, "GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
+
+	AchievementGroup := gameGroup.Subgroup("/Achievement")
+	AchievementGroup.HandleFunc(mux, "GET", "/getAchievements", achievement.GetAchievements)
+	AchievementGroup.HandleFunc(mux, "GET", "/getAvailableAchievements", achievement.GetAvailableAchievements)
+
+	achievementGroup := gameGroup.Subgroup("/achievement")
+	achievementGroup.HandleFunc(mux, "POST", "/grantAchievement", achievement.GrantAchievement)
+	achievementGroup.HandleFunc(mux, "POST", "/syncStats", achievement.SyncStats)
+
+	advertisementGroup := gameGroup.Subgroup("/advertisement")
+	advertisementGroup.HandleFunc(mux, "POST", "/updatePlatformSessionID", advertisement.UpdatePlatformSessionID)
+	advertisementGroup.HandleFunc(mux, "POST", "/join", advertisement.Join)
+	advertisementGroup.HandleFunc(mux, "POST", "/updateTags", advertisement.UpdateTags)
+	advertisementGroup.HandleFunc(mux, "POST", "/update", advertisement.Update)
+	advertisementGroup.HandleFunc(mux, "POST", "/leave", advertisement.Leave)
+	advertisementGroup.HandleFunc(mux, "POST", "/host", advertisement.Host)
+	advertisementGroup.HandleFunc(mux, "GET", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
+	advertisementGroup.HandleFunc(mux, "GET", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
+	advertisementGroup.HandleFunc(mux, "GET", "/getAdvertisements", advertisement.GetAdvertisements)
+	advertisementGroup.HandleFunc(mux, "GET", "/findAdvertisements", advertisement.FindAdvertisements)
+	advertisementGroup.HandleFunc(mux, "POST", "/updateState", advertisement.UpdateState)
+
+	chatGroup := gameGroup.Subgroup("/chat")
+	chatGroup.HandleFunc(mux, "GET", "/getChatChannels", chat.GetChatChannels)
+	chatGroup.HandleFunc(mux, "GET", "/getOfflineMessages", chat.GetOfflineMessages)
+
+	relationshipGroup := gameGroup.Subgroup("/relationship")
+	relationshipGroup.HandleFunc(mux, "GET", "/getRelationships", relationship.GetRelationships)
+	relationshipGroup.HandleFunc(mux, "GET", "/getPresenceData", relationship.GetPresenceData)
+	relationshipGroup.HandleFunc(mux, "POST", "/setPresence", relationship.SetPresence)
+	relationshipGroup.HandleFunc(mux, "POST", "/ignore", relationship.Ignore)
+	relationshipGroup.HandleFunc(mux, "POST", "/clearRelationship", relationship.ClearRelationship)
+
+	partyGroup := gameGroup.Subgroup("/party")
+	partyGroup.HandleFunc(mux, "POST", "/peerAdd", party.PeerAdd)
+	partyGroup.HandleFunc(mux, "POST", "/peerUpdate", party.PeerUpdate)
+	partyGroup.HandleFunc(mux, "POST", "/sendMatchChat", party.SendMatchChat)
+	partyGroup.HandleFunc(mux, "POST", "/reportMatch", party.ReportMatch)
+	partyGroup.HandleFunc(mux, "POST", "/finalizeReplayUpload", party.FinalizeReplayUpload)
+	partyGroup.HandleFunc(mux, "POST", "/updateHost", party.UpdateHost)
+
+	invitationGroup := gameGroup.Subgroup("/invitation")
+	invitationGroup.HandleFunc(mux, "POST", "/extendInvitation", invitation.ExtendInvitation)
+	invitationGroup.HandleFunc(mux, "POST", "/cancelInvitation", invitation.CancelInvitation)
+	invitationGroup.HandleFunc(mux, "POST", "/replyToInvitation", invitation.ReplyToInvitation)
+
+	cloudGroup := gameGroup.Subgroup("/cloud")
+	cloudGroup.HandleFunc(mux, "GET", "/getFileURL", cloud.GetFileURL)
+	cloudGroup.HandleFunc(mux, "GET", "/getTempCredentials", cloud.GetTempCredentials)
+
+	msstoreGroup := gameGroup.Subgroup("/msstore")
+	msstoreGroup.HandleFunc(mux, "GET", "/getStoreTokens", msstore.GetStoreTokens)
+
+	baseGroup.HandleFunc(mux, "GET", "/wss/", wss.Handle)
+	baseGroup.HandleFunc(mux, "GET", "/cloudfiles/", cloudfiles.Cloudfiles)
 }

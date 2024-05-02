@@ -2,13 +2,12 @@ package achievement
 
 import (
 	i "aoe2DELanServer/internal"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func SyncStats(c *gin.Context) {
+func SyncStats(w http.ResponseWriter, _ *http.Request) {
 	// TODO: What does it do?
-	c.JSON(http.StatusOK,
+	i.JSON(&w,
 		i.A{2},
 	)
 }
