@@ -1,0 +1,18 @@
+{
+  "_data.txt": {
+    "key": "game/d3349d2d70bc16cb5bd54aa07e2171bb9ccc02212f0a1145045e8a8bda2ff164",
+    "type": "text/plain",
+    "id": 741324928,
+    "version": "2019-02-02",
+    "etag": "0x8D9A401244B5EF6",
+    "created": "Wed, 10 Nov 2021 04:18:26 GMT"
+  },
+  "_resources.txt": {
+    "key": "game/6b861a867ce5f4e66131c929fe13db8baa40b5bb412255adcc225e6604ff703f",
+    "type": "text/plain",
+    "id": 1779231939,
+    "version": "2019-02-02",
+    "etag": "0x8D9A40130FECFDF",
+    "created": "Wed, 10 Nov 2021 04:18:47 GMT"
+  }
+}
