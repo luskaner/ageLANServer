@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"os"
 )
 
@@ -11,32 +10,33 @@ const metadataBackupFolder = metadataOriginalFolder + ".bak"
 const metadataTempFolder = metadataOriginalFolder + ".tmp"
 
 func baseFolder() string {
-	return os.Getenv("USERPROFILE") + `\` + finalPath
+	return os.Getenv("USERPROFILE") + `\` + finalPath + `\`
 }
 
-func switchOriginalAndBackup(basePath string, metadataPath string, metadataBackupPath string) {
+func switchOriginalAndBackup(basePath string, metadataPath string, metadataBackupPath string) bool {
 	metadataTempPath := basePath + metadataTempFolder
 	err := os.Rename(metadataPath, metadataTempPath)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
 	err = os.Rename(metadataBackupPath, metadataPath)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
 	err = os.Rename(metadataTempPath, metadataBackupPath)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
+	return true
 }
 
-func Backup() {
+func BackupMetadata() bool {
 	basePath := baseFolder()
 	metadataPath := basePath + metadataOriginalFolder
 	metadataPathInfo, err := os.Stat(metadataPath)
 
 	if err != nil {
-		return
+		return false
 	}
 
 	metadataBackupPath := basePath + metadataBackupFolder
@@ -44,31 +44,32 @@ func Backup() {
 	if _, err := os.Stat(metadataBackupPath); err != nil {
 		err = os.Rename(metadataPath, metadataBackupPath)
 		if err != nil {
-			log.Fatal(err)
+			return false
 		}
 		err = os.Mkdir(metadataPath, metadataPathInfo.Mode())
 		if err != nil {
-			log.Fatal(err)
+			return false
 		}
+		return true
 	} else {
-		switchOriginalAndBackup(basePath, metadataPath, metadataBackupPath)
+		return switchOriginalAndBackup(basePath, metadataPath, metadataBackupPath)
 	}
 }
 
-func Restore() {
+func RestoreMetadata() bool {
 	basePath := baseFolder()
 	metadataPath := basePath + metadataOriginalFolder
 	_, err := os.Stat(metadataPath)
 
 	if err != nil {
-		return
+		return false
 	}
 
 	metadataBackupPath := basePath + metadataBackupFolder
 
 	if _, err := os.Stat(metadataBackupPath); err != nil {
-		return
+		return false
 	}
 
-	switchOriginalAndBackup(basePath, metadataPath, metadataBackupPath)
+	return switchOriginalAndBackup(basePath, metadataPath, metadataBackupPath)
 }
