@@ -35,7 +35,20 @@ func RunOnSteam() bool {
 
 func RunGame(config ClientConfig) bool {
 	if config.Executable != "" {
-		return StartCustomExecutable(config.Executable) != nil
+		switch config.Executable {
+		case "steam":
+			if isInstalledOnSteam() {
+				return RunOnSteam()
+			}
+			return false
+		case "msstore":
+			if isInstalledOnMicrosoftStore() {
+				return RunOnMicrosoftStore()
+			}
+			return false
+		default:
+			return StartCustomExecutable(config.Executable) != nil
+		}
 	}
 	if isInstalledOnSteam() {
 		return RunOnSteam()
