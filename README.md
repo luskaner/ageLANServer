@@ -51,8 +51,12 @@ Note: For the full list see https://go.dev/wiki/MinimumRequirements for Go 1.22.
 - Up-to-date version of the game: 
   - Any version (around mid-to-late 2023) since the domain changed to aoe-api.worldsedge.com should work.
 
+## Binaries
+
+See the [releases page](/luskaner/aoe2DELanServer/releases) for server and launcher binaries for common operating systems.
+
 ## Installation
-...
+Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
 
 ## How it works
 
