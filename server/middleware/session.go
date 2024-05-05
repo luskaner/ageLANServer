@@ -8,6 +8,7 @@ import (
 )
 
 var anonymousPaths = map[string]bool{
+	"/test":                        true,
 	"/game/msstore/getStoreTokens": true,
 	"/game/login/platformlogin":    true,
 	"/wss/":                        true,

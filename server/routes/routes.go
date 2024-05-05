@@ -20,6 +20,7 @@ import (
 	"server/routes/game/party"
 	"server/routes/game/relationship"
 	"server/routes/msstore"
+	"server/routes/test"
 	"server/routes/wss"
 )
 
@@ -151,6 +152,8 @@ func Initialize(mux *http.ServeMux) {
 	msstoreGroup := gameGroup.Subgroup("/msstore")
 	msstoreGroup.HandleFunc(mux, "GET", "/getStoreTokens", msstore.GetStoreTokens)
 
+	// Used for the launcher
+	baseGroup.HandleFunc(mux, "GET", "/test", test.Test)
 	baseGroup.HandleFunc(mux, "GET", "/wss/", wss.Handle)
 	baseGroup.HandleFunc(mux, "GET", "/cloudfiles/", cloudfiles.Cloudfiles)
 }
