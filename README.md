@@ -44,20 +44,21 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 
 Admin rights to listen to port 443 for https will likely be required (once or repeatedly) depending on the operating system.
 
-Note: For the full list see https://go.dev/wiki/MinimumRequirements for Go 1.22.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
 ### Launcher
-- Windows: 10 or higher, Server 2016 or higher.
-- If you allow it to handle the hosts file or certificate, it will require administrator rights.  
+- Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
+- If you allow it to handle the hosts file, it will require rights elevation.
 
 ### Client
 - Age of Empires 2 Definitive Edition - Steam or Microsoft Store.
-- Up-to-date version of the game: 
-  - Any version (around mid-to-late 2023) since the domain changed to aoe-api.worldsedge.com should work.
+- Up-to-date version of the game, however: 
+  - As-is *should* work since around mid-to-late 2023.
+  - Changing domain to *aoe-api.reliclick.com* should work for even older versions until around mid-to-late 2023.
 
 ## Binaries
 
-See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for common operating systems.
+See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for supported operating systems.
 
 ## Installation
 Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
