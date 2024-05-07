@@ -1,27 +1,23 @@
-package internal
+package config
 
 import "github.com/gookit/ini/v2"
 
-const Domain = "aoe-api.worldsedgelink.com"
-
 type ServerConfig struct {
-	Start               string
-	Executable          string
-	Host                string
-	Stop                string
-	WaitForProcessStart int
+	Start      string
+	Executable string
+	Host       string
+	Stop       string
 }
 
 type ClientConfig struct {
-	Executable               string
-	WaitForProcessStart      int
-	CheckProcessRunningEvery int
+	Executable string
 }
 
 type Config struct {
 	CanAddHost          bool
 	CanTrustCertificate bool
 	IsolateMetadata     bool
+	IsolateProfiles     bool
 	Server              ServerConfig
 	Client              ClientConfig
 }

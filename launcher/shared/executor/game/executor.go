@@ -1,7 +1,8 @@
-package internal
+package game
 
 import (
 	"golang.org/x/sys/windows/registry"
+	"shared/executor"
 )
 
 const steamAppID = "813780"
@@ -22,20 +23,20 @@ func isInstalledOnSteam() bool {
 }
 
 func isInstalledOnMicrosoftStore() bool {
-	return RunCustomExecutable("powershell", "-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }")
+	return executor.RunCustomExecutable("powershell", "-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }")
 }
 
 func RunOnMicrosoftStore() bool {
-	return StartCustomExecutable(`explorer.exe`, `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`) != nil
+	return executor.StartCustomExecutable(`explorer.exe`, false, `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`) != nil
 }
 
 func RunOnSteam() bool {
-	return StartCustomExecutable("rundll32.exe", "url.dll,FileProtocolHandler", "steam://rungameid/"+steamAppID) != nil
+	return executor.StartCustomExecutable("rundll32.exe", false, "url.dll,FileProtocolHandler", "steam://rungameid/"+steamAppID) != nil
 }
 
-func RunGame(config ClientConfig) bool {
-	if config.Executable != "" {
-		switch config.Executable {
+func RunGame(executable string) bool {
+	if executable != "auto" {
+		switch executable {
 		case "steam":
 			if isInstalledOnSteam() {
 				return RunOnSteam()
@@ -47,7 +48,7 @@ func RunGame(config ClientConfig) bool {
 			}
 			return false
 		default:
-			return StartCustomExecutable(config.Executable) != nil
+			return executor.StartCustomExecutable(executable, true) != nil
 		}
 	}
 	if isInstalledOnSteam() {

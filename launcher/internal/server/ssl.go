@@ -1,6 +1,7 @@
-package internal
+package server
 
 import (
+	"common"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -11,6 +12,7 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"shared/executor"
 	"time"
 )
 
@@ -26,7 +28,7 @@ func GenerateCertificatePair(folder string) bool {
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			CommonName:   Domain,
+			CommonName:   common.Domain,
 			Organization: []string{"github.com/luskaner/aoe2DELanServer"},
 		},
 		NotBefore: time.Now(),
@@ -35,7 +37,7 @@ func GenerateCertificatePair(folder string) bool {
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
 		},
-		DNSNames: []string{Domain},
+		DNSNames: []string{common.Domain},
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, template, template, &privateKey.PublicKey, privateKey)
@@ -133,7 +135,7 @@ func TrustCertificateFromServer(host string) bool {
 	defer func(certOut *os.File) {
 		_ = os.Remove(certOut.Name())
 	}(certOut)
-	return RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`Import-Certificate -FilePath "%s" -CertStoreLocation Cert:\CurrentUser\Root`, certOut.Name()))
+	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`Import-Certificate -FilePath "%s" -CertStoreLocation Cert:\CurrentUser\Root`, certOut.Name()))
 }
 
 func UntrustCertificateFromServer(host string) bool {
@@ -144,5 +146,5 @@ func UntrustCertificateFromServer(host string) bool {
 	defer func(certOut *os.File) {
 		_ = os.Remove(certOut.Name())
 	}(certOut)
-	return RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`$cert = Get-PfxCertificate "%s"; Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Thumbprint -eq $cert.Thumbprint } | Remove-Item`, certOut.Name()))
+	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`$cert = Get-PfxCertificate "%s"; Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Thumbprint -eq $cert.Thumbprint } | Remove-Item`, certOut.Name()))
 }

@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"common"
 	"encoding/json"
 	"net/http"
 	"server/files"
@@ -23,7 +24,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 			name,
 			fileData.Length,
 			fileData.Id,
-			"https://aoe-api.worldsedgelink.com/cloudfiles/" + finalPart,
+			"https://" + common.Domain + "/cloudfiles/" + finalPart,
 			finalPart,
 		}
 	}

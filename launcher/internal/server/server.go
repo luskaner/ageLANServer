@@ -1,38 +1,63 @@
-package internal
+package server
 
 import (
+	"crypto/tls"
+	"launcher/internal/config"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"shared/executor"
 	"time"
 )
 
-func StartServer(config ServerConfig) *exec.Cmd {
+const autoServerExecutable string = "server.exe"
+
+var autoServerPaths = []string{`.\`, `..\`, `..\server\`}
+
+func StartServer(config config.ServerConfig) *exec.Cmd {
 	if config.Start == "false" {
 		return nil
 	}
 	executablePath := getExecutablePath(config)
-	if config.Stop == "true" {
-		return StartCustomExecutable(executablePath)
+	if executablePath == "" {
+		return nil
 	}
-	return StartCustomExecutable("cmd", "/C", "start", executablePath)
+	var cmd *exec.Cmd
+	if config.Stop == "true" {
+		cmd = executor.StartCustomExecutable(executablePath, true)
+	} else {
+		cmd = executor.StartCustomExecutable("cmd", true, "/C", "start", executablePath)
+	}
+	for {
+		if LanServer(config.Host, true) {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return cmd
 }
 
-func getExecutablePath(config ServerConfig) string {
-	if config.Executable == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return ""
+func getExecutablePath(config config.ServerConfig) string {
+	if config.Executable == "auto" {
+		for _, path := range autoServerPaths {
+			fullPath := path + autoServerExecutable
+			if f, err := os.Stat(fullPath); err == nil && !f.IsDir() {
+				return fullPath
+			}
 		}
-		return dir + `\server.exe`
+		return ""
 	}
 	return config.Executable
 }
 
-func LanServer(host string) bool {
-	resp, err := http.Get("https://" + host + "/test")
+func LanServer(host string, insecureSkipVerify bool) bool {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get("https://" + host + "/test")
 	if err != nil {
 		return false
 	}
@@ -71,20 +96,25 @@ func WaitForLanServerAnnounce() *net.UDPAddr {
 	}
 }
 
-func CertificatePairFolder(config ServerConfig) string {
+func CertificatePairFolder(config config.ServerConfig) string {
 	executablePath := getExecutablePath(config)
+	if executablePath == "" {
+		return ""
+	}
 	parentDir := filepath.Dir(executablePath)
 	if parentDir == "" {
 		return ""
 	}
 	folder := parentDir + `\resources\certificates\`
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		return ""
+		if os.Mkdir(folder, os.ModeDir) == nil {
+			return ""
+		}
 	}
 	return folder
 }
 
-func HasCertificatePair(config ServerConfig) bool {
+func HasCertificatePair(config config.ServerConfig) bool {
 	parentDir := CertificatePairFolder(config)
 	if parentDir == "" {
 		return false

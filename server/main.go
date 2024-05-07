@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"server/announce"
 	"server/files"
 	"server/middleware"
 	"server/routes"
-	"server/udp"
 )
 
 func main() {
@@ -20,8 +20,10 @@ func main() {
 		Addr:    files.Config.Host + ":443",
 		Handler: handlers.LoggingHandler(os.Stdout, sessionMux),
 	}
-	go func() {
-		udp.Announce(files.Config.Host)
-	}()
+	if files.Config.Announce {
+		go func() {
+			announce.Announce(files.Config.Host)
+		}()
+	}
 	log.Fatal(server.ListenAndServeTLS("resources/certificates/cert.pem", "resources/certificates/key.pem"))
 }

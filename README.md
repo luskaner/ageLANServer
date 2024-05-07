@@ -6,14 +6,18 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 
 - Co-Op Campaigns.
 - Scenarios (including transferring the map):
-  - Event Scenarios (will require having an up-to-date server version).
+  - Event Scenarios*.
   - Custom Scenarios.
 - ... all other game modes available by creating a lobby **only with server as "Use Local Lan Server"**.
+- Rematch.
 - Restore game.
 - Data mods.
 - Invite player to lobby (including via link).
 - Player Search.
 - Chatting (both in the lobby and in-game).
+- Crossplay (cross-platform) Steam & Xbox (PC-only).
+
+*\*Will change depending on the server version and might require an update.*
 
 ## Unsupported features
 
@@ -21,7 +25,7 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
   - Quick Play.
   - Ranked.
   - Spectate Games.
-- Not possible without internet:
+- Not possible as it would require internet and some access to the user profile:
   - Steam & Xbox Friends.
 - Not implemented:
   - Changing player profile icon: the default will always be used.
@@ -40,7 +44,7 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 
 Admin rights to listen to port 443 for https will likely be required (once or repeatedly) depending on the operating system.
 
-Note: For the full list see https://go.dev/wiki/MinimumRequirements for Go 1.22. Only a subset of supported systems will have binaries released.
+Note: For the full list see https://go.dev/wiki/MinimumRequirements for Go 1.22.
 
 ### Launcher
 - Windows: 10 or higher, Server 2016 or higher.
@@ -53,7 +57,7 @@ Note: For the full list see https://go.dev/wiki/MinimumRequirements for Go 1.22.
 
 ## Binaries
 
-See the [releases page](/luskaner/aoe2DELanServer/releases) for server and launcher binaries for common operating systems.
+See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for common operating systems.
 
 ## Installation
 Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
@@ -72,8 +76,8 @@ is stored or sent to any other server.
 The launcher allows to easily play the game in LAN mode while allowing the official launcher to be used for online play. 
 
 It can do the following setup steps for you:
-- Automatically start/stop the server or connect to an existing one.
-- (Optional) Use an isolated metadata directory to avoid potential issues with the official game.
+- Automatically start/stop the server or connect to an existing one automatically.
+- (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
 - (Optional) Modify the hosts file to redirect the game's API requests to the LAN server.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server. 
 - Automatically find and start the game.

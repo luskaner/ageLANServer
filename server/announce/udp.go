@@ -1,4 +1,4 @@
-package udp
+package announce
 
 import (
 	"net"

@@ -1,5 +1,6 @@
 package models
 
 type Config struct {
-	Host string
+	Host     string
+	Announce bool
 }
