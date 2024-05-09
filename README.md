@@ -1,6 +1,10 @@
 # Age of Empires 2 Definitive Edition LAN Server
 
-AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet connection similar to how the original AoE2 worked plus many features new to HD and DE versions.
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E0XVCC6)
+
+AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE versions.
+
+**You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to Steam or Xbox Live depending on the version to fully play offline.**
 
 ## Features
 
@@ -52,9 +56,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Client
 - Age of Empires 2 Definitive Edition - Steam or Microsoft Store.
-- Up-to-date version of the game, however: 
-  - As-is *should* work since around mid-to-late 2023.
-  - Changing domain to *aoe-api.reliclick.com* should work for even older versions until around mid-to-late 2023.
+- Up-to-date version of the game.
 
 ## Binaries
 
@@ -67,7 +69,7 @@ Both the launcher and server work out of the box without any installation. Just 
 
 ### Server
 The server is simple web server that listens to the game's API requests. The server reimplements
-the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent by the client
+the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the client
 is stored or sent to any other server.
 
 *Note: See the [server README](server/README.md) for more details.*
@@ -91,9 +93,9 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-* Owning a legal license of Age of Empires 2 Definitive Edition.
+* Owning a **legal license** of Age of Empires 2 Definitive Edition.
 * Not using this software to cheat/hack and, in general, respect all the game terms of service.
 * Use this software for personal use.
 * Use this software in a LAN environment.
 
-Disclaimer: This software is not affiliated with Microsoft Corporation, Forgotten Empires LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.
+Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires LLC, World's Edge LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.

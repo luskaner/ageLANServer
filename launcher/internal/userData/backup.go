@@ -60,7 +60,7 @@ func (d *Data) Backup() bool {
 	info, err := os.Stat(absolutePath)
 
 	if err != nil {
-		return false
+		return true
 	}
 
 	backupPath := d.backupPath()
@@ -90,7 +90,7 @@ func (d *Data) Restore() bool {
 	_, err := os.Stat(absolutePath)
 
 	if err != nil {
-		return false
+		return true
 	}
 
 	backupPath := d.backupPath()
