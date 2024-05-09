@@ -18,7 +18,7 @@ The configuration file sent to the client upon login is [`login.json`](resources
 
 ### Cloud
 
-The game connects to a static cloud to download assets. The server is configured to replace the original calls to itself. The configuration file is [`cloudfilesIndex.json`](resources/config/cloud.json) and the corresponding files reside in the [`cloud`](resources/responses/cloud) directory.
+The game connects to a static cloud to download assets. The server is configured to replace the original calls to itself. The configuration file is [`cloudfilesIndex.json`](resources/config/cloudfilesIndex.json) and the corresponding files reside in the [`cloud`](resources/responses/cloud) directory.
 
 ### Other static responses
 
