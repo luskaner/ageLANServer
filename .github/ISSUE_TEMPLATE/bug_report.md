@@ -32,7 +32,7 @@ A clear and concise description of what you expected to happen.
 
 **Additional information** (see [here](https://support.ageofempires.com/hc/en-us/articles/360052281552-How-to-find-information-for-troubleshooting-with-Support) for how to get them)
 - Log (mandatory): 
-- Crash log (if applicable):
+- Crash dump (if applicable, send privately):
 - Save game/Recorded game (if it was during a game):
 - Screenshot(s) (if applicable):
 
