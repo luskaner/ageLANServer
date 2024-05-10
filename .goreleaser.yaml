@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+builds:
+  - id: server
+    main: ./server
+    binary: server
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - "386"
+      - amd64
+      - arm
+      - arm64
+  - id: serverWindows
+    main: ./server
+    binary: server/server
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [windows]
+    goarch: [amd64]
+  - id: launcher.hostsEditor
+    main: ./launcher/hostsEditor
+    binary: launcher/launcher.hostsEditor
+    goos: [windows]
+    goarch: [amd64]
+archives:
+  - id: all
+    builds: [serverWindows, launcher, launcher.hostsEditor]
+    format: zip
+    name_template: >-
+      {{- .ProjectName }}_
+      {{- .RawVersion }}_win_x86-64
+    strip_binary_directory: false
+    files:
+      - LICENSE
+      - src: README.md
+        dst: README.txt
+      - src: server/README.md
+        dst: server/README.txt
+      - server/resources/config
+      - server/resources/responses
+      - src: launcher/README.md
+        dst: launcher/README.txt
+      - launcher/config
+  - id: server
+    builds:  [server]
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_
+      {{- with .Os }}
+        {{- if eq . "windows"}}win
+        {{- else if eq . "darwin"}}mac
+        {{- else }}{{ . }}
+        {{- end }}
+      {{- end}}_
+      {{- if and (eq .Arch "amd64") (eq .Os "darwin") }}intel
+      {{- else if and (eq .Arch "arm64") (eq .Os "darwin") }}apple-silicon
+      {{- else if eq .Arch "386" }}x86-32
+      {{- else if eq .Arch "amd64" }}x86-64
+      {{- else if eq .Arch "arm" }}arm32
+      {{- else if eq .Arch "arm64" }}arm64
+      {{- else }}
+      {{- .Arch }}
+      {{- end }}
+    files:
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/responses
+        dst: resources/responses
+      - LICENSE
+      - README.md
+    format_overrides:
+      - goos: windows
+        format: zip
+  - id: launcher
+    builds: [launcher, launcher.hostsEditor]
+    files:
+      - src: launcher/config
+        dst: config
+      - src: LICENSE
+        dst: LICENSE.txt
+      - src: launcher/README.md
+        dst: README.txt
+    name_template: >-
+      {{- .ProjectName }}_launcher_
+      {{- .RawVersion }}_win_x86-64
+    format: zip
+    strip_binary_directory: true
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
+kos:
+  -
