@@ -17,7 +17,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22
+          go-version: '^1.22'
+          cache-dependency-path: |
+            server/go.sum
+            launcher/go.sum
+            launcher/shared/go.sum
+            launcher/hostsEditor/go.sum
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
