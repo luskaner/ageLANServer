@@ -1,5 +1,8 @@
 name: GoReleaser
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
