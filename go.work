@@ -2,8 +2,8 @@ go 1.22
 
 use (
 	common
-	server
 	launcher
-	launcher/shared
 	launcher/hostsEditor
+	launcher/shared
+	server
 )
