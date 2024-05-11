@@ -1,4 +1,4 @@
-name: GoReleaser
+name: goreleaser
 
 permissions:
   contents: write
@@ -31,6 +31,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: '~> v1'
-          args: release --clean
+          args: release --auto-snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

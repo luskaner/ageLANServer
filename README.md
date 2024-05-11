@@ -87,6 +87,17 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 *Note: See the [launcher README](launcher/README.md) for more details.*
 
+## Development
+
+### Debug
+It is recommended to use and IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia) or [Visual Studio Code](https://code.visualstudio.com/) (free) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
+
+### Release
+Install [GoRelease](https://goreleaser.com/) and then run:
+```shell
+goreleaser release --clean 
+```
+
 ## Terms of Use
 
 You and all the clients connecting to your server are only authorized to use this software if:
