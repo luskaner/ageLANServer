@@ -60,6 +60,16 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for supported operating systems.
 
+### Verification
+
+The verification process ensures that the files you download are the same as the ones that were uploaded by the maintainer.
+
+1. Check the release commit is verified with the committer's signature key (*all commits must be*).
+2. Download the ```..._checksums.txt``` and ```..._checksums.txt.sig``` files.
+3. Import the [release public key](release_public.key) and import it to your keyring if you haven't already.
+4. Verify the ```..._checksums.txt```  file with the ```..._checksums.txt.sig``` file:
+5. Verify the SHA-256 checksum list inside ```..._checksums.txt``` with the downloaded archives.
+
 ## Installation
 Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
 
