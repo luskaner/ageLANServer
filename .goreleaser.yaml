@@ -93,3 +93,6 @@ archives:
     strip_binary_directory: true
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
+signs:
+  - artifacts: checksum
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
