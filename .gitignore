@@ -3,5 +3,7 @@
 dist/
 build/*
 !build/.gitkeep
+!build/server/
 !build/server/.gitkeep
+!build/launcher/
 !build/launcher/.gitkeep
