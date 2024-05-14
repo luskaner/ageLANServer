@@ -2,8 +2,7 @@ package main
 
 import (
 	"common"
-	"launcher/internal/config"
-	internalExecutor "launcher/internal/executor"
+	"launcher/internal"
 	"launcher/internal/server"
 	"launcher/internal/userData"
 	"log"
@@ -15,7 +14,7 @@ import (
 )
 
 func main() {
-	c := config.ReadConfig()
+	c := internal.ReadConfig()
 	isAdmin := executor.IsAdmin()
 	if isAdmin {
 		log.Println("Running as administrator, this is not recommended. It will request elevated privileges if/when it needs.")
@@ -63,11 +62,12 @@ func main() {
 			log.Fatal("Server.Start is false. " + c.Server.Host + " must be reachable. Review the host is correct, the server is started and the network configuration is correct.")
 		}
 	} else {
-		if !server.HasCertificatePair(c.Server) {
+		serverExecutablePath := server.GetExecutablePath(c.Server)
+		if !common.HasCertificatePair(serverExecutablePath) {
 			if !c.CanTrustCertificate {
 				log.Fatal("Server.Start is true and CanTrustCertificate is false. Certificate pair is missing. Generate your own certificates manually.")
 			}
-			certificateFolder := server.CertificatePairFolder(c.Server)
+			certificateFolder := common.CertificatePairFolder(serverExecutablePath)
 			if certificateFolder == "" {
 				log.Fatal("Cannot find certificate folder of Server. Make sure the folder structure of the server is correct.")
 			}
@@ -90,7 +90,7 @@ func main() {
 			goto cleanHost
 		} else {
 			removeHost = true
-			if !internalExecutor.AddHost(isAdmin, ipOfHost) {
+			if !internal.AddHost(isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				goto cleanHost
 			}
@@ -171,7 +171,7 @@ cleanCertificate:
 	}
 cleanHost:
 	if removeHost {
-		if !internalExecutor.RemoveHost(isAdmin) {
+		if !internal.RemoveHost(isAdmin) {
 			log.Println("Failed to remove host.")
 		}
 	}

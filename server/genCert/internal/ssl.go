@@ -1,23 +1,16 @@
-package server
+package internal
 
 import (
 	"common"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
-	"net"
 	"os"
-	"shared/executor"
 	"time"
 )
-
-const Cert = "cert.pem"
-const Key = "key.pem"
 
 func GenerateCertificatePair(folder string) bool {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -29,13 +22,16 @@ func GenerateCertificatePair(folder string) bool {
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
 			CommonName:   common.Domain,
-			Organization: []string{"github.com/luskaner/aoe2DELanServer"},
+			Organization: []string{common.CertCommonName},
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(365 * 24 * time.Hour),
 		KeyUsage:  x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
+		},
+		Issuer: pkix.Name{
+			CommonName: common.CertCommonName,
 		},
 		DNSNames: []string{common.Domain},
 	}
@@ -45,7 +41,7 @@ func GenerateCertificatePair(folder string) bool {
 		return false
 	}
 
-	certFile, err := os.Create(folder + Cert)
+	certFile, err := os.Create(folder + common.Cert)
 	if err != nil {
 		return false
 	}
@@ -60,7 +56,7 @@ func GenerateCertificatePair(folder string) bool {
 		return false
 	}
 
-	keyFile, err := os.Create(folder + Key)
+	keyFile, err := os.Create(folder + common.Key)
 
 	if err != nil {
 		return false
@@ -76,75 +72,4 @@ func GenerateCertificatePair(folder string) bool {
 	}
 
 	return true
-}
-
-func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	conf := &tls.Config{
-		InsecureSkipVerify: insecureSkipVerify,
-	}
-	conn, err := tls.Dial("tcp", net.JoinHostPort(host, "443"), conf)
-	if err != nil {
-		return nil
-	}
-	return conn
-}
-
-func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
-	conn := connectToServer(host, insecureSkipVerify)
-	if conn == nil {
-		return false
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	return conn != nil
-}
-
-func saveCertificateFromServer(host string) *os.File {
-	conn := connectToServer(host, true)
-	if conn == nil {
-		return nil
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	certificates := conn.ConnectionState().PeerCertificates
-	if len(certificates) > 0 {
-		certOut, err := os.CreateTemp("", "cert_*.pem")
-		if err != nil {
-			return nil
-		}
-		defer func(certOut *os.File) {
-			_ = certOut.Close()
-		}(certOut)
-
-		err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certificates[0].Raw})
-		if err != nil {
-			return nil
-		}
-		return certOut
-	}
-	return nil
-}
-
-func TrustCertificateFromServer(host string) bool {
-	certOut := saveCertificateFromServer(host)
-	if certOut == nil {
-		return false
-	}
-	defer func(certOut *os.File) {
-		_ = os.Remove(certOut.Name())
-	}(certOut)
-	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`Import-Certificate -FilePath "%s" -CertStoreLocation Cert:\CurrentUser\Root`, certOut.Name()))
-}
-
-func UntrustCertificateFromServer(host string) bool {
-	certOut := saveCertificateFromServer(host)
-	if certOut == nil {
-		return false
-	}
-	defer func(certOut *os.File) {
-		_ = os.Remove(certOut.Name())
-	}(certOut)
-	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`$cert = Get-PfxCertificate "%s"; Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Thumbprint -eq $cert.Thumbprint } | Remove-Item`, certOut.Name()))
 }

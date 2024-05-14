@@ -6,4 +6,5 @@ use (
 	launcher/hostsEditor
 	launcher/shared
 	server
+	server/genCert
 )

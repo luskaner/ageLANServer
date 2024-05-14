@@ -44,7 +44,7 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 - MacOS: Catalina 10.15 or higher.
 - GNU/Linux: *any supported distro, see the note below for details*.
 
-Admin rights to listen to port 443 for https will likely be required (once or repeatedly) depending on the operating system.
+Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly) depending on the operating system.
 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
@@ -64,7 +64,7 @@ See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) fo
 
 The verification process ensures that the files you download are the same as the ones that were uploaded by the maintainer.
 
-1. Check the release commit is verified with the committer's signature key (*all commits must be*).
+1. Check the release tag is verified with the committer's signature key (*as all commits must be*).
 2. Download the ```..._checksums.txt``` and ```..._checksums.txt.sig``` files.
 3. Import the [release public key](release_public.key) and import it to your keyring if you haven't already.
 4. Verify the ```..._checksums.txt``` file with the ```..._checksums.txt.sig``` file.
@@ -97,16 +97,17 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 *Note: See the [launcher README](launcher/README.md) for more details.*
 
-## Development
+## Local development
 
 ### Debug
 It is recommended to use an IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia) or [Visual Studio Code](https://code.visualstudio.com/) (free) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
 
 ### Release
-Install [GoReleaser](https://goreleaser.com/) and then run:
-```shell
-goreleaser release --clean 
-```
+1. Install [GoReleaser](https://goreleaser.com/).
+2. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.
+3. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
+4. Set the environment variable ```GPG_FINGERPRINT``` to the fingerprint of the key.
+5. Finally run ```goreleaser release --snapshot --clean ```
 
 ## Terms of Use
 

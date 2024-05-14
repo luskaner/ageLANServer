@@ -23,15 +23,16 @@ func isInstalledOnSteam() bool {
 }
 
 func isInstalledOnMicrosoftStore() bool {
+	// Does not seem there is another way without cgo?
 	return executor.RunCustomExecutable("powershell", "-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }")
 }
 
 func RunOnMicrosoftStore() bool {
-	return executor.StartCustomExecutable(`explorer.exe`, false, `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`) != nil
+	return executor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`)
 }
 
 func RunOnSteam() bool {
-	return executor.StartCustomExecutable("rundll32.exe", false, "url.dll,FileProtocolHandler", "steam://rungameid/"+steamAppID) != nil
+	return executor.ShellExecute("open", "steam://rungameid/"+steamAppID)
 }
 
 func RunGame(executable string) bool {

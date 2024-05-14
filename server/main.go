@@ -1,6 +1,7 @@
 package main
 
 import (
+	"common"
 	"github.com/gorilla/handlers"
 	"log"
 	"net/http"
@@ -25,5 +26,6 @@ func main() {
 			announce.Announce(files.Config.Host)
 		}()
 	}
-	log.Fatal(server.ListenAndServeTLS("resources/certificates/cert.pem", "resources/certificates/key.pem"))
+	certificatePairFolder := common.CertificatePairFolder(os.Args[0])
+	log.Fatal(server.ListenAndServeTLS(certificatePairFolder+common.Cert, certificatePairFolder+common.Key))
 }

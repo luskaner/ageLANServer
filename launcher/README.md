@@ -13,6 +13,7 @@ The launcher is a tool that allows you to launch the game to connect to the LAN 
 
 ## Server
 
+- Generate a self-signed certificate.
 - Start the server.
 - Discover the server.
 - Stop the server

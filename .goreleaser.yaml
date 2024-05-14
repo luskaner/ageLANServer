@@ -18,6 +18,23 @@ builds:
     binary: server/server
     goos: [ windows ]
     goarch: [ amd64 ]
+  - id: genCert
+    main: ./server/genCert
+    binary: genCert
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - "386"
+      - amd64
+      - arm
+      - arm64
+  - id: genCertWindows
+    main: ./server/genCert
+    binary: server/genCert
+    goos: [ windows ]
+    goarch: [ amd64 ]
   - id: launcher
     main: ./launcher
     binary: launcher/launcher
@@ -30,7 +47,7 @@ builds:
     goarch: [amd64]
 archives:
   - id: all
-    builds: [serverWindows, launcher, launcher.hostsEditor]
+    builds: [serverWindows, genCertWindows, launcher, launcher.hostsEditor]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
@@ -48,7 +65,7 @@ archives:
         dst: launcher/README.txt
       - launcher/config
   - id: server
-    builds:  [server]
+    builds:  [server, genCert]
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_

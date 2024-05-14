@@ -1,46 +1,24 @@
 package main
 
 import (
-	"flag"
-	"hostsEditor/internal"
+	"common"
+	"genCert/internal"
 	"log"
-	"net"
-	"shared/executor"
+	"os"
 )
-
-type Arguments struct {
-	Ip  string
-	Add bool
-}
 
 func main() {
 	log.SetFlags(0)
-	if !executor.IsAdmin() {
-		log.Fatal("This program must be run as administrator")
+	certificatePairFolder := common.CertificatePairFolder(os.Args[0])
+	if certificatePairFolder == "" {
+		log.Fatal("Failed to determine certificate pair folder")
 	}
-	if !internal.ParentMatches("./launcher.exe") {
-		log.Fatal("This program must only be executed by the launcher.")
+	if common.HasCertificatePair(os.Args[0]) {
+		log.Fatal("Already have certificate pair, delete it manually and re-run.")
 	}
-	args := Arguments{}
-	flag.StringVar(&args.Ip, "ip", "", "IP address to resolve the host to")
-	flag.BoolVar(&args.Add, "add", true, "Add the host to the hosts file or remove it")
-	flag.Parse()
-
-	var ok bool
-	if args.Add {
-		if net.ParseIP(args.Ip) != nil {
-			log.Fatal("Invalid IP address")
-		} else {
-			log.Println("Adding host")
-			ok = internal.AddHost(args.Ip)
-		}
+	if !internal.GenerateCertificatePair(certificatePairFolder) {
+		log.Fatal("Could not generate certificate pair.")
 	} else {
-		log.Println("Removing host (if needed) and flushed DNS cache.")
-		ok = internal.RemoveHost()
-	}
-	if !ok {
-		log.Fatal("Failed to update hosts file")
-	} else {
-		log.Println("Updated hosts file (if needed) and flushed DNS cache.")
+		log.Println("Certificate pair generated successfully.")
 	}
 }

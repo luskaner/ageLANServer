@@ -19,7 +19,7 @@ func main() {
 		log.Fatal("This program must be run as administrator")
 	}
 	if !internal.ParentMatches("./launcher.exe") {
-		log.Fatal("This program must only be executed by the launcher.")
+		log.Println("This program should only be executed by the launcher.")
 	}
 	args := Arguments{}
 	flag.StringVar(&args.Ip, "ip", "", "IP address to resolve the host to")
@@ -28,14 +28,14 @@ func main() {
 
 	var ok bool
 	if args.Add {
-		if net.ParseIP(args.Ip) != nil {
+		if net.ParseIP(args.Ip) == nil {
 			log.Fatal("Invalid IP address")
 		} else {
 			log.Println("Adding host")
 			ok = internal.AddHost(args.Ip)
 		}
 	} else {
-		log.Println("Removing host (if needed) and flushed DNS cache.")
+		log.Println("Removing host")
 		ok = internal.RemoveHost()
 	}
 	if !ok {

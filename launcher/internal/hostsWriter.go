@@ -1,4 +1,4 @@
-package executor
+package internal
 
 import (
 	"shared/executor"
@@ -17,13 +17,9 @@ func run(admin bool, ip string, add bool) bool {
 	}
 	args := []string{ipFlag + ip, addFlag + boolStr}
 	if admin {
-		return executor.RunCustomExecutable("./"+processName, args...)
+		return executor.RunCustomExecutable(processName, args...)
 	}
-	argsStr := ""
-	for _, arg := range args {
-		argsStr += ", '" + arg + "'"
-	}
-	return executor.RunCustomExecutable("powershell", "Start-Process", "admin.exe", "-WindowStyle Hidden", "-Wait", "-Verb", "runAs", "-ArgumentList", argsStr[2:])
+	return executor.ElevateCustomExecutable(processName, args...)
 }
 
 func AddHost(admin bool, ip string) bool {

@@ -1,7 +1,8 @@
-package internal
+package server
 
 import (
 	"crypto/tls"
+	"launcher/internal"
 	"net"
 	"net/http"
 	"os"
@@ -14,11 +15,11 @@ const autoServerExecutable string = "server.exe"
 
 var autoServerPaths = []string{`.\`, `..\`, `..\server\`}
 
-func StartServer(config ServerConfig) *exec.Cmd {
+func StartServer(config internal.ServerConfig) *exec.Cmd {
 	if config.Start == "false" {
 		return nil
 	}
-	executablePath := getExecutablePath(config)
+	executablePath := GetExecutablePath(config)
 	if executablePath == "" {
 		return nil
 	}
@@ -37,7 +38,7 @@ func StartServer(config ServerConfig) *exec.Cmd {
 	return cmd
 }
 
-func getExecutablePath(config ServerConfig) string {
+func GetExecutablePath(config internal.ServerConfig) string {
 	if config.Executable == "auto" {
 		for _, path := range autoServerPaths {
 			fullPath := path + autoServerExecutable
