@@ -114,7 +114,7 @@ Depending on the module you want to debug, you will need to run the correspondin
 * server: ```task debug-prepare-server```
   * genCert: ```task debug:prepare-server-genCert```
 * launcher: ```task debug:prepare-launcher```
-  * launcher.hostsEditor: ```task debug:prepare-server-genCert```
+  * launcher.hostsEditor: ```task debug:prepare-folder```
 
 ### Build
 
