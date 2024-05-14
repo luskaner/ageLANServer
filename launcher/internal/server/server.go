@@ -1,13 +1,11 @@
-package server
+package internal
 
 import (
 	"crypto/tls"
-	"launcher/internal/config"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"shared/executor"
 	"time"
 )
@@ -16,7 +14,7 @@ const autoServerExecutable string = "server.exe"
 
 var autoServerPaths = []string{`.\`, `..\`, `..\server\`}
 
-func StartServer(config config.ServerConfig) *exec.Cmd {
+func StartServer(config ServerConfig) *exec.Cmd {
 	if config.Start == "false" {
 		return nil
 	}
@@ -39,7 +37,7 @@ func StartServer(config config.ServerConfig) *exec.Cmd {
 	return cmd
 }
 
-func getExecutablePath(config config.ServerConfig) string {
+func getExecutablePath(config ServerConfig) string {
 	if config.Executable == "auto" {
 		for _, path := range autoServerPaths {
 			fullPath := path + autoServerExecutable
@@ -94,36 +92,4 @@ func WaitForLanServerAnnounce() *net.UDPAddr {
 		}
 		return nil
 	}
-}
-
-func CertificatePairFolder(config config.ServerConfig) string {
-	executablePath := getExecutablePath(config)
-	if executablePath == "" {
-		return ""
-	}
-	parentDir := filepath.Dir(executablePath)
-	if parentDir == "" {
-		return ""
-	}
-	folder := parentDir + `\resources\certificates\`
-	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		if os.Mkdir(folder, os.ModeDir) == nil {
-			return ""
-		}
-	}
-	return folder
-}
-
-func HasCertificatePair(config config.ServerConfig) bool {
-	parentDir := CertificatePairFolder(config)
-	if parentDir == "" {
-		return false
-	}
-	if _, err := os.Stat(parentDir + Cert); os.IsNotExist(err) {
-		return false
-	}
-	if _, err := os.Stat(parentDir + Key); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
