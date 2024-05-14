@@ -99,15 +99,32 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Local development
 
+### System requirements
+
+- [Go 1.22](https://go.dev/dl/).
+- [Git](https://git-scm.com/downloads).
+- [Task](https://taskfile.dev/installation/).
+- [GoReleaser](https://goreleaser.com/).
+
 ### Debug
+
 It is recommended to use an IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia) or [Visual Studio Code](https://code.visualstudio.com/) (free) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
 
+Depending on the module you want to debug, you will need to run the corresponding task **before**:
+* server: ```task debug-prepare-server```
+  * genCert: ```task debug:prepare-server-genCert```
+* launcher: ```task debug:prepare-launcher```
+  * launcher.hostsEditor: ```task debug:prepare-server-genCert```
+
+### Build
+
+Run ```task build```.
+
 ### Release
-1. Install [GoReleaser](https://goreleaser.com/).
-2. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.
-3. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
-4. Set the environment variable ```GPG_FINGERPRINT``` to the fingerprint of the key.
-5. Finally run ```goreleaser release --snapshot --clean ```
+1. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.
+2. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
+3. Copy .env.example to .env and set ```GPG_FINGERPRINT``` to the fingerprint of the key.
+4. Finally run ```task release```
 
 ## Terms of Use
 
