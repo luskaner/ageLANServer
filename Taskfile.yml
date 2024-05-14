@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: '3'
+
+dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
+
+tasks:
+  build:
+    cmds:
+      - goreleaser build --clean --snapshot
+  release:
+    cmds:
+      - goreleaser release --clean --snapshot
+  debug-prepare-server:
+    deps: [debug:prepare-server-base]
+    cmds:
+      - build/server/genCert{{exeExt}}
+includes:
+  debug: ./Taskfile.{{if eq OS "windows"}}windows{{else}}unix{{end}}.yml

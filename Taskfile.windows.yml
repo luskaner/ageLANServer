@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: '3'
+
+tasks:
+  prepare-folder:
+    cmds:
+      - powershell Remove-Item -Recurse -Force build
+      - powershell New-Item -ItemType File -Force -Path build/.gitkeep
+      - powershell New-Item -ItemType File -Force -Path build/server/.gitkeep
+      - powershell New-Item -ItemType File -Force -Path build/launcher/.gitkeep
+  prepare-server-base:
+    internal: true
+    deps: [prepare-folder]
+    cmds:
+      - powershell Copy-Item -Path server/resources -Destination build/server/resources -Recurse
+      - go build -o build/server ./server
+      - go build -o build/server ./server/genCert
+  prepare-launcher:
+    platforms: [windows/amd64]
+    deps: [prepare-server-base]
+    cmds:
+      - powershell New-Item -ItemType Directory -Force -Path build/launcher/config
+      - powershell Copy-Item -Path launcher/config/config.ini -Destination build/launcher/config/config.ini
+      - go build -o build/launcher/launcher.hostsEditor.exe ./launcher/hostsEditor
+  prepare-server-genCert:
+    deps: [prepare-folder]
+    cmds:
+      - powershell New-Item -ItemType Directory -Force -Path build/server/resources
