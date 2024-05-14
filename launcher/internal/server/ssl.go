@@ -1,12 +1,10 @@
 package server
 
 import (
-	"common"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/google/certtostore"
 	"net"
 	"os"
 	"shared/executor"
@@ -74,14 +72,6 @@ func readCertificateFromServer(host string) *x509.Certificate {
 		return certificates[0]
 	}
 	return nil
-}
-
-func openCertificateStore() *certtostore.WinCertStore {
-	store, err := certtostore.OpenWinCertStoreCurrentUser(certtostore.ProviderMSSoftware, "", []string{common.CertCommonName}, nil, false)
-	if err != nil {
-		return nil
-	}
-	return store
 }
 
 func TrustCertificateFromServer(host string) bool {
