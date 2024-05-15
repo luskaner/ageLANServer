@@ -42,7 +42,7 @@ func processesExists() bool {
 	var procEntry PROCESSENTRY32
 	procEntry.dwSize = uint32(unsafe.Sizeof(procEntry))
 
-	r1, _, err := procProcess32First.Call(uintptr(snapshot), uintptr(unsafe.Pointer(&procEntry)))
+	r1, _, _ := procProcess32First.Call(uintptr(snapshot), uintptr(unsafe.Pointer(&procEntry)))
 	if r1 == 0 {
 		return false
 	}

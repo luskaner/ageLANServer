@@ -35,9 +35,7 @@ func ParseParameters(r *http.Request) (*models.Advertisement, int, []int32, []in
 	advIdStr := r.PostFormValue("match_id")
 	advId, err := strconv.ParseInt(advIdStr, 10, 32)
 	var adv *models.Advertisement
-	if err != nil {
-		advId = 0
-	} else {
+	if err == nil {
 		adv, _ = models.GetAdvertisement(int32(advId))
 	}
 	length := min(len(profileIds), len(raceIds), len(statGroupIds), len(teamIds))

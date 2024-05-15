@@ -43,7 +43,7 @@ func Build(configFolder string, baseFolder string) *CloudFilesIndexMap {
 		panic(err)
 	}
 	var index CloudFilesIndexMap
-	err = json.Unmarshal(data, &index)
+	_ = json.Unmarshal(data, &index)
 	for i, fileInfo := range index {
 		data, err := index.ReadFile(baseFolder, i)
 		if err != nil {

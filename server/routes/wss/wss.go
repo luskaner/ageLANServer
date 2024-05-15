@@ -114,9 +114,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			}
 		} else if _, ok := models.GetSessionById(sessionToken); !ok {
 			break
-		} else {
-			// TODO: Handle other operations
 		}
+		// TODO: Handle other operations
 		log.Printf("Operation: %v", op)
 	}
 

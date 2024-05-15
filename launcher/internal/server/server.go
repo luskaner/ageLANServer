@@ -87,10 +87,10 @@ func WaitForLanServerAnnounce() *net.UDPAddr {
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
 			return nil
-		}
-		if n == 1 && buf[0] == 43 {
+		} else if n == 1 && buf[0] == 43 {
 			return addr
+		} else {
+			return nil
 		}
-		return nil
 	}
 }
