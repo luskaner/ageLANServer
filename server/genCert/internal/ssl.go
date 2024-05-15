@@ -30,9 +30,6 @@ func GenerateCertificatePair(folder string) bool {
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
 		},
-		Issuer: pkix.Name{
-			CommonName: common.CertCommonName,
-		},
 		DNSNames: []string{common.Domain},
 	}
 

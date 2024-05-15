@@ -17,7 +17,7 @@ func run(admin bool, ip string, add bool) bool {
 	}
 	args := []string{ipFlag + ip, addFlag + boolStr}
 	if admin {
-		return executor.RunCustomExecutable(processName, args...)
+		return executor.RunCustomExecutable("./"+processName, args...)
 	}
 	return executor.ElevateCustomExecutable(processName, args...)
 }

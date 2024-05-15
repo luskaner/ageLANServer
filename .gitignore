@@ -1,7 +1,7 @@
 .env
 .idea/
 dist/
-build/*
+build/**/*
 !build/.gitkeep
 !build/server/
 !build/server/.gitkeep

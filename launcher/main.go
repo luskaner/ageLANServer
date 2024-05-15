@@ -3,13 +3,13 @@ package main
 import (
 	"common"
 	"launcher/internal"
+	"launcher/internal/game"
 	"launcher/internal/server"
 	"launcher/internal/userData"
 	"log"
 	"os/exec"
 	"shared"
 	"shared/executor"
-	"shared/executor/game"
 	"time"
 )
 

@@ -17,7 +17,7 @@ func RunCustomExecutable(executable string, arg ...string) bool {
 }
 
 func ElevateCustomExecutable(executable string, arg ...string) bool {
-	return ShellExecute("runas", executable, arg...)
+	return ShellExecuteAndWait("runas", executable, arg...)
 }
 
 func ShellExecute(verb string, executable string, arg ...string) bool {
