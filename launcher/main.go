@@ -77,8 +77,9 @@ func main() {
 			}
 		}
 		log.Println("Starting server...")
-		serverProcess = server.StartServer(c.Server)
-		if serverProcess == nil {
+		var ok bool
+		ok, serverProcess = server.StartServer(c.Server)
+		if !ok {
 			log.Println("Failed to run server.")
 			goto cleanServer
 		}

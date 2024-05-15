@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"golang.org/x/sys/windows"
 	"launcher/internal"
 	"launcher/internal/executor"
 	"net"
@@ -15,27 +16,31 @@ const autoServerExecutable string = "server.exe"
 
 var autoServerPaths = []string{`.\`, `..\`, `..\server\`}
 
-func StartServer(config internal.ServerConfig) *exec.Cmd {
+func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
 	if config.Start == "false" {
-		return nil
+		return false, nil
 	}
 	executablePath := GetExecutablePath(config)
 	if executablePath == "" {
-		return nil
+		return false, nil
 	}
-	var cmd *exec.Cmd
+	var ok = false
+	var cmd *exec.Cmd = nil
 	if config.Stop == "true" {
-		cmd = executor.StartCustomExecutable(executablePath, true)
+		cmd := executor.StartCustomExecutable(executablePath, true)
+		ok = cmd != nil
 	} else {
-		cmd = executor.StartCustomExecutable("cmd", true, "/C", "start", executablePath)
+		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE)
 	}
-	for {
-		if LanServer(config.Host, true) {
-			break
+	if ok {
+		for {
+			if LanServer(config.Host, true) {
+				break
+			}
+			time.Sleep(1 * time.Second)
 		}
-		time.Sleep(1 * time.Second)
 	}
-	return cmd
+	return ok, cmd
 }
 
 func GetExecutablePath(config internal.ServerConfig) string {

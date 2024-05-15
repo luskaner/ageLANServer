@@ -1,6 +1,7 @@
 package game
 
 import (
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 	internalExecutor "launcher/internal/executor"
 	"shared/executor"
@@ -29,11 +30,11 @@ func isInstalledOnMicrosoftStore() bool {
 }
 
 func RunOnMicrosoftStore() bool {
-	return internalExecutor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`)
+	return internalExecutor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, false, windows.SW_HIDE)
 }
 
 func RunOnSteam() bool {
-	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID)
+	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID, false, windows.SW_HIDE)
 }
 
 func RunGame(executable string) bool {

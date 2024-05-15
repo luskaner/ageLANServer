@@ -5,19 +5,27 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 func ElevateCustomExecutable(executable string, arg ...string) bool {
 	return ShellExecuteAndWait("runas", executable, arg...)
 }
 
-func ShellExecute(verb string, executable string, arg ...string) bool {
+func ShellExecute(verb string, file string, executableWorkingPath bool, showWindow int, arg ...string) bool {
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
-	exe, _ := windows.UTF16PtrFromString(executable)
+	exe, _ := windows.UTF16PtrFromString(file)
 	args, _ := windows.UTF16PtrFromString(strings.Join(arg, " "))
-	show := windows.SW_HIDE
+	var workingDirPtr *uint16
+	if executableWorkingPath {
+		workingDirPtr, _ = syscall.UTF16PtrFromString(filepath.Dir(file))
+	} else {
+		workingDirPtr = nil
+	}
 
-	err := windows.ShellExecute(0, verbPtr, exe, args, nil, int32(show))
+	show := showWindow
+
+	err := windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, int32(show))
 	if err != nil {
 		return false
 	}
