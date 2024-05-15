@@ -3,11 +3,11 @@ package server
 import (
 	"crypto/tls"
 	"launcher/internal"
+	"launcher/internal/executor"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"shared/executor"
 	"time"
 )
 

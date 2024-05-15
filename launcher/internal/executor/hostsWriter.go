@@ -1,4 +1,4 @@
-package internal
+package executor
 
 import (
 	"shared/executor"
@@ -19,7 +19,7 @@ func run(admin bool, ip string, add bool) bool {
 	if admin {
 		return executor.RunCustomExecutable("./"+processName, args...)
 	}
-	return executor.ElevateCustomExecutable(processName, args...)
+	return ElevateCustomExecutable(processName, args...)
 }
 
 func AddHost(admin bool, ip string) bool {

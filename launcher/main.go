@@ -3,6 +3,7 @@ package main
 import (
 	"common"
 	"launcher/internal"
+	executor2 "launcher/internal/executor"
 	"launcher/internal/game"
 	"launcher/internal/server"
 	"launcher/internal/userData"
@@ -90,7 +91,7 @@ func main() {
 			goto cleanHost
 		} else {
 			removeHost = true
-			if !internal.AddHost(isAdmin, ipOfHost) {
+			if !executor2.AddHost(isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				goto cleanHost
 			}
@@ -165,13 +166,13 @@ cleanMetadata:
 	}
 cleanCertificate:
 	if removeCertificate {
-		if !server.UntrustCertificateFromServer(common.Domain) {
+		if !server.UntrustCertificate() {
 			log.Println("Failed to untrust certificate from " + common.Domain + ".")
 		}
 	}
 cleanHost:
 	if removeHost {
-		if !internal.RemoveHost(isAdmin) {
+		if !executor2.RemoveHost(isAdmin) {
 			log.Println("Failed to remove host.")
 		}
 	}

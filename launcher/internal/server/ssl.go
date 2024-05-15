@@ -1,12 +1,13 @@
 package server
 
 import (
+	"common"
 	"crypto/tls"
-	"encoding/pem"
-	"fmt"
+	"crypto/x509"
+	"golang.org/x/sys/windows"
 	"net"
-	"os"
 	"shared/executor"
+	"unsafe"
 )
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
@@ -31,7 +32,7 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 	return conn != nil
 }
 
-func saveCertificateFromServer(host string) *os.File {
+func readCertificateFromServer(host string) *x509.Certificate {
 	conn := connectToServer(host, true)
 	if conn == nil {
 		return nil
@@ -41,44 +42,56 @@ func saveCertificateFromServer(host string) *os.File {
 	}()
 	certificates := conn.ConnectionState().PeerCertificates
 	if len(certificates) > 0 {
-		certOut, err := os.CreateTemp("", "cert_*.pem")
-		if err != nil {
-			return nil
-		}
-		defer func(certOut *os.File) {
-			_ = certOut.Close()
-		}(certOut)
-
-		err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certificates[0].Raw})
-		if err != nil {
-			return nil
-		}
-		return certOut
+		return certificates[0]
 	}
 	return nil
 }
 
 func TrustCertificateFromServer(host string) bool {
-	certOut := saveCertificateFromServer(host)
-	if certOut == nil {
+	cert := readCertificateFromServer(host)
+	if cert == nil {
 		return false
 	}
-	defer func(certOut *os.File) {
-		_ = os.Remove(certOut.Name())
-	}(certOut)
+	certBytes := cert.Raw
+	certContext, err := windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
+	if err != nil {
+		return false
+	}
 
-	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`Import-Certificate -FilePath "%s" -CertStoreLocation Cert:\CurrentUser\Root`, certOut.Name()))
+	defer func(ctx *windows.CertContext) {
+		_ = windows.CertFreeCertificateContext(ctx)
+	}(certContext)
+
+	store, err := windows.CertOpenSystemStore(0, windows.StringToUTF16Ptr("ROOT"))
+	if err != nil {
+		return false
+	}
+
+	defer func(store windows.Handle, flags uint32) {
+		_ = windows.CertCloseStore(store, flags)
+	}(store, 0)
+
+	err = windows.CertAddCertificateContextToStore(store, certContext, windows.CERT_STORE_ADD_NEW, nil)
+	return err == nil
 }
 
-func UntrustCertificateFromServer(host string) bool {
-	certOut := saveCertificateFromServer(host)
-	if certOut == nil {
+func UntrustCertificate() bool {
+	store, err := windows.CertOpenSystemStore(0, windows.StringToUTF16Ptr("ROOT"))
+	if err != nil {
 		return false
 	}
-	defer func(certOut *os.File) {
-		_ = os.Remove(certOut.Name())
-	}(certOut)
-	return executor.RunCustomExecutable("powershell", "-Command", fmt.Sprintf(`$cert = Get-PfxCertificate "%s"; Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Thumbprint -eq $cert.Thumbprint } | Remove-Item`, certOut.Name()))
+	defer func(store windows.Handle, flags uint32) {
+		_ = windows.CertCloseStore(store, flags)
+	}(store, 0)
+
+	var certContext *windows.CertContext
+	certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.Domain)), nil)
+	if err != nil {
+		return false
+	}
+
+	err = windows.CertDeleteCertificateFromStore(certContext)
+	return err == nil
 }
 
 func GenerateCertificatePair(certificateFolder string) bool {
