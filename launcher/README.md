@@ -19,6 +19,7 @@ The launcher is a tool that allows you to launch the game to connect to the LAN 
 - Stop the server
 
 ## Client
+
 - Isolated metadata directory.
 - Isolated profiles directory.
 - Smart modify the hosts file.

@@ -40,6 +40,7 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 ## System Requirements
 
 ### Server
+
 - Windows: 10 or higher, Server 2016 or higher.
 - MacOS: Catalina 10.15 or higher.
 - GNU/Linux: *any supported distro, see the note below for details*.
@@ -49,10 +50,12 @@ Admin rights or firewall permission to listen to port 443 for https will likely 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
 ### Launcher
+
 - Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
 - If you allow it to handle the hosts file, it will require rights elevation.
 
 ### Client
+
 - Age of Empires 2 Definitive Edition - Steam or Microsoft Store.
 - Up-to-date version of the game.
 
@@ -71,11 +74,13 @@ The verification process ensures that the files you download are the same as the
 5. Verify the SHA-256 checksum list inside ```..._checksums.txt``` with the downloaded archives.
 
 ## Installation
+
 Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
 
 ## How it works
 
 ### Server
+
 The server is simple web server that listens to the game's API requests. The server reimplements
 the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the client
 is stored or sent to any other server.
@@ -87,6 +92,7 @@ is stored or sent to any other server.
 The launcher allows to easily play the game in LAN mode while allowing the official launcher to be used for online play. 
 
 It can do the following setup steps for you:
+
 - Automatically start/stop the server or connect to an existing one automatically.
 - (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
 - (Optional) Modify the hosts file to redirect the game's API requests to the LAN server.
@@ -111,16 +117,18 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 It is recommended to use an IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia) or [Visual Studio Code](https://code.visualstudio.com/) (free) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
 
 Depending on the module you want to debug, you will need to run the corresponding task **before**:
-* server: ```task debug-prepare-server```
-  * genCert: ```task debug:prepare-server-genCert```
-* launcher: ```task debug:prepare-launcher```
-  * launcher.hostsEditor: ```task debug:prepare-folder```
+
+- server: ```task debug-prepare-server```
+  - genCert: ```task debug:prepare-server-genCert```
+- launcher: ```task debug:prepare-launcher```
+  - launcher.hostsEditor: ```task debug:prepare-folder```
 
 ### Build
 
 Run ```task build```.
 
 ### Release
+
 1. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.
 2. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
 3. Copy .env.example to .env and set ```GPG_FINGERPRINT``` to the fingerprint of the key.
@@ -130,9 +138,9 @@ Run ```task build```.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-* Owning a **legal license** of Age of Empires 2 Definitive Edition.
-* Not using this software to cheat/hack and, in general, respect all the game terms of service.
-* Use this software for personal use.
-* Use this software in a LAN environment.
+- Owning a **legal license** of Age of Empires 2 Definitive Edition.
+- Not using this software to cheat/hack and, in general, respect all the game terms of service.
+- Use this software for personal use.
+- Use this software in a LAN environment.
 
 Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires LLC, World's Edge LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.

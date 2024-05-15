@@ -48,8 +48,8 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	receivers := make([]*models.User, len(toProfileIds))
-	for i, profileId := range toProfileIds {
-		receivers[i], _ = models.GetUserById(profileId)
+	for j, profileId := range toProfileIds {
+		receivers[j], _ = models.GetUserById(profileId)
 	}
 
 	message := adv.AddMessage(

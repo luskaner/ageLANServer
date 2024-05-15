@@ -2,7 +2,6 @@ package server
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"net"
@@ -55,21 +54,6 @@ func saveCertificateFromServer(host string) *os.File {
 			return nil
 		}
 		return certOut
-	}
-	return nil
-}
-
-func readCertificateFromServer(host string) *x509.Certificate {
-	conn := connectToServer(host, true)
-	if conn == nil {
-		return nil
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	certificates := conn.ConnectionState().PeerCertificates
-	if len(certificates) > 0 {
-		return certificates[0]
 	}
 	return nil
 }

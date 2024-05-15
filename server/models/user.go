@@ -182,10 +182,10 @@ func (u *User) GetPresence() int8 {
 
 func getUsers() []*User {
 	users := make([]*User, len(userStore))
-	i := 0
+	j := 0
 	for _, u := range userStore {
-		users[i] = u
-		i++
+		users[j] = u
+		j++
 	}
 	return users
 }

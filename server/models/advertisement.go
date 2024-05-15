@@ -416,14 +416,14 @@ func (adv *Advertisement) UpdateState(state int8) {
 
 func (adv *Advertisement) EncodePeers() i.A {
 	var peers = make(i.A, adv.peers.Len())
-	i := 0
+	j := 0
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		p := el.Value
 		userId := el.Key.GetId()
 		peerLock.RLock(userId)
-		peers[i] = p.Encode()
+		peers[j] = p.Encode()
 		peerLock.RUnlock(userId)
-		i++
+		j++
 	}
 	return peers
 }

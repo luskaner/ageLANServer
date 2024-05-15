@@ -31,8 +31,8 @@ func PeerUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 		users[j] = u
 	}
-	for i, u := range users {
-		adv.UpdatePeer(u, raceIds[i], teamIds[i])
+	for j, u := range users {
+		adv.UpdatePeer(u, raceIds[j], teamIds[j])
 	}
 	i.JSON(&w, i.A{0})
 }
