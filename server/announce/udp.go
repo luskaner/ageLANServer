@@ -21,9 +21,6 @@ func Announce(host string) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		_, err := conn.Write(data)
-		if err != nil {
-			continue
-		}
+		_, _ = conn.Write(data)
 	}
 }
