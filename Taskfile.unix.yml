@@ -3,22 +3,11 @@
 version: '3'
 
 tasks:
-  prepare-folder:
-    cmds:
-      - rm -rf build
-      - mkdir -p build
-      - touch build/.gitkeep
-      - mkdir -p build/server
-      - touch build/server/.gitkeep
-      - mkdir -p build/launcher
-      - touch build/launcher/.gitkeep
   prepare-server-base:
     internal: true
-    deps: [ prepare-folder ]
     cmds:
       - cp -r server/resources build/server/resources
       - go build -o build/server ./server/genCert
   prepare-server-genCert:
-    deps: [ prepare-folder ]
     cmds:
       - mkdir -p build/server/resources
