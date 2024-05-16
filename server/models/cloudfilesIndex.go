@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
 type CloudfilesIndex struct {
@@ -34,11 +35,11 @@ func (m *CloudFilesIndexMap) ReadFile(baseFolder string, name string) ([]byte, e
 	if !ok {
 		return nil, os.ErrInvalid
 	}
-	return os.ReadFile(baseFolder + "/" + name)
+	return os.ReadFile(filepath.Join(baseFolder, name))
 }
 
 func Build(configFolder string, baseFolder string) *CloudFilesIndexMap {
-	data, err := os.ReadFile(configFolder + "/cloudfilesIndex.json")
+	data, err := os.ReadFile(filepath.Join(configFolder, "cloudfilesIndex.json"))
 	if err != nil {
 		panic(err)
 	}

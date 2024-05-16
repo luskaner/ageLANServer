@@ -26,10 +26,7 @@ func ShellExecute(verb string, file string, executableWorkingPath bool, showWind
 	show := showWindow
 
 	err := windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, int32(show))
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func StartCustomExecutable(executable string, executableWorkingPath bool, arg ...string) *exec.Cmd {

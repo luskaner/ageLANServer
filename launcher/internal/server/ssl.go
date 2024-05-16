@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"golang.org/x/sys/windows"
 	"net"
+	"path/filepath"
 	"shared/executor"
 	"unsafe"
 )
@@ -95,5 +96,5 @@ func UntrustCertificate() bool {
 }
 
 func GenerateCertificatePair(certificateFolder string) bool {
-	return executor.RunCustomExecutable(certificateFolder + `\..\..\genCert.exe`)
+	return executor.RunCustomExecutable(filepath.Join(certificateFolder, "..", "..", "genCert.exe"))
 }

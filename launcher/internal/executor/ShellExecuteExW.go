@@ -60,9 +60,5 @@ func ShellExecuteAndWait(verb string, executable string, arg ...string) bool {
 	}
 
 	_, err = windows.WaitForSingleObject(info.hProcess, windows.INFINITE)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }

@@ -3,20 +3,20 @@ package main
 import (
 	"common"
 	"launcher/internal"
-	executor2 "launcher/internal/executor"
+	"launcher/internal/executor"
 	"launcher/internal/game"
 	"launcher/internal/server"
 	"launcher/internal/userData"
 	"log"
 	"os/exec"
 	"shared"
-	"shared/executor"
+	sharedExecutor "shared/executor"
 	"time"
 )
 
 func main() {
 	c := internal.ReadConfig()
-	isAdmin := executor.IsAdmin()
+	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
 		log.Println("Running as administrator, this is not recommended. It will request elevated privileges if/when it needs.")
 	}
@@ -80,7 +80,7 @@ func main() {
 		var ok bool
 		ok, serverProcess = server.StartServer(c.Server)
 		if !ok {
-			log.Println("Failed to run server.")
+			log.Println("Failed to start server.")
 			goto cleanServer
 		}
 	}
@@ -92,7 +92,7 @@ func main() {
 			goto cleanHost
 		} else {
 			removeHost = true
-			if !executor2.AddHost(isAdmin, ipOfHost) {
+			if !executor.AddHost(isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				goto cleanHost
 			}
@@ -173,15 +173,14 @@ cleanCertificate:
 	}
 cleanHost:
 	if removeHost {
-		if !executor2.RemoveHost(isAdmin) {
+		if !executor.RemoveHost(isAdmin) {
 			log.Println("Failed to remove host.")
 		}
 	}
 cleanServer:
-	if c.Server.Stop == "true" && serverProcess != nil {
+	if serverProcess != nil {
 		log.Println("Stopping server...")
-		err := serverProcess.Process.Kill()
-		if err != nil {
+		if !server.StopServer(serverProcess) {
 			log.Println("Failed to stop server.")
 		}
 	}

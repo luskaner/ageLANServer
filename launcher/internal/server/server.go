@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"errors"
 	"golang.org/x/sys/windows"
 	"launcher/internal"
 	"launcher/internal/executor"
@@ -24,23 +25,51 @@ func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
 	if executablePath == "" {
 		return false, nil
 	}
-	var ok = false
+	var ok bool
 	var cmd *exec.Cmd = nil
 	if config.Stop == "true" {
-		cmd := executor.StartCustomExecutable(executablePath, true)
+		cmd = executor.StartCustomExecutable(executablePath, true)
 		ok = cmd != nil
 	} else {
 		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE)
 	}
 	if ok {
-		for {
+		// Wait up to 30s for server to start
+		for i := 0; i < 30; i++ {
 			if LanServer(config.Host, true) {
-				break
+				return true, cmd
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Second)
+		}
+		if cmd != nil {
+			return StopServer(cmd), cmd
 		}
 	}
-	return ok, cmd
+	return false, nil
+}
+
+func StopServer(cmd *exec.Cmd) bool {
+	err := cmd.Process.Kill()
+	if err != nil {
+		return false
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case <-time.After(10 * time.Second):
+		return false
+	case err := <-done:
+		if err != nil {
+			var e *exec.ExitError
+			if !errors.As(err, &e) {
+				return false
+			}
+		}
+		return true
+	}
 }
 
 func GetExecutablePath(config internal.ServerConfig) string {

@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"math/big"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -38,7 +39,7 @@ func GenerateCertificatePair(folder string) bool {
 		return false
 	}
 
-	certFile, err := os.Create(folder + common.Cert)
+	certFile, err := os.Create(filepath.Join(folder, common.Cert))
 	if err != nil {
 		return false
 	}
@@ -53,7 +54,7 @@ func GenerateCertificatePair(folder string) bool {
 		return false
 	}
 
-	keyFile, err := os.Create(folder + common.Key)
+	keyFile, err := os.Create(filepath.Join(folder, common.Key))
 
 	if err != nil {
 		return false

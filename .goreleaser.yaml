@@ -38,16 +38,16 @@ builds:
   - id: launcher
     main: ./launcher
     binary: launcher/launcher
-    goos: [windows]
-    goarch: [amd64]
+    goos: [ windows ]
+    goarch: [ amd64 ]
   - id: launcher.hostsEditor
     main: ./launcher/hostsEditor
     binary: launcher/launcher.hostsEditor
-    goos: [windows]
-    goarch: [amd64]
+    goos: [ windows ]
+    goarch: [ amd64 ]
 archives:
   - id: all
-    builds: [serverWindows, genCertWindows, launcher, launcher.hostsEditor]
+    builds: [ serverWindows, genCertWindows, launcher, launcher.hostsEditor ]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
@@ -65,7 +65,7 @@ archives:
         dst: launcher/README.txt
       - launcher/config
   - id: server
-    builds:  [server, genCert]
+    builds: [ server, genCert ]
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_
@@ -95,7 +95,7 @@ archives:
       - goos: windows
         format: zip
   - id: launcher
-    builds: [launcher, launcher.hostsEditor]
+    builds: [ launcher, launcher.hostsEditor ]
     files:
       - src: launcher/config
         dst: config
@@ -113,4 +113,4 @@ checksum:
 signs:
   - artifacts: checksum
     cmd: gpg2
-    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]

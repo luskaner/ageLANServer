@@ -14,12 +14,11 @@ tasks:
       - touch build/launcher/.gitkeep
   prepare-server-base:
     internal: true
-    deps: [prepare-folder]
+    deps: [ prepare-folder ]
     cmds:
       - cp -r server/resources build/server/resources
-      - go build -o build/server ./server
       - go build -o build/server ./server/genCert
   prepare-server-genCert:
-    deps: [prepare-folder]
+    deps: [ prepare-folder ]
     cmds:
       - mkdir -p build/server/resources

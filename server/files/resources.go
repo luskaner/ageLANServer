@@ -6,6 +6,7 @@ import (
 	"github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"
+	"path/filepath"
 	i "server/internal"
 	"server/models"
 	"strings"
@@ -30,13 +31,14 @@ func Initialize() {
 }
 
 const resourceFolder = "resources"
-const configFolder = resourceFolder + "/config"
-const responsesFolder = resourceFolder + "/responses"
-const CloudFolder = responsesFolder + "/cloud"
+
+var configFolder = filepath.Join(resourceFolder, "config")
+var responsesFolder = filepath.Join(resourceFolder, "responses")
+var CloudFolder = filepath.Join(responsesFolder, "cloud")
 
 func initializeConfig() {
 	cfg := ini.New()
-	err := cfg.LoadFiles(configFolder + "/config.ini")
+	err := cfg.LoadFiles(filepath.Join(configFolder, "config.ini"))
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +49,7 @@ func initializeConfig() {
 }
 
 func initializeLogin() {
-	data, err := os.ReadFile(configFolder + "/login.json")
+	data, err := os.ReadFile(filepath.Join(configFolder, "login.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +69,7 @@ func initializeLogin() {
 func initializeResponses() {
 	dirEntries, _ := os.ReadDir(responsesFolder)
 	for _, entry := range dirEntries {
-		data, err := os.ReadFile(responsesFolder + "/" + entry.Name())
+		data, err := os.ReadFile(filepath.Join(responsesFolder, entry.Name()))
 		if err != nil {
 			continue
 		}

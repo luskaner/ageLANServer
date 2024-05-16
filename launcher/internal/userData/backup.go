@@ -1,6 +1,9 @@
 package userData
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 type Data struct {
 	Path     string
@@ -18,11 +21,11 @@ func (d *Data) temporaryPath() string {
 }
 
 func (d *Data) absolutePath() string {
-	return Path() + `\` + d.Path
+	return filepath.Join(Path(), d.Path)
 }
 
 func Path() string {
-	return os.Getenv("USERPROFILE") + `\` + finalPath
+	return filepath.Join(os.Getenv("USERPROFILE"), finalPath)
 }
 
 func (d *Data) srcDestPath() (string, string) {

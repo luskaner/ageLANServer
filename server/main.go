@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"server/announce"
 	"server/files"
 	"server/middleware"
@@ -27,5 +28,5 @@ func main() {
 		}()
 	}
 	certificatePairFolder := common.CertificatePairFolder(os.Args[0])
-	log.Fatal(server.ListenAndServeTLS(certificatePairFolder+common.Cert, certificatePairFolder+common.Key))
+	log.Fatal(server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key)))
 }

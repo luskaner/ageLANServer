@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -57,7 +58,7 @@ func Matches(addr1 string, addr2 string) bool {
 }
 
 func HostsFile() string {
-	return os.Getenv("WINDIR") + `\System32\drivers\etc\hosts`
+	return filepath.Join(os.Getenv("WINDIR"), "System32", "drivers", "etc", "hosts")
 }
 
 func lineWithoutComment(line string) string {

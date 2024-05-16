@@ -2,7 +2,7 @@
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 version: '3'
 
-dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
+dotenv: [ '.env', '{{.ENV}}/.env.', '{{.HOME}}/.env' ]
 
 tasks:
   build:
@@ -12,7 +12,7 @@ tasks:
     cmds:
       - goreleaser release --clean --snapshot
   debug-prepare-server:
-    deps: [debug:prepare-server-base]
+    deps: [ debug:prepare-server-base ]
     cmds:
       - build/server/genCert{{exeExt}}
 includes:

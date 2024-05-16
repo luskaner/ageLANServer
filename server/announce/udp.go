@@ -9,7 +9,7 @@ var data = make([]byte, 1)
 
 func Announce(host string) {
 	data[0] = 43
-	conn, err := net.Dial("udp", host+":"+"59999")
+	conn, err := net.Dial("udp", host+":59999")
 	if err != nil {
 		panic(err)
 	}
