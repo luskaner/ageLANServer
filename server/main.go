@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"server/announce"
 	"server/files"
+	"server/ip"
 	"server/middleware"
 	"server/routes"
 )
@@ -18,13 +18,17 @@ func main() {
 	files.Initialize()
 	routes.Initialize(mux)
 	sessionMux := middleware.SessionMiddleware(mux)
+	addr := ip.ResolveHost(files.Config.Host)
+	if addr == nil {
+		log.Fatal("Failed to resolve host")
+	}
 	server := &http.Server{
-		Addr:    files.Config.Host + ":443",
+		Addr:    addr.String() + ":443",
 		Handler: handlers.LoggingHandler(os.Stdout, sessionMux),
 	}
 	if files.Config.Announce {
 		go func() {
-			announce.Announce(files.Config.Host)
+			ip.Announce(addr)
 		}()
 	}
 	certificatePairFolder := common.CertificatePairFolder(os.Args[0])

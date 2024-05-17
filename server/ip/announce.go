@@ -1,4 +1,4 @@
-package announce
+package ip
 
 import (
 	"net"
@@ -7,9 +7,15 @@ import (
 
 var data = make([]byte, 1)
 
-func Announce(host string) {
+func Announce(ip net.IP) {
 	data[0] = 43
-	conn, err := net.Dial("udp", host+":59999")
+	broadcastIp := ResolveBroadcastIp(ip)
+	udpAddr, err := net.ResolveUDPAddr("udp", broadcastIp.String()+":59999")
+	if err != nil {
+		panic(err)
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
 		panic(err)
 	}
