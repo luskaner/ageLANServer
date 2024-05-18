@@ -1,15 +1,18 @@
 # Age of Empires 2 Definitive Edition LAN Server
 
-AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE versions.
+AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
+connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE
+versions.
 
-**You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to Steam or Xbox Live depending on the version to fully play offline.**
+**You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
+Steam or Xbox Live depending on the version to fully play offline.**
 
 ## Features
 
 - Co-Op Campaigns.
 - Scenarios (including transferring the map):
-  - Event Scenarios*.
-  - Custom Scenarios.
+    - Event Scenarios*.
+    - Custom Scenarios.
 - ... all other game modes available by creating a lobby **only with server as "Use Local Lan Server"**.
 - Rematch.
 - Restore game.
@@ -24,18 +27,19 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 ## Unsupported features
 
 - Not compatible with Battle Server P2P (LAN):
-  - Quick Play.
-  - Ranked.
-  - Spectate Games.
+    - Quick Play.
+    - Ranked.
+    - Spectate Games.
 - Not possible as it would require internet and some access to the user profile:
-  - Steam & Xbox Friends.
+    - Steam & Xbox Friends.
 - Not implemented:
-  - Changing player profile icon: the default will always be used.
-  - Leaderboards: will appear empty.
-  - Player stats: will appear empty.
-  - Clans: all players are without clans. Browsing clan will appear empty and creating one will always result in error.
-  - Lobby ban player: will appear like it works but doesn't.
-  - Report player: will appear like it works but doesn't.
+    - Changing player profile icon: the default will always be used.
+    - Leaderboards: will appear empty.
+    - Player stats: will appear empty.
+    - Clans: all players are without clans. Browsing clan will appear empty and creating one will always result in
+      error.
+    - Lobby ban player: will appear like it works but doesn't.
+    - Report player: will appear like it works but doesn't.
 
 ## System Requirements
 
@@ -45,7 +49,8 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 - MacOS: Catalina 10.15 or higher.
 - GNU/Linux: *any supported distro, see the note below for details*.
 
-Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly) depending on the operating system.
+Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly)
+depending on the operating system.
 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
@@ -61,11 +66,13 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ## Binaries
 
-See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for supported operating systems.
+See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for
+supported operating systems.
 
 ### Verification
 
-The verification process ensures that the files you download are the same as the ones that were uploaded by the maintainer.
+The verification process ensures that the files you download are the same as the ones that were uploaded by the
+maintainer.
 
 1. Check the release tag is verified with the committer's signature key (*as all commits must be*).
 2. Download the ```..._checksums.txt``` and ```..._checksums.txt.sig``` files.
@@ -75,28 +82,30 @@ The verification process ensures that the files you download are the same as the
 
 ## Installation
 
-Both the launcher and server work out of the box without any installation. Just download the compressed archives, decompress and run them.
+Both the launcher and server work out of the box without any installation. Just download the compressed archives,
+decompress and run them.
 
 ## How it works
 
 ### Server
 
 The server is simple web server that listens to the game's API requests. The server reimplements
-the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the client
+the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the
+client
 is stored or sent to any other server.
 
 *Note: See the [server README](server/README.md) for more details.*
 
 ### Launcher
 
-The launcher allows to easily play the game in LAN mode while allowing the official launcher to be used for online play. 
+The launcher allows to easily play the game in LAN mode while allowing the official launcher to be used for online play.
 
 It can do the following setup steps for you:
 
 - Automatically start/stop the server or connect to an existing one automatically.
 - (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
 - (Optional) Modify the hosts file to redirect the game's API requests to the LAN server.
-- (Optional) Install a self-signed certificate to allow the game to connect to the LAN server. 
+- (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
 - Automatically find and start the game.
 
 Afterwards, it reverses any changes to allow the official launcher to connect to the official servers.
@@ -114,14 +123,15 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ### Debug
 
-It is recommended to use an IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia) or [Visual Studio Code](https://code.visualstudio.com/) (free) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
+It is recommended to use an IDE such as [GoLand](https://www.jetbrains.com/go/) (free for academia)
+or [Visual Studio Code](https://code.visualstudio.com/) (free) with
+the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go).
 
 Depending on the module you want to debug, you will need to run the corresponding task **before**:
 
 - server: ```task debug-prepare-server```
-  - genCert: ```task debug:prepare-server-genCert```
+    - genCert: ```task debug:prepare-server-genCert```
 - launcher: ```task debug:prepare-launcher```
-  - launcher.hostsEditor: ```task debug:prepare-folder```
 
 ### Build
 
@@ -143,4 +153,5 @@ You and all the clients connecting to your server are only authorized to use thi
 - Use this software for personal use.
 - Use this software in a LAN environment.
 
-Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires LLC, World's Edge LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.
+Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires LLC,
+World's Edge LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.
