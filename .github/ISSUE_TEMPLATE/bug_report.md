@@ -20,12 +20,20 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Software Components**
+
+Check all that apply:
+- [ ] Server
+- [ ] Server Certificate generator
+- [ ] Launcher
+- [ ] Launcher Hosts Editor
+
 **Server**
 - OS and Architecture: [e.g. Ubuntu]
 - OS Version and architecture [e.g. 24.04 x64]: 
 - Server version [e.g. 1.0.0]:
 
-**Client**
+**Launcher**
 - OS: [e.g. Windows]
 - OS Version and architecture [e.g. 11 x64]: 
 - Client version [e.g. 1.0.0]:
