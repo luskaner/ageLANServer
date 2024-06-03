@@ -48,6 +48,14 @@ func readCertificateFromServer(host string) *x509.Certificate {
 	return nil
 }
 
+func openStore() (windows.Handle, error) {
+	rootStr := windows.StringToUTF16Ptr("ROOT")
+	if executor.IsAdmin() {
+		return windows.CertOpenStore(windows.CERT_STORE_PROV_SYSTEM, 0, 0, windows.CERT_SYSTEM_STORE_LOCAL_MACHINE, uintptr(unsafe.Pointer(rootStr)))
+	}
+	return windows.CertOpenSystemStore(0, rootStr)
+}
+
 func TrustCertificateFromServer(host string) bool {
 	cert := readCertificateFromServer(host)
 	if cert == nil {
@@ -63,7 +71,8 @@ func TrustCertificateFromServer(host string) bool {
 		_ = windows.CertFreeCertificateContext(ctx)
 	}(certContext)
 
-	store, err := windows.CertOpenSystemStore(0, windows.StringToUTF16Ptr("ROOT"))
+	store, err := openStore()
+
 	if err != nil {
 		return false
 	}
@@ -77,7 +86,7 @@ func TrustCertificateFromServer(host string) bool {
 }
 
 func UntrustCertificate() bool {
-	store, err := windows.CertOpenSystemStore(0, windows.StringToUTF16Ptr("ROOT"))
+	store, err := openStore()
 	if err != nil {
 		return false
 	}
