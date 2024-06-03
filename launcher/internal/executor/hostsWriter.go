@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"path/filepath"
 	"shared/executor"
 )
 
@@ -18,7 +17,7 @@ func run(admin bool, ip string, add bool) bool {
 	}
 	args := []string{ipFlag + ip, addFlag + boolStr}
 	if admin {
-		return executor.RunCustomExecutable(filepath.Join(".", processName), args...)
+		return executor.RunCustomExecutable("./"+processName, args...)
 	}
 	return ElevateCustomExecutable(processName, args...)
 }
