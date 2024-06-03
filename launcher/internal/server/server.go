@@ -28,7 +28,7 @@ func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
 	var ok bool
 	var cmd *exec.Cmd = nil
 	if config.Stop == "true" {
-		cmd = executor.StartCustomExecutable(executablePath, true)
+		_, cmd = executor.StartCustomExecutable(executablePath, true)
 		ok = cmd != nil
 	} else {
 		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE)

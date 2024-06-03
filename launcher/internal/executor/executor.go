@@ -29,14 +29,14 @@ func ShellExecute(verb string, file string, executableWorkingPath bool, showWind
 	return err == nil
 }
 
-func StartCustomExecutable(executable string, executableWorkingPath bool, arg ...string) *exec.Cmd {
+func StartCustomExecutable(executable string, executableWorkingPath bool, arg ...string) (error, *exec.Cmd) {
 	cmd := exec.Command(executable, arg...)
 	if executableWorkingPath {
 		cmd.Dir = filepath.Dir(executable)
 	}
 	err := cmd.Start()
 	if err != nil {
-		return nil
+		return err, nil
 	}
-	return cmd
+	return nil, cmd
 }
