@@ -8,13 +8,72 @@ import (
 	"launcher/internal/server"
 	"launcher/internal/userData"
 	"log"
+	"os"
 	"os/exec"
+	"os/signal"
 	"shared"
 	sharedExecutor "shared/executor"
+	"syscall"
 	"time"
 )
 
+var removeHost = false
+var removeCertificate = false
+var config internal.Config
+var serverProcess *exec.Cmd = nil
+
+func cleanup() {
+	log.Println("Cleaning up...")
+	if config.IsolateProfiles {
+		if !userData.RestoreProfiles() {
+			log.Println("Failed to restore profiles.")
+		}
+	}
+
+	if config.IsolateMetadata {
+		if !userData.Metadata.Restore() {
+			log.Println("Failed to restore metadata.")
+		}
+	}
+
+	if removeCertificate {
+		if !server.UntrustCertificate() {
+			log.Println("Failed to untrust certificate from " + common.Domain + ".")
+		}
+	}
+
+	if removeHost {
+		if !executor.RemoveHost(sharedExecutor.IsAdmin()) {
+			log.Println("Failed to remove host.")
+		}
+	}
+
+	if serverProcess != nil {
+		log.Println("Stopping server...")
+		if !server.StopServer(serverProcess) {
+			log.Println("Failed to stop server.")
+		}
+	}
+}
+
 func main() {
+	errorCode := 0
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		_, ok := <-sigs
+		if ok {
+			close(sigs)
+			cleanup()
+			os.Exit(errorCode)
+		}
+	}()
+	defer func() {
+		os.Exit(errorCode)
+	}()
+	defer func() {
+		cleanup()
+	}()
 	c := internal.ReadConfig()
 	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
@@ -49,9 +108,6 @@ func main() {
 		}
 	}
 	var ipOfHost string
-	var serverProcess *exec.Cmd = nil
-	removeHost := false
-	removeCertificate := false
 	if c.Server.Start == "false" {
 		if c.Server.Stop == "true" {
 			log.Println("Server.Start is false. Ignoring Server.Stop being true.")
@@ -81,7 +137,7 @@ func main() {
 		ok, serverProcess = server.StartServer(c.Server)
 		if !ok {
 			log.Println("Failed to start server.")
-			goto cleanServer
+			return
 		}
 	}
 
@@ -89,12 +145,12 @@ func main() {
 	if !shared.Matches(ipOfHost, common.Domain) {
 		if !c.CanAddHost {
 			log.Println("Server.Start is false and CanAddHost is false but server does not match " + common.Domain + ".")
-			goto cleanHost
+			return
 		} else {
 			removeHost = true
 			if !executor.AddHost(isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
-				goto cleanHost
+				return
 			}
 		}
 	} else if !server.CheckConnectionFromServer(common.Domain, true) {
@@ -106,34 +162,34 @@ func main() {
 			removeCertificate = true
 			if !server.TrustCertificateFromServer(common.Domain) {
 				log.Println("Failed to trust certificate from " + common.Domain + ".")
-				goto cleanCertificate
+				return
 			} else if !server.CheckConnectionFromServer(common.Domain, false) {
 				log.Println(common.Domain + " must have been trusted automatically at this point.")
-				goto cleanCertificate
+				return
 			} else if !server.LanServer(common.Domain, false) {
 				log.Println("Something went wrong, " + common.Domain + " either points to the real server or certificate issue.")
-				goto cleanCertificate
+				return
 			}
 		} else {
 			log.Println(common.Domain + " must have been trusted manually.")
-			goto cleanCertificate
+			return
 		}
 	} else if !server.LanServer(common.Domain, false) {
 		log.Println("Something went wrong, " + common.Domain + " either points to the real server or certificate issue.")
-		goto cleanCertificate
+		return
 	}
 
 	if c.IsolateMetadata {
 		if !userData.Metadata.Backup() {
 			log.Println("Failed to backup metadata.")
-			goto cleanMetadata
+			return
 		}
 	}
 
 	if c.IsolateProfiles {
 		if !userData.BackupProfiles() {
 			log.Println("Failed to backup profiles.")
-			goto clean
+			return
 		}
 	}
 
@@ -141,47 +197,13 @@ func main() {
 	log.Println("AoE2:DE looking for it and starting it...")
 	if !game.RunGame(c.Client.Executable) {
 		log.Println("AoE2:DE failed to start.")
-		goto clean
+		return
 	}
 	if !game.WaitUntilProcessesStart(time.Second, 60) {
 		log.Println("AoE2:DE did not start in time...")
-		goto clean
+		return
 	}
 	log.Println("AoE2:DE started.")
 	game.WaitUntilProcessesEnd(time.Second * 10)
 	log.Println("AoE2:DE stopped.")
-clean:
-	log.Println("Cleaning up...")
-
-	if c.IsolateProfiles {
-		if !userData.RestoreProfiles() {
-			log.Println("Failed to restore profiles.")
-		}
-	}
-
-cleanMetadata:
-	if c.IsolateMetadata {
-		if !userData.Metadata.Restore() {
-			log.Println("Failed to restore metadata.")
-		}
-	}
-cleanCertificate:
-	if removeCertificate {
-		if !server.UntrustCertificate() {
-			log.Println("Failed to untrust certificate from " + common.Domain + ".")
-		}
-	}
-cleanHost:
-	if removeHost {
-		if !executor.RemoveHost(isAdmin) {
-			log.Println("Failed to remove host.")
-		}
-	}
-cleanServer:
-	if serverProcess != nil {
-		log.Println("Stopping server...")
-		if !server.StopServer(serverProcess) {
-			log.Println("Failed to stop server.")
-		}
-	}
 }
