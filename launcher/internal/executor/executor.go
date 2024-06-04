@@ -12,7 +12,7 @@ func ElevateCustomExecutable(executable string, arg ...string) bool {
 	return ShellExecuteAndWait("runas", executable, arg...)
 }
 
-func ShellExecute(verb string, file string, executableWorkingPath bool, showWindow int, arg ...string) bool {
+func ShellExecute(verb string, file string, executableWorkingPath bool, showWindow int, arg ...string) error {
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
 	exe, _ := windows.UTF16PtrFromString(file)
 	args, _ := windows.UTF16PtrFromString(strings.Join(arg, " "))
@@ -26,7 +26,7 @@ func ShellExecute(verb string, file string, executableWorkingPath bool, showWind
 	show := showWindow
 
 	err := windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, int32(show))
-	return err == nil
+	return err
 }
 
 func StartCustomExecutable(executable string, executableWorkingPath bool, arg ...string) (error, *exec.Cmd) {

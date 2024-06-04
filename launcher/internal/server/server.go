@@ -31,7 +31,7 @@ func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
 		_, cmd = executor.StartCustomExecutable(executablePath, true)
 		ok = cmd != nil
 	} else {
-		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE)
+		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE) == nil
 	}
 	if ok {
 		// Wait up to 30s for server to start

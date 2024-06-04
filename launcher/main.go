@@ -18,7 +18,7 @@ func main() {
 	c := internal.ReadConfig()
 	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
-		log.Println("Running as administrator, this is not recommended. It will request elevated privileges if/when it needs.")
+		log.Println("Running as administrator, this is not recommended for security reasons. It will request elevated privileges if/when it needs.")
 	}
 	// Setup
 	log.Println("Setting up...")

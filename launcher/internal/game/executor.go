@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -32,11 +33,11 @@ func isInstalledOnMicrosoftStore() bool {
 }
 
 func RunOnMicrosoftStore() bool {
-	return internalExecutor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, false, windows.SW_HIDE)
+	return internalExecutor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, false, windows.SW_HIDE) == nil
 }
 
 func RunOnSteam() bool {
-	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID, false, windows.SW_HIDE)
+	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID, false, windows.SW_HIDE) == nil
 }
 
 func RunGame(executable string) bool {
@@ -57,6 +58,10 @@ func RunGame(executable string) bool {
 		default:
 			log.Println(fmt.Sprintf("AoE2:DE launching custom launcher «%s»", executable))
 			err, _ := internalExecutor.StartCustomExecutable(executable, true)
+			if errors.Is(err, windows.ERROR_ELEVATION_REQUIRED) {
+				log.Println("AoE2:DE Elevation required, retrying with admin privileges...")
+				err = internalExecutor.ShellExecute("runas", executable, true, windows.SW_NORMAL)
+			}
 			if err != nil {
 				log.Println("Failed to start custom launcher: " + err.Error())
 				return false
