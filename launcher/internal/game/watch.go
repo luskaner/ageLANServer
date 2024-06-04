@@ -26,7 +26,7 @@ type PROCESSENTRY32 struct {
 
 var processes = []string{"AoE2DE.exe", "AoE2DE_s.exe"}
 
-func processesExists() bool {
+func ProcessesExists() bool {
 	kernel32 := syscall.MustLoadDLL("kernel32.dll")
 	procProcess32First := kernel32.MustFindProc("Process32FirstW")
 	procProcess32Next := kernel32.MustFindProc("Process32NextW")
@@ -66,7 +66,7 @@ func processesExists() bool {
 
 func WaitUntilProcessesEnd(sleep time.Duration) {
 	for {
-		if !processesExists() {
+		if !ProcessesExists() {
 			break
 		}
 		time.Sleep(sleep)
@@ -75,7 +75,7 @@ func WaitUntilProcessesEnd(sleep time.Duration) {
 
 func WaitUntilProcessesStart(sleep time.Duration, maxTimes int) bool {
 	for i := 0; i < maxTimes; i++ {
-		if processesExists() {
+		if ProcessesExists() {
 			return true
 		}
 		time.Sleep(sleep)

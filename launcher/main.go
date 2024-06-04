@@ -24,6 +24,7 @@ var serverProcess *exec.Cmd = nil
 
 func cleanup() {
 	log.Println("Cleaning up...")
+	isAdmin := sharedExecutor.IsAdmin()
 	if config.IsolateProfiles {
 		if !userData.RestoreProfiles() {
 			log.Println("Failed to restore profiles.")
@@ -37,12 +38,22 @@ func cleanup() {
 	}
 
 	if removeCertificate {
+		if isAdmin {
+			log.Println("Removing server certificate from store.")
+		} else {
+			log.Println("Removing server certificate from store, accept any dialog if it appears...")
+		}
 		if !server.UntrustCertificate() {
 			log.Println("Failed to untrust certificate from " + common.Domain + ".")
 		}
 	}
 
 	if removeHost {
+		if isAdmin {
+			log.Println("Removing host from hosts file.")
+		} else {
+			log.Println("Removing host from hosts file, accept any dialog if it appears...")
+		}
 		if !executor.RemoveHost(sharedExecutor.IsAdmin()) {
 			log.Println("Failed to remove host.")
 		}
@@ -74,6 +85,10 @@ func main() {
 	defer func() {
 		cleanup()
 	}()
+	if game.ProcessesExists() {
+		log.Println("Game is already running.")
+		return
+	}
 	c := internal.ReadConfig()
 	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
@@ -111,25 +126,31 @@ func main() {
 	if c.Server.Start == "false" {
 		if c.Server.Stop == "true" {
 			log.Println("Server.Start is false. Ignoring Server.Stop being true.")
+			return
 		}
 		if c.Server.Host == "" {
-			log.Fatal("Server.Start is false. Server.Host must not be empty as we need to know which host to connect to.")
+			log.Println("Server.Start is false. Server.Host must not be empty as we need to know which host to connect to.")
+			return
 		}
 		if !server.CheckConnectionFromServer(c.Server.Host, true) {
-			log.Fatal("Server.Start is false. " + c.Server.Host + " must be reachable. Review the host is correct, the server is started and the network configuration is correct.")
+			log.Println("Server.Start is false. " + c.Server.Host + " must be reachable. Review the host is correct, the server is started and the network configuration is correct.")
+			return
 		}
 	} else {
 		serverExecutablePath := server.GetExecutablePath(c.Server)
 		if !common.HasCertificatePair(serverExecutablePath) {
 			if !c.CanTrustCertificate {
-				log.Fatal("Server.Start is true and CanTrustCertificate is false. Certificate pair is missing. Generate your own certificates manually.")
+				log.Println("Server.Start is true and CanTrustCertificate is false. Certificate pair is missing. Generate your own certificates manually.")
+				return
 			}
 			certificateFolder := common.CertificatePairFolder(serverExecutablePath)
 			if certificateFolder == "" {
-				log.Fatal("Cannot find certificate folder of Server. Make sure the folder structure of the server is correct.")
+				log.Println("Cannot find certificate folder of Server. Make sure the folder structure of the server is correct.")
+				return
 			}
 			if !server.GenerateCertificatePair(certificateFolder) {
-				log.Fatal("Failed to generate certificate pair.")
+				log.Println("Failed to generate certificate pair.")
+				return
 			}
 		}
 		log.Println("Starting server...")
@@ -148,18 +169,29 @@ func main() {
 			return
 		} else {
 			removeHost = true
+			if isAdmin {
+				log.Println("Adding host to hosts file.")
+			} else {
+				log.Println("Adding host to hosts file, accept any dialog if it appears...")
+			}
 			if !executor.AddHost(isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				return
 			}
 		}
 	} else if !server.CheckConnectionFromServer(common.Domain, true) {
-		log.Fatal("Server.Start is false and host matches. " + common.Domain + " must be reachable. Review the host is reachable via this domain.")
+		log.Println("Server.Start is false and host matches. " + common.Domain + " must be reachable. Review the host is reachable via this domain.")
+		return
 	}
 
 	if !server.CheckConnectionFromServer(common.Domain, false) {
 		if c.CanTrustCertificate {
 			removeCertificate = true
+			if isAdmin {
+				log.Println("Adding server certificate to store.")
+			} else {
+				log.Println("Adding server certificate to store, accept any dialog if it appears...")
+			}
 			if !server.TrustCertificateFromServer(common.Domain) {
 				log.Println("Failed to trust certificate from " + common.Domain + ".")
 				return
