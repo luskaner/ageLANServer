@@ -25,7 +25,7 @@ jobs:
             server/go.sum
             launcher/go.sum
             launcher/shared/go.sum
-            launcher/hostsEditor/go.sum
+            launcher/admin/go.sum
 
       - name: Import GPG key
         id: import_gpg

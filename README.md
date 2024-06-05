@@ -112,6 +112,31 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 *Note: See the [launcher README](launcher/README.md) for more details.*
 
+## Simplest way to use it
+
+1. **Download the asset `aoe2DELanServer_X_win_x86-64.zip`** from the latest
+   release https://github.com/luskaner/aoe2DELanServer/releases
+2. **Uncompress** it somewhere (it's fully portable and with no dependencies).
+3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/config/config.ini) file
+   **
+   and modify
+   the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher.exe` (no quotes needed).
+   You will need to use a custom launcher for 100% offline play.
+4. **Execute `launcher/launcher.exe`**: you will be asked for admin elevation and confirmation of other dialogs as
+   needed, you
+   will also need to allow the connections via the Microsoft Defender Firewall or any other.
+5. **Repeat the above steps for every PC** you want to play in LAN with by running the `launcher.exe`, the first PC to
+   launch
+   it will host the "server" and the rest will auto-discover and connect to it.
+6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server**. Setting it to
+   public
+   visibility is recommended.
+7. **Invite friends** by searching them by name and sending an invite as needed. They can also search in the lobby
+   browser
+   by
+   the lobby ID or just connect to it directly if public (sharing the link to join the lobby automatically probably does
+   not work).
+
 ## Local development
 
 ### System requirements

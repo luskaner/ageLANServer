@@ -40,14 +40,14 @@ builds:
     binary: launcher/launcher
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: launcher.hostsEditor
-    main: ./launcher/hostsEditor
-    binary: launcher/launcher.hostsEditor
+  - id: launcher.admin
+    main: ./launcher/admin
+    binary: launcher/launcher.admin
     goos: [ windows ]
     goarch: [ amd64 ]
 archives:
   - id: all
-    builds: [ serverWindows, genCertWindows, launcher, launcher.hostsEditor ]
+    builds: [ serverWindows, genCertWindows, launcher, launcher.admin ]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
@@ -95,7 +95,7 @@ archives:
       - goos: windows
         format: zip
   - id: launcher
-    builds: [ launcher, launcher.hostsEditor ]
+    builds: [ launcher, launcher.admin ]
     files:
       - src: launcher/config
         dst: config

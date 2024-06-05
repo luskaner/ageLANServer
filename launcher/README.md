@@ -1,13 +1,17 @@
-# Launcher 
+# Launcher
 
-The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the system and reverting that configuration upon exit.
+The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
+system and reverting that configuration upon exit.
 
-**You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to Steam or Xbox Live depending on the version to fully play offline.**
+**You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
+Steam or Xbox Live depending on the version to fully play offline.**
 
 ## System Requirements
 
 - Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-- If you allow it to handle the hosts file, it will require rights elevation.
+- Admin rights if:
+    - You allow it to handle the hosts file.
+    - If the game launcher requires it.
 
 ## Features
 
@@ -29,4 +33,5 @@ All possible client modifications are reverted upon the launcher's exit.
 
 ## Configuration
 
-The configuration options are available in the [`config.ini`](config/config.ini) file. The file contains comments that should help you understand the options.
+The configuration options are available in the [`config.ini`](config/config.ini) file. The file contains comments that
+should help you understand the options.

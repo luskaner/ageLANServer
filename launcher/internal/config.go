@@ -15,7 +15,7 @@ type ClientConfig struct {
 
 type Config struct {
 	CanAddHost          bool
-	CanTrustCertificate bool
+	CanTrustCertificate string
 	IsolateMetadata     bool
 	IsolateProfiles     bool
 	Server              ServerConfig

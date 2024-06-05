@@ -15,7 +15,7 @@ tasks:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/config -ErrorAction Ignore
       - powershell Copy-Item -Path launcher/config/config.ini -Destination build/launcher/config/config.ini -ErrorAction Ignore -Force
-      - go build -o build/launcher/launcher.hostsEditor.exe ./launcher/hostsEditor
+      - go build -o build/launcher/launcher.admin.exe ./launcher/admin
   prepare-server-genCert:
     cmds:
       - powershell New-Item -ItemType Directory -ErrorAction Ignore -Force -Path build/server/resources

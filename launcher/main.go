@@ -19,19 +19,19 @@ import (
 
 var removeHost = false
 var removeCertificate = false
-var config internal.Config
+var c internal.Config
 var serverProcess *exec.Cmd = nil
 
 func cleanup() {
 	log.Println("Cleaning up...")
 	isAdmin := sharedExecutor.IsAdmin()
-	if config.IsolateProfiles {
+	if c.IsolateProfiles {
 		if !userData.RestoreProfiles() {
 			log.Println("Failed to restore profiles.")
 		}
 	}
 
-	if config.IsolateMetadata {
+	if c.IsolateMetadata {
 		if !userData.Metadata.Restore() {
 			log.Println("Failed to restore metadata.")
 		}
@@ -43,7 +43,7 @@ func cleanup() {
 		} else {
 			log.Println("Removing server certificate from store, accept any dialog if it appears...")
 		}
-		if !server.UntrustCertificate() {
+		if !executor.RemoveCertificateInternal(c.CanTrustCertificate == "local" && !isAdmin) {
 			log.Println("Failed to untrust certificate from " + common.Domain + ".")
 		}
 	}
@@ -54,7 +54,7 @@ func cleanup() {
 		} else {
 			log.Println("Removing host from hosts file, accept any dialog if it appears...")
 		}
-		if !executor.RemoveHost(sharedExecutor.IsAdmin()) {
+		if !executor.RemoveHost(!isAdmin) {
 			log.Println("Failed to remove host.")
 		}
 	}
@@ -86,10 +86,10 @@ func main() {
 		cleanup()
 	}()
 	if game.ProcessesExists() {
-		log.Println("Game is already running.")
+		log.Println("Game is already running, exiting...")
 		return
 	}
-	c := internal.ReadConfig()
+	c = internal.ReadConfig()
 	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
 		log.Println("Running as administrator, this is not recommended for security reasons. It will request elevated privileges if/when it needs.")
@@ -139,7 +139,7 @@ func main() {
 	} else {
 		serverExecutablePath := server.GetExecutablePath(c.Server)
 		if !common.HasCertificatePair(serverExecutablePath) {
-			if !c.CanTrustCertificate {
+			if c.CanTrustCertificate == "false" {
 				log.Println("Server.Start is true and CanTrustCertificate is false. Certificate pair is missing. Generate your own certificates manually.")
 				return
 			}
@@ -174,7 +174,7 @@ func main() {
 			} else {
 				log.Println("Adding host to hosts file, accept any dialog if it appears...")
 			}
-			if !executor.AddHost(isAdmin, ipOfHost) {
+			if !executor.AddHost(!isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				return
 			}
@@ -185,14 +185,18 @@ func main() {
 	}
 
 	if !server.CheckConnectionFromServer(common.Domain, false) {
-		if c.CanTrustCertificate {
+		if c.CanTrustCertificate != "false" {
 			removeCertificate = true
 			if isAdmin {
 				log.Println("Adding server certificate to store.")
 			} else {
 				log.Println("Adding server certificate to store, accept any dialog if it appears...")
 			}
-			if !server.TrustCertificateFromServer(common.Domain) {
+			cert := server.ReadCertificateFromServer(common.Domain)
+			if cert == nil {
+				log.Println("Failed to read certificate from " + common.Domain + ".")
+				return
+			} else if !executor.AddCertificateInternal(c.CanTrustCertificate == "local" && !isAdmin, cert) {
 				log.Println("Failed to trust certificate from " + common.Domain + ".")
 				return
 			} else if !server.CheckConnectionFromServer(common.Domain, false) {
@@ -227,7 +231,7 @@ func main() {
 
 	// Launch game
 	log.Println("AoE2:DE looking for it and starting it...")
-	if !game.RunGame(c.Client.Executable) {
+	if !game.RunGame(c.Client.Executable, c.CanTrustCertificate == "user") {
 		log.Println("AoE2:DE failed to start.")
 		return
 	}

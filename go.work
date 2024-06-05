@@ -3,7 +3,7 @@ go 1.22
 use (
 	common
 	launcher
-	launcher/hostsEditor
+	./launcher/admin
 	launcher/shared
 	server
 	server/genCert

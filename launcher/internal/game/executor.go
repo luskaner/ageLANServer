@@ -40,7 +40,7 @@ func RunOnSteam() bool {
 	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID, false, windows.SW_HIDE) == nil
 }
 
-func RunGame(executable string) bool {
+func RunGame(executable string, userOnlyCertificate bool) bool {
 	if executable != "auto" {
 		switch executable {
 		case "steam":
@@ -59,7 +59,10 @@ func RunGame(executable string) bool {
 			log.Println(fmt.Sprintf("AoE2:DE launching custom launcher «%s»", executable))
 			err, _ := internalExecutor.StartCustomExecutable(executable, true)
 			if errors.Is(err, windows.ERROR_ELEVATION_REQUIRED) {
-				log.Println("AoE2:DE Elevation required, retrying with admin privileges...")
+				log.Println("AoE2:DE Elevation required, retrying with admin privileges, accept any dialog if it appears...")
+				if userOnlyCertificate {
+					log.Println("Using a local user certificate. If it fails to connect to the server, try setting the config setting 'CanTrustCertificate' to 'local'.")
+				}
 				err = internalExecutor.ShellExecute("runas", executable, true, windows.SW_NORMAL)
 			}
 			if err != nil {
@@ -70,9 +73,11 @@ func RunGame(executable string) bool {
 		}
 	}
 	if isInstalledOnSteam() {
+		log.Println("AoE2:DE found on Steam, launching...")
 		return RunOnSteam()
 	}
 	if isInstalledOnMicrosoftStore() {
+		log.Println("AoE2:DE found on Microsoft Store, launching...")
 		return RunOnMicrosoftStore()
 	}
 	return false
