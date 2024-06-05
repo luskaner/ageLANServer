@@ -117,8 +117,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 1. **Download the asset `aoe2DELanServer_X_win_x86-64.zip`** from the latest
    release https://github.com/luskaner/aoe2DELanServer/releases
 2. **Uncompress** it somewhere (it's fully portable and with no dependencies).
-3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/config/config.ini) file
-   **
+3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/config/config.ini) file**
    and modify
    the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher.exe` (no quotes needed).
    You will need to use a custom launcher for 100% offline play.
