@@ -2,6 +2,7 @@ package main
 
 import (
 	"common"
+	"fmt"
 	"launcher/internal"
 	"launcher/internal/executor"
 	"launcher/internal/game"
@@ -27,13 +28,13 @@ func cleanup() {
 	isAdmin := sharedExecutor.IsAdmin()
 	if c.IsolateProfiles {
 		if !userData.RestoreProfiles() {
-			log.Println("Failed to restore profiles.")
+			log.Println(`Failed to restore profiles. Some or all folders (numeric) might need to be switched around manually "*.bak" <-> "*"`)
 		}
 	}
 
 	if c.IsolateMetadata {
 		if !userData.Metadata.Restore() {
-			log.Println("Failed to restore metadata.")
+			log.Println(`Failed to restore metadata. Switch the folder names around manually "%USERPROFILE%\Games\Age of Empires 2 DE\metadata" <-> "%USERPROFILE%\Games\Age of Empires 2 DE\metadata.bak"`)
 		}
 	}
 
@@ -44,7 +45,13 @@ func cleanup() {
 			log.Println("Removing server certificate from store, accept any dialog if it appears...")
 		}
 		if !executor.RemoveCertificateInternal(c.CanTrustCertificate == "local" && !isAdmin) {
-			log.Println("Failed to untrust certificate from " + common.Domain + ".")
+			var manager string
+			if c.CanTrustCertificate == "local" {
+				manager = "certmgr.msc"
+			} else {
+				manager = "certlm.msc"
+			}
+			log.Println(fmt.Sprintf(`Failed to untrust certificate from store. Remove manually by opening "%s" and deleting the certificate named "%s" from the "Trusted Root Certification Authorities" folder.`, manager, common.Domain))
 		}
 	}
 
@@ -55,14 +62,14 @@ func cleanup() {
 			log.Println("Removing host from hosts file, accept any dialog if it appears...")
 		}
 		if !executor.RemoveHost(!isAdmin) {
-			log.Println("Failed to remove host.")
+			log.Println(fmt.Sprintf(`Failed to remove host. Remove manually by opening "%%WINDIR%%\System32\drivers\etc\hosts" file in a text editor with admin rights and deleting the line with "%s"`, common.Domain))
 		}
 	}
 
 	if serverProcess != nil {
 		log.Println("Stopping server...")
 		if !server.StopServer(serverProcess) {
-			log.Println("Failed to stop server.")
+			log.Println(fmt.Sprintf(`Failed to stop server. Kill the process "server.exe" (PID: %d) with Task Manager if needed.`, serverProcess.Process.Pid))
 		}
 	}
 }

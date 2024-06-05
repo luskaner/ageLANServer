@@ -45,13 +45,13 @@ func RunGame(executable string, userOnlyCertificate bool) bool {
 		switch executable {
 		case "steam":
 			if isInstalledOnSteam() {
-				log.Println("AoE2:DE found on Steam, launching...")
+				log.Println("AoE2:DE installed on Steam, launching...")
 				return RunOnSteam()
 			}
 			return false
 		case "msstore":
 			if isInstalledOnMicrosoftStore() {
-				log.Println("AoE2:DE found on Microsoft Store, launching...")
+				log.Println("AoE2:DE installed on Microsoft Store, launching...")
 				return RunOnMicrosoftStore()
 			}
 			return false
@@ -73,11 +73,11 @@ func RunGame(executable string, userOnlyCertificate bool) bool {
 		}
 	}
 	if isInstalledOnSteam() {
-		log.Println("AoE2:DE found on Steam, launching...")
+		log.Println("AoE2:DE installed on Steam, launching...")
 		return RunOnSteam()
 	}
 	if isInstalledOnMicrosoftStore() {
-		log.Println("AoE2:DE found on Microsoft Store, launching...")
+		log.Println("AoE2:DE installed on Microsoft Store, launching...")
 		return RunOnMicrosoftStore()
 	}
 	return false
