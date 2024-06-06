@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"shared"
 	"shared/executor"
 )
 
@@ -43,4 +44,32 @@ func AddCertificate(elevate bool, cert x509.Certificate) bool {
 
 func RemoveCertificate(elevate bool) bool {
 	return run(elevate, "removeCert", nil)
+}
+
+func AddCertificateInternal(elevate bool, cert *x509.Certificate) bool {
+	if elevate {
+		return AddCertificate(elevate, *cert)
+	}
+	return shared.TrustCertificate(cert)
+}
+
+func RemoveCertificateInternal(elevate bool) bool {
+	if elevate {
+		return RemoveCertificate(elevate)
+	}
+	return shared.UntrustCertificate()
+}
+
+func AddHostInternal(elevate bool, ip string) bool {
+	if elevate {
+		return AddHost(elevate, ip)
+	}
+	return shared.AddHost(ip)
+}
+
+func RemoveHostInternal(elevate bool) bool {
+	if elevate {
+		return RemoveHost(elevate)
+	}
+	return shared.RemoveHost()
 }

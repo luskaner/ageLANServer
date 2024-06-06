@@ -61,7 +61,7 @@ func cleanup() {
 		} else {
 			log.Println("Removing host from hosts file, accept any dialog if it appears...")
 		}
-		if !executor.RemoveHost(!isAdmin) {
+		if !executor.RemoveHostInternal(!isAdmin) {
 			log.Println(fmt.Sprintf(`Failed to remove host. Remove manually by opening "%%WINDIR%%\System32\drivers\etc\hosts" file in a text editor with admin rights and deleting the line with "%s"`, common.Domain))
 		}
 	}
@@ -181,7 +181,7 @@ func main() {
 			} else {
 				log.Println("Adding host to hosts file, accept any dialog if it appears...")
 			}
-			if !executor.AddHost(!isAdmin, ipOfHost) {
+			if !executor.AddHostInternal(!isAdmin, ipOfHost) {
 				log.Println("Failed to add host.")
 				return
 			}

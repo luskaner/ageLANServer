@@ -72,12 +72,12 @@ func main() {
 			log.Fatal("Invalid IP address")
 		} else {
 			log.Println("Adding host")
-			ok = internal.AddHost(subArguments["ip"].(string))
+			ok = shared.AddHost(subArguments["ip"].(string))
 		}
 	case "removeHost":
 		subject = "host"
 		log.Println("Removing host")
-		ok = internal.RemoveHost()
+		ok = shared.RemoveHost()
 	case "addCert":
 		subject = "certificate"
 		subArguments := parseSubarguments(args.Subarguments)

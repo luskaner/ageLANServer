@@ -1,10 +1,9 @@
-package internal
+package shared
 
 import (
 	"bufio"
 	"common"
 	"os"
-	"shared"
 	"shared/executor"
 	"strings"
 )
@@ -13,10 +12,10 @@ func AddHost(ip string) bool {
 	if ip == "0.0.0.0" {
 		ip = "127.0.0.1"
 	}
-	if shared.MappingExists(ip, common.Domain) {
+	if MappingExists(ip, common.Domain) {
 		return true
 	}
-	p := shared.HostsFile()
+	p := HostsFile()
 	f, err := os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return false
@@ -35,10 +34,10 @@ func flushDns() bool {
 }
 
 func RemoveHost() bool {
-	if !shared.HostExists(common.Domain) {
+	if !HostExists(common.Domain) {
 		return true
 	}
-	f, err := os.OpenFile(shared.HostsFile(), os.O_RDWR, 0644)
+	f, err := os.OpenFile(HostsFile(), os.O_RDWR, 0644)
 	if err != nil {
 		return false
 	}
@@ -52,7 +51,7 @@ func RemoveHost() bool {
 	var line string
 
 	for scanner := bufio.NewScanner(f); scanner.Scan(); line = scanner.Text() {
-		lineHost := shared.Host(line)
+		lineHost := Host(line)
 		if lineHost == common.Domain {
 			continue
 		}
