@@ -17,7 +17,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Rematch.
 - Restore game.
 - Data mods.
-- Invite player to lobby (including via link).
+- Invite player to lobby (including via link but only if game is already running).
 - Player Search.
 - Chatting (both in the lobby and in-game).
 - Crossplay (cross-platform) Steam & Xbox (PC-only).
