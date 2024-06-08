@@ -28,6 +28,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.
+- Cleanup (run `launcher.admin.exe` directly as admin)
 
 All possible client modifications are reverted upon the launcher's exit.
 

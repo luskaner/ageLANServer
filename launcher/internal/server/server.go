@@ -3,13 +3,16 @@ package server
 import (
 	"crypto/tls"
 	"errors"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/sys/windows"
 	"launcher/internal"
 	"launcher/internal/executor"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/exec"
+	"shared"
 	"time"
 )
 
@@ -36,8 +39,10 @@ func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
 	if ok {
 		// Wait up to 30s for server to start
 		for i := 0; i < 30; i++ {
-			if LanServer(config.Host, true) {
-				return true, cmd
+			for ip := range shared.HostOrIpToIps(config.Host).Iter() {
+				if LanServer(ip, true) {
+					return true, cmd
+				}
 			}
 			time.Sleep(time.Second)
 		}
@@ -97,10 +102,10 @@ func LanServer(host string, insecureSkipVerify bool) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func WaitForLanServerAnnounce() *net.UDPAddr {
+func LanServersAnnounced() mapset.Set[string] {
 	addr := net.UDPAddr{
 		Port: 59999,
-		IP:   net.ParseIP("0.0.0.0"),
+		IP:   netip.IPv4Unspecified().AsSlice(),
 	}
 
 	conn, err := net.ListenUDP("udp", &addr)
@@ -116,15 +121,15 @@ func WaitForLanServerAnnounce() *net.UDPAddr {
 		return nil
 	}
 
+	addresses := mapset.NewSet[string]()
 	buf := make([]byte, 1)
 	for {
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			return nil
+			break
 		} else if n == 1 && buf[0] == 43 {
-			return addr
-		} else {
-			return nil
+			addresses.Add(addr.IP.String())
 		}
 	}
+	return addresses
 }

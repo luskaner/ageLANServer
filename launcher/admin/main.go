@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"flag"
+	mapset "github.com/deckarep/golang-set/v2"
 	"log"
 	"net"
 	"shared"
 	"shared/executor"
 )
 
-var actions = []string{"addHost", "removeHost", "addCert", "removeCert"}
+var actions = []string{"cleanup", "addHosts", "removeHosts", "addCert", "removeCert"}
 
 type Arguments struct {
 	Action       string
@@ -40,12 +41,9 @@ func main() {
 	if !executor.IsAdmin() {
 		log.Fatal("This program must be run as administrator")
 	}
-	if !internal.ParentMatches("./launcher.exe") {
-		log.Println("This program should only be executed by the launcher for admin tasks.")
-	}
 	args := Arguments{}
-	flag.StringVar(&args.Action, "action", "", "Action to perform (addHost, removeHost, addCert, removeCert).")
-	flag.StringVar(&args.Subarguments, "subArguments", "", "Subarguments for the action. ip for addHost, certData for addCert.")
+	flag.StringVar(&args.Action, "action", "cleanup", "Action to perform (cleanup, addHosts, removeHosts, addCert, removeCert).")
+	flag.StringVar(&args.Subarguments, "subArguments", "{}", "Subarguments for the action. ips for addHosts, certData for addCert.")
 	flag.Parse()
 
 	foundAction := false
@@ -63,42 +61,58 @@ func main() {
 	var ok bool
 	var subject string
 	switch args.Action {
-	case "addHost":
-		subject = "host"
+	case "addHosts":
+		subject = "hosts"
 		subArguments := parseSubarguments(args.Subarguments)
-		if subArguments["ip"] == nil {
-			log.Fatal("Missing ip in subarguments")
-		} else if net.ParseIP(subArguments["ip"].(string)) == nil {
-			log.Fatal("Invalid IP address")
+		if subArguments["ips"] == nil {
+			log.Fatal("Missing ips in subarguments")
 		} else {
-			log.Println("Adding host")
-			ok = shared.AddHost(subArguments["ip"].(string))
+			ipsSlice := subArguments["ips"].([]interface{})
+			ipsMap := mapset.NewSet[string]()
+			for _, ip := range ipsSlice {
+				ipStr := ip.(string)
+				if net.ParseIP(ipStr) == nil {
+					log.Fatal("Invalid IP address")
+				}
+				ipsMap.Add(ipStr)
+			}
+			log.Println("Adding hosts")
+			ok = shared.AddHosts(ipsMap)
 		}
-	case "removeHost":
-		subject = "host"
-		log.Println("Removing host")
-		ok = shared.RemoveHost()
+	case "removeHosts":
+		subject = "hosts"
+		log.Println("Removing hosts")
+		ok = shared.RemoveHosts()
 	case "addCert":
 		subject = "certificate"
 		subArguments := parseSubarguments(args.Subarguments)
 		if subArguments["certData"] == nil {
 			log.Fatal("Missing certData in subarguments")
 		}
-		log.Println("Adding certificate")
+		log.Println("Adding local certificate")
 		cert := internal.Base64ToCertificate(subArguments["certData"].(string))
 		if cert == nil {
 			log.Fatal("Failed to parse certificate data")
 		}
-		ok = shared.TrustCertificate(cert)
+		ok = shared.TrustCertificate(false, cert)
 	case "removeCert":
 		subject = "certificate"
-		log.Println("Removing certificate")
-		ok = shared.UntrustCertificate()
+		log.Println("Removing local certificate")
+		ok = shared.UntrustCertificate(false)
+	case "cleanup":
+		subject = "hosts and certificate"
+		log.Println("Cleaning up")
+		log.Println("Removing user certificate")
+		ok = shared.UntrustCertificate(true)
+		log.Println("Removing local certificate")
+		ok = ok || shared.UntrustCertificate(false)
+		log.Println("Removing hosts")
+		ok = ok || shared.RemoveHosts()
 	}
 
 	if !ok {
-		log.Println("Failed to update ", subject)
+		log.Println("Failed to update", subject)
 	} else {
-		log.Println("Updated ", subject)
+		log.Println("Updated", subject)
 	}
 }

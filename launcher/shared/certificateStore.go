@@ -4,19 +4,18 @@ import (
 	"common"
 	"crypto/x509"
 	"golang.org/x/sys/windows"
-	"shared/executor"
 	"unsafe"
 )
 
-func openStore() (windows.Handle, error) {
+func openStore(userStore bool) (windows.Handle, error) {
 	rootStr := windows.StringToUTF16Ptr("ROOT")
-	if executor.IsAdmin() {
-		return windows.CertOpenStore(windows.CERT_STORE_PROV_SYSTEM, 0, 0, windows.CERT_SYSTEM_STORE_LOCAL_MACHINE, uintptr(unsafe.Pointer(rootStr)))
+	if userStore {
+		return windows.CertOpenSystemStore(0, rootStr)
 	}
-	return windows.CertOpenSystemStore(0, rootStr)
+	return windows.CertOpenStore(windows.CERT_STORE_PROV_SYSTEM, 0, 0, windows.CERT_SYSTEM_STORE_LOCAL_MACHINE, uintptr(unsafe.Pointer(rootStr)))
 }
 
-func TrustCertificate(cert *x509.Certificate) bool {
+func TrustCertificate(userStore bool, cert *x509.Certificate) bool {
 	certBytes := cert.Raw
 	certContext, err := windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
 	if err != nil {
@@ -27,7 +26,7 @@ func TrustCertificate(cert *x509.Certificate) bool {
 		_ = windows.CertFreeCertificateContext(ctx)
 	}(certContext)
 
-	store, err := openStore()
+	store, err := openStore(userStore)
 
 	if err != nil {
 		return false
@@ -41,8 +40,8 @@ func TrustCertificate(cert *x509.Certificate) bool {
 	return err == nil
 }
 
-func UntrustCertificate() bool {
-	store, err := openStore()
+func UntrustCertificate(userStore bool) bool {
+	store, err := openStore(userStore)
 	if err != nil {
 		return false
 	}

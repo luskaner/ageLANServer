@@ -14,6 +14,8 @@ import (
 	"os/signal"
 	"shared"
 	sharedExecutor "shared/executor"
+	"sort"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -34,7 +36,7 @@ func cleanup() {
 
 	if c.IsolateMetadata {
 		if !userData.Metadata.Restore() {
-			log.Println(`Failed to restore metadata. Switch the folder names around manually "%USERPROFILE%\Games\Age of Empires 2 DE\metadata" <-> "%USERPROFILE%\Games\Age of Empires 2 DE\metadata.bak"`)
+			log.Println(`Failed to restore metadata. Switch the folder names around manually "%USERPROFILE%\Games\Age of Empires 2 DE\metadata" <-> "%USERPROFILE%\Games\Age of Empires 2 DE\metadata.bak" if needed`)
 		}
 	}
 
@@ -47,11 +49,11 @@ func cleanup() {
 		if !executor.RemoveCertificateInternal(c.CanTrustCertificate == "local" && !isAdmin) {
 			var manager string
 			if c.CanTrustCertificate == "local" {
-				manager = "certmgr.msc"
-			} else {
 				manager = "certlm.msc"
+			} else {
+				manager = "certmgr.msc"
 			}
-			log.Println(fmt.Sprintf(`Failed to untrust certificate from store. Remove manually by opening "%s" and deleting the certificate named "%s" from the "Trusted Root Certification Authorities" folder.`, manager, common.Domain))
+			log.Println(fmt.Sprintf(`Failed to untrust certificate from store. Remove manually by opening "%s" and deleting the certificate named "%s" from the "Trusted Root Certification Authorities" folder if needed.`, manager, common.Domain))
 		}
 	}
 
@@ -61,8 +63,8 @@ func cleanup() {
 		} else {
 			log.Println("Removing host from hosts file, accept any dialog if it appears...")
 		}
-		if !executor.RemoveHostInternal(!isAdmin) {
-			log.Println(fmt.Sprintf(`Failed to remove host. Remove manually by opening "%%WINDIR%%\System32\drivers\etc\hosts" file in a text editor with admin rights and deleting the line with "%s"`, common.Domain))
+		if !executor.RemoveHostsInternal(!isAdmin) {
+			log.Println(fmt.Sprintf(`Failed to remove host. Remove manually by opening "%%WINDIR%%\System32\drivers\etc\hosts" file in a text editor with admin rights and deleting the line with "%s" if needed`, common.Domain))
 		}
 	}
 
@@ -99,37 +101,73 @@ func main() {
 	c = internal.ReadConfig()
 	isAdmin := sharedExecutor.IsAdmin()
 	if isAdmin {
-		log.Println("Running as administrator, this is not recommended for security reasons. It will request elevated privileges if/when it needs.")
+		log.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when it needs.")
 	}
 	// Setup
 	log.Println("Setting up...")
 	if c.Server.Start == "auto" {
-		log.Println("Waiting for up to 15 seconds for any server announcement already running on LAN...")
-		serverAdd := server.WaitForLanServerAnnounce()
-		hostServer := false
-		if serverAdd != nil {
-			ip := serverAdd.IP.String()
-			log.Println("Server " + ip + " already running on LAN")
-			if !server.CheckConnectionFromServer(ip, true) {
-				log.Println("Server " + ip + " is not reachable. Hosting own server instead")
+		log.Println("Waiting 15 seconds for server announcements on LAN...")
+		servers := server.LanServersAnnounced()
+		joinServer := false
+		if servers != nil && !servers.IsEmpty() {
+			serverTags := make([]string, servers.Cardinality())
+			serversStr := servers.ToSlice()
+			for i, ip := range serversStr {
+				hosts := shared.IpToHosts(ip)
+				hostsStr := ""
+				if !hosts.IsEmpty() {
+					hostsSlice := hosts.ToSlice()
+					sort.Strings(hostsSlice)
+					hostsStr = strings.Join(hostsSlice, ", ")
+				}
+				serverTags[i] = fmt.Sprintf("%s (%s)", ip, hostsStr)
+			}
+			if servers.Cardinality() == 1 {
+				log.Printf("Found a single server \"%s\", will connect to it...\n", serverTags[0])
+				c.Server.Host = serversStr[0]
+				joinServer = true
 			} else {
-				c.Server.Host = ip
-				hostServer = true
+				var option int
+				for {
+					log.Println("Found the following servers:")
+					for i := range serversStr {
+						log.Printf("%d. %s\n", i+1, serverTags[i])
+					}
+					log.Printf("%d. Host server\n", len(serversStr)+1)
+					log.Printf("Enter the number of the server (1-%d): ", len(serversStr)+1)
+					_, err := fmt.Scan(&option)
+					if err != nil || option < 1 || option > len(serversStr)+1 {
+						log.Println("Invalid (or error reading) option. Please enter a number from the list.")
+						continue
+					}
+					if option == len(serversStr)+1 {
+						break
+					}
+					ip := serversStr[option-1]
+					if !server.CheckConnectionFromServer(ip, true) {
+						tag := serverTags[option-1]
+						log.Println(fmt.Sprintf("Server %s is not reachable. Please enter another number from the list", tag))
+					} else {
+						c.Server.Host = ip
+						joinServer = true
+						break
+					}
+				}
 			}
 		}
-		if hostServer {
+		if joinServer {
 			c.Server.Start = "false"
 			if c.Server.Stop == "auto" {
 				c.Server.Stop = "false"
 			}
 		} else {
+			c.Server.Host = "127.0.0.1"
 			c.Server.Start = "true"
 			if c.Server.Stop == "auto" {
 				c.Server.Stop = "true"
 			}
 		}
 	}
-	var ipOfHost string
 	if c.Server.Start == "false" {
 		if c.Server.Stop == "true" {
 			log.Println("Server.Start is false. Ignoring Server.Stop being true.")
@@ -169,8 +207,7 @@ func main() {
 		}
 	}
 
-	ipOfHost = shared.ResolveHost(c.Server.Host)
-	if !shared.Matches(ipOfHost, common.Domain) {
+	if !shared.Matches(c.Server.Host, common.Domain) {
 		if !c.CanAddHost {
 			log.Println("Server.Start is false and CanAddHost is false but server does not match " + common.Domain + ".")
 			return
@@ -181,7 +218,7 @@ func main() {
 			} else {
 				log.Println("Adding host to hosts file, accept any dialog if it appears...")
 			}
-			if !executor.AddHostInternal(!isAdmin, ipOfHost) {
+			if !executor.AddHostsInternal(!isAdmin, c.Server.Host) {
 				log.Println("Failed to add host.")
 				return
 			}

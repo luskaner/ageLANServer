@@ -3,16 +3,16 @@ package shared
 import (
 	"bufio"
 	"common"
+	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"os"
 	"shared/executor"
 	"strings"
 )
 
-func AddHost(ip string) bool {
-	if ip == "0.0.0.0" {
-		ip = "127.0.0.1"
-	}
-	if MappingExists(ip, common.Domain) {
+func AddHosts(ips mapset.Set[string]) bool {
+	missingIps := MissingIpMappings(ips, common.Domain)
+	if missingIps.IsEmpty() {
 		return true
 	}
 	p := HostsFile()
@@ -25,15 +25,17 @@ func AddHost(ip string) bool {
 		_ = f.Close()
 		flushDns()
 	}()
-	_, err = f.WriteString("\r\n" + ip + "\t" + common.Domain + "\t#AoE2DELanServer\r\n")
-	return err == nil
+	for ip := range missingIps.Iter() {
+		_, _ = f.WriteString(fmt.Sprintf("\r\n%s\t%s\t#AoE2DELanServer", ip, common.Domain))
+	}
+	return true
 }
 
 func flushDns() bool {
 	return executor.RunCustomExecutable("ipconfig", "/flushdns")
 }
 
-func RemoveHost() bool {
+func RemoveHosts() bool {
 	if !HostExists(common.Domain) {
 		return true
 	}

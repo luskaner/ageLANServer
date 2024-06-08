@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	mapset "github.com/deckarep/golang-set/v2"
 	"shared"
 	"shared/executor"
 )
@@ -24,17 +25,16 @@ func run(elevate bool, action string, subArguments map[string]interface{}) bool 
 	args := []string{"-action=" + action, "-subArguments=" + subArgumentsJsonStr}
 	if elevate {
 		return ElevateCustomExecutable(processName, args...)
-
 	}
 	return executor.RunCustomExecutable("./"+processName, args...)
 }
 
-func AddHost(elevate bool, ip string) bool {
-	return run(elevate, "addHost", map[string]interface{}{"ip": ip})
+func AddHosts(elevate bool, ips mapset.Set[string]) bool {
+	return run(elevate, "addHosts", map[string]interface{}{"ips": ips.ToSlice()})
 }
 
-func RemoveHost(elevate bool) bool {
-	return run(elevate, "removeHost", nil)
+func RemoveHosts(elevate bool) bool {
+	return run(elevate, "removeHosts", nil)
 }
 
 func AddCertificate(elevate bool, cert x509.Certificate) bool {
@@ -50,26 +50,33 @@ func AddCertificateInternal(elevate bool, cert *x509.Certificate) bool {
 	if elevate {
 		return AddCertificate(elevate, *cert)
 	}
-	return shared.TrustCertificate(cert)
+	return shared.TrustCertificate(true, cert)
 }
 
 func RemoveCertificateInternal(elevate bool) bool {
 	if elevate {
 		return RemoveCertificate(elevate)
 	}
-	return shared.UntrustCertificate()
+	return shared.UntrustCertificate(true)
 }
 
-func AddHostInternal(elevate bool, ip string) bool {
+func AddHostsInternal(elevate bool, host string) bool {
+	ips := shared.HostOrIpToIps(host)
+	var ok bool
 	if elevate {
-		return AddHost(elevate, ip)
+		ok = AddHosts(elevate, ips)
 	}
-	return shared.AddHost(ip)
+	ok = shared.AddHosts(ips)
+	shared.ClearResolveCache()
+	return ok
 }
 
-func RemoveHostInternal(elevate bool) bool {
+func RemoveHostsInternal(elevate bool) bool {
+	var ok bool
 	if elevate {
-		return RemoveHost(elevate)
+		ok = RemoveHosts(elevate)
 	}
-	return shared.RemoveHost()
+	ok = shared.RemoveHosts()
+	shared.ClearResolveCache()
+	return ok
 }
