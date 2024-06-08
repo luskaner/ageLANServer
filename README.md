@@ -69,6 +69,8 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for
 supported operating systems.
 
+*Note: If you are using Windows Defender on Windows it may flag one or more executables as virus, this is a **false positive***.
+
 ### Verification
 
 The verification process ensures that the files you download are the same as the ones that were uploaded by the
