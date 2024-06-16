@@ -57,7 +57,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 ### Launcher
 
 - Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-- If you allow it to handle the hosts file or a local certificate, it will require rights elevation.
+- If you allow it to handle the hosts file, local certificate or a custom game launcher which requires admin privileges, it will require rights elevation.
 
 ### Client
 
