@@ -1,7 +1,7 @@
 # Age of Empires 2 Definitive Edition LAN Server
 
 AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
-connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE
+connection **to the game server** (*aoe-api.worldsedgelink.com*) paving the way to how the original AoE2 worked plus many features new to HD and DE
 versions.
 
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
@@ -57,7 +57,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 ### Launcher
 
 - Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-- If you allow it to handle the hosts file, it will require rights elevation.
+- If you allow it to handle the hosts file or a local certificate, it will require rights elevation.
 
 ### Client
 
@@ -93,8 +93,7 @@ decompress and run them.
 
 The server is simple web server that listens to the game's API requests. The server reimplements
 the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the
-client
-is stored or sent to any other server.
+client is stored or sent to any other server.
 
 *Note: See the [server README](server/README.md) for more details.*
 
@@ -135,8 +134,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 7. **Invite friends** by searching them by name and sending an invite as needed. They can also search in the lobby
    browser
    by
-   the lobby ID or just connect to it directly if public (sharing the link to join the lobby automatically probably does
-   not work).
+   the lobby ID or just connect to it directly if public (sharing the link to join the lobby automatically only works if the game is already running).
 
 ## Local development
 
