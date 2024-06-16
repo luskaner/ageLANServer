@@ -11,13 +11,14 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
 - Admin rights if:
     - You allow it to handle the hosts file.
+    - You allow it to handle the local certificate.
     - If the game launcher requires it.
 
 ## Features
 
 ## Server
 
-- Generate a self-signed certificate.
+- Generate a self-signed certificate (user or local).
 - Start the server.
 - Discover the server.
 - Stop the server
@@ -28,7 +29,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.
-- Cleanup (run `launcher.admin.exe` directly as admin)
+- Cleanup (manually run `launcher.admin.exe` directly as admin)
 
 All possible client modifications are reverted upon the launcher's exit.
 
