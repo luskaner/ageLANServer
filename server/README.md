@@ -1,11 +1,11 @@
 # Server
 
-The server module represents the core of the AoE2:DE LAN Server. It is a simple web server that listens to the game's
+The server module represents the core of the AoE2:DE LAN Server. It is a simple web server (reimplementation for *aoe-api.worldsedgelink.com*) that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
 
 ## System requirements
 
-The server supports a very wide variety of operating systems and architectures. Basically any system you can
+The server supports a very wide variety of operating systems and architectures. Any system you can
 compile [Go](https://go.dev/wiki/MinimumRequirements) 1.22 for. You can support even more operating systems by using an
 older Go version like 1.20 (few code changes might be required) that would enable Windows 7 or higher support, macOS
 High Sierra 10.13 or higher ... etc.
