@@ -6,16 +6,29 @@ tasks:
   prepare-server-base:
     internal: true
     cmds:
-      - powershell Copy-Item -Path server/resources -Destination build/server/resources -Recurse -ErrorAction Ignore -Force
-      - go build -o build/server ./server/genCert
+      - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
+      - go build -o build/server/genCert.exe ./server-genCert
+  build-config:
+    internal: true
+    cmds:
+      - go build -o build/launcher/config.exe ./launcher-config
+  build-config-admin:
+    cmds:
+      - go build -o build/launcher/config-admin.exe ./launcher-config-admin
+  build-config-admin-agent:
+    deps: [ build-config-admin ]
+    cmds:
+      - go build -o build/launcher/config-admin-agent.exe ./launcher-config-admin-agent
+  build-config-all:
+    deps: [ build-config, build-config-admin-agent ]
   prepare-launcher:
     platforms: [ windows/amd64 ]
-    deps: [ prepare-server-base ]
+    deps: [ prepare-server-base, build-config-all ]
     cmds:
       - go build -o build/server ./server
-      - powershell New-Item -ItemType Directory -Force -Path build/launcher/config -ErrorAction Ignore
-      - powershell Copy-Item -Path launcher/config/config.ini -Destination build/launcher/config/config.ini -ErrorAction Ignore -Force
-      - go build -o build/launcher/launcher.admin.exe ./launcher/admin
+      - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
+      - powershell Copy-Item -Path launcher/resources/config.ini -Destination build/launcher/resources/config.ini -ErrorAction Ignore -Force
+      - go build -o build/launcher/watcher.exe ./launcher-watcher
   prepare-server-genCert:
     cmds:
       - powershell New-Item -ItemType Directory -ErrorAction Ignore -Force -Path build/server/resources

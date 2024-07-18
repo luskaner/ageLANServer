@@ -2,8 +2,7 @@ package files
 
 import (
 	"encoding/json"
-	"github.com/gookit/ini/v2"
-	"github.com/wk8/go-ordered-map/v2"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,10 +20,8 @@ var Login []i.A
 var ArrayFiles = make(map[string]i.A)
 var KeyedFiles = make(map[string]*orderedmap.OrderedMap[string, any])
 var CloudFiles models.CloudFilesIndexMap
-var Config models.Config
 
 func Initialize() {
-	initializeConfig()
 	initializeLogin()
 	initializeResponses()
 	initializeCloud()
@@ -35,18 +32,6 @@ const resourceFolder = "resources"
 var configFolder = filepath.Join(resourceFolder, "config")
 var responsesFolder = filepath.Join(resourceFolder, "responses")
 var CloudFolder = filepath.Join(responsesFolder, "cloud")
-
-func initializeConfig() {
-	cfg := ini.New()
-	err := cfg.LoadFiles(filepath.Join(configFolder, "config.ini"))
-	if err != nil {
-		panic(err)
-	}
-	err = cfg.MapStruct("", &Config)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func initializeLogin() {
 	data, err := os.ReadFile(filepath.Join(configFolder, "login.json"))

@@ -1,16 +1,56 @@
 package game
 
 import (
-	"errors"
-	"fmt"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	internalExecutor "launcher/internal/executor"
-	"log"
-	"shared/executor"
+	commonExecutor "launcher-common/executor"
+	"os"
 )
 
+type Executor interface {
+	Execute(args []string) (result *commonExecutor.ExecResult)
+	FinalExecutable() string
+}
+
+type SteamExecutor struct{}
+type MicrosoftStoreExecutor struct{}
+type CustomExecutor struct {
+	Executable string
+}
+
 const steamAppID = "813780"
+
+func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
+	result = commonExecutor.ExecOptions{File: "steam://rungameid/" + steamAppID, SpecialFile: true}.Exec()
+	return
+}
+
+func (exec SteamExecutor) FinalExecutable() string {
+	return steamProcess
+}
+
+func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
+	result = commonExecutor.ExecOptions{File: `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, SpecialFile: true}.Exec()
+	return
+}
+
+func (exec MicrosoftStoreExecutor) FinalExecutable() string {
+	return microsoftStoreProcess
+}
+
+func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.ExecResult) {
+	result = commonExecutor.ExecOptions{File: exec.Executable, Args: args}.Exec()
+	return
+}
+
+func (exec CustomExecutor) FinalExecutable() string {
+	return steamProcess
+}
+
+func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.ExecResult) {
+	result = commonExecutor.ExecOptions{File: exec.Executable, AsAdmin: true, WindowState: windows.SW_NORMAL, Args: args}.Exec()
+	return
+}
 
 func isInstalledOnSteam() bool {
 	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam\Apps\`+steamAppID, registry.QUERY_VALUE)
@@ -29,56 +69,40 @@ func isInstalledOnSteam() bool {
 
 func isInstalledOnMicrosoftStore() bool {
 	// Does not seem there is another way without cgo?
-	return executor.RunCustomExecutable("powershell", "-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }")
+	return commonExecutor.ExecOptions{File: "powershell", Wait: true, UseWorkingPath: true, ExitCode: true, Args: []string{"-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }"}}.Exec().Success()
 }
 
-func RunOnMicrosoftStore() bool {
-	return internalExecutor.ShellExecute("open", `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, false, windows.SW_HIDE) == nil
+func isInstalledCustom(executable string) bool {
+	info, err := os.Stat(executable)
+	if err != nil || os.IsNotExist(err) || info.IsDir() {
+		return false
+	}
+	return true
 }
 
-func RunOnSteam() bool {
-	return internalExecutor.ShellExecute("open", "steam://rungameid/"+steamAppID, false, windows.SW_HIDE) == nil
-}
-
-func RunGame(executable string, userOnlyCertificate bool) bool {
+func MakeExecutor(executable string) Executor {
 	if executable != "auto" {
 		switch executable {
 		case "steam":
 			if isInstalledOnSteam() {
-				log.Println("AoE2:DE installed on Steam, launching...")
-				return RunOnSteam()
+				return SteamExecutor{}
 			}
-			return false
 		case "msstore":
 			if isInstalledOnMicrosoftStore() {
-				log.Println("AoE2:DE installed on Microsoft Store, launching...")
-				return RunOnMicrosoftStore()
+				return MicrosoftStoreExecutor{}
 			}
-			return false
 		default:
-			log.Println(fmt.Sprintf("AoE2:DE launching custom launcher «%s»", executable))
-			err, _ := internalExecutor.StartCustomExecutable(executable, true)
-			if errors.Is(err, windows.ERROR_ELEVATION_REQUIRED) {
-				log.Println("AoE2:DE Elevation required, retrying with admin privileges, accept any dialog if it appears...")
-				if userOnlyCertificate {
-					log.Println("Using a local user certificate. If it fails to connect to the server, try setting the config setting 'CanTrustCertificate' to 'local'.")
-				}
-				err = internalExecutor.ShellExecute("runas", executable, true, windows.SW_NORMAL)
+			if isInstalledCustom(executable) {
+				return CustomExecutor{Executable: executable}
 			}
-			if err != nil {
-				log.Println("Failed to start custom launcher: " + err.Error())
-				return false
-			}
-			return true
+			return nil
 		}
 	}
 	if isInstalledOnSteam() {
-		log.Println("AoE2:DE installed on Steam, launching...")
-		return RunOnSteam()
+		return SteamExecutor{}
 	}
 	if isInstalledOnMicrosoftStore() {
-		log.Println("AoE2:DE installed on Microsoft Store, launching...")
-		return RunOnMicrosoftStore()
+		return MicrosoftStoreExecutor{}
 	}
-	return false
+	return nil
 }

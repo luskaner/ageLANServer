@@ -45,7 +45,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 
 ### Server
 
-- Windows: 10 or higher, Server 2016 or higher.
+- Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher.
 - MacOS: Catalina 10.15 or higher.
 - GNU/Linux: *any supported distro, see the note below for details*.
 
@@ -56,8 +56,11 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- Windows: 10 or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-- If you allow it to handle the hosts file, it will require rights elevation.
+- Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
+  Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
+- If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require
+  admin rights.
+  elevation.
 
 ### Client
 
@@ -66,10 +69,37 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ## Binaries
 
-See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for
+See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for a
+subset of
 supported operating systems.
 
-*Note: If you are using Windows Defender on Windows it may flag one or more executables as virus, this is a **false positive***.
+The following archives are provided:
+
+* Full:
+    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_*A.B.C*_win_arm64.zip
+    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_*A.B.C*_win_x86-64.zip
+* Launcher:
+    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.zip
+    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
+* Server:
+    * Windows:
+        * **10 (or higher) on Arm (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
+        * **10 IoT on Arm (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
+        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
+        * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
+        * **10 (or higher) - all-in-one**: aoe2DELanServer_server_*A.B.C*_win_all.zip
+    * Linux:
+        * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.gz
+        * **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
+        * **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
+        * **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
+    * Mac OS:
+        * **Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
+        * **Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
+        * **Universal - all-in-one**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
+
+*Note: If you are using Windows Defender on Windows it may flag one or more executables as virus, this is
+a **false positive***.
 
 ### Verification
 
@@ -116,10 +146,11 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Simplest way to use it
 
-1. **Download the asset `aoe2DELanServer_X_win_x86-64.zip`** from the latest
-   release https://github.com/luskaner/aoe2DELanServer/releases
+1. **Download the asset `aoe2DELanServer_A.B.C_win_x86-64.zip`** from the latest
+   stable release https://github.com/luskaner/aoe2DELanServer/releases
 2. **Uncompress** it somewhere (it's fully portable and with no dependencies).
-3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/config/config.ini) file**
+3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
+   file**
    and modify
    the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher.exe` (no quotes needed).
    You will need to use a custom launcher for 100% offline play.
@@ -158,6 +189,9 @@ Depending on the module you want to debug, you will need to run the correspondin
 - server: ```task debug-prepare-server```
     - genCert: ```task debug:prepare-server-genCert```
 - launcher: ```task debug:prepare-launcher```
+    - config: ```task debug:build-config-admin-agent```
+    - config-admin-agent: ```task debug:build-config-admin```
+    - watcher: ```task debug:build-config-all```
 
 ### Build
 

@@ -398,12 +398,6 @@ func (adv *Advertisement) Delete() {
 	advLock.Unlock(adv.id)
 }
 
-/*func (adv *Advertisement) UpdateTags(tags map[string]int32) {
-	advLock.Lock(adv.id)
-	adv.tags = tags
-	advLock.Unlock(adv.id)
-}*/
-
 func (adv *Advertisement) UpdateState(state int8) {
 	advLock.Lock(adv.id)
 	previousState := adv.state

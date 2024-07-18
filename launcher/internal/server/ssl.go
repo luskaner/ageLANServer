@@ -1,11 +1,14 @@
 package server
 
 import (
+	"common"
 	"crypto/tls"
 	"crypto/x509"
+	"launcher-common/executor"
 	"net"
+	"os"
 	"path/filepath"
-	"shared/executor"
+	"strings"
 )
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
@@ -45,6 +48,20 @@ func ReadCertificateFromServer(host string) *x509.Certificate {
 	return nil
 }
 
-func GenerateCertificatePair(certificateFolder string) bool {
-	return executor.RunCustomExecutable(filepath.Join(certificateFolder, "..", "..", "genCert.exe"))
+func GenerateCertificatePair(certificateFolder string) (result *executor.ExecResult) {
+	baseFolder := filepath.Join(certificateFolder, "..", "..")
+	exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
+	var path string
+	if _, err := os.Stat(exePath); err == nil {
+		path = exePath
+	} else {
+		batchPath := filepath.Join(baseFolder, common.GetScriptFileName(common.ServerGenCert))
+		if _, err = os.Stat(batchPath); err == nil {
+			path = batchPath
+		} else {
+			return nil
+		}
+	}
+	result = executor.ExecOptions{File: path, Wait: true, SpecialFile: strings.HasSuffix(path, ".bat"), ExitCode: true}.Exec()
+	return
 }

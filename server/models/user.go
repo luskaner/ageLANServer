@@ -3,8 +3,10 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/spf13/viper"
 	"hash/fnv"
 	"math/rand"
+	"net"
 	i "server/internal"
 	"strconv"
 	"time"
@@ -45,7 +47,45 @@ func generate(identifier string, isXbox bool, platformUserId uint64, alias strin
 	}
 }
 
-func GetOrCreateUser(isXbox bool, platformUserId uint64, alias string) *User {
+func generatePlatformUserIdSteam(rng *rand.Rand) uint64 {
+	Z := rng.Int63n(1 << 31)
+	Y := Z % 2
+	id := Z*2 + Y + 76561197960265728
+	return uint64(id)
+}
+
+func generateFullPlatformUserIdXbox(platformUserId int64) string {
+	rng := rand.New(rand.NewSource(platformUserId))
+	const chars = "0123456789ABCDEF"
+	id := make([]byte, 40)
+	for j := range id {
+		id[j] = chars[rng.Intn(len(chars))]
+	}
+	return string(id)
+}
+
+func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
+	return uint64(rng.Int63n(9e15) + 1e15)
+}
+
+func GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alias string) *User {
+	if viper.GetBool("default.GeneratePlatformUserId") {
+		ipStr, _, err := net.SplitHostPort(remoteAddr)
+		if err != nil {
+			ip := net.ParseIP(ipStr)
+			if ip != nil {
+				ipV4 := ip.To4()
+				if ipV4 != nil {
+					rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint32(ipV4))))
+					if isXbox {
+						platformUserId = generatePlatformUserIdXbox(rng)
+					} else {
+						platformUserId = generatePlatformUserIdSteam(rng)
+					}
+				}
+			}
+		}
+	}
 	identifier := getPlatformPath(isXbox, platformUserId)
 	Lock.Lock(identifier)
 	user, ok := userStore[identifier]
@@ -81,12 +121,15 @@ func (u *User) GetAlias() string {
 
 func getPlatformPath(isXbox bool, platformUserId uint64) string {
 	var prefix string
+	var fullPlatformUserId string
 	if isXbox {
+		fullPlatformUserId = generateFullPlatformUserIdXbox(int64(platformUserId))
 		prefix = "xboxlive"
 	} else {
+		fullPlatformUserId = strconv.FormatUint(platformUserId, 10)
 		prefix = "steam"
 	}
-	return fmt.Sprintf("/%s/%d", prefix, platformUserId)
+	return fmt.Sprintf("/%s/%s", prefix, fullPlatformUserId)
 }
 
 func (u *User) GetPlatformPath() string {

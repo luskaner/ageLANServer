@@ -1,32 +1,89 @@
 package ip
 
 import (
+	"bytes"
+	"common"
+	"encoding/binary"
+	"encoding/gob"
+	"fmt"
+	"github.com/google/uuid"
 	"net"
+	"strings"
 	"time"
 )
 
-var data = make([]byte, 1)
+func Announce(ip net.IP, port int) {
+	ips, targetIps := ResolveIps(ip)
 
-func Announce(ip net.IP) {
-	data[0] = 43
-	broadcastIp := ResolveBroadcastIp(ip)
-	udpAddr, err := net.ResolveUDPAddr("udp", broadcastIp.String()+":59999")
-	if err != nil {
-		panic(err)
+	if len(ips) == 0 {
+		fmt.Println("No suitable addresses found.")
+		return
 	}
 
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		panic(err)
+	var connections []*net.UDPConn
+	for _, targetIp := range targetIps {
+		conn, err := net.DialUDP("udp", nil, &net.UDPAddr{
+			IP:   targetIp,
+			Port: port,
+		})
+		if err != nil {
+			continue
+		}
+		connections = append(connections, conn)
 	}
-	defer func(conn net.Conn) {
-		_ = conn.Close()
-	}(conn)
+
+	if len(connections) == 0 {
+		fmt.Println("All connections failed.")
+		return
+	}
+
+	defer func(conns []*net.UDPConn) {
+		for _, conn := range conns {
+			_ = conn.Close()
+		}
+	}(connections)
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		_, _ = conn.Write(data)
+	var messageBuff bytes.Buffer
+	enc := gob.NewEncoder(&messageBuff)
+	err := enc.Encode(common.AnnounceMessageData000{})
+	if err != nil {
+		fmt.Println("Error encoding message data.")
+		return
 	}
+	messageBuffBytes := messageBuff.Bytes()
+	var buf bytes.Buffer
+	buf.Write([]byte(common.AnnounceHeader))
+	buf.WriteByte(common.AnnounceVersion0)
+	var uuidBytes []byte
+	uuidBytes, err = uuid.New().MarshalBinary()
+	if err != nil {
+		fmt.Println("Error generating ID.")
+		return
+	}
+	buf.Write(uuidBytes)
+	err = binary.Write(&buf, binary.LittleEndian, uint16(len(messageBuffBytes)))
+	if err != nil {
+		fmt.Println("Error encoding message length.")
+		return
+	}
+	buf.Write(messageBuffBytes)
+	bufBytes := buf.Bytes()
+
+	addrs := make([]string, len(connections))
+	for i, conn := range connections {
+		addrs[i] = strings.Split(conn.LocalAddr().String(), ":")[0]
+	}
+
+	fmt.Printf("Announcing on %s...\n", strings.Join(addrs, ", "))
+
+	for range ticker.C {
+		for _, conn := range connections {
+			_, _ = conn.Write(bufBytes)
+		}
+	}
+
+	fmt.Println("Announce stopped.")
 }

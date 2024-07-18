@@ -22,10 +22,15 @@ jobs:
         with:
           go-version: '^1.22'
           cache-dependency-path: |
+            common/go.sum
             server/go.sum
+            server-genCert/go.sum            
             launcher/go.sum
-            launcher/shared/go.sum
-            launcher/admin/go.sum
+            launcher-common/go.sum
+            launcher-watcher/go.sum
+            launcher-config/go.sum
+            launcher-config-admin/go.sum
+            launcher-config-admin-agent/go.sum
 
       - name: Import GPG key
         id: import_gpg
@@ -37,7 +42,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
-          version: '~> v1'
+          version: '~> v2'
           args: release --auto-snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

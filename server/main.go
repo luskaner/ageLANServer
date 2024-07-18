@@ -1,36 +1,16 @@
 package main
 
 import (
-	"common"
-	"github.com/gorilla/handlers"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"server/files"
-	"server/ip"
-	"server/middleware"
-	"server/routes"
+	"github.com/spf13/cobra"
+	"server/internal/cmd"
 )
 
+const version = "development"
+
 func main() {
-	mux := http.NewServeMux()
-	files.Initialize()
-	routes.Initialize(mux)
-	sessionMux := middleware.SessionMiddleware(mux)
-	addr := ip.ResolveHost(files.Config.Host)
-	if addr == nil {
-		log.Fatal("Failed to resolve host")
+	cobra.MousetrapHelpText = ""
+	if err := cmd.Execute(); err != nil {
+		panic(err)
 	}
-	server := &http.Server{
-		Addr:    addr.String() + ":443",
-		Handler: handlers.LoggingHandler(os.Stdout, sessionMux),
-	}
-	if files.Config.Announce {
-		go func() {
-			ip.Announce(addr)
-		}()
-	}
-	certificatePairFolder := common.CertificatePairFolder(os.Args[0])
-	log.Fatal(server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key)))
+	cmd.Version = version
 }

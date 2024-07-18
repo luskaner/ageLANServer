@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: 2
 builds:
   - id: server
     main: ./server
@@ -13,13 +14,18 @@ builds:
       - amd64
       - arm
       - arm64
-  - id: serverWindows
+  - id: server-win_x86-64
     main: ./server
     binary: server/server
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: genCert
-    main: ./server/genCert
+  - id: server-win_arm64
+    main: ./server
+    binary: server/server
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server-genCert
+    main: ./server-genCert
     binary: genCert
     goos:
       - linux
@@ -30,42 +36,153 @@ builds:
       - amd64
       - arm
       - arm64
-  - id: genCertWindows
-    main: ./server/genCert
+  - id: server-win_x86-32_arch
+    main: ./server
+    binary: server_x86-32
+    goos: [ windows ]
+    goarch: [ "386" ]
+  - id: server-win_x86-64_arch
+    main: ./server
+    binary: server_x86-64
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: server-win_arm32_arch
+    main: ./server
+    binary: server_arm32
+    goos: [ windows ]
+    goarch: [ arm ]
+  - id: server-win_arm64_arch
+    main: ./server
+    binary: server_arm64
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server-genCert-win_x86-32_arch
+    main: ./server-genCert
+    binary: genCert_x86-32
+    goos: [ windows ]
+    goarch: [ "386" ]
+  - id: server-genCert-win_x86-64_arch
+    main: ./server-genCert
+    binary: genCert_x86-64
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: server-genCert-win_arm32_arch
+    main: ./server-genCert
+    binary: genCert_arm32
+    goos: [ windows ]
+    goarch: [ arm ]
+  - id: server-genCert-win_arm64_arch
+    main: ./server-genCert
+    binary: genCert_arm64
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server-genCert-win_x86-64
+    main: ./server-genCert
     binary: server/genCert
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: launcher
+  - id: server-genCert-win_arm64
+    main: ./server-genCert
+    binary: server/genCert
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-win_x86-64
     main: ./launcher
     binary: launcher/launcher
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: launcher.admin
-    main: ./launcher/admin
-    binary: launcher/launcher.admin
+  - id: launcher-watcher-win_x86-64
+    main: ./launcher-watcher
+    binary: launcher/watcher
     goos: [ windows ]
     goarch: [ amd64 ]
+  - id: launcher-config-win_x86-64
+    main: ./launcher-config
+    binary: launcher/config
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-config-admin-win_x86-64
+    main: ./launcher-config-admin
+    binary: launcher/config-admin
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-config-admin-agent-win_x86-64
+    main: ./launcher-config-admin-agent
+    binary: launcher/config-admin-agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-win_arm64
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-watcher-win_arm64
+    main: ./launcher-watcher
+    binary: launcher/watcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-win_arm64
+    main: ./launcher-config
+    binary: launcher/config
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-win_arm64
+    main: ./launcher-config-admin
+    binary: launcher/config-admin
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-agent-win_arm64
+    main: ./launcher-config-admin-agent
+    binary: launcher/config-admin-agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
 archives:
-  - id: all
-    builds: [ serverWindows, genCertWindows, launcher, launcher.admin ]
+  - id: all_x86-64
+    builds: [ server-win_x86-64, server-genCert-win_x86-64, launcher-win_x86-64, launcher-watcher-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
       {{- .RawVersion }}_win_x86-64
-    strip_binary_directory: false
     files:
-      - LICENSE
+      - src: LICENSE
+        dst: docs/LICENSE.txt
       - src: README.md
-        dst: README.txt
+        dst: docs/README.txt
       - src: server/README.md
-        dst: server/README.txt
+        dst: server/docs/README.txt
       - server/resources/config
       - server/resources/responses
       - src: launcher/README.md
-        dst: launcher/README.txt
-      - launcher/config
+        dst: launcher/docs/README.txt
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config.txt
+      - launcher/resources
+      - src: launcher-config/windows-resources/*
+        dst: launcher/
+  - id: all_arm64
+    builds: [ server-win_arm64, server-genCert-win_arm64, launcher-win_arm64, launcher-watcher-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
+    format: zip
+    name_template: >-
+      {{- .ProjectName }}_
+      {{- .RawVersion }}_win_arm64
+    files:
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
+      - src: server/README.md
+        dst: server/docs/README.txt
+      - server/resources/config
+      - server/resources/responses
+      - src: launcher/README.md
+        dst: launcher/docs/README.txt
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config.txt
+      - launcher/resources
+      - src: launcher-config/windows-resources/*
+        dst: launcher/
   - id: server
-    builds: [ server, genCert ]
+    builds: [ server, server-genCert ]
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_
@@ -89,25 +206,79 @@ archives:
         dst: resources/config
       - src: server/resources/responses
         dst: resources/responses
-      - LICENSE
-      - README.md
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
     format_overrides:
       - goos: windows
         format: zip
-  - id: launcher
-    builds: [ launcher, launcher.admin ]
+  - id: server-server-genCert-win
+    name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_win_all"
+    meta: true
     files:
-      - src: launcher/config
-        dst: config
+      - src: dist/server-win_*_arch*/*
+        dst: bin/server
+        strip_parent: true
+      - src: dist/server-genCert-win_*_arch*/*
+        dst: bin/genCert
+        strip_parent: true
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/responses
+        dst: resources/responses
       - src: LICENSE
-        dst: LICENSE.txt
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
+      - src: server/windows-resources/runner.bat
+        dst: server.bat
+      - src: server-genCert/windows-resources/runner.bat
+        dst: genCert.bat
+    format: zip
+  - id: launcher-win_x86-64
+    builds: [ launcher-win_x86-64, launcher-watcher-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
+    files:
+      - src: launcher/resources
+        dst: resources
+      - src: LICENSE
+        dst: docs/LICENSE.txt
       - src: launcher/README.md
-        dst: README.txt
+        dst: docs/README.txt
+      - src: launcher-config/README.md
+        dst: docs/README-config.txt
+      - src: launcher-config/windows-resources/*
+        dst: .
     name_template: >-
       {{- .ProjectName }}_launcher_
       {{- .RawVersion }}_win_x86-64
     format: zip
     strip_binary_directory: true
+  - id: launcher-win_arm64
+    builds: [ launcher-win_arm64, launcher-watcher-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
+    files:
+      - src: launcher/resources
+        dst: resources
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: launcher/README.md
+        dst: docs/README.txt
+      - src: launcher-config/README.md
+        dst: docs/README-config.txt
+      - src: launcher-config/windows-resources/*
+        dst: .
+    name_template: >-
+      {{- .ProjectName }}_launcher_
+      {{- .RawVersion }}_win_arm64
+    format: zip
+    strip_binary_directory: true
+universal_binaries:
+  - id: server
+    name_template: 'server'
+    replace: false
+  - id: server-genCert
+    name_template: 'genCert'
+    replace: false
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
 signs:

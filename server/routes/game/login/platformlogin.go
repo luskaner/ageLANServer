@@ -25,7 +25,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	t2 := t - rand.Int63n(3600*2-3600+1) + 3600
 	t3 := t - rand.Int63n(3600*2-3600+1) + 3600
-	u := models.GetOrCreateUser(req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	u := models.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	u.SetPresence(1)
 	sess, ok := models.GetSessionByUser(u)
 	if ok {

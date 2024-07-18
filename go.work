@@ -2,9 +2,12 @@ go 1.22
 
 use (
 	common
-	launcher
-	./launcher/admin
-	launcher/shared
 	server
-	server/genCert
+	server-genCert
+	launcher
+	launcher-common
+	launcher-watcher
+	launcher-config
+	launcher-config-admin
+	launcher-config-admin-agent
 )

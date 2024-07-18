@@ -1,93 +1,80 @@
 package server
 
 import (
+	"bytes"
+	"common"
 	"crypto/tls"
-	"errors"
+	"encoding/binary"
+	"encoding/gob"
+	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
-	"launcher/internal"
-	"launcher/internal/executor"
+	launcherCommon "launcher-common"
+	commonExecutor "launcher-common/executor"
 	"net"
 	"net/http"
 	"net/netip"
 	"os"
-	"os/exec"
-	"shared"
+	"path"
+	"path/filepath"
 	"time"
 )
 
-const autoServerExecutable string = "server.exe"
+var autoServerDir = []string{`\`, `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
+var autoServerName = []string{common.GetScriptFileName(common.Server), common.GetExeFileName(common.Server)}
 
-var autoServerPaths = []string{`.\`, `..\`, `..\server\`}
-
-func StartServer(config internal.ServerConfig) (bool, *exec.Cmd) {
-	if config.Start == "false" {
-		return false, nil
-	}
-	executablePath := GetExecutablePath(config)
+func StartServer(stop string, host string, executable string, args []string) (result *commonExecutor.ExecResult) {
+	executablePath := GetExecutablePath(executable)
 	if executablePath == "" {
-		return false, nil
+		return
 	}
-	var ok bool
-	var cmd *exec.Cmd = nil
-	if config.Stop == "true" {
-		_, cmd = executor.StartCustomExecutable(executablePath, true)
-		ok = cmd != nil
+	var windowState int
+	if stop == "true" {
+		windowState = windows.SW_HIDE
 	} else {
-		ok = executor.ShellExecute("open", executablePath, true, windows.SW_MINIMIZE) == nil
+		windowState = windows.SW_MINIMIZE
 	}
-	if ok {
+	result = commonExecutor.ExecOptions{File: executablePath, Args: args, WindowState: windowState, Pid: true}.Exec()
+	if result.Success() {
 		// Wait up to 30s for server to start
 		for i := 0; i < 30; i++ {
-			for ip := range shared.HostOrIpToIps(config.Host).Iter() {
+			for ip := range launcherCommon.HostOrIpToIps(host).Iter() {
 				if LanServer(ip, true) {
-					return true, cmd
+					return
 				}
 			}
 			time.Sleep(time.Second)
 		}
-		if cmd != nil {
-			return StopServer(cmd), cmd
+		if err := commonExecutor.Kill(int(result.Pid)); err != nil {
+			fmt.Println("Failed to stop server")
+			fmt.Println("Error message: " + result.Err.Error())
 		}
+		result = nil
 	}
-	return false, nil
+	return
 }
 
-func StopServer(cmd *exec.Cmd) bool {
-	err := cmd.Process.Kill()
-	if err != nil {
-		return false
-	}
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-
-	select {
-	case <-time.After(10 * time.Second):
-		return false
-	case err := <-done:
+func GetExecutablePath(executable string) string {
+	if executable == "auto" {
+		ex, err := os.Executable()
 		if err != nil {
-			var e *exec.ExitError
-			if !errors.As(err, &e) {
-				return false
-			}
+			return ""
 		}
-		return true
-	}
-}
-
-func GetExecutablePath(config internal.ServerConfig) string {
-	if config.Executable == "auto" {
-		for _, path := range autoServerPaths {
-			fullPath := path + autoServerExecutable
-			if f, err := os.Stat(fullPath); err == nil && !f.IsDir() {
-				return fullPath
+		exePath := filepath.Dir(ex)
+		var f os.FileInfo
+		for _, dir := range autoServerDir {
+			dirPath := exePath + dir
+			for _, name := range autoServerName {
+				p := dirPath + name
+				if f, err = os.Stat(p); err == nil && !f.IsDir() {
+					return path.Clean(p)
+				}
 			}
 		}
 		return ""
 	}
-	return config.Executable
+	return executable
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
@@ -102,34 +89,99 @@ func LanServer(host string, insecureSkipVerify bool) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func LanServersAnnounced() mapset.Set[string] {
-	addr := net.UDPAddr{
-		Port: 59999,
-		IP:   netip.IPv4Unspecified().AsSlice(),
+func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
+	results := make(chan map[uuid.UUID]*common.AnnounceMessage)
+
+	for _, port := range ports {
+		go func(port int) {
+			addr := net.UDPAddr{
+				IP:   netip.IPv4Unspecified().AsSlice(),
+				Port: port,
+			}
+			conn, err := net.ListenUDP("udp", &addr)
+			if err != nil {
+				return
+			}
+			defer func(conn *net.UDPConn) {
+				_ = conn.Close()
+			}(conn)
+
+			err = conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+			if err != nil {
+				return
+			}
+
+			packetBuffer := make([]byte, 65_536)
+			headerBuffer := make([]byte, len(common.AnnounceHeader))
+			var messageLenBuffer uint16
+			var messageBuffer *bytes.Buffer
+			servers := make(map[uuid.UUID]*common.AnnounceMessage)
+			var n int
+			var serverAddr *net.UDPAddr
+
+			for {
+				n, serverAddr, err = conn.ReadFromUDP(packetBuffer)
+				if err != nil {
+					break
+				}
+				n = copy(headerBuffer, packetBuffer)
+				if n < len(common.AnnounceHeader) || string(headerBuffer) != common.AnnounceHeader {
+					continue
+				}
+				remainingPacketBuffer := packetBuffer[n:]
+				version := remainingPacketBuffer[:common.AnnounceVersionLength][0]
+				remainingPacketBuffer = remainingPacketBuffer[common.AnnounceVersionLength:]
+				var id uuid.UUID
+				id, err = uuid.FromBytes(remainingPacketBuffer[:common.AnnounceIdLength])
+				if err != nil {
+					continue
+				}
+				remainingPacketBuffer = remainingPacketBuffer[common.AnnounceIdLength:]
+				err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
+				if err != nil {
+					continue
+				}
+				remainingPacketBuffer = remainingPacketBuffer[2:]
+				messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
+				var data interface{}
+				switch version {
+				case common.AnnounceVersion0:
+					var msg common.AnnounceMessageData000
+					dec := gob.NewDecoder(messageBuffer)
+					if err = dec.Decode(&msg); err == nil {
+						data = msg
+					}
+				}
+				ip := serverAddr.IP.String()
+				var m *common.AnnounceMessage
+				var ok bool
+				if m, ok = servers[id]; !ok {
+					m = &common.AnnounceMessage{
+						Version: version,
+						Data:    data,
+						Ips:     mapset.NewSet[string](),
+					}
+					servers[id] = m
+				}
+				m.Ips.Add(ip)
+			}
+
+			results <- servers
+		}(port)
 	}
 
-	conn, err := net.ListenUDP("udp", &addr)
-	if err != nil {
-		return nil
-	}
-	defer func(conn *net.UDPConn) {
-		_ = conn.Close()
-	}(conn)
-
-	err = conn.SetReadDeadline(time.Now().Add(15 * time.Second))
-	if err != nil {
-		return nil
-	}
-
-	addresses := mapset.NewSet[string]()
-	buf := make([]byte, 1)
-	for {
-		n, addr, err := conn.ReadFromUDP(buf)
-		if err != nil {
-			break
-		} else if n == 1 && buf[0] == 43 {
-			addresses.Add(addr.IP.String())
+	servers := make(map[uuid.UUID]*common.AnnounceMessage)
+	for range ports {
+		for id, server := range <-results {
+			if _, ok := servers[id]; !ok {
+				servers[id] = server
+			} else {
+				for ip := range server.Ips.Iter() {
+					servers[id].Ips.Add(ip)
+				}
+			}
 		}
 	}
-	return addresses
+
+	return servers
 }

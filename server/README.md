@@ -1,13 +1,14 @@
 # Server
 
-The server module represents the core of the AoE2:DE LAN Server. It is a simple web server that listens to the game's
+The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
 
 ## System requirements
 
 The server supports a very wide variety of operating systems and architectures. Basically any system you can
-compile [Go](https://go.dev/wiki/MinimumRequirements) 1.22 for. You can support even more operating systems by using an
-older Go version like 1.20 (few code changes might be required) that would enable Windows 7 or higher support, macOS
+compile [Go](https://go.dev/wiki/MinimumRequirements) 1.22 for. If you are a developer it can support even more
+operating systems by using the
+older Go version 1.20 (few code changes might be required) that would enable Windows 7 or higher support, macOS
 High Sierra 10.13 or higher ... etc.
 
 ## Configuration
@@ -16,7 +17,9 @@ High Sierra 10.13 or higher ... etc.
 
 You can use your own certificate by (re)placing the `cert.pem` and `key.pem` files in the `resources/certificates`
 directory.
-The easiest way to generate a self-signed certificate is by running the ``genCert`` executable or you may leave that to
+The easiest way to generate a self-signed certificate is by running the ``genCert`` executable/batch (more
+info [here](../server-genCert)) or you may leave
+that to
 the ```launcher.exe``` if you are hosting and running the launcher on same PC.
 
 ### Main
@@ -51,6 +54,11 @@ the [`responses`](resources/responses) base directory:
 - [`Item Bundle Items`](resources/responses/itemBundleItems.json): Grouping of items into bundles.
 
 *Note: These files might require updates to work with future game versions.*
+
+## Command Line
+
+CLI is available with similar options as the configuration. You can see the available options with
+`server -h`.
 
 ## API endpoints
 
