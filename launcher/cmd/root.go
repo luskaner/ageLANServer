@@ -113,10 +113,11 @@ var (
 					}
 				}
 				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d)...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, serverHost = cmd.ListenToServerAnnouncementsAndSelect(portsInt)
+				errorCode, bestServerHost := cmd.ListenToServerAnnouncementsAndSelect(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
-				} else if serverHost != "" {
+				} else if bestServerHost != "" {
+					serverHost = bestServerHost
 					serverStart = "false"
 					if serverStop == "auto" {
 						serverStop = "false"
