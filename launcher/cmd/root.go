@@ -86,7 +86,7 @@ var (
 			}()
 			defer func() {
 				if errorCode == common.ErrSuccess {
-					fmt.Println("Program finished succesfully, closing in 10 seconds...")
+					fmt.Println("Program finished successfully, closing in 10 seconds...")
 					time.Sleep(10 * time.Second)
 				} else {
 					config.Revert()
@@ -113,7 +113,7 @@ var (
 					}
 				}
 				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d)...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, serverHost := cmd.ListenToServerAnnouncementsAndSelect(portsInt)
+				errorCode, serverHost = cmd.ListenToServerAnnouncementsAndSelect(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if serverHost != "" {
