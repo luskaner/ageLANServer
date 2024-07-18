@@ -3,6 +3,7 @@ module server
 go 1.22
 
 require (
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
@@ -17,7 +18,6 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/google/uuid v1.4.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
