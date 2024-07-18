@@ -9,7 +9,6 @@ const ServerGenCert = "genCert"
 
 // Launcher
 
-const Launcher = "launcher"
 const LauncherWatcher = "watcher"
 const LauncherConfig = "config"
 const LauncherConfigAdmin = "config-admin"
