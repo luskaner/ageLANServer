@@ -50,14 +50,14 @@ func ReadCertificateFromServer(host string) *x509.Certificate {
 
 func GenerateCertificatePair(certificateFolder string) (result *executor.ExecResult) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
-	exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
+	batchPath := filepath.Join(baseFolder, common.GetScriptFileName(common.ServerGenCert))
 	var path string
-	if _, err := os.Stat(exePath); err == nil {
-		path = exePath
+	if _, err := os.Stat(batchPath); err == nil {
+		path = batchPath
 	} else {
-		batchPath := filepath.Join(baseFolder, common.GetScriptFileName(common.ServerGenCert))
-		if _, err = os.Stat(batchPath); err == nil {
-			path = batchPath
+		exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
+		if _, err = os.Stat(exePath); err == nil {
+			path = exePath
 		} else {
 			return nil
 		}
