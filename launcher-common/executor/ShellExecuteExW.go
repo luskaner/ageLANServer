@@ -32,7 +32,7 @@ type SHELLEXECUTEINFO struct {
 	hProcess       windows.Handle
 }
 
-func shellExecuteEx(verb string, start bool, executable string, executableWorkingPath bool, show int, arg ...string) (err error, pid uint32, exitCode int) {
+func shellExecuteEx(verb string, start bool, executable string, executableWorkingPath bool, getPid bool, show int, arg ...string) (err error, pid uint32, exitCode int) {
 	pid = 0
 	exitCode = common.ErrSuccess
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
@@ -72,8 +72,8 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 			return
 		}
 		exitCode = int(tmpExitCode)
-	} else {
-		pid = uint32(info.hProcess)
+	} else if getPid {
+		pid, err = windows.GetProcessId(info.hProcess)
 	}
 
 	return

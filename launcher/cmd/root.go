@@ -70,20 +70,19 @@ var (
 				fmt.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
 			}
 
-			var watcherPid uint32 = 0
-
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
 			go func() {
 				_, ok := <-sigs
 				if ok {
-					if watcherPid > 0 {
+					if config.WatcherPid() > 0 {
 						config.KillWatcher()
 						config.Revert()
 					}
 					os.Exit(errorCode)
 				}
 			}()
+
 			defer func() {
 				if errorCode == common.ErrSuccess {
 					fmt.Println("Program finished successfully, closing in 10 seconds...")
@@ -113,11 +112,11 @@ var (
 					}
 				}
 				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d)...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, bestServerHost := cmd.ListenToServerAnnouncementsAndSelect(portsInt)
+				errorCode, selectedServerHost := cmd.ListenToServerAnnouncementsAndSelect(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
-				} else if bestServerHost != "" {
-					serverHost = bestServerHost
+				} else if selectedServerHost != "" {
+					serverHost = selectedServerHost
 					serverStart = "false"
 					if serverStop == "auto" {
 						serverStop = "false"
@@ -144,7 +143,7 @@ var (
 					return
 				}
 			} else {
-				errorCode = config.StartServer(serverExecutable, serverHost, serverStop == "true", canTrustCertificate != "false")
+				errorCode, serverHost = config.StartServer(serverExecutable, serverStop == "true", canTrustCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
 				}

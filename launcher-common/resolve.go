@@ -152,7 +152,11 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 	if ip := net.ParseIP(host); ip != nil {
 		var ips = mapset.NewSet[string]()
 		if ip.To4() != nil {
-			ips.Add(ip.String())
+			if ip.IsUnspecified() {
+				ips.Append(ResolveUnspecifiedIps()...)
+			} else {
+				ips.Add(ip.String())
+			}
 		} else {
 			hosts := IpToHosts(ip.String())
 			for _, h := range hosts.ToSlice() {
@@ -182,6 +186,45 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 		}
 		return ips
 	}
+}
+
+func ResolveUnspecifiedIps() (ips []string) {
+	interfaces, err := net.Interfaces()
+
+	if err != nil {
+		return
+	}
+
+	var addrs []net.Addr
+	for _, i := range interfaces {
+
+		if i.Flags&net.FlagRunning == 0 {
+			continue
+		}
+
+		addrs, err = i.Addrs()
+		if err != nil {
+			return
+		}
+
+		for _, addr := range addrs {
+			var currentIp net.IP
+			v, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+
+			currentIp = v.IP
+			currentIpv4 := currentIp.To4()
+			if currentIpv4 == nil {
+				continue
+			}
+
+			ips = append(ips, currentIpv4.String())
+		}
+	}
+
+	return
 }
 
 func Matches(addr1 string, addr2 string) bool {

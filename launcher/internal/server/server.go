@@ -24,7 +24,7 @@ import (
 var autoServerDir = []string{`\`, `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
 var autoServerName = []string{common.GetScriptFileName(common.Server), common.GetExeFileName(common.Server)}
 
-func StartServer(stop string, host string, executable string, args []string) (result *commonExecutor.ExecResult) {
+func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, ip string) {
 	executablePath := GetExecutablePath(executable)
 	if executablePath == "" {
 		return
@@ -39,8 +39,9 @@ func StartServer(stop string, host string, executable string, args []string) (re
 	if result.Success() {
 		// Wait up to 30s for server to start
 		for i := 0; i < 30; i++ {
-			for ip := range launcherCommon.HostOrIpToIps(host).Iter() {
-				if LanServer(ip, true) {
+			for curIp := range launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).Iter() {
+				if LanServer(curIp, true) {
+					ip = curIp
 					return
 				}
 			}

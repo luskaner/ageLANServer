@@ -22,6 +22,7 @@ const (
 	ErrServerCertCreate
 	ErrServerStart
 	ErrConfigIpMap
+	ErrConfigIpMapFind
 	ErrConfigIpMapAdd
 	ErrConfigCertAdd
 	ErrConfigCert

@@ -57,6 +57,10 @@ func (c *Config) RequiresConfigRevert() bool {
 	return c.unmapIPs || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
 }
 
+func (c *Config) WatcherPid() uint32 {
+	return c.watcherPid
+}
+
 func (c *Config) Revert() {
 	if c.serverPid > 0 {
 		fmt.Println("Stopping server...")

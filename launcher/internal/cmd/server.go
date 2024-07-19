@@ -6,6 +6,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/spf13/viper"
 	launcherCommon "launcher-common"
+	commonExecutor "launcher-common/executor"
 	"launcher/internal"
 	"launcher/internal/server"
 	"net"
@@ -158,7 +159,7 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 	return
 }
 
-func (c *Config) StartServer(executable string, host string, stop bool, canTrustCertificate bool) (errorCode int) {
+func (c *Config) StartServer(executable string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
 	serverExecutablePath := server.GetExecutablePath(executable)
 	if serverExecutablePath == "" {
 		fmt.Println("Cannot find server executable path. Set it manually in Server.Executable.")
@@ -180,7 +181,7 @@ func (c *Config) StartServer(executable string, host string, stop bool, canTrust
 			errorCode = internal.ErrServerCertDirectory
 			return
 		}
-		if result := server.GenerateCertificatePair(certificateFolder); result != nil && result.Success() {
+		if result := server.GenerateCertificatePair(certificateFolder); !result.Success() {
 			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
 			errorCode = internal.ErrServerCertCreate
 			if result.Err != nil {
@@ -199,7 +200,8 @@ func (c *Config) StartServer(executable string, host string, stop bool, canTrust
 	} else {
 		stopStr = "false"
 	}
-	result := server.StartServer(stopStr, host, executable,
+	var result *commonExecutor.ExecResult
+	result, ip = server.StartServer(stopStr, executable,
 		viper.GetStringSlice("Server.ExecutableArgs"))
 	if result.Success() {
 		fmt.Println("Server started.")

@@ -24,7 +24,6 @@ func openStore(userStore bool) (windows.Handle, error) {
 }
 
 func TrustCertificate(userStore bool, cert *x509.Certificate) error {
-	cert.Subject.OrganizationalUnit = []string{common.CertSubjectOrganizationalUnit}
 	certBytes := cert.Raw
 	certContext, err := windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
 	if err != nil {
@@ -59,7 +58,7 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 	}(store, 0)
 
 	var certContext *windows.CertContext
-	certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganizationalUnit)), nil)
+	certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
 
 	if err != nil {
 		return

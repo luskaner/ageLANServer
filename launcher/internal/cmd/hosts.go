@@ -23,12 +23,19 @@ func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {
 				fmt.Println(`Adding host to hosts file, accept any dialog from "launcher-config-admin" if it appears...`)
 			}
 			ips := launcherCommon.HostOrIpToIps(host)
-			ipsSlice := ips.ToSlice()
-			if len(ipsSlice) > 9 {
-				fmt.Println("Too many resolved IPs for the server host. Only 9 will be added. This should not be an issue, if it is, set Server.Host to an IP address")
-				ipsSlice = ipsSlice[:9]
+			var ip string
+			for curIp := range ips.Iter() {
+				if server.LanServer(curIp, true) {
+					ip = curIp
+					break
+				}
 			}
-			if result := executor.RunSetUp(mapset.NewSet[string](ipsSlice...), nil, nil, false, false, true); !result.Success() {
+			if ip == "" {
+				fmt.Println("Failed to find a reachable IP for " + host + ".")
+				errorCode = internal.ErrConfigIpMapFind
+				return
+			}
+			if result := executor.RunSetUp(mapset.NewSet[string](ip), nil, nil, false, false, true); !result.Success() {
 				fmt.Println("Failed to add host.")
 				if result.Err != nil {
 					fmt.Println("Error message: " + result.Err.Error())

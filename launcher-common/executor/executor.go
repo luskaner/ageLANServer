@@ -42,7 +42,7 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 		return
 	}
 	options.AsAdmin = options.AsAdmin && !IsAdmin()
-	shell := options.WindowState != windows.SW_HIDE || options.SpecialFile || options.AsAdmin
+	shell := options.WindowState != windows.SW_HIDE || options.SpecialFile || options.AsAdmin || !options.Wait
 	if (shell || !options.Wait) && options.Output {
 		result.Err = errors.New("output is not supported for shell or non-waiting processes")
 		return
@@ -60,7 +60,7 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 			fullFile = getExecutablePath(fullFile)
 		}
 		if options.Wait || options.Pid || options.ExitCode {
-			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, fullFile, !options.UseWorkingPath, options.WindowState, options.Args...)
+			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, fullFile, !options.UseWorkingPath, options.Pid, options.WindowState, options.Args...)
 			result.Err = err
 			if options.Pid {
 				result.Pid = pid
@@ -76,10 +76,7 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 		if options.Output {
 			result.Err, result.Output = runCustomExecutableOutput(fullFile, !options.UseWorkingPath, options.Args...)
 		} else {
-			err, cmd := execCustomExecutable(fullFile, !options.Wait, !options.UseWorkingPath, options.Args...)
-			if options.Pid {
-				result.Pid = uint32(cmd.Process.Pid)
-			}
+			err, cmd := execCustomExecutable(fullFile, !options.UseWorkingPath, options.Args...)
 			if options.ExitCode && cmd.ProcessState != nil {
 				result.ExitCode = cmd.ProcessState.ExitCode()
 			}
@@ -114,14 +111,9 @@ func makeCommand(executable string, executableWorkingPath bool, arg ...string) *
 	return cmd
 }
 
-func execCustomExecutable(executable string, start bool, executableWorkingPath bool, arg ...string) (error, *exec.Cmd) {
+func execCustomExecutable(executable string, executableWorkingPath bool, arg ...string) (error, *exec.Cmd) {
 	cmd := makeCommand(executable, executableWorkingPath, arg...)
-	var err error
-	if start {
-		err = cmd.Start()
-	} else {
-		err = cmd.Run()
-	}
+	err := cmd.Run()
 	return err, cmd
 }
 
