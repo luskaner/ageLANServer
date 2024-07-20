@@ -10,7 +10,8 @@ import (
 func Ignore(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement just in memory?
 	profileIdStr := r.PostFormValue("targetProfileID")
-	profileId, err := strconv.Atoi(profileIdStr)
+
+	profileId, err := strconv.ParseInt(profileIdStr, 10, 32)
 	if err != nil {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return

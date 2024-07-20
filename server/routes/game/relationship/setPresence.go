@@ -13,7 +13,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	presence, err := strconv.Atoi(presenceId)
+	presence, err := strconv.ParseInt(presenceId, 10, 8)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return

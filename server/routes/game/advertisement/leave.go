@@ -11,7 +11,7 @@ import (
 func Leave(w http.ResponseWriter, r *http.Request) {
 	sess, _ := middleware.Session(r)
 	advStr := r.PostFormValue("advertisementid")
-	advId, err := strconv.ParseUint(advStr, 10, 32)
+	advId, err := strconv.ParseInt(advStr, 10, 32)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return

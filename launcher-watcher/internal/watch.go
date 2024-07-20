@@ -33,7 +33,7 @@ func waitForProcess(name string) bool {
 	return true
 }
 
-func Watch(watchedProcess string, serverPid uint32, revertArgs []string, exitCode *int) {
+func Watch(watchedProcess string, serverPid int, revertArgs []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertArgs) > 0 {
 		defer func() {
@@ -47,7 +47,7 @@ func Watch(watchedProcess string, serverPid uint32, revertArgs []string, exitCod
 	}
 	if waitForProcess(watchedProcess) {
 		if serverPid > 0 {
-			if err := executor.Kill(int(serverPid)); err != nil {
+			if err := executor.Kill(serverPid); err != nil {
 				log.Println("Failed to stop server.")
 				*exitCode = ErrFailedStopServer
 			}

@@ -27,12 +27,12 @@ func main() {
 		}
 	}()
 	watchedProcess := os.Args[1]
-	serverPid, err := strconv.ParseUint(os.Args[2], 10, 32)
+	serverPid, err := strconv.ParseInt(os.Args[2], 10, 32)
 	if err != nil {
 		log.Println("Failed to parse server pid.")
 		exitCode = internal.ErrParseServerPid
 		return
 	}
-	internal.Watch(watchedProcess, uint32(serverPid), revertFlags, &exitCode)
+	internal.Watch(watchedProcess, int(serverPid), revertFlags, &exitCode)
 	os.Exit(exitCode)
 }
