@@ -4,7 +4,6 @@ import (
 	"common"
 	"errors"
 	"golang.org/x/sys/windows"
-	"golang.org/x/text/encoding/charmap"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 type ExecOptions struct {
 	File           string
 	SpecialFile    bool
+	Shell          bool
 	UseWorkingPath bool
 	AsAdmin        bool
 	Wait           bool
@@ -26,7 +26,7 @@ type ExecOptions struct {
 
 type ExecResult struct {
 	Err      error
-	Output   *string
+	Output   []byte
 	ExitCode int
 	Pid      uint32
 }
@@ -42,12 +42,15 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 		return
 	}
 	options.AsAdmin = options.AsAdmin && !IsAdmin()
-	shell := options.WindowState != windows.SW_HIDE || options.SpecialFile || options.AsAdmin || !options.Wait
+	shell := options.Shell || options.WindowState != windows.SW_HIDE || options.AsAdmin || !options.Wait
 	if (shell || !options.Wait) && options.Output {
 		result.Err = errors.New("output is not supported for shell or non-waiting processes")
 		return
 	}
 	fullFile := options.File
+	if !options.SpecialFile {
+		fullFile = getExecutablePath(fullFile)
+	}
 	if shell {
 		var verb string
 		switch {
@@ -56,9 +59,7 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 		default:
 			verb = "open"
 		}
-		if !options.SpecialFile {
-			fullFile = getExecutablePath(fullFile)
-		}
+
 		if options.Wait || options.Pid || options.ExitCode {
 			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, fullFile, !options.UseWorkingPath, options.Pid, options.WindowState, options.Args...)
 			result.Err = err
@@ -72,7 +73,6 @@ func (options ExecOptions) Exec() (result *ExecResult) {
 			result.Err = shellExecute(verb, fullFile, !options.UseWorkingPath, options.WindowState, options.Args...)
 		}
 	} else {
-		fullFile = getExecutablePath(fullFile)
 		if options.Output {
 			result.Err, result.Output = runCustomExecutableOutput(fullFile, !options.UseWorkingPath, options.Args...)
 		} else {
@@ -117,20 +117,9 @@ func execCustomExecutable(executable string, executableWorkingPath bool, arg ...
 	return err, cmd
 }
 
-func runCustomExecutableOutput(executable string, executableWorkingPath bool, arg ...string) (err error, output *string) {
+func runCustomExecutableOutput(executable string, executableWorkingPath bool, arg ...string) (err error, output []byte) {
 	cmd := makeCommand(executable, executableWorkingPath, arg...)
-	var outputRaw []byte
-	outputRaw, err = cmd.Output()
-	if err != nil {
-		return
-	}
-	decoder := charmap.CodePage437.NewDecoder()
-	out, err := decoder.Bytes(outputRaw)
-	if err != nil {
-		return
-	}
-	outStr := string(out)
-	output = &outStr
+	output, err = cmd.Output()
 	return
 }
 

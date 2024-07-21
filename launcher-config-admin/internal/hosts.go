@@ -146,7 +146,7 @@ func AddHosts(ips mapset.Set[string]) (ok bool, err error) {
 }
 
 func flushDns() (result *executor.ExecResult) {
-	result = executor.ExecOptions{File: "ipconfig", ExitCode: true, Wait: true, UseWorkingPath: true, Args: []string{"/flushdns"}}.Exec()
+	result = executor.ExecOptions{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}.Exec()
 	return
 }
 

@@ -21,7 +21,7 @@ type CustomExecutor struct {
 const steamAppID = "813780"
 
 func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: "steam://rungameid/" + steamAppID, SpecialFile: true}.Exec()
+	result = commonExecutor.ExecOptions{File: "steam://rungameid/" + steamAppID, Shell: true, SpecialFile: true}.Exec()
 	return
 }
 
@@ -30,7 +30,7 @@ func (exec SteamExecutor) FinalExecutable() string {
 }
 
 func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, SpecialFile: true}.Exec()
+	result = commonExecutor.ExecOptions{File: `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, Shell: true, SpecialFile: true}.Exec()
 	return
 }
 
@@ -69,7 +69,7 @@ func isInstalledOnSteam() bool {
 
 func isInstalledOnMicrosoftStore() bool {
 	// Does not seem there is another way without cgo?
-	return commonExecutor.ExecOptions{File: "powershell", Wait: true, UseWorkingPath: true, ExitCode: true, Args: []string{"-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }"}}.Exec().Success()
+	return commonExecutor.ExecOptions{File: "powershell", SpecialFile: true, Wait: true, ExitCode: true, Args: []string{"-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }"}}.Exec().Success()
 }
 
 func isInstalledCustom(executable string) bool {
@@ -95,8 +95,8 @@ func MakeExecutor(executable string) Executor {
 			if isInstalledCustom(executable) {
 				return CustomExecutor{Executable: executable}
 			}
-			return nil
 		}
+		return nil
 	}
 	if isInstalledOnSteam() {
 		return SteamExecutor{}

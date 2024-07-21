@@ -2,10 +2,7 @@ package launcher_common
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"launcher-common/executor"
 	"net"
-	"os"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -15,8 +12,6 @@ var failedIpToHosts = make(map[string]time.Time)
 var failedHostToIps = make(map[string]time.Time)
 var ipToHosts = make(map[string]mapset.Set[string])
 var hostToIps = make(map[string]mapset.Set[string])
-var pingIpRegexp = regexp.MustCompile(`\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]`)
-var netbiosRegexp = regexp.MustCompile(`\s*(.*?)\s*<00>`)
 
 func dnsNameToIps(host string) []string {
 	names, err := net.LookupIP(host)
@@ -83,71 +78,6 @@ func cacheMapping(host string, ip string) {
 	}
 }
 
-func netbiosNameToIps(host string) []string {
-	result := executor.ExecOptions{File: "ping", ExitCode: true, UseWorkingPath: true, Wait: true, Output: true, Args: []string{"-4", "-n", "1", "-w", "1000", host}}.Exec()
-	if !result.Success() {
-		return nil
-	}
-	match := pingIpRegexp.FindStringSubmatch(*result.Output)
-	if len(match) == 0 {
-		return nil
-	}
-	return []string{match[1]}
-}
-
-func isLocalIp(ip net.IP) bool {
-	interfaces, err := net.Interfaces()
-
-	if err != nil {
-		return false
-	}
-	var addrs []net.Addr
-	for _, i := range interfaces {
-		addrs, err = i.Addrs()
-		if err != nil {
-			return false
-		}
-
-		for _, addr := range addrs {
-			var currentIp net.IP
-			v, ok := addr.(*net.IPNet)
-			if !ok {
-				continue
-			}
-
-			currentIp = v.IP
-			if currentIp.To4() == nil {
-				continue
-			}
-
-			if currentIp.Equal(ip) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func ipToNetbiosName(ip string) *string {
-	result := executor.ExecOptions{File: "nbtstat", UseWorkingPath: true, Wait: true, Output: true, Args: []string{"-a", ip}}.Exec()
-	if !result.Success() {
-		return nil
-	}
-	match := netbiosRegexp.FindStringSubmatch(*result.Output)
-	if len(match) == 0 {
-		parsedIp := net.ParseIP(ip)
-		if parsedIp != nil && isLocalIp(parsedIp) {
-			hostname, err := os.Hostname()
-			if err == nil {
-				return &hostname
-			}
-		}
-		return nil
-	}
-	return &match[1]
-}
-
 func HostOrIpToIps(host string) mapset.Set[string] {
 	if ip := net.ParseIP(host); ip != nil {
 		var ips = mapset.NewSet[string]()
@@ -173,13 +103,6 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 		ipsFromDns := dnsNameToIps(host)
 		if ipsFromDns != nil {
 			for _, ipStr := range ipsFromDns {
-				ips.Add(ipStr)
-				cacheMapping(host, ipStr)
-			}
-		}
-		ipsFromNetbios := netbiosNameToIps(host)
-		if ipsFromNetbios != nil {
-			for _, ipStr := range ipsFromNetbios {
 				ips.Add(ipStr)
 				cacheMapping(host, ipStr)
 			}
@@ -245,11 +168,6 @@ func IpToHosts(ip string) mapset.Set[string] {
 			hosts.Add(hostStr)
 			cacheMapping(hostStr, ip)
 		}
-	}
-	hostFromNetbios := ipToNetbiosName(ip)
-	if hostFromNetbios != nil {
-		hosts.Add(*hostFromNetbios)
-		cacheMapping(*hostFromNetbios, ip)
 	}
 	return hosts
 }
