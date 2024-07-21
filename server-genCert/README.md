@@ -7,3 +7,8 @@ and `resources/certificates/cert.pem` upon execution.
 
 CLI is available and you can see the available options with
 `genCert -h`.
+
+## Exit Codes
+
+* [Base codes](/common/errors.go).
+* [Server genCert codes](internal/errors.go).

@@ -59,8 +59,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
 - If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require
-  admin rights.
-  elevation.
+  admin rights elevation.
 
 ### Client
 

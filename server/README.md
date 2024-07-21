@@ -65,3 +65,8 @@ CLI is available with similar options as the configuration. You can see the avai
 For documentation on how what each endpoints does, please refer
 to [LibreMatch documentation](https://wiki.librematch.org/rlink/game/start). Other endpoints are mostly
 self-explanatory.
+
+## Exit Codes
+
+* [Base codes](/common/errors.go).
+* [Server codes](internal/errors.go).

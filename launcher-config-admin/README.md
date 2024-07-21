@@ -11,3 +11,9 @@ It is not meant to be run directly, only via `config`.
 
 CLI is available. You can see the available options with
 `config-admin -h`.
+
+## Exit Codes
+
+* [Base codes](/common/errors.go).
+* [Launcher shared codes](/launcher-common/errors.go).
+* [Config Admin codes](internal/errors.go).

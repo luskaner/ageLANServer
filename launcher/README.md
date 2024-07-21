@@ -25,7 +25,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Discover the server.
 - Stop the server.
 
-## Client (via `config`)
+## Client (via [`config`](/launcher-config/README.md))
 
 - Isolated metadata directory.
 - Isolated profiles directory.
@@ -44,3 +44,9 @@ CLI is available with similar options as the configuration. You can see the avai
 The configuration options are available in the [`config.ini`](resources/config.ini) file. The file contains comments
 that
 should help you understand the options.
+
+## Exit Codes
+
+* [Base codes](/common/errors.go).
+* [Launcher shared codes](/launcher-common/errors.go).
+* [Launcher codes](internal/errors.go).
