@@ -6,7 +6,7 @@ import (
 )
 
 func SyncStats(w http.ResponseWriter, _ *http.Request) {
-	// TODO: What does it do?
+	// What does it do?
 	i.JSON(&w,
 		i.A{2},
 	)

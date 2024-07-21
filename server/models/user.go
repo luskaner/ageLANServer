@@ -184,10 +184,6 @@ func (u *User) GetExtraProfileInfo() i.A {
 }
 
 func (u *User) GetProfileInfo(includePresence bool) i.A {
-	/*isSteamInt := 1
-	if u.isXbox {
-		isSteamInt = 0
-	}*/
 	profileInfo := i.A{
 		time.Now().UTC().Unix() - rand.Int63n(300-50+1) + 50,
 		u.id,
@@ -196,7 +192,6 @@ func (u *User) GetProfileInfo(includePresence bool) i.A {
 		u.alias,
 		"",
 		u.statId,
-		//isSteamInt,
 		1,
 		1,
 		0,

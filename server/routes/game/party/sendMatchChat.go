@@ -41,7 +41,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	currentUser := sess.GetUser()
 
 	// Only peers within the match can send messages
-	// TODO: What about AI?
+	// What about AI?
 	if _, ok := adv.GetPeer(currentUser); !ok {
 		i.JSON(&w, i.A{2})
 		return

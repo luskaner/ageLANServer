@@ -57,7 +57,6 @@ type Advertisement struct {
 	startTime         int64
 	chat              []Message
 	peers             *orderedmap.OrderedMap[*User, *Peer]
-	//tags              map[string]int32
 }
 
 var peers = make(map[*User]interface{})
@@ -215,7 +214,6 @@ func StoreAdvertisement(advFrom *shared.AdvertisementHostRequest) *Advertisement
 			adv.team = advFrom.Team
 			adv.statGroup = advFrom.StatGroup
 			adv.peers = orderedmap.New[*User, *Peer]()
-			//adv.tags = make(map[string]int32)
 			adv.chat = make([]Message, 0)
 			u, _ := GetUserById(advFrom.HostId)
 			adv.NewPeer(u, advFrom.Race, advFrom.Team)

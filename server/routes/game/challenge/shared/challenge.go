@@ -5,6 +5,6 @@ import (
 )
 
 func GetChallengeProgressData() i.A {
-	// TODO: Empty means all completed?
+	// Empty means all completed?
 	return i.A{}
 }

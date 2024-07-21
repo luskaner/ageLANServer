@@ -18,7 +18,7 @@ func GetInventoryByProfileIDs(w http.ResponseWriter, r *http.Request) {
 	initialData := make(i.A, len(profileIds))
 	finalData := make(i.A, len(profileIds))
 	finalDataArr := i.A{
-		// TODO: What this mean?
+		// What this mean?
 		i.A{1, 0, 0, 0, 10000, 0, 0, 0, 1},
 		i.A{2, 0, 1, 0, 10000, 0, 1, 1, 0},
 	}
@@ -26,7 +26,7 @@ func GetInventoryByProfileIDs(w http.ResponseWriter, r *http.Request) {
 		profileIdStr := strconv.Itoa(int(profileId))
 		initialData[j] = i.A{
 			profileIdStr,
-			// TODO: Understand what these values mean
+			// And this?
 			i.A{},
 		}
 		finalData[j] = i.A{

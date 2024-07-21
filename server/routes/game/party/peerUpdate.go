@@ -9,7 +9,7 @@ import (
 )
 
 func PeerUpdate(w http.ResponseWriter, r *http.Request) {
-	// TODO: What about isNonParticipants[]? observers? ai players?
+	// What about isNonParticipants[]? observers? ai players?
 	adv, length, profileIds, raceIds, statGroupIds, teamIds := shared.ParseParameters(r)
 	if adv == nil {
 		i.JSON(&w, i.A{2})

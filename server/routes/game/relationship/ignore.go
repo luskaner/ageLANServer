@@ -8,7 +8,6 @@ import (
 )
 
 func Ignore(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement just in memory?
 	profileIdStr := r.PostFormValue("targetProfileID")
 
 	profileId, err := strconv.ParseInt(profileIdStr, 10, 32)
