@@ -4,6 +4,7 @@ import (
 	"common"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
@@ -36,6 +37,7 @@ var (
 		Short: "launcher discovers and configures AoE 2:DE to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
+			errorMayBeConfig := false
 			var errorCode = common.ErrSuccess
 			defer func() {
 				os.Exit(errorCode)
@@ -85,12 +87,21 @@ var (
 
 			defer func() {
 				if errorCode == common.ErrSuccess {
-					fmt.Println("Program finished successfully, closing in 10 seconds...")
-					time.Sleep(10 * time.Second)
+					fmt.Print("Program finished successfully")
+					if mousetrap.StartedByExplorer() {
+						fmt.Println(", closing in 10 seconds...")
+						time.Sleep(10 * time.Second)
+					}
 				} else {
 					config.Revert()
-					fmt.Println("Program finished with errors you may try running \"cleanup.bat\" as administrator, press the Enter key to exit...")
-					_, _ = fmt.Scanln()
+					fmt.Print("Program finished with errors")
+					if errorMayBeConfig {
+						fmt.Print(", you may try running \"cleanup.bat\" as regular user")
+					}
+					if mousetrap.StartedByExplorer() {
+						fmt.Println(", press the Enter key to exit...")
+						_, _ = fmt.Scanln()
+					}
 				}
 			}()
 			if cmd.GameRunning() {
@@ -140,6 +151,7 @@ var (
 				if !server.CheckConnectionFromServer(serverHost, true) {
 					fmt.Println("serverStart is false. " + serverHost + " must be reachable. Review the host is correct, the server is started and you can connect to TCP port 443 (HTTPS).")
 					errorCode = internal.ErrInvalidServerStart
+					errorMayBeConfig = true
 					return
 				}
 			} else {
@@ -150,14 +162,17 @@ var (
 			}
 			errorCode = config.MapHosts(serverHost, canAddHost)
 			if errorCode != common.ErrSuccess {
+				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.AddCert(canTrustCertificate)
 			if errorCode != common.ErrSuccess {
+				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
+				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.LaunchWatcherAndGame(clientExecutable, canTrustCertificate)
