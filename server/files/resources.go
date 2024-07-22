@@ -2,6 +2,7 @@ package files
 
 import (
 	"encoding/json"
+	"fmt"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"
@@ -18,7 +19,9 @@ var keyedFilenames = map[string]struct{}{
 
 var Login []i.A
 var ArrayFiles = make(map[string]i.A)
-var KeyedFiles = make(map[string]*orderedmap.OrderedMap[string, any])
+
+var KeyedFiles = make(map[string][]byte)
+var NameToSignature = make(map[string]string)
 var CloudFiles models.CloudFilesIndexMap
 
 func Initialize() {
@@ -66,7 +69,10 @@ func initializeResponses() {
 			var result = orderedmap.New[string, any]()
 			err = json.Unmarshal(data, result)
 			if err == nil {
-				KeyedFiles[name] = result
+				rawSignature, _ := result.Get("dataSignature")
+				serverSignature := rawSignature.(string)
+				KeyedFiles[name] = data
+				NameToSignature[name] = serverSignature
 			}
 		} else {
 			var result i.A
@@ -91,19 +97,22 @@ func ReturnSignedAsset(name string, w *http.ResponseWriter, r *http.Request, key
 	var response any
 	if keyedResponse {
 		response = KeyedFiles[name]
-		rawSignature, _ := response.(*orderedmap.OrderedMap[string, any]).Get("dataSignature")
-		serverSignature = rawSignature.(string)
+		serverSignature = NameToSignature[name]
 	} else {
 		response = ArrayFiles[name]
 		arrayResponse := response.(i.A)
 		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
 	}
 	if r.URL.Query().Get("signature") != serverSignature {
-		i.JSON(w, response)
+		if keyedResponse {
+			i.RawJSON(w, response.([]byte))
+		} else {
+			i.JSON(w, response)
+		}
 		return
 	}
 	if keyedResponse {
-		i.JSON(w, i.H{"result": 0, "dataSignature": serverSignature})
+		i.RawJSON(w, []byte(fmt.Sprintf(`{"result":0,"dataSignature":"%s"}`, serverSignature)))
 	} else {
 		emptyArrays := make(i.A, len(response.(i.A))-2)
 		ret := i.A{0}

@@ -17,6 +17,11 @@ func JSON(w *http.ResponseWriter, data any) {
 	_ = json.NewEncoder(*w).Encode(data)
 }
 
+func RawJSON(w *http.ResponseWriter, data []byte) {
+	(*w).Header().Set("Content-Type", "application/json")
+	_, _ = (*w).Write(data)
+}
+
 func decode(dst interface{}, src map[string][]string) error {
 	err := decoder.Decode(dst, src)
 	if err == nil {
