@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
@@ -50,18 +49,10 @@ func ReadCertificateFromServer(host string) *x509.Certificate {
 
 func GenerateCertificatePair(certificateFolder string) (result *executor.ExecResult) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
-	batchPath := filepath.Join(baseFolder, common.GetScriptFileName(common.ServerGenCert))
-	var path string
-	if _, err := os.Stat(batchPath); err == nil {
-		path = batchPath
-	} else {
-		exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
-		if _, err = os.Stat(exePath); err == nil {
-			path = exePath
-		} else {
-			return nil
-		}
+	exePath := filepath.Join(baseFolder, common.GetExeFileName(common.ServerGenCert))
+	if _, err := os.Stat(exePath); err != nil {
+		return nil
 	}
-	result = executor.ExecOptions{File: path, Wait: true, SpecialFile: strings.HasSuffix(path, ".bat"), ExitCode: true}.Exec()
+	result = executor.ExecOptions{File: exePath, Wait: true, ExitCode: true}.Exec()
 	return
 }

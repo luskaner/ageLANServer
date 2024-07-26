@@ -22,7 +22,7 @@ import (
 )
 
 var autoServerDir = []string{`\`, `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
-var autoServerName = []string{common.GetScriptFileName(common.Server), common.GetExeFileName(common.Server)}
+var autoServerName = []string{common.GetExeFileName(common.Server)}
 
 func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, ip string) {
 	executablePath := GetExecutablePath(executable)

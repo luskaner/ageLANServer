@@ -21,11 +21,3 @@ func GetExeFileName(name string) string {
 	}
 	return filename
 }
-
-func GetScriptFileName(name string) string {
-	filename := name
-	if runtime.GOOS == "windows" {
-		filename += ".bat"
-	}
-	return filename
-}

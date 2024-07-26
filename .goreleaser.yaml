@@ -36,46 +36,6 @@ builds:
       - amd64
       - arm
       - arm64
-  - id: server-win_x86-32_arch
-    main: ./server
-    binary: server_x86-32
-    goos: [ windows ]
-    goarch: [ "386" ]
-  - id: server-win_x86-64_arch
-    main: ./server
-    binary: server_x86-64
-    goos: [ windows ]
-    goarch: [ amd64 ]
-  - id: server-win_arm32_arch
-    main: ./server
-    binary: server_arm32
-    goos: [ windows ]
-    goarch: [ arm ]
-  - id: server-win_arm64_arch
-    main: ./server
-    binary: server_arm64
-    goos: [ windows ]
-    goarch: [ arm64 ]
-  - id: server-genCert-win_x86-32_arch
-    main: ./server-genCert
-    binary: genCert_x86-32
-    goos: [ windows ]
-    goarch: [ "386" ]
-  - id: server-genCert-win_x86-64_arch
-    main: ./server-genCert
-    binary: genCert_x86-64
-    goos: [ windows ]
-    goarch: [ amd64 ]
-  - id: server-genCert-win_arm32_arch
-    main: ./server-genCert
-    binary: genCert_arm32
-    goos: [ windows ]
-    goarch: [ arm ]
-  - id: server-genCert-win_arm64_arch
-    main: ./server-genCert
-    binary: genCert_arm64
-    goos: [ windows ]
-    goarch: [ arm64 ]
   - id: server-genCert-win_x86-64
     main: ./server-genCert
     binary: server/genCert
@@ -213,29 +173,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-  - id: server-server-genCert-win
-    name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_win_all"
-    meta: true
-    files:
-      - src: dist/server-win_*_arch*/*
-        dst: bin/server
-        strip_parent: true
-      - src: dist/server-genCert-win_*_arch*/*
-        dst: bin/genCert
-        strip_parent: true
-      - src: server/resources/config
-        dst: resources/config
-      - src: server/resources/responses
-        dst: resources/responses
-      - src: LICENSE
-        dst: docs/LICENSE.txt
-      - src: README.md
-        dst: docs/README.txt
-      - src: server/windows-resources/runner.bat
-        dst: server.bat
-      - src: server-genCert/windows-resources/runner.bat
-        dst: genCert.bat
-    format: zip
   - id: launcher-win_x86-64
     builds: [ launcher-win_x86-64, launcher-watcher-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
     files:

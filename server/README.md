@@ -17,7 +17,7 @@ High Sierra 10.13 or higher ... etc.
 
 You can use your own certificate by (re)placing the `cert.pem` and `key.pem` files in the `resources/certificates`
 directory.
-The easiest way to generate a self-signed certificate is by running the ``genCert`` executable/batch (more
+The easiest way to generate a self-signed certificate is by running the ``genCert`` executable (more
 info [here](/server-genCert) or you may leave
 that to
 the ```launcher.exe``` if you are hosting and running the launcher on same PC.
