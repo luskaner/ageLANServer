@@ -7,7 +7,7 @@ tasks:
     internal: true
     cmds:
       - cp -r server/resources build/server/resources
-      - go build -o build/server/genCert ./server-genCert
+      - go build -o build/server/bin/genCert ./server-genCert
   prepare-server-genCert:
     cmds:
       - mkdir -p build/server/resources

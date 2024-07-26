@@ -17,7 +17,7 @@ func main() {
 		fmt.Println("This program must be run as an administrator")
 		os.Exit(launcherCommon.ErrNotAdmin)
 	}
-	if !internal.ParentMatches(common.GetExeFileName(common.LauncherConfig)) {
+	if !internal.ParentMatches(common.GetExeFileName(true, common.LauncherConfig)) {
 		fmt.Printf("This program should only be run through \"%s\", not directly. You can use the same arguments and more.\n", common.LauncherConfig)
 	}
 	err := cmd.Execute()

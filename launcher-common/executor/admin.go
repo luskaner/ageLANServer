@@ -20,7 +20,7 @@ func RunSetUp(IPs []net.IP, certificate *x509.Certificate) (result *ExecResult) 
 		args = append(args, "-l")
 		args = append(args, base64.StdEncoding.EncodeToString(certificate.Raw))
 	}
-	result = ExecOptions{File: common.GetExeFileName(common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	result = ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
 	return
 }
 
@@ -37,6 +37,6 @@ func RunRevert(IPs bool, certificate bool, failfast bool) (result *ExecResult) {
 	} else {
 		args = append(args, "-a")
 	}
-	result = ExecOptions{File: common.GetExeFileName(common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	result = ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
 	return
 }

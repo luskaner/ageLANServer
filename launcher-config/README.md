@@ -8,6 +8,7 @@ This executable makes and revert configuration changes and is executed by `launc
 - Install of a self-signed certificate for the current user or local (in this case via `config-admin`).
 
 It is also responsible for managing the lifecycle and communicating with `config-admin-agent`.
+Resides in `bin` subdirectory.
 
 ## Command Line
 

@@ -1,6 +1,9 @@
 package common
 
-import "runtime"
+import (
+	"path/filepath"
+	"runtime"
+)
 
 // Server
 
@@ -14,10 +17,18 @@ const LauncherConfig = "config"
 const LauncherConfigAdmin = "config-admin"
 const LauncherConfigAdminAgent = "config-admin-agent"
 
-func GetExeFileName(name string) string {
+func getExeFileName(name string) string {
 	filename := name
 	if runtime.GOOS == "windows" {
 		filename += ".exe"
+	}
+	return filename
+}
+
+func GetExeFileName(bin bool, executable string) string {
+	filename := getExeFileName(executable)
+	if !bin {
+		filename = filepath.Join("bin", filename)
 	}
 	return filename
 }

@@ -26,7 +26,7 @@ builds:
     goarch: [ arm64 ]
   - id: server-genCert
     main: ./server-genCert
-    binary: genCert
+    binary: bin/genCert
     goos:
       - linux
       - windows
@@ -38,12 +38,12 @@ builds:
       - arm64
   - id: server-genCert-win_x86-64
     main: ./server-genCert
-    binary: server/genCert
+    binary: server/bin/genCert
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: server-genCert-win_arm64
     main: ./server-genCert
-    binary: server/genCert
+    binary: server/bin/genCert
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-win_x86-64
@@ -53,22 +53,22 @@ builds:
     goarch: [ amd64 ]
   - id: launcher-watcher-win_x86-64
     main: ./launcher-watcher
-    binary: launcher/watcher
+    binary: launcher/bin/watcher
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-config-win_x86-64
     main: ./launcher-config
-    binary: launcher/config
+    binary: launcher/bin/config
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-config-admin-win_x86-64
     main: ./launcher-config-admin
-    binary: launcher/config-admin
+    binary: launcher/bin/config-admin
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-config-admin-agent-win_x86-64
     main: ./launcher-config-admin-agent
-    binary: launcher/config-admin-agent
+    binary: launcher/bin/config-admin-agent
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-win_arm64
@@ -78,22 +78,72 @@ builds:
     goarch: [ arm64 ]
   - id: launcher-watcher-win_arm64
     main: ./launcher-watcher
-    binary: launcher/watcher
+    binary: launcher/bin/watcher
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-config-win_arm64
     main: ./launcher-config
-    binary: launcher/config
+    binary: launcher/bin/config
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-config-admin-win_arm64
     main: ./launcher-config-admin
-    binary: launcher/config-admin
+    binary: launcher/bin/config-admin
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-config-admin-agent-win_arm64
     main: ./launcher-config-admin-agent
-    binary: launcher/config-admin-agent
+    binary: launcher/bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher_launcher-win-x86-64
+    main: ./launcher
+    binary: launcher
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-watcher_launcher-win-x86-64
+    main: ./launcher-watcher
+    binary: bin/watcher
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-config_launcher-win-x86-64
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-config-admin_launcher-win-x86-64
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher-config-admin-agent_launcher-win-x86-64
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+  - id: launcher_launcher-win-arm64
+    main: ./launcher
+    binary: launcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-watcher_launcher-win-arm64
+    main: ./launcher-watcher
+    binary: bin/watcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config_launcher-win-arm64
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin_launcher-win-arm64
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-agent_launcher-win-arm64
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
     goos: [ windows ]
     goarch: [ arm64 ]
 archives:
@@ -174,7 +224,7 @@ archives:
       - goos: windows
         format: zip
   - id: launcher-win_x86-64
-    builds: [ launcher-win_x86-64, launcher-watcher-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
+    builds: [ launcher_launcher-win-x86-64, launcher-watcher_launcher-win-x86-64, launcher-config_launcher-win-x86-64, launcher-config-admin_launcher-win-x86-64, launcher-config-admin-agent_launcher-win-x86-64 ]
     files:
       - src: launcher/resources
         dst: resources
@@ -190,9 +240,8 @@ archives:
       {{- .ProjectName }}_launcher_
       {{- .RawVersion }}_win_x86-64
     format: zip
-    strip_binary_directory: true
   - id: launcher-win_arm64
-    builds: [ launcher-win_arm64, launcher-watcher-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
+    builds: [ launcher_launcher-win-arm64, launcher-watcher_launcher-win-arm64, launcher-config_launcher-win-arm64, launcher-config-admin_launcher-win-arm64, launcher-config-admin-agent_launcher-win-arm64 ]
     files:
       - src: launcher/resources
         dst: resources
@@ -208,13 +257,12 @@ archives:
       {{- .ProjectName }}_launcher_
       {{- .RawVersion }}_win_arm64
     format: zip
-    strip_binary_directory: true
 universal_binaries:
   - id: server
     name_template: 'server'
     replace: false
   - id: server-genCert
-    name_template: 'genCert'
+    name_template: 'bin/genCert'
     replace: false
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'

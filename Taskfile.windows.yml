@@ -7,18 +7,18 @@ tasks:
     internal: true
     cmds:
       - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
-      - go build -o build/server/genCert.exe ./server-genCert
+      - go build -o build/server/bin/genCert.exe ./server-genCert
   build-config:
     internal: true
     cmds:
-      - go build -o build/launcher/config.exe ./launcher-config
+      - go build -o build/launcher/bin/config.exe ./launcher-config
   build-config-admin:
     cmds:
-      - go build -o build/launcher/config-admin.exe ./launcher-config-admin
+      - go build -o build/launcher/bin/config-admin.exe ./launcher-config-admin
   build-config-admin-agent:
     deps: [ build-config-admin ]
     cmds:
-      - go build -o build/launcher/config-admin-agent.exe ./launcher-config-admin-agent
+      - go build -o build/launcher/bin/config-admin-agent.exe ./launcher-config-admin-agent
   build-config-all:
     deps: [ build-config, build-config-admin-agent ]
   prepare-launcher:
@@ -28,7 +28,7 @@ tasks:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
       - powershell Copy-Item -Path launcher/resources/config.ini -Destination build/launcher/resources/config.ini -ErrorAction Ignore -Force
-      - go build -o build/launcher/watcher.exe ./launcher-watcher
+      - go build -o build/launcher/bin/watcher.exe ./launcher-watcher
   prepare-server-genCert:
     cmds:
       - powershell New-Item -ItemType Directory -ErrorAction Ignore -Force -Path build/server/resources

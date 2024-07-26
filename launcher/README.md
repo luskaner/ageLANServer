@@ -25,7 +25,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 - Discover the server.
 - Stop the server.
 
-## Client (via [`config`](/launcher-config/README.md))
+## Client (via [`bin\config`](/launcher-config/README.md))
 
 - Isolated metadata directory.
 - Isolated profiles directory.

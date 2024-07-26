@@ -6,6 +6,7 @@ This executable makes and revert configuration changes which require admin privi
 - Install of a self-signed certificate for the local Pc.
 
 It is not meant to be run directly, only via `config`.
+Resides in `bin` subdirectory.
 
 ## Command Line
 

@@ -69,7 +69,7 @@ func (c *Config) Revert() {
 		} else {
 			fmt.Println("Failed to stop server.")
 			fmt.Println("Error message: " + err.Error())
-			fmt.Println("You may need to stop the server manually. Search for the process with the name", common.GetExeFileName(common.Server), "and PID", c.serverPid)
+			fmt.Println("You may need to stop the server manually. Search for the process with the name", common.GetExeFileName(true, common.Server), "and PID", c.serverPid)
 		}
 	}
 	if c.RequiresConfigRevert() {

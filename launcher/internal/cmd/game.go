@@ -15,7 +15,7 @@ import (
 func (c *Config) KillWatcher() {
 	err := commonExecutor.Kill(int(c.watcherPid))
 	if err != nil {
-		fmt.Printf(`Failed to terminate watcher. Kill it manually if it still exists, search for name "%s" and/or PID %d\n`, common.GetExeFileName(common.LauncherWatcher), c.watcherPid)
+		fmt.Printf(`Failed to terminate watcher. Kill it manually if it still exists, search for name "%s" and/or PID %d\n`, common.GetExeFileName(true, common.LauncherWatcher), c.watcherPid)
 	}
 }
 
