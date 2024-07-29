@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"common"
+	commonProcess "common/process"
 	"crypto/tls"
 	"encoding/binary"
 	"encoding/gob"
@@ -24,8 +25,8 @@ import (
 var autoServerDir = []string{`\`, `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
-func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, ip string) {
-	executablePath := GetExecutablePath(executable)
+func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, executablePath string, ip string) {
+	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
 	}
@@ -47,9 +48,12 @@ func StartServer(stop string, executable string, args []string) (result *commonE
 			}
 			time.Sleep(time.Second)
 		}
-		if err := commonExecutor.Kill(int(result.Pid)); err != nil {
+		if proc, err := commonProcess.Kill(executablePath); err != nil {
 			fmt.Println("Failed to stop server")
 			fmt.Println("Error message: " + result.Err.Error())
+			if proc != nil {
+				fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+			}
 		}
 		result = nil
 	}

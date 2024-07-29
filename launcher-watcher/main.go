@@ -2,15 +2,20 @@ package main
 
 import (
 	"common"
+	"common/pidLock"
+	"fmt"
 	"golang.org/x/sys/windows"
-	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"watcher/internal"
 )
 
 func main() {
+	lock := &pidLock.Lock{}
+	if err := lock.Lock(); err != nil {
+		fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+		os.Exit(common.ErrPidLock)
+	}
 	var exitCode int
 	var revertFlags []string
 	if len(os.Args) > 3 {
@@ -23,16 +28,12 @@ func main() {
 		if ok {
 			exitCode = common.ErrSignal
 			internal.RunConfig(revertFlags)
+			_ = lock.Unlock()
 			os.Exit(exitCode)
 		}
 	}()
 	watchedProcess := os.Args[1]
-	serverPid, err := strconv.ParseInt(os.Args[2], 10, 32)
-	if err != nil {
-		log.Println("Failed to parse server pid.")
-		exitCode = internal.ErrParseServerPid
-		return
-	}
-	internal.Watch(watchedProcess, int(serverPid), revertFlags, &exitCode)
+	internal.Watch(watchedProcess, os.Args[2], revertFlags, &exitCode)
+	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

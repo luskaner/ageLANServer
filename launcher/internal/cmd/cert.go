@@ -16,7 +16,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 			if canAdd == "user" {
 				certMsg += ", accept the dialog."
 			} else {
-				if commonExecutor.IsAdmin() || c.StartedAgent() {
+				if commonExecutor.IsAdmin() || c.AgentStarted() {
 					certMsg += "."
 				} else {
 					certMsg += `, accept any dialog from "launcher-config-admin" if it appears.`

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"common"
+	"common/pidLock"
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/spf13/cobra"
@@ -30,10 +31,16 @@ var (
 		Use:   filepath.Base(os.Args[0]),
 		Short: "server is a service acting as " + common.Domain + " for LAN features in AoE 2:DE.",
 		Run: func(_ *cobra.Command, _ []string) {
+			lock := &pidLock.Lock{}
+			if err := lock.Lock(); err != nil {
+				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+				os.Exit(common.ErrPidLock)
+			}
 			host := viper.GetString("default.Host")
 			addr := ip.ResolveHost(host)
 			if addr == nil {
 				fmt.Println("Failed to resolve host")
+				_ = lock.Unlock()
 				os.Exit(internal.ErrResolveHost)
 			}
 			mux := http.NewServeMux()
@@ -49,6 +56,7 @@ var (
 				err := os.MkdirAll("logs", 0755)
 				if err != nil {
 					fmt.Println("Failed to create logs directory")
+					_ = lock.Unlock()
 					os.Exit(internal.ErrCreateLogsDir)
 				}
 				t := time.Now()
@@ -56,6 +64,7 @@ var (
 				file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					fmt.Println("Failed to create log file")
+					_ = lock.Unlock()
 					os.Exit(internal.ErrCreateLogFile)
 				}
 				writer = file
@@ -76,6 +85,7 @@ var (
 			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
 			if certificatePairFolder == "" {
 				fmt.Println("Failed to determine certificate pair folder")
+				_ = lock.Unlock()
 				os.Exit(internal.ErrCertDirectory)
 			}
 			fmt.Println("Listening on " + server.Addr)
@@ -83,6 +93,7 @@ var (
 			if err != nil {
 				fmt.Println("Failed to start server")
 				fmt.Println(err)
+				_ = lock.Unlock()
 				os.Exit(internal.ErrStartServer)
 			}
 		},

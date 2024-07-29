@@ -6,7 +6,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.21.0
-	golang.org/x/text v0.16.0
 )
 
 require (

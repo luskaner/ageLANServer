@@ -1,10 +1,8 @@
-package executor
+package process
 
 import (
-	"errors"
 	"golang.org/x/sys/windows"
 	"os"
-	"os/exec"
 	"time"
 	"unsafe"
 )
@@ -80,32 +78,16 @@ func ProcessesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly 
 	return processesEntry
 }
 
-func Kill(pid int) error {
-	proc, err := os.FindProcess(pid)
+func FindProcess(pid int) (proc *os.Process, err error) {
+	proc, err = os.FindProcess(pid)
 	if err != nil {
-		return err
+		return
 	}
-	err = proc.Kill()
-	if err != nil {
-		return err
+	entries := ProcessesEntry(func(entry *windows.ProcessEntry32) bool {
+		return int(entry.ProcessID) == pid
+	}, true)
+	if len(entries) == 0 {
+		proc = nil
 	}
-	done := make(chan error, 1)
-	go func() {
-		_, err = proc.Wait()
-		done <- err
-	}()
-
-	select {
-	case <-time.After(3 * time.Second):
-		return errors.New("timeout")
-
-	case err = <-done:
-		if err != nil {
-			var e *exec.ExitError
-			if !errors.As(err, &e) {
-				return err
-			}
-		}
-		return nil
-	}
+	return
 }

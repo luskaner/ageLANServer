@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"common"
+	commonProcess "common/process"
 	"errors"
 	"fmt"
 	"github.com/spf13/viper"
@@ -13,9 +14,9 @@ import (
 )
 
 func (c *Config) KillWatcher() {
-	err := commonExecutor.Kill(int(c.watcherPid))
-	if err != nil {
-		fmt.Printf(`Failed to terminate watcher. Kill it manually if it still exists, search for name "%s" and/or PID %d\n`, common.GetExeFileName(true, common.LauncherWatcher), c.watcherPid)
+	proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherWatcher))
+	if err != nil && proc != nil {
+		fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
 	}
 }
 
@@ -36,9 +37,9 @@ func (c *Config) LaunchWatcherAndGame(executable string, canTrustCertificate str
 		errorCode = internal.ErrGameLauncherNotFound
 		return
 	}
-	if c.serverPid > 0 || c.RequiresConfigRevert() {
+	if len(c.serverExe) > 0 || c.RequiresConfigRevert() {
 		fmt.Println("Starting watcher...")
-		result := executor.RunWatcher(executer.FinalExecutable(), c.serverPid, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
+		result := executor.RunWatcher(executer.FinalExecutable(), c.serverExe, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
 		if !result.Success() {
 			fmt.Println("Failed to start watcher.")
 			errorCode = internal.ErrWatcherStart
@@ -50,7 +51,7 @@ func (c *Config) LaunchWatcherAndGame(executable string, canTrustCertificate str
 			}
 			return
 		} else {
-			c.SetWatcherPid(result.Pid)
+			c.SetWatcherStarted()
 			fmt.Println("Watcher started.")
 		}
 	}
@@ -70,7 +71,7 @@ func (c *Config) LaunchWatcherAndGame(executable string, canTrustCertificate str
 	if !result.Success() {
 		errorCode = internal.ErrGameLauncherStart
 		fmt.Println("Game failed to start. Error message: " + result.Err.Error())
-		if c.watcherPid > 0 {
+		if c.WatcherStarted() {
 			c.KillWatcher()
 		}
 	} else {

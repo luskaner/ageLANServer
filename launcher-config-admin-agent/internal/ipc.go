@@ -10,7 +10,6 @@ import (
 	launcherCommon "launcher-common"
 	"launcher-common/executor"
 	"net"
-	"os"
 )
 
 var mappedIps = false
@@ -136,7 +135,7 @@ func handleRevert(decoder *gob.Decoder) int {
 	return result.ExitCode
 }
 
-func RunIpcServer() {
+func RunIpcServer() (errorCode int) {
 	pipePath := launcherCommon.ConfigAdminIpcPipe
 	_, sid := userSid()
 	pc := &winio.PipeConfig{
@@ -149,7 +148,7 @@ func RunIpcServer() {
 	l, err := winio.ListenPipe(pipePath, pc)
 	if err != nil {
 		fmt.Println("Error creating pipe: ", err)
-		os.Exit(ErrCreatePipe)
+		errorCode = ErrCreatePipe
 	}
 	defer func(l net.Listener) {
 		_ = l.Close()
@@ -167,4 +166,5 @@ func RunIpcServer() {
 			break
 		}
 	}
+	return
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"common"
+	"common/pidLock"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/inconshreveable/mousetrap"
@@ -37,9 +38,15 @@ var (
 		Short: "launcher discovers and configures AoE 2:DE to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
+			lock := &pidLock.Lock{}
+			if err := lock.Lock(); err != nil {
+				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+				os.Exit(common.ErrPidLock)
+			}
 			errorMayBeConfig := false
 			var errorCode = common.ErrSuccess
 			defer func() {
+				_ = lock.Unlock()
 				os.Exit(errorCode)
 			}()
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
@@ -77,10 +84,11 @@ var (
 			go func() {
 				_, ok := <-sigs
 				if ok {
-					if config.WatcherPid() > 0 {
+					if config.WatcherStarted() {
 						config.KillWatcher()
 						config.Revert()
 					}
+					_ = lock.Unlock()
 					os.Exit(errorCode)
 				}
 			}()

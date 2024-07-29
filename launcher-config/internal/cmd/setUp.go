@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"common"
+	commonProcess "common/process"
 	"config/internal"
 	"config/internal/userData"
 	"fmt"
@@ -148,7 +149,6 @@ var setUpCmd = &cobra.Command{
 			}
 		}
 		if cmd.AddLocalCertData != nil || !hostMappings.IsEmpty() {
-			var pid uint32
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -165,9 +165,12 @@ var setUpCmd = &cobra.Command{
 					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
 						fmt.Println("Failed to connect to config-admin-agent after starting it, killing the process...")
-						err := executor.Kill(int(pid))
+						proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
 						if err != nil {
 							fmt.Println("Failed to terminate config-admin-agent after failing to connect to it")
+							if proc != nil {
+								fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+							}
 							os.Exit(internal.ErrStartAgentRevert)
 						} else {
 							fmt.Println("Successfully terminated config-admin-agent after failing to connect to it")
@@ -220,28 +223,15 @@ var setUpCmd = &cobra.Command{
 				if agentStarted {
 					fmt.Println("Failed to communicate with config-admin-agent")
 					if agentEndOnError {
-						fmt.Println("Stopping config-admin-agent")
-						if pid == 0 {
-							fmt.Println("Communicating with the process...")
-							err = internal.StopAgentIfNeeded()
-							if err == nil {
-								if internal.ConnectAgentIfNeededWithRetries(false) {
-									fmt.Println("Stopped config-admin-agent")
-								} else {
-									fmt.Println("Failed to stop config-admin-agent")
-								}
-							} else {
-								fmt.Println("Failed to trying stopping config-admin-agent")
-								fmt.Println(err)
+						fmt.Println("Killing the process...")
+						proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
+						if err != nil {
+							fmt.Println("Failed to terminate config-admin-agent.")
+							if proc != nil {
+								fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
 							}
 						} else {
-							fmt.Println("Killing the process...")
-							err := windows.TerminateProcess(windows.Handle(pid), uint32(common.ErrGeneral))
-							if err != nil {
-								fmt.Println("Failed to terminate config-admin-agent.")
-							} else {
-								fmt.Println("Successfully terminated config-admin-agent.")
-							}
+							fmt.Println("Successfully terminated config-admin-agent.")
 						}
 					}
 				} else {

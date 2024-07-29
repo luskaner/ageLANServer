@@ -1,14 +1,14 @@
 package internal
 
 import (
+	commonProcess "common/process"
 	"golang.org/x/sys/windows"
-	"launcher-common/executor"
 	"os"
 	"path/filepath"
 )
 
 func parentProcessID(pid int) (int, error) {
-	processes := executor.ProcessesEntry(func(entry *windows.ProcessEntry32) bool {
+	processes := commonProcess.ProcessesEntry(func(entry *windows.ProcessEntry32) bool {
 		return int(entry.ProcessID) == pid
 	}, true)
 	if len(processes) == 0 {

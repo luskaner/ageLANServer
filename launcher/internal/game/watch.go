@@ -1,8 +1,8 @@
 package game
 
 import (
+	commonProcess "common/process"
 	mapset "github.com/deckarep/golang-set/v2"
-	"launcher-common/executor"
 )
 
 const steamProcess = "AoE2DE_s.exe"
@@ -16,5 +16,5 @@ func AnyProcessExists(steam bool, microsoftStore bool) bool {
 	if microsoftStore {
 		processes.Add(microsoftStoreProcess)
 	}
-	return executor.AnyProcessExists(processes.ToSlice())
+	return commonProcess.AnyProcessExists(processes.ToSlice())
 }
