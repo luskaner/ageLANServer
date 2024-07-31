@@ -3,7 +3,7 @@ package game
 import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	commonExecutor "launcher-common/executor"
+	commonExecutor "launcherCommon/executor"
 	"os"
 )
 

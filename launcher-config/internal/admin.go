@@ -6,8 +6,8 @@ import (
 	"encoding/gob"
 	"github.com/Microsoft/go-winio"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 	"net"
 	"time"
 )

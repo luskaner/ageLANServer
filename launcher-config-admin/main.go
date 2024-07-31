@@ -1,12 +1,12 @@
 package main
 
 import (
-	"admin/internal"
-	"admin/internal/cmd"
+	"cfgAdmin/internal"
+	"cfgAdmin/internal/cmd"
 	"common"
 	"fmt"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 	"os"
 )
 

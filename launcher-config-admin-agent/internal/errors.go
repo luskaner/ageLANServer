@@ -1,6 +1,6 @@
 package internal
 
-import launcherCommon "launcher-common"
+import launcherCommon "launcherCommon"
 
 const (
 	ErrCreatePipe = iota + launcherCommon.ErrLast

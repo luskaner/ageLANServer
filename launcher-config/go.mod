@@ -1,4 +1,4 @@
-module config
+module cfg
 
 go 1.22.0
 

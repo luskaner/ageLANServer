@@ -3,10 +3,10 @@ package cmd
 import (
 	"common"
 	"fmt"
-	commonExecutor "launcher-common/executor"
 	"launcher/internal"
 	"launcher/internal/executor"
 	"launcher/internal/server"
+	commonExecutor "launcherCommon/executor"
 )
 
 func (c *Config) AddCert(canAdd string) (errorCode int) {
@@ -16,7 +16,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 			if canAdd == "user" {
 				certMsg += ", accept the dialog."
 			} else {
-				if commonExecutor.IsAdmin() || c.AgentStarted() {
+				if commonExecutor.IsAdmin() || c.CfgAgentStarted() {
 					certMsg += "."
 				} else {
 					certMsg += `, accept any dialog from "launcher-config-admin" if it appears.`

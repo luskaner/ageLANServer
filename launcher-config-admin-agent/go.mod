@@ -1,4 +1,4 @@
-module agent
+module cfgAdminAgent
 
 go 1.22.0
 

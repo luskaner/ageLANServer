@@ -1,7 +1,7 @@
 package internal
 
 import (
-	launcherCommon "launcher-common"
+	launcherCommon "launcherCommon"
 )
 
 const (

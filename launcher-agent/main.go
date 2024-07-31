@@ -1,25 +1,23 @@
 package main
 
 import (
+	"agent/internal"
 	"common"
 	"common/pidLock"
-	"fmt"
 	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
-	"watcher/internal"
 )
 
 func main() {
 	lock := &pidLock.Lock{}
 	if err := lock.Lock(); err != nil {
-		fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
 		os.Exit(common.ErrPidLock)
 	}
 	var exitCode int
 	var revertFlags []string
-	if len(os.Args) > 3 {
-		revertFlags = os.Args[3:]
+	if len(os.Args) > 4 {
+		revertFlags = os.Args[4:]
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
@@ -32,8 +30,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	watchedProcess := os.Args[1]
-	internal.Watch(watchedProcess, os.Args[2], revertFlags, &exitCode)
+	internal.Watch(os.Args[1], os.Args[2], os.Args[3], revertFlags, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

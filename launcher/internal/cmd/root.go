@@ -16,7 +16,7 @@ type Config struct {
 	restoreMetadata bool
 	restoreProfiles bool
 	serverExe       string
-	watcherStarted  bool
+	agentStarted    bool
 }
 
 func (c *Config) MappedHosts() {
@@ -41,15 +41,15 @@ func (c *Config) BackedUpProfiles() {
 	c.restoreProfiles = true
 }
 
-func (c *Config) SetWatcherStarted() {
-	c.watcherStarted = true
+func (c *Config) SetAgentStarted() {
+	c.agentStarted = true
 }
 
 func (c *Config) SetServerExe(exe string) {
 	c.serverExe = exe
 }
 
-func (c *Config) AgentStarted() bool {
+func (c *Config) CfgAgentStarted() bool {
 	return c.startedAgent
 }
 
@@ -57,8 +57,8 @@ func (c *Config) RequiresConfigRevert() bool {
 	return c.unmapIPs || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
 }
 
-func (c *Config) WatcherStarted() bool {
-	return c.watcherStarted
+func (c *Config) AgentStarted() bool {
+	return c.agentStarted
 }
 
 func (c *Config) ServerExe() string {

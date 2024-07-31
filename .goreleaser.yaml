@@ -51,9 +51,9 @@ builds:
     binary: launcher/launcher
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: launcher-watcher-win_x86-64
-    main: ./launcher-watcher
-    binary: launcher/bin/watcher
+  - id: launcher-agent-win_x86-64
+    main: ./launcher-agent
+    binary: launcher/bin/agent
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-config-win_x86-64
@@ -76,9 +76,9 @@ builds:
     binary: launcher/launcher
     goos: [ windows ]
     goarch: [ arm64 ]
-  - id: launcher-watcher-win_arm64
-    main: ./launcher-watcher
-    binary: launcher/bin/watcher
+  - id: launcher-agent-win_arm64
+    main: ./launcher-agent
+    binary: launcher/bin/agent
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-config-win_arm64
@@ -101,9 +101,9 @@ builds:
     binary: launcher
     goos: [ windows ]
     goarch: [ amd64 ]
-  - id: launcher-watcher_launcher-win-x86-64
-    main: ./launcher-watcher
-    binary: bin/watcher
+  - id: launcher-agent_launcher-win-x86-64
+    main: ./launcher-agent
+    binary: bin/agent
     goos: [ windows ]
     goarch: [ amd64 ]
   - id: launcher-config_launcher-win-x86-64
@@ -126,9 +126,9 @@ builds:
     binary: launcher
     goos: [ windows ]
     goarch: [ arm64 ]
-  - id: launcher-watcher_launcher-win-arm64
-    main: ./launcher-watcher
-    binary: bin/watcher
+  - id: launcher-agent_launcher-win-arm64
+    main: ./launcher-agent
+    binary: bin/agent
     goos: [ windows ]
     goarch: [ arm64 ]
   - id: launcher-config_launcher-win-arm64
@@ -148,7 +148,7 @@ builds:
     goarch: [ arm64 ]
 archives:
   - id: all_x86-64
-    builds: [ server-win_x86-64, server-genCert-win_x86-64, launcher-win_x86-64, launcher-watcher-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
+    builds: [ server-win_x86-64, server-genCert-win_x86-64, launcher-win_x86-64, launcher-agent-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
@@ -170,7 +170,7 @@ archives:
       - src: launcher-config/windows-resources/*
         dst: launcher/
   - id: all_arm64
-    builds: [ server-win_arm64, server-genCert-win_arm64, launcher-win_arm64, launcher-watcher-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
+    builds: [ server-win_arm64, server-genCert-win_arm64, launcher-win_arm64, launcher-agent-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
     format: zip
     name_template: >-
       {{- .ProjectName }}_
@@ -224,7 +224,7 @@ archives:
       - goos: windows
         format: zip
   - id: launcher-win_x86-64
-    builds: [ launcher_launcher-win-x86-64, launcher-watcher_launcher-win-x86-64, launcher-config_launcher-win-x86-64, launcher-config-admin_launcher-win-x86-64, launcher-config-admin-agent_launcher-win-x86-64 ]
+    builds: [ launcher_launcher-win-x86-64, launcher-agent_launcher-win-x86-64, launcher-config_launcher-win-x86-64, launcher-config-admin_launcher-win-x86-64, launcher-config-admin-agent_launcher-win-x86-64 ]
     files:
       - src: launcher/resources
         dst: resources
@@ -241,7 +241,7 @@ archives:
       {{- .RawVersion }}_win_x86-64
     format: zip
   - id: launcher-win_arm64
-    builds: [ launcher_launcher-win-arm64, launcher-watcher_launcher-win-arm64, launcher-config_launcher-win-arm64, launcher-config-admin_launcher-win-arm64, launcher-config-admin-agent_launcher-win-arm64 ]
+    builds: [ launcher_launcher-win-arm64, launcher-agent_launcher-win-arm64, launcher-config_launcher-win-arm64, launcher-config-admin_launcher-win-arm64, launcher-config-admin-agent_launcher-win-arm64 ]
     files:
       - src: launcher/resources
         dst: resources

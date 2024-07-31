@@ -7,7 +7,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/sys/windows"
 	"io"
-	"launcher-common/executor"
+	"launcherCommon/executor"
 	"os"
 	"path/filepath"
 	"regexp"

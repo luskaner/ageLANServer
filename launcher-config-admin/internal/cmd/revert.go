@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"admin/internal"
+	"cfgAdmin/internal"
 	"common"
 	"crypto/x509"
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcher-common"
-	"launcher-common/cmd"
+	launcherCommon "launcherCommon"
+	"launcherCommon/cmd"
 	"os"
 	"os/signal"
 )

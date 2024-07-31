@@ -1,4 +1,4 @@
-module admin
+module cfgAdmin
 
 go 1.22.0
 

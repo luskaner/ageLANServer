@@ -12,7 +12,7 @@ const ServerGenCert = "genCert"
 
 // Launcher
 
-const LauncherWatcher = "watcher"
+const LauncherAgent = "agent"
 const LauncherConfig = "config"
 const LauncherConfigAdmin = "config-admin"
 const LauncherConfigAdminAgent = "config-admin-agent"

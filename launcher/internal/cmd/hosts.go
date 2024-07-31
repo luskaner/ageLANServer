@@ -4,11 +4,11 @@ import (
 	"common"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcher-common"
-	commonExecutor "launcher-common/executor"
 	"launcher/internal"
 	"launcher/internal/executor"
 	"launcher/internal/server"
+	launcherCommon "launcherCommon"
+	commonExecutor "launcherCommon/executor"
 )
 
 func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {

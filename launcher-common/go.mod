@@ -1,4 +1,4 @@
-module launcher-common
+module launcherCommon
 
 go 1.22.0
 

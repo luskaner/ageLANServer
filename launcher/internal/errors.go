@@ -1,11 +1,12 @@
 package internal
 
 import (
-	launcherCommon "launcher-common"
+	launcherCommon "launcherCommon"
 )
 
 const (
 	ErrInvalidCanTrustCertificate = iota + launcherCommon.ErrLast
+	ErrInvalidCanBroadcastBattleServer
 	ErrInvalidServerStart
 	ErrInvalidServerStop
 	ErrInvalidServerHost
@@ -29,5 +30,5 @@ const (
 	ErrReadCert
 	ErrTrustCert
 	ErrMetadataProfilesSetup
-	ErrWatcherStart
+	ErrAgentStart
 )

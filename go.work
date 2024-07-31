@@ -6,7 +6,7 @@ use (
 	server-genCert
 	launcher
 	launcher-common
-	launcher-watcher
+	launcher-agent
 	launcher-config
 	launcher-config-admin
 	launcher-config-admin-agent

@@ -5,7 +5,6 @@ import (
 	commonProcess "common/process"
 	"fmt"
 	"golang.org/x/sys/windows"
-	"log"
 )
 
 func waitForProcess(name string) bool {
@@ -34,7 +33,7 @@ func waitForProcess(name string) bool {
 	return true
 }
 
-func Watch(watchedProcess string, serverExe string, revertArgs []string, exitCode *int) {
+func Watch(watchedProcess string, serverExe string, canBroadcastBattleServer string, revertArgs []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertArgs) > 0 {
 		defer func() {
@@ -42,22 +41,28 @@ func Watch(watchedProcess string, serverExe string, revertArgs []string, exitCod
 		}()
 	}
 	if !commonProcess.WaitUntilAnyProcessExist([]string{watchedProcess}) {
-		log.Println("Failed to wait for process start or took longer than 1 minute.")
-		*exitCode = ErrTimeoutStart
+		*exitCode = ErrGameTimeoutStart
 		return
 	}
+	fmt.Println(canBroadcastBattleServer)
+	if canBroadcastBattleServer == "auto" {
+		mostPriority, restInterfaces := RetrieveInterfaceAddresses()
+		if mostPriority != nil && len(restInterfaces) > 0 {
+			fmt.Println("Needed.")
+			if !commonProcess.WaitUntilAnyProcessExist([]string{"BattleServer.exe"}) {
+				*exitCode = ErrBattleServerTimeOutStart
+				return
+			}
+			go CloneAnnouncements(mostPriority, restInterfaces)
+		}
+	}
 	if waitForProcess(watchedProcess) {
-		if len(serverExe) > 0 {
-			if proc, err := commonProcess.Kill(serverExe); err != nil {
-				log.Println("Failed to stop server.")
-				if proc != nil {
-					fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
-				}
+		if serverExe != "-" {
+			if _, err := commonProcess.Kill(serverExe); err != nil {
 				*exitCode = ErrFailedStopServer
 			}
 		}
 	} else {
-		log.Println("Failed to wait for process end.")
 		*exitCode = ErrFailedWaitForProcess
 	}
 }

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"config/internal/cmd"
+	"cfg/internal/cmd"
 	"fmt"
-	"launcher-common/executor"
+	"launcherCommon/executor"
 )
 
 const version = "development"

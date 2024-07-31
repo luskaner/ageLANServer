@@ -4,8 +4,8 @@ import (
 	"common"
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 )
 
 func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, exitAgentOnError bool) (result *executor.ExecResult) {

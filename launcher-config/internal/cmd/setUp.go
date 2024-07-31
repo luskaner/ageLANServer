@@ -1,17 +1,17 @@
 package cmd
 
 import (
+	"cfg/internal"
+	"cfg/internal/userData"
 	"common"
 	commonProcess "common/process"
-	"config/internal"
-	"config/internal/userData"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcher-common"
-	"launcher-common/cmd"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/cmd"
+	"launcherCommon/executor"
 	"os"
 	"os/signal"
 )

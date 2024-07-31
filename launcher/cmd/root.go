@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
-	commonExecutor "launcher-common/executor"
 	"launcher/internal"
 	"launcher/internal/cmd"
 	"launcher/internal/server"
+	commonExecutor "launcherCommon/executor"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -29,11 +29,12 @@ var configPaths = []string{"resources", "."}
 var config = &cmd.Config{}
 
 var (
-	Version                   string
-	cfgFile                   string
-	autoTrueFalseValues       = mapset.NewSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues = mapset.NewSet[string](falseValue, "user", "local")
-	rootCmd                   = &cobra.Command{
+	Version                        string
+	cfgFile                        string
+	autoTrueFalseValues            = mapset.NewSet[string](autoValue, trueValue, falseValue)
+	canTrustCertificateValues      = mapset.NewSet[string](falseValue, "user", "local")
+	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
+	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE 2:DE to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
@@ -53,6 +54,12 @@ var (
 			if !canTrustCertificateValues.Contains(canTrustCertificate) {
 				fmt.Printf("Invalid value for canTrustCertificate (local/user/false): %s\n", canTrustCertificate)
 				errorCode = internal.ErrInvalidCanTrustCertificate
+				return
+			}
+			canBroadcastBattleServer := viper.GetString("Config.CanBroadcastBattleServer")
+			if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
+				fmt.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
+				errorCode = internal.ErrInvalidCanBroadcastBattleServer
 				return
 			}
 			serverStart := viper.GetString("Server.Start")
@@ -84,8 +91,8 @@ var (
 			go func() {
 				_, ok := <-sigs
 				if ok {
-					if config.WatcherStarted() {
-						config.KillWatcher()
+					if config.AgentStarted() {
+						config.KillAgent()
 						config.Revert()
 					}
 					_ = lock.Unlock()
@@ -183,7 +190,7 @@ var (
 				errorMayBeConfig = true
 				return
 			}
-			errorCode = config.LaunchWatcherAndGame(clientExecutable, canTrustCertificate)
+			errorCode = config.LaunchAgentAndGame(clientExecutable, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )
@@ -193,6 +200,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Will require admin privileges.")
 	rootCmd.PersistentFlags().StringP("canTrustCertificate", "c", "local", `Trust the certificate of the server if needed. "false", "user" or "local" (will require admin privileges)`)
+	rootCmd.PersistentFlags().StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", true, "Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
@@ -209,6 +217,9 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Config.CanTrustCertificate", rootCmd.PersistentFlags().Lookup("canTrustCertificate")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Config.CanBroadcastBattleServer", rootCmd.PersistentFlags().Lookup("canBroadcastBattleServer")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Config.IsolateMetadata", rootCmd.PersistentFlags().Lookup("isolateMetadata")); err != nil {

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/Microsoft/go-winio"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcher-common"
-	"launcher-common/executor"
+	launcherCommon "launcherCommon"
+	"launcherCommon/executor"
 	"net"
 )
 
@@ -25,7 +25,6 @@ func handleClient(c net.Conn) (exit bool) {
 
 	for !exit {
 		if err = decoder.Decode(&action); err != nil {
-			fmt.Println("Error decoding action: ", err)
 			_ = encoder.Encode(ErrDecode)
 			return
 		}
@@ -40,7 +39,6 @@ func handleClient(c net.Conn) (exit bool) {
 		case launcherCommon.ConfigAdminIpcExit:
 			err = c.Close()
 			if err != nil {
-				fmt.Println("Error closing connection: ", err)
 				exitCode = ErrConnectionClosing
 			} else {
 				exit = true
@@ -147,8 +145,8 @@ func RunIpcServer() (errorCode int) {
 
 	l, err := winio.ListenPipe(pipePath, pc)
 	if err != nil {
-		fmt.Println("Error creating pipe: ", err)
 		errorCode = ErrCreatePipe
+		return
 	}
 	defer func(l net.Listener) {
 		_ = l.Close()
@@ -158,11 +156,9 @@ func RunIpcServer() (errorCode int) {
 	for {
 		conn, err = l.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection: ", err)
 			continue
 		}
 		if handleClient(conn) {
-			fmt.Println("Client requested exit")
 			break
 		}
 	}

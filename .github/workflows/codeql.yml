@@ -83,10 +83,10 @@ jobs:
           go build -o build/server/server.exe server
           go build -o build/server/bin/genCert.exe genCert
           go build -o build/launcher/launcher.exe launcher
-          go build -o build/launcher/watcher.exe watcher
-          go build -o build/launcher/bin/config.exe config
-          go build -o build/launcher/bin/config-admin.exe admin
-          go build -o build/launcher/bin/config-admin-agent.exe agent
+          go build -o build/launcher/agent.exe agent
+          go build -o build/launcher/bin/config.exe cfg
+          go build -o build/launcher/bin/config-admin.exe cfgAdmin
+          go build -o build/launcher/bin/config-admin-agent.exe cfgAdminAgent
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
