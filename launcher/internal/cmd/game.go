@@ -46,7 +46,8 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 	}
 	if broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
 		fmt.Println("Starting agent...")
-		result := executor.RunAgent(executer.FinalExecutable(), c.serverExe, broadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
+		steamProcess, microsoftStoreProcess := executer.GameProcesses()
+		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart

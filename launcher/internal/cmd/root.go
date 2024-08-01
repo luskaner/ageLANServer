@@ -5,7 +5,6 @@ import (
 	commonProcess "common/process"
 	"fmt"
 	"launcher/internal/executor"
-	"launcher/internal/game"
 )
 
 type Config struct {
@@ -95,7 +94,7 @@ func (c *Config) Revert() {
 }
 
 func GameRunning() bool {
-	if game.AnyProcessExists(true, true) {
+	if commonProcess.AnyProcessExists(commonProcess.GameProcesses(true, true)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}

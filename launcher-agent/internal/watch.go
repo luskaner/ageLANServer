@@ -4,16 +4,24 @@ import (
 	"common"
 	commonProcess "common/process"
 	"golang.org/x/sys/windows"
+	"time"
 )
 
-func waitForProcess(name string) bool {
-	processes := commonProcess.ProcessesEntryNames([]string{name})
-	if processes == nil || len(processes) == 0 {
-		return false
-	}
-	process := processes[name]
+var processWaitInterval = 1 * time.Second
 
-	handle, err := windows.OpenProcess(windows.SYNCHRONIZE, true, process.ProcessID)
+func waitUntilAnyProcessExist(names []string) (processesEntryNames map[string]windows.ProcessEntry32) {
+	for i := 0; i < int((1*time.Minute)/processWaitInterval); i++ {
+		processesEntryNames = commonProcess.ProcessesEntryNames(names)
+		if len(processesEntryNames) > 0 {
+			return
+		}
+		time.Sleep(processWaitInterval)
+	}
+	return
+}
+
+func waitForProcess(processesEntryName windows.ProcessEntry32) bool {
+	handle, err := windows.OpenProcess(windows.SYNCHRONIZE, true, processesEntryName.ProcessID)
 
 	if err != nil {
 		return false
@@ -32,28 +40,34 @@ func waitForProcess(name string) bool {
 	return true
 }
 
-func Watch(watchedProcess string, serverExe string, broadcastBattleServer bool, revertArgs []string, exitCode *int) {
+func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertArgs) > 0 {
 		defer func() {
 			RunConfig(revertArgs)
 		}()
 	}
-	if !commonProcess.WaitUntilAnyProcessExist([]string{watchedProcess}) {
+	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(steamProcess, microsoftStoreProcess))
+	if len(processes) == 0 {
 		*exitCode = ErrGameTimeoutStart
 		return
 	}
 	if broadcastBattleServer {
 		mostPriority, restInterfaces := common.RetrieveBsInterfaceAddresses()
 		if mostPriority != nil && len(restInterfaces) > 0 {
-			if !commonProcess.WaitUntilAnyProcessExist([]string{"BattleServer.exe"}) {
+			if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
+				go CloneAnnouncements(mostPriority, restInterfaces)
+			} else {
 				*exitCode = ErrBattleServerTimeOutStart
-				return
 			}
-			go CloneAnnouncements(mostPriority, restInterfaces)
 		}
 	}
-	if waitForProcess(watchedProcess) {
+	var process windows.ProcessEntry32
+	for _, p := range processes {
+		process = p
+		break
+	}
+	if waitForProcess(process) {
 		if serverExe != "-" {
 			if _, err := commonProcess.Kill(serverExe); err != nil {
 				*exitCode = ErrFailedStopServer

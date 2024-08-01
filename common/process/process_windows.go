@@ -1,27 +1,29 @@
 package process
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/sys/windows"
 	"os"
-	"time"
 	"unsafe"
 )
 
-var processWaitInterval = 1 * time.Second
+const steamProcess = "AoE2DE_s.exe"
+const microsoftStoreProcess = "AoE2DE.exe"
 
 func AnyProcessExists(names []string) bool {
 	processes := ProcessesEntryNames(names)
 	return len(processes) > 0
 }
 
-func WaitUntilAnyProcessExist(names []string) bool {
-	for i := 0; i < int((1*time.Minute)/processWaitInterval); i++ {
-		if AnyProcessExists(names) {
-			return true
-		}
-		time.Sleep(processWaitInterval)
+func GameProcesses(steam bool, microsoftStore bool) []string {
+	processes := mapset.NewSet[string]()
+	if steam {
+		processes.Add(steamProcess)
 	}
-	return false
+	if microsoftStore {
+		processes.Add(microsoftStoreProcess)
+	}
+	return processes.ToSlice()
 }
 
 func ProcessesEntryNames(names []string) map[string]windows.ProcessEntry32 {

@@ -9,7 +9,7 @@ import (
 
 type Executor interface {
 	Execute(args []string) (result *commonExecutor.ExecResult)
-	FinalExecutable() string
+	GameProcesses() (steamProcess bool, microsoftStoreProcess bool)
 }
 
 type SteamExecutor struct{}
@@ -25,8 +25,9 @@ func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.ExecResult
 	return
 }
 
-func (exec SteamExecutor) FinalExecutable() string {
-	return steamProcess
+func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+	steamProcess = true
+	return
 }
 
 func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
@@ -34,8 +35,9 @@ func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.E
 	return
 }
 
-func (exec MicrosoftStoreExecutor) FinalExecutable() string {
-	return microsoftStoreProcess
+func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+	microsoftStoreProcess = true
+	return
 }
 
 func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.ExecResult) {
@@ -43,8 +45,10 @@ func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.ExecRe
 	return
 }
 
-func (exec CustomExecutor) FinalExecutable() string {
-	return steamProcess
+func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+	steamProcess = true
+	microsoftStoreProcess = true
+	return
 }
 
 func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.ExecResult) {
