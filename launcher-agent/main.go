@@ -7,6 +7,7 @@ import (
 	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
+	"strconv"
 )
 
 func main() {
@@ -14,6 +15,7 @@ func main() {
 	if err := lock.Lock(); err != nil {
 		os.Exit(common.ErrPidLock)
 	}
+	broadcastBattleServer, _ := strconv.ParseBool(os.Args[3])
 	var exitCode int
 	var revertFlags []string
 	if len(os.Args) > 4 {
@@ -30,7 +32,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	internal.Watch(os.Args[1], os.Args[2], os.Args[3], revertFlags, &exitCode)
+	internal.Watch(os.Args[1], os.Args[2], broadcastBattleServer, revertFlags, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

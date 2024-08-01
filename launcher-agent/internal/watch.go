@@ -3,7 +3,6 @@ package internal
 import (
 	"common"
 	commonProcess "common/process"
-	"fmt"
 	"golang.org/x/sys/windows"
 )
 
@@ -33,7 +32,7 @@ func waitForProcess(name string) bool {
 	return true
 }
 
-func Watch(watchedProcess string, serverExe string, canBroadcastBattleServer string, revertArgs []string, exitCode *int) {
+func Watch(watchedProcess string, serverExe string, broadcastBattleServer bool, revertArgs []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertArgs) > 0 {
 		defer func() {
@@ -44,11 +43,9 @@ func Watch(watchedProcess string, serverExe string, canBroadcastBattleServer str
 		*exitCode = ErrGameTimeoutStart
 		return
 	}
-	fmt.Println(canBroadcastBattleServer)
-	if canBroadcastBattleServer == "auto" {
-		mostPriority, restInterfaces := RetrieveInterfaceAddresses()
+	if broadcastBattleServer {
+		mostPriority, restInterfaces := common.RetrieveBsInterfaceAddresses()
 		if mostPriority != nil && len(restInterfaces) > 0 {
-			fmt.Println("Needed.")
 			if !commonProcess.WaitUntilAnyProcessExist([]string{"BattleServer.exe"}) {
 				*exitCode = ErrBattleServerTimeOutStart
 				return

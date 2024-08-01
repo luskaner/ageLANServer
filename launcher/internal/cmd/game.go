@@ -37,9 +37,16 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 		errorCode = internal.ErrGameLauncherNotFound
 		return
 	}
-	if len(c.serverExe) > 0 || c.RequiresConfigRevert() {
+	var broadcastBattleServer bool
+	if canBroadcastBattleServer == "auto" {
+		mostPriority, restInterfaces := common.RetrieveBsInterfaceAddresses()
+		if mostPriority != nil && len(restInterfaces) > 0 {
+			broadcastBattleServer = true
+		}
+	}
+	if broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
 		fmt.Println("Starting agent...")
-		result := executor.RunAgent(executer.FinalExecutable(), c.serverExe, canBroadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
+		result := executor.RunAgent(executer.FinalExecutable(), c.serverExe, broadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart
