@@ -19,7 +19,7 @@ jobs:
       - name: Rename go.work
         shell: bash
         run: |
-          mv go.work.example go.work
+          cp go.work.example go.work
 
       - name: Set up Go
         uses: actions/setup-go@v5
