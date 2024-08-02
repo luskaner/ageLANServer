@@ -80,7 +80,7 @@ jobs:
       - if: matrix.build-mode == 'manual'
         shell: bash
         run: |
-          go go.work.example go.work
+          mv go.work.example go.work
           go build -o build/server/server.exe server
           go build -o build/server/bin/genCert.exe genCert
           go build -o build/launcher/launcher.exe launcher
