@@ -104,7 +104,7 @@ a **false positive***.
 The verification process ensures that the files you download are the same as the ones that were uploaded by the
 maintainer.
 
-1. Check the release tag is verified with the committer's signature key (*as all commits must be*).
+1. Check the release tag is verified with the committer's signature key (*as all commits must be - commits between 631cfa1 and 9eb66cf are not due "rebase and merge" PR issue*).
 2. Download the ```..._checksums.txt``` and ```..._checksums.txt.sig``` files.
 3. Import the [release public key](release_public.key) and import it to your keyring if you haven't already.
 4. Verify the ```..._checksums.txt``` file with the ```..._checksums.txt.sig``` file.
