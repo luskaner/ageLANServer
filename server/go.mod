@@ -11,6 +11,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	golang.org/x/net v0.26.0
+	github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.2
 )
 
 require (

@@ -11,3 +11,6 @@ use (
 	launcher-common
 	server
 )
+
+replace github.com/luskaner/aoe2DELanServer/common => ./common
+replace github.com/luskaner/aoe2DELanServer/launcherCommon => ./launcher-common
