@@ -6,9 +6,9 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0
-	github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.3
-	github.com/luskaner/aoe2DELanServer/launcher-common v1.2.0-rc.3
-	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0-rc.6
+	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240802195906-4bacebe98993
+	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240802195906-4bacebe98993
+	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0-rc.7
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/sys v0.22.0

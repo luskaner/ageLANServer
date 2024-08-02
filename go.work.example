@@ -12,6 +12,6 @@ use (
 	server
 )
 
-replace github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.3 => ./common
-replace github.com/luskaner/aoe2DELanServer/launcher-common v1.2.0-rc.3 => ./launcher-common
-replace github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0-rc.6 => ./battle-server-broadcast
+replace github.com/luskaner/aoe2DELanServer/common v0.0.0-20240802195906-4bacebe98993 => ./common
+replace github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240802195906-4bacebe98993 => ./launcher-common
+replace github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0-rc.7 => ./battle-server-broadcast
