@@ -169,6 +169,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Local development
 
+Rename `go.work.example` to `go.work`
+
 ### System requirements
 
 - [Go 1.22](https://go.dev/dl/).
