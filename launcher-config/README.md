@@ -19,6 +19,6 @@ You may run `cleanup.bat` to revert all changes (forced).
 
 ## Exit Codes
 
-* [Base codes](/common/errors.go).
-* [Launcher shared codes](/launcher-common/errors.go).
+* [Base codes](../common/errors.go).
+* [Launcher shared codes](../launcher-common/errors.go).
 * [Config codes](internal/errors.go).

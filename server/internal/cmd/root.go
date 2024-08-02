@@ -5,11 +5,11 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	"github.com/luskaner/aoe2DELanServer/server/files"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/ip"
-	"github.com/luskaner/aoe2DELanServer/server/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/routes"
+	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	ip2 "github.com/luskaner/aoe2DELanServer/server/internal/ip"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/routes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
@@ -37,7 +37,7 @@ var (
 				os.Exit(common.ErrPidLock)
 			}
 			host := viper.GetString("default.Host")
-			addr := ip.ResolveHost(host)
+			addr := ip2.ResolveHost(host)
 			if addr == nil {
 				fmt.Println("Failed to resolve host")
 				_ = lock.Unlock()
@@ -78,7 +78,7 @@ var (
 			if viper.GetBool("Announcement.Enabled") {
 				fmt.Println("Trying to announce server in", addr, "network to UDP port", viper.GetInt("Announcement.Port"))
 				go func() {
-					ip.Announce(addr, viper.GetInt("Announcement.Port"))
+					ip2.Announce(addr, viper.GetInt("Announcement.Port"))
 				}()
 			}
 

@@ -3,7 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast/battleServer"
+	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
@@ -40,7 +40,7 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 	}
 	var broadcastBattleServer bool
 	if canBroadcastBattleServer == "auto" {
-		mostPriority, restInterfaces, err := battleServer.RetrieveBsInterfaceAddresses()
+		mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()
 		if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
 			broadcastBattleServer = true
 		}

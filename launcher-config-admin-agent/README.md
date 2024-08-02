@@ -6,6 +6,6 @@ Resides in `bin` subdirectory.
 
 ## Exit Codes
 
-* [Base codes](/common/errors.go).
-* [Launcher shared codes](/launcher-common/errors.go).
+* [Base codes](../common/errors.go).
+* [Launcher shared codes](../launcher-common/errors.go).
 * [Config Admin codes](internal/errors.go) (some might only be sent through IPC).
