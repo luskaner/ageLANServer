@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/cfgAdminAgent/internal"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin-agent/internal"
 	"os"
 )
 

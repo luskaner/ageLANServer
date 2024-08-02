@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/agent/internal"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
+	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
 	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"

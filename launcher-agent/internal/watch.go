@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast/battleServer"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	"golang.org/x/sys/windows"
@@ -53,10 +54,12 @@ func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broa
 		return
 	}
 	if broadcastBattleServer {
-		mostPriority, restInterfaces := common.RetrieveBsInterfaceAddresses()
-		if mostPriority != nil && len(restInterfaces) > 0 {
+		mostPriority, restInterfaces, err := battleServer.RetrieveBsInterfaceAddresses()
+		if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
 			if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
-				go CloneAnnouncements(mostPriority, restInterfaces)
+				go func() {
+					_ = battleServer.CloneAnnouncements(mostPriority, restInterfaces)
+				}()
 			} else {
 				*exitCode = ErrBattleServerTimeOutStart
 			}

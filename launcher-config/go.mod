@@ -1,4 +1,4 @@
-module github.com/luskaner/aoe2DELanServer/cfg
+module github.com/luskaner/aoe2DELanServer/launcher-config
 
 go 1.22.0
 

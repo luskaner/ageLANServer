@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/genCert/internal"
+	"github.com/luskaner/aoe2DELanServer/server-genCert/internal"
 	"github.com/spf13/cobra"
 	"os"
 	"path"

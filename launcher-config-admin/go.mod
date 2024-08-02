@@ -1,4 +1,4 @@
-module github.com/luskaner/aoe2DELanServer/cfgAdmin
+module github.com/luskaner/aoe2DELanServer/launcher-config-admin
 
 go 1.22.0
 

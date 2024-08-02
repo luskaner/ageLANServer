@@ -3,10 +3,10 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/cfgAdmin/internal"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows"
 	"os"

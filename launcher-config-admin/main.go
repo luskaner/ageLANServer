@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/cfgAdmin/internal"
-	"github.com/luskaner/aoe2DELanServer/cfgAdmin/internal/cmd"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/cmd"
 	"os"
 )
 

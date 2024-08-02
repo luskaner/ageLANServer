@@ -1,4 +1,4 @@
-module github.com/luskaner/aoe2DELanServer/genCert
+module github.com/luskaner/aoe2DELanServer/server-genCert
 
 go 1.22.0
 
