@@ -2,10 +2,10 @@ package wss
 
 import (
 	"github.com/gorilla/websocket"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"log"
 	"net/http"
-	i "server/internal"
-	"server/models"
 	"time"
 )
 

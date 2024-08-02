@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"common"
 	"fmt"
-	"launcher/internal"
-	"launcher/internal/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"strings"
 )
 

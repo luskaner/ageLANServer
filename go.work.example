@@ -1,13 +1,13 @@
 go 1.22.0
 
 use (
-	common
-	server
-	server-genCert
-	launcher
-	launcher-common
 	launcher-agent
 	launcher-config
 	launcher-config-admin
 	launcher-config-admin-agent
+	common
+	server-genCert
+	launcher
+	launcher-common
+	server
 )

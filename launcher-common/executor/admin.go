@@ -1,9 +1,9 @@
 package executor
 
 import (
-	"common"
 	"crypto/x509"
 	"encoding/base64"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 )
 

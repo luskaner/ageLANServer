@@ -2,10 +2,10 @@ package models
 
 import (
 	"fmt"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/advertisement/shared"
 	"github.com/wk8/go-ordered-map/v2"
 	"math"
-	i "server/internal"
-	"server/routes/game/advertisement/shared"
 	"sync"
 	"time"
 )

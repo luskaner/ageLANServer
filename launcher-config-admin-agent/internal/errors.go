@@ -1,6 +1,6 @@
 package internal
 
-import launcherCommon "launcherCommon"
+import launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
 
 const (
 	ErrCreatePipe = iota + launcherCommon.ErrLast

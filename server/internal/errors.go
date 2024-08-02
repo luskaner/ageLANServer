@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"common"
+	"github.com/luskaner/aoe2DELanServer/common"
 )
 
 const (

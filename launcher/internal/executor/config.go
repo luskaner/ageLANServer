@@ -1,11 +1,11 @@
 package executor
 
 import (
-	"common"
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcherCommon"
-	"launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 )
 
 func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, exitAgentOnError bool) (result *executor.ExecResult) {

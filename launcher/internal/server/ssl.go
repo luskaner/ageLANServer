@@ -1,10 +1,10 @@
 package server
 
 import (
-	"common"
 	"crypto/tls"
 	"crypto/x509"
-	"launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"net"
 	"os"
 	"path/filepath"

@@ -1,9 +1,9 @@
 package challenge
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/challenge/shared"
 	"net/http"
-	i "server/internal"
-	"server/routes/game/challenge/shared"
 )
 
 func GetChallengeProgress(w http.ResponseWriter, _ *http.Request) {

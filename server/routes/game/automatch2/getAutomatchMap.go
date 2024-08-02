@@ -1,9 +1,9 @@
 package Automatch2
 
 import (
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	"server/files"
-	i "server/internal"
 )
 
 func GetAutomatchMap(w http.ResponseWriter, _ *http.Request) {

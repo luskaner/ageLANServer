@@ -2,8 +2,8 @@ package shared
 
 import (
 	"encoding/json"
-	i "server/internal"
-	"server/models"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 )
 
 func GetStatGroups(idsQuery string, isProfileId bool, includeExtraProfileInfo bool) i.A {

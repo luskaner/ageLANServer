@@ -2,9 +2,9 @@ package cloudfiles
 
 import (
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"net/http"
-	"server/files"
-	"server/models"
 	"strconv"
 	"strings"
 	"time"

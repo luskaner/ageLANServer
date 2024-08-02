@@ -1,17 +1,17 @@
 package cmd
 
 import (
-	"cfg/internal"
-	"cfg/internal/userData"
-	"common"
-	commonProcess "common/process"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/aoe2DELanServer/cfg/internal"
+	"github.com/luskaner/aoe2DELanServer/cfg/internal/userData"
+	"github.com/luskaner/aoe2DELanServer/common"
+	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/cmd"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcherCommon"
-	"launcherCommon/cmd"
-	"launcherCommon/executor"
 	"os"
 	"os/signal"
 )

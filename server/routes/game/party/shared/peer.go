@@ -2,8 +2,8 @@ package shared
 
 import (
 	"encoding/json"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"net/http"
-	"server/models"
 	"strconv"
 )
 

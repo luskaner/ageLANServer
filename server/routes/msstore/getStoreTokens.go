@@ -1,8 +1,8 @@
 package msstore
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	i "server/internal"
 )
 
 func GetStoreTokens(w http.ResponseWriter, _ *http.Request) {

@@ -1,8 +1,8 @@
 package challenge
 
 import (
+	"github.com/luskaner/aoe2DELanServer/server/files"
 	"net/http"
-	"server/files"
 )
 
 func GetChallenges(w http.ResponseWriter, r *http.Request) {

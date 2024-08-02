@@ -1,8 +1,8 @@
 package executor
 
 import (
-	"common"
 	"errors"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"golang.org/x/sys/windows"
 	"os"
 	"os/exec"

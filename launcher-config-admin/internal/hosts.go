@@ -2,12 +2,12 @@ package internal
 
 import (
 	"bufio"
-	"common"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"golang.org/x/sys/windows"
 	"io"
-	"launcherCommon/executor"
 	"os"
 	"path/filepath"
 	"regexp"

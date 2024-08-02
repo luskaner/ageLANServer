@@ -1,7 +1,7 @@
 package internal
 
 import (
-	launcherCommon "launcherCommon"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
 )
 
 const (

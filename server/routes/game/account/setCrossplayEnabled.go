@@ -1,8 +1,8 @@
 package account
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	i "server/internal"
 )
 
 func SetCrossplayEnabled(w http.ResponseWriter, r *http.Request) {

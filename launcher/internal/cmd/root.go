@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"common"
-	commonProcess "common/process"
 	"fmt"
-	"launcher/internal/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 )
 
 type Config struct {

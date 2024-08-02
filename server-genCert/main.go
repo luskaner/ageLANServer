@@ -1,7 +1,7 @@
 package main
 
 import (
-	"genCert/internal/cmd"
+	"github.com/luskaner/aoe2DELanServer/genCert/internal/cmd"
 	"github.com/spf13/cobra"
 )
 

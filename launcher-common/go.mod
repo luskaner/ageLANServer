@@ -1,4 +1,4 @@
-module launcherCommon
+module github.com/luskaner/aoe2DELanServer/launcherCommon
 
 go 1.22.0
 

@@ -3,12 +3,12 @@ package files
 import (
 	"encoding/json"
 	"fmt"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"
 	"path/filepath"
-	i "server/internal"
-	"server/models"
 	"strings"
 )
 

@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"common"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"github.com/spf13/viper"
-	"launcher/internal"
-	"launcher/internal/server"
-	launcherCommon "launcherCommon"
-	commonExecutor "launcherCommon/executor"
 	"net"
 	"sort"
 	"strings"

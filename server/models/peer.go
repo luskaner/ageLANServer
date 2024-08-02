@@ -1,7 +1,7 @@
 package models
 
 import (
-	i "server/internal"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 )
 
 type Peer struct {

@@ -1,8 +1,8 @@
 package item
 
 import (
+	"github.com/luskaner/aoe2DELanServer/server/files"
 	"net/http"
-	"server/files"
 )
 
 func GetItemDefinitionsJson(w http.ResponseWriter, r *http.Request) {

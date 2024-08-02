@@ -1,11 +1,11 @@
 package cloud
 
 import (
-	"common"
 	"encoding/json"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	"server/files"
-	i "server/internal"
 )
 
 func GetFileURL(w http.ResponseWriter, r *http.Request) {

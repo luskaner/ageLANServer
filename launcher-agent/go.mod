@@ -1,4 +1,4 @@
-module agent
+module github.com/luskaner/aoe2DELanServer/agent
 
 go 1.22.0
 

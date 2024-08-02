@@ -2,11 +2,11 @@ package ip
 
 import (
 	"bytes"
-	"common"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 	"strings"
 	"time"

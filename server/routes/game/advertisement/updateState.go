@@ -1,11 +1,11 @@
 package advertisement
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/challenge/shared"
+	"github.com/luskaner/aoe2DELanServer/server/routes/wss"
 	"net/http"
-	i "server/internal"
-	"server/models"
-	"server/routes/game/challenge/shared"
-	"server/routes/wss"
 	"strconv"
 )
 

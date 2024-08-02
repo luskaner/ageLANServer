@@ -1,11 +1,11 @@
 package advertisement
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/advertisement/shared"
 	"net/http"
 	"regexp"
-	i "server/internal"
-	"server/models"
-	"server/routes/game/advertisement/shared"
 )
 
 var re *regexp.Regexp = nil

@@ -1,11 +1,11 @@
 package advertisement
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/models"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/advertisement/shared"
 	"net/http"
-	i "server/internal"
-	"server/middleware"
-	"server/models"
-	"server/routes/game/advertisement/shared"
 )
 
 type JoinRequest struct {

@@ -3,11 +3,11 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/spf13/viper"
 	"hash/fnv"
 	"math/rand"
 	"net"
-	i "server/internal"
 	"strconv"
 	"time"
 )

@@ -1,7 +1,7 @@
 package ip
 
 import (
-	"common"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 )
 

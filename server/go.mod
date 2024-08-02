@@ -1,4 +1,4 @@
-module server
+module github.com/luskaner/aoe2DELanServer/server
 
 go 1.22.0
 

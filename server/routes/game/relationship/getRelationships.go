@@ -1,10 +1,10 @@
 package relationship
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"net/http"
-	i "server/internal"
-	"server/middleware"
-	"server/models"
 )
 
 func GetRelationships(w http.ResponseWriter, r *http.Request) {

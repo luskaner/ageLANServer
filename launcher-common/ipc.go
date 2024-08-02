@@ -1,7 +1,7 @@
 package launcher_common
 
 import (
-	"common"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 )
 

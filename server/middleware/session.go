@@ -1,9 +1,9 @@
 package middleware
 
 import (
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"golang.org/x/net/context"
 	"net/http"
-	"server/models"
 	"strings"
 )
 

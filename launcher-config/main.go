@@ -1,9 +1,9 @@
 package main
 
 import (
-	"cfg/internal/cmd"
 	"fmt"
-	"launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/cfg/internal/cmd"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 )
 
 const version = "development"

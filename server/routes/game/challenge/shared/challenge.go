@@ -1,7 +1,7 @@
 package shared
 
 import (
-	i "server/internal"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 )
 
 func GetChallengeProgressData() i.A {

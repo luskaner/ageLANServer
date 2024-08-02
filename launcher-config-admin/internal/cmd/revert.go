@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"cfgAdmin/internal"
-	"common"
 	"crypto/x509"
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/cfgAdmin/internal"
+	"github.com/luskaner/aoe2DELanServer/common"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/cmd"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcherCommon"
-	"launcherCommon/cmd"
 	"os"
 	"os/signal"
 )

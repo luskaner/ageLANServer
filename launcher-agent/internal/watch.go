@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"common"
-	commonProcess "common/process"
+	"github.com/luskaner/aoe2DELanServer/common"
+	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	"golang.org/x/sys/windows"
 	"time"
 )

@@ -1,6 +1,6 @@
 package launcher_common
 
-import "common"
+import "github.com/luskaner/aoe2DELanServer/common"
 
 const (
 	ErrNotAdmin = iota + common.ErrLast

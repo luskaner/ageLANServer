@@ -1,4 +1,4 @@
-module cfg
+module github.com/luskaner/aoe2DELanServer/cfg
 
 go 1.22.0
 

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/luskaner/aoe2DELanServer/server/internal/cmd"
 	"github.com/spf13/cobra"
-	"server/internal/cmd"
 )
 
 const version = "development"

@@ -1,14 +1,14 @@
 package internal
 
 import (
-	"common"
 	"crypto/x509"
 	"encoding/gob"
 	"fmt"
 	"github.com/Microsoft/go-winio"
+	"github.com/luskaner/aoe2DELanServer/common"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"golang.org/x/sys/windows"
-	launcherCommon "launcherCommon"
-	"launcherCommon/executor"
 	"net"
 )
 

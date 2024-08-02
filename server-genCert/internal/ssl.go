@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"common"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"math/big"
 	"os"
 	"path/filepath"

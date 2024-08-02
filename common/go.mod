@@ -1,4 +1,4 @@
-module common
+module github.com/luskaner/aoe2DELanServer/common
 
 go 1.22.0
 

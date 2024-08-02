@@ -1,9 +1,9 @@
 package chat
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/middleware"
 	"net/http"
-	i "server/internal"
-	"server/middleware"
 	"strconv"
 )
 

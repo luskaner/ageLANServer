@@ -1,8 +1,8 @@
 package launcher_common
 
 import (
-	"common"
 	"crypto/x509"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"golang.org/x/sys/windows"
 	"unsafe"
 )

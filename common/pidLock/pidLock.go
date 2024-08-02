@@ -1,7 +1,7 @@
 package pidLock
 
 import (
-	"common/process"
+	"github.com/luskaner/aoe2DELanServer/common/process"
 	"os"
 	"strconv"
 )

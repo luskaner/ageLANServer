@@ -1,10 +1,15 @@
 package cmd
 
 import (
-	"common"
-	"common/pidLock"
 	"fmt"
 	"github.com/gorilla/handlers"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/pidLock"
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	"github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/ip"
+	"github.com/luskaner/aoe2DELanServer/server/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/routes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
@@ -13,11 +18,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"server/files"
-	"server/internal"
-	"server/ip"
-	"server/middleware"
-	"server/routes"
 	"strings"
 	"time"
 )

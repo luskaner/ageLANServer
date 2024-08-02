@@ -1,4 +1,4 @@
-module launcher
+module github.com/luskaner/aoe2DELanServer/launcher
 
 go 1.22.0
 

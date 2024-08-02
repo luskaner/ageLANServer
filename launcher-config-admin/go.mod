@@ -1,4 +1,4 @@
-module cfgAdmin
+module github.com/luskaner/aoe2DELanServer/cfgAdmin
 
 go 1.22.0
 

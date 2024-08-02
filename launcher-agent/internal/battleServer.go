@@ -2,7 +2,7 @@ package internal
 
 import (
 	"bytes"
-	"common"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 )
 

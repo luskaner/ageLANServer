@@ -1,13 +1,13 @@
 package internal
 
 import (
-	"common"
 	"crypto/x509"
 	"encoding/gob"
 	"github.com/Microsoft/go-winio"
 	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommon "launcherCommon"
-	"launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"net"
 	"time"
 )

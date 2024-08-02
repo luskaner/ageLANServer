@@ -1,11 +1,11 @@
 package invitation
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/models"
+	"github.com/luskaner/aoe2DELanServer/server/routes/wss"
 	"net/http"
-	i "server/internal"
-	"server/middleware"
-	"server/models"
-	"server/routes/wss"
 )
 
 type extendRequest struct {

@@ -3,7 +3,7 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	i "server/internal"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"sync"
 	"time"
 )

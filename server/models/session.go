@@ -1,7 +1,7 @@
 package models
 
 import (
-	"server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal"
 	"sync"
 	"time"
 )

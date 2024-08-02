@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"common"
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/spf13/cobra"
 	"net"
 )

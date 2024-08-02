@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"common"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"launcher/internal"
-	"launcher/internal/executor"
-	"launcher/internal/server"
-	launcherCommon "launcherCommon"
-	commonExecutor "launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 )
 
 func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {

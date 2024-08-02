@@ -1,9 +1,9 @@
 package leaderboard
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/routes/game/leaderboard/shared"
 	"net/http"
-	i "server/internal"
-	"server/routes/game/leaderboard/shared"
 )
 
 func GetStatsForLeaderboardByProfileName(w http.ResponseWriter, r *http.Request) {

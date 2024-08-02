@@ -1,8 +1,8 @@
 package chat
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	i "server/internal"
 )
 
 func GetChatChannels(w http.ResponseWriter, _ *http.Request) {

@@ -2,11 +2,11 @@ package cloud
 
 import (
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"net/http"
 	"net/url"
-	"server/files"
-	i "server/internal"
-	"server/models"
 	"strings"
 	"time"
 )

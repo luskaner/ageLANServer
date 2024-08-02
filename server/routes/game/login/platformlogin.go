@@ -2,11 +2,11 @@ package login
 
 import (
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/server/files"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"math/rand"
 	"net/http"
-	"server/files"
-	i "server/internal"
-	"server/models"
 	"time"
 )
 

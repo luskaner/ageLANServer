@@ -1,7 +1,7 @@
 package executor
 
 import (
-	"common"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"path/filepath"
 	"strings"
 	"unsafe"

@@ -1,8 +1,8 @@
 package achievement
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	i "server/internal"
 	"time"
 )
 

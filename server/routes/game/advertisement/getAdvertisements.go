@@ -2,9 +2,9 @@ package advertisement
 
 import (
 	"encoding/json"
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/models"
 	"net/http"
-	i "server/internal"
-	"server/models"
 )
 
 func GetAdvertisements(w http.ResponseWriter, r *http.Request) {

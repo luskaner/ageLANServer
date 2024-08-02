@@ -1,8 +1,8 @@
 package party
 
 import (
+	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"net/http"
-	i "server/internal"
 )
 
 func ReportMatch(w http.ResponseWriter, _ *http.Request) {
