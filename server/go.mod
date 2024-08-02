@@ -3,15 +3,15 @@ module github.com/luskaner/aoe2DELanServer/server
 go 1.22.0
 
 require (
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.2
+	github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
-	golang.org/x/net v0.26.0
+	golang.org/x/net v0.27.0
 )
 
 require (
