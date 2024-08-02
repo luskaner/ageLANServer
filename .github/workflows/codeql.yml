@@ -80,13 +80,13 @@ jobs:
       - if: matrix.build-mode == 'manual'
         shell: bash
         run: |
-          go build -o build/server/server.exe server
-          go build -o build/server/bin/genCert.exe genCert
-          go build -o build/launcher/launcher.exe launcher
-          go build -o build/launcher/agent.exe agent
-          go build -o build/launcher/bin/config.exe cfg
-          go build -o build/launcher/bin/config-admin.exe cfgAdmin
-          go build -o build/launcher/bin/config-admin-agent.exe cfgAdminAgent
+          go build -o build/server/server.exe ./server
+          go build -o build/server/bin/genCert.exe ./server-genCert
+          go build -o build/launcher/launcher.exe ./launcher
+          go build -o build/launcher/agent.exe ./launcher-agent
+          go build -o build/launcher/bin/config.exe ./launcher-config
+          go build -o build/launcher/bin/config-admin.exe ./launcher-config-admin
+          go build -o build/launcher/bin/config-admin-agent.exe ./launcher-config-admin-agent
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
