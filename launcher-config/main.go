@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/cfg/internal/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 )
 
 const version = "development"

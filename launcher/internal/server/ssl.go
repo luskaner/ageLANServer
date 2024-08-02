@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"net"
 	"os"
 	"path/filepath"

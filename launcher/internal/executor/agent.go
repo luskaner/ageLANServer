@@ -2,7 +2,7 @@ package executor
 
 import (
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"strconv"
 )
 

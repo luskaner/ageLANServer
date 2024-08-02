@@ -4,11 +4,11 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 )
 
 func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {

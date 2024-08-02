@@ -4,10 +4,9 @@ import (
 	"crypto/x509"
 	"encoding/gob"
 	"fmt"
-	"github.com/Microsoft/go-winio"
 	"github.com/luskaner/aoe2DELanServer/common"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"golang.org/x/sys/windows"
 	"net"
 )

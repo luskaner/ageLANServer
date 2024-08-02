@@ -10,7 +10,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/sys v0.20.0
 	github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.2
-	github.com/luskaner/aoe2DELanServer/launcherCommon v1.2.0-rc.2
+	github.com/luskaner/aoe2DELanServer/launcher-common v1.2.0-rc.2
 )
 
 require (

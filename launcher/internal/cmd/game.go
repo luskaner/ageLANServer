@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/game"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
 )

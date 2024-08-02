@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
 )
 
 func (c *Config) AddCert(canAdd string) (errorCode int) {

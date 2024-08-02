@@ -4,8 +4,8 @@ import (
 	"github.com/luskaner/aoe2DELanServer/cfgAdminAgent/internal"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcherCommon"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"os"
 )
 

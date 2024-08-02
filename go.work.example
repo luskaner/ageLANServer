@@ -12,5 +12,5 @@ use (
 	server
 )
 
-replace github.com/luskaner/aoe2DELanServer/common => ./common
-replace github.com/luskaner/aoe2DELanServer/launcherCommon => ./launcher-common
+replace github.com/luskaner/aoe2DELanServer/common v1.2.0-rc.3 => ./common
+replace github.com/luskaner/aoe2DELanServer/launcher-common v1.2.0-rc.3 => ./launcher-common

@@ -48,5 +48,5 @@ should help you understand the options.
 ## Exit Codes
 
 * [Base codes](/common/errors.go).
-* [Launcher shared codes](/launcherCommon/errors.go).
+* [Launcher shared codes](/launcher-common/errors.go).
 * [Launcher codes](internal/errors.go).

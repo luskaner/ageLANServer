@@ -1,7 +1,7 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 	"os"

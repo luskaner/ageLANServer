@@ -5,7 +5,7 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcherCommon/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"golang.org/x/sys/windows"
 	"io"
 	"os"
