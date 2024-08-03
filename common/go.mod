@@ -3,7 +3,9 @@ module github.com/luskaner/aoe2DELanServer/common
 go 1.22.0
 
 retract v1.2.0-rc.2
+
 retract v1.2.0-rc.3
+
 retract v1.2.0-rc.4
 
 require (

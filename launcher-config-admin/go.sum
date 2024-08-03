@@ -3,10 +3,10 @@ github.com/deckarep/golang-set/v2 v2.6.0 h1:XfcQbWM1LlMB8BsJ8N9vW5ehnnPVIw0je80N
 github.com/deckarep/golang-set/v2 v2.6.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240802195906-4bacebe98993 h1:6c1INxj3RzzcDzuQYPYYKQ0+ULdqnqhjgseDbK4wGFU=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240802195906-4bacebe98993/go.mod h1:4YQ/5OtWHcPQL5pJuiGg5A56GyoGkH6LLTShX2zmR/8=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240802195906-4bacebe98993 h1:TN1zO7bRv2c1ECC3sqvepG6tdk34MJ42BViPk/iRYvs=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240802195906-4bacebe98993/go.mod h1:u/PJEKZ+8tBwyYZT1KNRBddDxBxJq9KkuGoPbS5paSo=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240803175212-482443b3f0c7 h1:4n+JfqEAxjkd9YkBUHyfZp49KvI66Ze2Hp9Mu0TWQUY=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240803175212-482443b3f0c7/go.mod h1:4Mk4kI3ikX8KjCVMSOwJoNJNN6B7tNoDjK/eejyb9x0=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240803181101-bd67ef728e1f h1:sHb0mdZJgQrhjxGfkkmwdo1/OkUWnESKxR1LDFswpHA=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240803181101-bd67ef728e1f/go.mod h1:tnrYJj6fW4Amo26jaI2DMCccmtI1JgzYntTCmd7DVqE=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
 github.com/spf13/cobra v1.8.1/go.mod h1:wHxEcudfqmLYa8iTfL+OuZPbBZkmvliBWKIezN3kD9Y=
