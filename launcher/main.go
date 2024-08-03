@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher/cmd"
+	"github.com/luskaner/aoe2DELanServer/launcher/internal/cmd"
 	"github.com/spf13/cobra"
 )
 
