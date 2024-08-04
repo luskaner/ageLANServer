@@ -1,4 +1,5 @@
 # Launcher Config
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/launcher-config)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/launcher-config)
 
 This executable makes and revert configuration changes and is executed by `launcher` or manually:
 
