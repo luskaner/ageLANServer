@@ -125,7 +125,7 @@ func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
 			var serverAddr *net.UDPAddr
 
 			for {
-				n, serverAddr, err = conn.ReadFromUDP(packetBuffer)
+				_, serverAddr, err = conn.ReadFromUDP(packetBuffer)
 				if err != nil {
 					break
 				}
