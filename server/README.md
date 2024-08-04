@@ -1,4 +1,5 @@
 # Server
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/server)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/server)
 
 The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
