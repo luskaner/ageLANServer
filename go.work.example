@@ -1,6 +1,7 @@
 go 1.22.0
 
 use (
+    battle-server-broadcast
 	launcher-agent
 	launcher-config
 	launcher-config-admin
