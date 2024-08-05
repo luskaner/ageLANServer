@@ -8,7 +8,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0
 	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240805173957-ab14eac0a9e5
-	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240803181101-bd67ef728e1f
+	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240805174749-a83793c3bd98
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/sys v0.23.0
