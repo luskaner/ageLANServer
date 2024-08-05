@@ -10,5 +10,5 @@ retract v1.2.0-rc.4
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
-	golang.org/x/sys v0.22.0
+	golang.org/x/sys v0.23.0
 )
