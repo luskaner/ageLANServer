@@ -4,7 +4,7 @@ go 1.22.0
 
 require github.com/spf13/cobra v1.8.1
 
-require github.com/luskaner/aoe2DELanServer/common v0.0.0-20240803175212-482443b3f0c7
+require github.com/luskaner/aoe2DELanServer/common v0.0.0-20240805173957-ab14eac0a9e5
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
