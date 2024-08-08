@@ -5,7 +5,6 @@ import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/files"
 	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
-	"math/rand"
 	"net/http"
 	"time"
 )
@@ -23,8 +22,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
-	t2 := t - rand.Int63n(3600*2-3600+1) + 3600
-	t3 := t - rand.Int63n(3600*2-3600+1) + 3600
+	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
+	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
 	u := models2.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	u.SetPresence(1)
 	sess, ok := models2.GetSessionByUser(u)

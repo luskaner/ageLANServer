@@ -185,7 +185,7 @@ func (u *User) GetExtraProfileInfo() i.A {
 
 func (u *User) GetProfileInfo(includePresence bool) i.A {
 	profileInfo := i.A{
-		time.Now().UTC().Unix() - rand.Int63n(300-50+1) + 50,
+		time.Now().UTC().Unix() - i.Rng.Int63n(300-50+1) + 50,
 		u.id,
 		u.GetPlatformPath(),
 		"",
