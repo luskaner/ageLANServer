@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
 )
@@ -31,7 +31,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adv, ok := models2.GetAdvertisement(req.MatchID)
+	adv, ok := models.GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -47,9 +47,9 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	receivers := make([]*models2.User, len(toProfileIds))
+	receivers := make([]*models.User, len(toProfileIds))
 	for j, profileId := range toProfileIds {
-		receivers[j], _ = models2.GetUserById(profileId)
+		receivers[j], _ = models.GetUserById(profileId)
 	}
 
 	message := adv.AddMessage(
@@ -62,7 +62,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 
 	messageEncoded := message.Encode()
 	for _, receiver := range receivers {
-		receiverSession, ok := models2.GetSessionByUser(receiver)
+		receiverSession, ok := models.GetSessionByUser(receiver)
 		if !ok {
 			continue
 		}

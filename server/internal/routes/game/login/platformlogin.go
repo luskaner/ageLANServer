@@ -4,7 +4,7 @@ import (
 	"fmt"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/files"
-	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 	"time"
 )
@@ -24,13 +24,13 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
 	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
-	u := models2.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	u := models.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	u.SetPresence(1)
-	sess, ok := models2.GetSessionByUser(u)
+	sess, ok := models.GetSessionByUser(u)
 	if ok {
 		sess.Delete()
 	}
-	sessionId := models2.CreateSession(u)
+	sessionId := models.CreateSession(u)
 	profileInfo := u.GetProfileInfo(false)
 	profileId := u.GetProfileId()
 	response := i.A{

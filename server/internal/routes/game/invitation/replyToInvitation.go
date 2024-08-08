@@ -3,7 +3,7 @@ package invitation
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/invitation/shared"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
@@ -23,12 +23,12 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	sess, _ := middleware.Session(r)
 	u := sess.GetUser()
-	adv, ok := models2.GetAdvertisement(q.AdvertisementId)
+	adv, ok := models.GetAdvertisement(q.AdvertisementId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	inviter, ok := models2.GetUserById(q.InviterId)
+	inviter, ok := models.GetUserById(q.InviterId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -44,7 +44,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peer.Uninvite(u)
-	inviterSession, ok := models2.GetSessionByUser(inviter)
+	inviterSession, ok := models.GetSessionByUser(inviter)
 	if ok {
 		var acceptStr string
 		if q.Accept {

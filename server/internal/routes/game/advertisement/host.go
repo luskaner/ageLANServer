@@ -2,7 +2,7 @@ package advertisement
 
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/advertisement/shared"
 	"net/http"
 	"regexp"
@@ -43,12 +43,12 @@ func Host(w http.ResponseWriter, r *http.Request) {
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
-		u, ok := models2.GetUserById(adv.HostId)
-		if !ok || models2.IsInAdvertisement(u) {
+		u, ok := models.GetUserById(adv.HostId)
+		if !ok || models.IsInAdvertisement(u) {
 			returnError(&w)
 			return
 		}
-		storedAdv := models2.StoreAdvertisement(&adv)
+		storedAdv := models.StoreAdvertisement(&adv)
 		i.JSON(&w,
 			i.A{
 				0,

@@ -3,7 +3,7 @@ package invitation
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	models2 "github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
 )
@@ -21,7 +21,7 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	sess, _ := middleware.Session(r)
 	u := sess.GetUser()
-	adv, ok := models2.GetAdvertisement(q.AdvertisementId)
+	adv, ok := models.GetAdvertisement(q.AdvertisementId)
 	if !ok || adv.GetPasswordValue() != q.AdvertisementPassword {
 		i.JSON(&w, i.A{2})
 		return
@@ -31,7 +31,7 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invitee, ok := models2.GetUserById(q.UserId)
+	invitee, ok := models.GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -42,7 +42,7 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peer.Invite(invitee)
-	inviteeSession, ok := models2.GetSessionByUser(invitee)
+	inviteeSession, ok := models.GetSessionByUser(invitee)
 	if ok {
 		go func() {
 			// TODO: Wait for client to acknowledge it
