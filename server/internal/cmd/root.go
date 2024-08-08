@@ -1,24 +1,29 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/files"
-	ip2 "github.com/luskaner/aoe2DELanServer/server/internal/ip"
+	"github.com/luskaner/aoe2DELanServer/server/internal/ip"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
+	"log"
 	"net/http"
 	"net/netip"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -37,7 +42,7 @@ var (
 				os.Exit(common.ErrPidLock)
 			}
 			host := viper.GetString("default.Host")
-			addr := ip2.ResolveHost(host)
+			addr := ip.ResolveHost(host)
 			if addr == nil {
 				fmt.Println("Failed to resolve host")
 				_ = lock.Unlock()
@@ -78,7 +83,7 @@ var (
 			if viper.GetBool("Announcement.Enabled") {
 				fmt.Println("Trying to announce server in", addr, "network to UDP port", viper.GetInt("Announcement.Port"))
 				go func() {
-					ip2.Announce(addr, viper.GetInt("Announcement.Port"))
+					ip.Announce(addr, viper.GetInt("Announcement.Port"))
 				}()
 			}
 
@@ -88,14 +93,31 @@ var (
 				_ = lock.Unlock()
 				os.Exit(internal.ErrCertDirectory)
 			}
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 			fmt.Println("Listening on " + server.Addr)
-			err := server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key))
-			if err != nil {
-				fmt.Println("Failed to start server")
-				fmt.Println(err)
-				_ = lock.Unlock()
-				os.Exit(internal.ErrStartServer)
+			go func() {
+				err := server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key))
+				if err != nil && !errors.Is(err, http.ErrServerClosed) {
+					fmt.Println("Failed to start server")
+					fmt.Println(err)
+					os.Exit(internal.ErrStartServer)
+				}
+			}()
+			<-stop
+
+			log.Printf("Server is shutting down...")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if err := server.Shutdown(ctx); err != nil {
+				fmt.Printf("Server forced to shutdown: %v\n", err)
 			}
+
+			log.Println("Server stopped")
+
+			_ = lock.Unlock()
 		},
 	}
 )
