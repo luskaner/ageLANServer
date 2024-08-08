@@ -17,7 +17,7 @@ import (
 func (c *Config) KillAgent() {
 	proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherAgent))
 	if err != nil && proc != nil {
-		fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+		fmt.Println("You may try killing it manually. Search for the process PID inside agent.pid if it exists")
 	}
 }
 

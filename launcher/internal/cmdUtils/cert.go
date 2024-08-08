@@ -19,7 +19,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 				if commonExecutor.IsAdmin() || c.CfgAgentStarted() {
 					certMsg += "."
 				} else {
-					certMsg += `, accept any dialog from "launcher-config-admin" if it appears.`
+					certMsg += `, accept any dialog from "config-admin-agent" if it appears.`
 				}
 			}
 			fmt.Println(certMsg)

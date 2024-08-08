@@ -73,7 +73,7 @@ func (c *Config) Revert() {
 			fmt.Println("Failed to stop server.")
 			fmt.Println("Error message: " + err.Error())
 			if proc != nil {
-				fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+				fmt.Println("You may try killing it manually. Search for the process PID inside server.pid if it exists")
 			}
 		}
 	}

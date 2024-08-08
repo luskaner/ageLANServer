@@ -20,7 +20,7 @@ func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {
 			if commonExecutor.IsAdmin() {
 				fmt.Println("Adding host to hosts file.")
 			} else {
-				fmt.Println(`Adding host to hosts file, accept any dialog from "launcher-config-admin" if it appears...`)
+				fmt.Println(`Adding host to hosts file, accept any dialog from "config-admin-agent" if it appears...`)
 			}
 			ips := launcherCommon.HostOrIpToIps(host)
 			var ip string
