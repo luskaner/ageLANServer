@@ -443,6 +443,12 @@ func (adv *Advertisement) Encode() i.A {
 	} else {
 		startTime = nil
 	}
+	var started uint8
+	if startTime != nil {
+		started = 1
+	} else {
+		started = 0
+	}
 	return i.A{
 		adv.id,
 		adv.platformSessionId,
@@ -451,7 +457,7 @@ func (adv *Advertisement) Encode() i.A {
 		"",
 		"0",
 		adv.host.GetUser().GetId(),
-		0,
+		started,
 		adv.description,
 		adv.description,
 		visible,
