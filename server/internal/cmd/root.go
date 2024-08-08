@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
-	"log"
 	"net/http"
 	"net/netip"
 	"os"
@@ -106,7 +105,7 @@ var (
 			}()
 			<-stop
 
-			log.Printf("Server is shutting down...")
+			fmt.Printf("Server is shutting down...")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -115,7 +114,7 @@ var (
 				fmt.Printf("Server forced to shutdown: %v\n", err)
 			}
 
-			log.Println("Server stopped")
+			fmt.Println("Server stopped")
 
 			_ = lock.Unlock()
 		},
