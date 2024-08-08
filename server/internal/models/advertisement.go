@@ -402,6 +402,8 @@ func (adv *Advertisement) UpdateState(state int8) {
 	adv.state = state
 	if adv.state == 1 && previousState != 1 {
 		adv.startTime = time.Now().UTC().Unix()
+		adv.visible = false
+		adv.joinable = false
 	}
 	advLock.Unlock(adv.id)
 }
