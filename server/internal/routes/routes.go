@@ -86,7 +86,6 @@ func Initialize(mux *http.ServeMux) {
 	accountGroup.HandleFunc(mux, "GET", "/getProfileName", account.GetProfileName)
 
 	LeaderboardGroup := gameGroup.Subgroup("/Leaderboard")
-	LeaderboardGroup.HandleFunc(mux, "POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
 	LeaderboardGroup.HandleFunc(mux, "GET", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
 	LeaderboardGroup.HandleFunc(mux, "GET", "/getLeaderBoard", leaderboard.GetLeaderBoard)
 	LeaderboardGroup.HandleFunc(mux, "GET", "/getAvailableLeaderboards", leaderboard.GetAvailableLeaderboards)
@@ -95,6 +94,7 @@ func Initialize(mux *http.ServeMux) {
 	LeaderboardGroup.HandleFunc(mux, "GET", "/getPartyStat", leaderboard.GetPartyStat)
 
 	leaderboardGroup := gameGroup.Subgroup("/leaderboard")
+	leaderboardGroup.HandleFunc(mux, "POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
 	leaderboardGroup.HandleFunc(mux, "POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
 
 	automatch2Group := gameGroup.Subgroup("/automatch2")
@@ -105,6 +105,7 @@ func Initialize(mux *http.ServeMux) {
 	AchievementGroup.HandleFunc(mux, "GET", "/getAvailableAchievements", achievement.GetAvailableAchievements)
 
 	achievementGroup := gameGroup.Subgroup("/achievement")
+	achievementGroup.HandleFunc(mux, "POST", "/applyOfflineUpdates", achievement.ApplyOfflineUpdates)
 	achievementGroup.HandleFunc(mux, "POST", "/grantAchievement", achievement.GrantAchievement)
 	achievementGroup.HandleFunc(mux, "POST", "/syncStats", achievement.SyncStats)
 
