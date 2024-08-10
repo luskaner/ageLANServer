@@ -3,7 +3,6 @@ package cmdUtils
 import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
@@ -16,9 +15,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 			if canAdd == "user" {
 				certMsg += ", accept the dialog."
 			} else {
-				if commonExecutor.IsAdmin() || c.CfgAgentStarted() {
-					certMsg += "."
-				} else {
+				if !c.CfgAgentStarted() {
 					certMsg += `, accept any dialog from "config-admin-agent" if it appears.`
 				}
 			}

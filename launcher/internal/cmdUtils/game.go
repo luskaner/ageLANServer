@@ -46,7 +46,7 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 		}
 	}
 	if broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
-		fmt.Println("Starting agent...")
+		fmt.Println("Starting agent, accept any dialog from 'agent.exe' if it appears...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
 		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
 		if !result.Success() {
@@ -64,8 +64,11 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 			fmt.Println("Agent started.")
 		}
 	}
-
-	fmt.Println("Starting game...")
+	if _, ok := executer.(game.CustomExecutor); ok {
+		fmt.Println("Starting game, accept any dialog if it appears...")
+	} else {
+		fmt.Println("Starting game...")
+	}
 	var result *commonExecutor.ExecResult
 	executableArgs := viper.GetStringSlice("Client.ExecutableArgs")
 

@@ -193,7 +193,7 @@ func (c *Config) StartServer(executable string, stop bool, canTrustCertificate b
 			return
 		}
 	}
-	fmt.Println("Starting server...")
+	fmt.Println("Starting server, accept any dialog if it appears...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
