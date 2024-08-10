@@ -40,7 +40,7 @@ var (
 )
 
 func Execute() error {
+	rootCmd.Version = Version
 	rootCmd.PersistentFlags().BoolVarP(&replace, "replace", "r", false, "Overwrite existing certificate pair.")
-	rootCmd.PersistentFlags().StringVarP(&Version, "version", "v", Version, "Version")
 	return rootCmd.Execute()
 }

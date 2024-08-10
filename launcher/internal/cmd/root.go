@@ -197,6 +197,7 @@ var (
 
 func Execute() error {
 	cobra.OnInitialize(initConfig)
+	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Will require admin privileges.")
 	rootCmd.PersistentFlags().StringP("canTrustCertificate", "c", "local", `Trust the certificate of the server if needed. "false", "user" or "local" (will require admin privileges)`)
@@ -212,7 +213,6 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringArrayP("serverPathArgs", "r", []string{}, `The arguments to pass to the server executable if starting it. Can be set multiple times. See the server for available arguments.`)
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", `The type of game client or the path. "auto" will use the Steam and then the Microsoft Store one if found. Use a path to the game launcher, "steam" or "msstore" to use the default launcher.`)
 	rootCmd.PersistentFlags().StringArrayP("clientExeArgs", "i", []string{}, `The arguments to pass to the client launcher if it is custom. Can be set multiple times.`)
-	rootCmd.PersistentFlags().StringVarP(&Version, "version", "v", Version, "Version")
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
 		return err
 	}

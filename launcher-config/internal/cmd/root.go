@@ -15,8 +15,8 @@ var rootCmd = &cobra.Command{
 var Version string
 
 func Execute() error {
+	rootCmd.Version = Version
 	initSetUp()
 	initRevert()
-	rootCmd.PersistentFlags().StringVarP(&Version, "version", "v", Version, "Version")
 	return rootCmd.Execute()
 }

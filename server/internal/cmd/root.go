@@ -123,13 +123,13 @@ var (
 
 func Execute() error {
 	cobra.OnInitialize(initConfig)
+	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce server in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts")
 	rootCmd.PersistentFlags().StringP("host", "n", netip.IPv4Unspecified().String(), "The host the server will bind to.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
-	rootCmd.PersistentFlags().StringVarP(&Version, "version", "v", Version, "Version")
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.PersistentFlags().Lookup("announce")); err != nil {
 		return err
 	}

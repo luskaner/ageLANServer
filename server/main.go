@@ -9,8 +9,8 @@ const version = "development"
 
 func main() {
 	cobra.MousetrapHelpText = ""
+	cmd.Version = version
 	if err := cmd.Execute(); err != nil {
 		panic(err)
 	}
-	cmd.Version = version
 }

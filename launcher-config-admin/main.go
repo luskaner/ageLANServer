@@ -20,9 +20,9 @@ func main() {
 	if !internal.ParentMatches(common.GetExeFileName(true, common.LauncherConfig)) {
 		fmt.Printf("This program should only be run through \"%s\", not directly. You can use the same arguments and more.\n", common.LauncherConfig)
 	}
+	cmd.Version = version
 	err := cmd.Execute()
 	if err != nil {
 		panic(err)
 	}
-	cmd.Version = version
 }
