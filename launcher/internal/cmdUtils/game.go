@@ -46,7 +46,7 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 		}
 	}
 	if broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
-		fmt.Println("Starting agent, accept any dialog from 'agent.exe' if it appears...")
+		fmt.Println("Starting agent, accept any dialog from 'agent.exe' (including the firewall) if it appears...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
 		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
 		if !result.Success() {

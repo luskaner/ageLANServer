@@ -137,7 +137,7 @@ var (
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d)...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
+				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher.exe' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
 				errorCode, selectedServerHost := cmdUtils.ListenToServerAnnouncementsAndSelect(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
