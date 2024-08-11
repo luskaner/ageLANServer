@@ -45,12 +45,21 @@ Steam or Xbox Live depending on the version to fully play offline.**
 
 ### Server
 
-- Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher.
-- MacOS: Catalina 10.15 or higher.
-- GNU/Linux: *any supported distro, see the note below for details*.
+#### Pre-built releases (Stable)
+
+- Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher. 32-bit/64-bit both Arm and x86.
+- MacOS: Catalina 10.15 or higher. 64-bit both Arm and x86.
+- GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm and x86 (other archs are considered stable but they are not included).
 
 Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly)
 depending on the operating system.
+
+#### Buildable (Experimental)
+
+- BSD-based (OpenBSD, DragonFly BSD, FreeBSD and NetBSD).
+- Solaris-based (Solaris and Illumos).
+- AIX.
+- Plan 9.
 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
@@ -94,9 +103,9 @@ The following archives are provided:
     * Mac OS:
         * **Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
         * **Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
-        * **Universal - all-in-one**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
+        * **Universal**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
 
-*Note: If you are using Windows Defender on Windows it may flag one or more executables as virus, this is
+*Note: If you are using Antivirus it may flag one or more executables as virus, this is
 a **false positive***.
 
 ### Verification
@@ -105,7 +114,7 @@ The verification process ensures that the files you download are the same as the
 maintainer.
 
 1. Check the release tag is verified with the committer's signature key (*as all commits
-   must be).
+   must be*).
 2. Download the ```..._checksums.txt``` and ```..._checksums.txt.sig``` files.
 3. Import the [release public key](release_public.key) and import it to your keyring if you haven't already.
 4. Verify the ```..._checksums.txt``` file with the ```..._checksums.txt.sig``` file.
@@ -169,11 +178,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server**. Setting it to
    public
    visibility is recommended.
-7. **Invite friends** by searching them by name and sending an invite as needed. They can also search in the lobby
-   browser
-   by
-   the lobby ID or just connect to it directly if public (sharing the link to join the lobby automatically probably does
-   not work).
+7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name and sending an invite as needed. You can share the link to join the lobby automatically (only works if already in-game).
 
 ## Local development
 
@@ -216,7 +221,7 @@ Run ```task build```.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-- Owning a **legal license** of Age of Empires 2 Definitive Edition.
+- Owning a **legal license** of Age of Empires 2 Definitive Edition (and all relevant DLC's).
 - Not using this software to cheat/hack and, in general, respect all the game terms of service.
 - Use this software for personal use.
 - Use this software in a LAN environment.
