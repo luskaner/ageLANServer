@@ -49,7 +49,8 @@ Steam or Xbox Live depending on the version to fully play offline.**
 
 - Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher. 32-bit/64-bit both Arm and x86.
 - MacOS: Catalina 10.15 or higher. 64-bit both Arm and x86.
-- GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm and x86 (other archs are considered stable but they are not included).
+- GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm
+  and x86 (other archs are considered stable but they are not included).
 
 Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly)
 depending on the operating system.
@@ -59,7 +60,6 @@ depending on the operating system.
 - BSD-based (OpenBSD, DragonFly BSD, FreeBSD and NetBSD).
 - Solaris-based (Solaris and Illumos).
 - AIX.
-- Plan 9.
 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
 
@@ -178,7 +178,9 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server**. Setting it to
    public
    visibility is recommended.
-7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name and sending an invite as needed. You can share the link to join the lobby automatically (only works if already in-game).
+7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
+   and sending an invite as needed. You can share the link to join the lobby automatically (only works if already
+   in-game).
 
 ## Local development
 
