@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-var autoServerDir = []string{`\`, `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
+var autoServerDir = []string{`\`, fmt.Sprintf(`\%s\`, common.Server), `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
 func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, executablePath string, ip string) {
