@@ -2,28 +2,49 @@ package process
 
 import (
 	"errors"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 )
 
+func getPidPaths(exeDir string) (paths []string) {
+	name := common.Name + "-" + filepath.Base(exeDir) + ".pid"
+	if runtime.GOOS != "windows" {
+		if d, e := os.Stat("/var/run"); e == nil && d.IsDir() {
+			paths = append(paths, filepath.Join("/var/run", name))
+		}
+	}
+	tmp := os.TempDir()
+	if tmp != "" {
+		if d, e := os.Stat(tmp); e == nil && d.IsDir() {
+			paths = append(paths, filepath.Join(tmp, name))
+		}
+	}
+	paths = append(paths, filepath.Join(exeDir, name))
+	return
+}
+
 func Process(exe string) (pidPath string, proc *os.Process, err error) {
-	pidPath = filepath.Join(filepath.Dir(exe), filepath.Base(exe)+".pid")
-	if _, err = os.Stat(pidPath); err == nil {
+	pidPaths := getPidPaths(filepath.Dir(exe))
+	var pid int
+	for _, pidPath = range pidPaths {
 		var data []byte
 		data, err = os.ReadFile(pidPath)
 		if err != nil {
-			return
+			continue
 		}
-		var pid int
 		pid, err = strconv.Atoi(string(data))
 		if err != nil {
-			return
+			continue
 		}
 		proc, err = FindProcess(pid)
+		return
 	}
+	pidPath = pidPaths[0]
 	return
 }
 
