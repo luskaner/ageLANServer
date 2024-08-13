@@ -8,9 +8,9 @@ retract v1.2.0-rc.4
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240805173957-ab14eac0a9e5
+	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240813200314-001649bbff63
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sys v0.23.0
+	golang.org/x/sys v0.24.0
 )
 
 require (
