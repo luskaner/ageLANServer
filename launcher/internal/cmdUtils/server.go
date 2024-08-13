@@ -8,7 +8,6 @@ import (
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
-	"github.com/spf13/viper"
 	"net"
 	"sort"
 	"strings"
@@ -159,7 +158,7 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 	return
 }
 
-func (c *Config) StartServer(executable string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
+func (c *Config) StartServer(executable string, args []string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
 	serverExecutablePath := server.GetExecutablePath(executable)
 	if serverExecutablePath == "" {
 		fmt.Println("Cannot find server executable path. Set it manually in Server.Executable.")
@@ -202,8 +201,7 @@ func (c *Config) StartServer(executable string, stop bool, canTrustCertificate b
 	}
 	var result *commonExecutor.ExecResult
 	var serverExe string
-	result, serverExe, ip = server.StartServer(stopStr, executable,
-		viper.GetStringSlice("Server.ExecutableArgs"))
+	result, serverExe, ip = server.StartServer(stopStr, executable, args)
 	if result.Success() {
 		fmt.Println("Server started.")
 		c.SetServerExe(serverExe)

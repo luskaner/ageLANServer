@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
+	"mvdan.cc/sh/v3/shell"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -27,6 +28,11 @@ const falseValue = "false"
 
 var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
+
+func parseCommandArgs(name string) (args []string, err error) {
+	args, err = shell.Fields(viper.GetString(name), nil)
+	return
+}
 
 var (
 	Version                        string
@@ -72,6 +78,19 @@ var (
 			if !autoTrueFalseValues.Contains(serverStop) {
 				fmt.Printf("Invalid value for serverStop (auto/true/false): %s\n", serverStop)
 				errorCode = internal.ErrInvalidServerStop
+				return
+			}
+			serverArgs, err := parseCommandArgs("Server.ExecutableArgs")
+			if err != nil {
+				fmt.Println("Failed to parse server executable arguments")
+				errorCode = internal.ErrInvalidServerArgs
+				return
+			}
+			var clientArgs []string
+			clientArgs, err = parseCommandArgs("Client.ExecutableArgs")
+			if err != nil {
+				fmt.Println("Failed to parse server executable arguments")
+				errorCode = internal.ErrInvalidClientArgs
 				return
 			}
 			canAddHost := viper.GetBool("Config.CanAddHost")
@@ -170,7 +189,7 @@ var (
 					return
 				}
 			} else {
-				errorCode, serverHost = config.StartServer(serverExecutable, serverStop == "true", canTrustCertificate != "false")
+				errorCode, serverHost = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
 				}
@@ -190,7 +209,7 @@ var (
 				errorMayBeConfig = true
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(clientExecutable, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )
@@ -210,9 +229,9 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "e", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order ".\%s", ".\%s\%s", "..\%s" and finally "..\%s\%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
-	rootCmd.PersistentFlags().StringArrayP("serverPathArgs", "r", []string{}, `The arguments to pass to the server executable if starting it. Can be set multiple times. See the server for available arguments.`)
+	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "[]string{}", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. Path names need to use double backslashes or be within single quotes.`)
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", `The type of game client or the path. "auto" will use the Steam and then the Microsoft Store one if found. Use a path to the game launcher, "steam" or "msstore" to use the default launcher.`)
-	rootCmd.PersistentFlags().StringArrayP("clientExeArgs", "i", []string{}, `The arguments to pass to the client launcher if it is custom. Can be set multiple times.`)
+	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", `The arguments to pass to the client launcher if it is custom. Path names need to use double backslashes or be within single quotes.`)
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
 		return err
 	}

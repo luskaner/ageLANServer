@@ -31,4 +31,6 @@ const (
 	ErrTrustCert
 	ErrMetadataProfilesSetup
 	ErrAgentStart
+	ErrInvalidServerArgs
+	ErrInvalidClientArgs
 )

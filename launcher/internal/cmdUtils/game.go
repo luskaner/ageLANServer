@@ -10,7 +10,6 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/game"
-	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
 )
 
@@ -21,7 +20,7 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	fmt.Println("Looking for the game...")
 	executer := game.MakeExecutor(executable)
 	var customExecutor game.CustomExecutor
@@ -70,14 +69,13 @@ func (c *Config) LaunchAgentAndGame(executable string, canTrustCertificate strin
 		fmt.Println("Starting game...")
 	}
 	var result *commonExecutor.ExecResult
-	executableArgs := viper.GetStringSlice("Client.ExecutableArgs")
 
-	if result = executer.Execute(executableArgs); !result.Success() && result.Err != nil {
+	if result = executer.Execute(args); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && errors.Is(result.Err, windows.ERROR_ELEVATION_REQUIRED) {
 			if canTrustCertificate == "user" {
 				fmt.Println("Using a user certificate. If it fails to connect to the server, try setting the config/option setting 'CanTrustCertificate' to 'local'.")
 			}
-			result = customExecutor.ExecuteElevated(executableArgs)
+			result = customExecutor.ExecuteElevated(args)
 		}
 	}
 	if !result.Success() {
