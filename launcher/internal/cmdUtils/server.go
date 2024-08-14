@@ -14,11 +14,15 @@ import (
 )
 
 func selectBestServerIp(ips []string) (ok bool, ip string) {
-	var successIps []string
+	var successIps []net.IP
 
 	for _, curIp := range ips {
-		if server.CheckConnectionFromServer(curIp, true) {
-			successIps = append(successIps, curIp)
+		if server.LanServer(curIp, true) {
+			parsedIp := net.ParseIP(curIp)
+			if parsedIp.IsLoopback() {
+				return true, curIp
+			}
+			successIps = append(successIps, net.ParseIP(curIp).To4())
 		}
 	}
 
@@ -28,36 +32,29 @@ func selectBestServerIp(ips []string) (ok bool, ip string) {
 	}
 
 	ok = true
-	ip = successIps[0]
+	ip = successIps[0].String()
+	interfaces, err := net.Interfaces()
 
-	if countSuccessIps > 1 {
-		interfaces, err := net.Interfaces()
+	if err != nil {
+		return
+	}
 
+	var addrs []net.Addr
+	for _, i := range interfaces {
+		addrs, err = i.Addrs()
 		if err != nil {
-			return
+			continue
 		}
-		var successIpsParsed []net.IP
-		for _, curIp := range successIps {
-			successIpsParsed = append(successIpsParsed, net.ParseIP(curIp).To4())
-		}
-
-		var addrs []net.Addr
-		for _, i := range interfaces {
-			addrs, err = i.Addrs()
-			if err != nil {
+		for _, addr := range addrs {
+			v, addrOk := addr.(*net.IPNet)
+			if !addrOk {
 				continue
 			}
-			for _, addr := range addrs {
-				v, addrOk := addr.(*net.IPNet)
-				if !addrOk {
-					continue
-				}
 
-				for _, curIp := range successIpsParsed {
-					if v.Contains(curIp) {
-						ip = curIp.String()
-						return
-					}
+			for _, curIp := range successIps {
+				if v.Contains(curIp) {
+					ip = curIp.String()
+					return
 				}
 			}
 		}
