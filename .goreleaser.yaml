@@ -151,7 +151,7 @@ archives:
     builds: [ server-win_x86-64, server-genCert-win_x86-64, launcher-win_x86-64, launcher-agent-win_x86-64, launcher-config-win_x86-64, launcher-config-admin-win_x86-64, launcher-config-admin-agent-win_x86-64 ]
     format: zip
     name_template: >-
-      {{- .ProjectName }}_
+      {{- .ProjectName }}_full
       {{- .RawVersion }}_win_x86-64
     files:
       - src: LICENSE
@@ -173,7 +173,7 @@ archives:
     builds: [ server-win_arm64, server-genCert-win_arm64, launcher-win_arm64, launcher-agent-win_arm64, launcher-config-win_arm64, launcher-config-admin-win_arm64, launcher-config-admin-agent-win_arm64 ]
     format: zip
     name_template: >-
-      {{- .ProjectName }}_
+      {{- .ProjectName }}_full
       {{- .RawVersion }}_win_arm64
     files:
       - src: LICENSE
