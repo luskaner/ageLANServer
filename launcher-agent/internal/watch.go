@@ -4,6 +4,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"golang.org/x/sys/windows"
 	"time"
 )
@@ -41,8 +42,13 @@ func waitForProcess(processesEntryName windows.ProcessEntry32) bool {
 	return true
 }
 
-func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, exitCode *int) {
+func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, revertCmd []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
+	if len(revertCmd) > 0 {
+		defer func() {
+			launcherCommonExecutor.RunCommand(revertCmd)
+		}()
+	}
 	if len(revertArgs) > 0 {
 		defer func() {
 			RunConfig(revertArgs)

@@ -33,4 +33,8 @@ const (
 	ErrAgentStart
 	ErrInvalidServerArgs
 	ErrInvalidClientArgs
+	ErrInvalidSetupCommand
+	ErrInvalidRevertCommand
+	ErrSetupCommand
+	ErrRevertCommand
 )

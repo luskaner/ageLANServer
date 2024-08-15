@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
+	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 )
 
@@ -16,6 +17,8 @@ type Config struct {
 	restoreProfiles bool
 	serverExe       string
 	agentStarted    bool
+	setupCommandRan bool
+	revertCommand   []string
 }
 
 func (c *Config) MappedHosts() {
@@ -48,12 +51,20 @@ func (c *Config) SetServerExe(exe string) {
 	c.serverExe = exe
 }
 
+func (c *Config) SetRevertCommand(cmd []string) {
+	c.revertCommand = cmd
+}
+
 func (c *Config) CfgAgentStarted() bool {
 	return c.startedAgent
 }
 
 func (c *Config) RequiresConfigRevert() bool {
 	return c.unmapIPs || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
+}
+
+func (c *Config) RequiresRunningRevertCommand() bool {
+	return c.setupCommandRan && len(c.revertCommand) > 0
 }
 
 func (c *Config) AgentStarted() bool {
@@ -64,7 +75,17 @@ func (c *Config) ServerExe() string {
 	return c.serverExe
 }
 
+func (c *Config) RevertCommand() []string {
+	if c.setupCommandRan {
+		return c.revertCommand
+	}
+	return []string{}
+}
+
 func (c *Config) Revert() {
+	if c.AgentStarted() {
+		c.KillAgent()
+	}
 	if serverExe := c.ServerExe(); len(serverExe) > 0 {
 		fmt.Println("Stopping server...")
 		if proc, err := commonProcess.Kill(serverExe); err == nil {
@@ -91,6 +112,15 @@ func (c *Config) Revert() {
 			}
 		}
 	}
+	if c.RequiresRunningRevertCommand() {
+		err := c.RunRevertCommand()
+		if err != nil {
+			fmt.Println("Failed to run revert command.")
+			fmt.Println("Error message: " + err.Error())
+		} else {
+			fmt.Println("Ran Revert command.")
+		}
+	}
 }
 
 func GameRunning() bool {
@@ -99,4 +129,17 @@ func GameRunning() bool {
 		return true
 	}
 	return false
+}
+
+func (c *Config) RunSetupCommand(cmd []string) (err error) {
+	err = launcherExecutor.RunCommand(cmd)
+	if err == nil {
+		c.setupCommandRan = true
+	}
+	return
+}
+
+func (c *Config) RunRevertCommand() (err error) {
+	err = launcherExecutor.RunCommand(c.revertCommand)
+	return
 }

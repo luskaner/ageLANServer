@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -26,11 +27,14 @@ const autoValue = "auto"
 const trueValue = "true"
 const falseValue = "false"
 
+var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)
 var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
 func parseCommandArgs(name string) (args []string, err error) {
-	args, err = shell.Fields(viper.GetString(name), nil)
+	cmd := viper.GetString(name)
+	cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
+	args, err = shell.Fields(cmd, nil)
 	return
 }
 
@@ -93,6 +97,21 @@ var (
 				errorCode = internal.ErrInvalidClientArgs
 				return
 			}
+			var setupCommand []string
+			setupCommand, err = parseCommandArgs("Config.SetupCommand")
+			if err != nil {
+				fmt.Println("Failed to parse setup command")
+				errorCode = internal.ErrInvalidSetupCommand
+				return
+			}
+			var revertCommand []string
+			revertCommand, err = parseCommandArgs("Config.RevertCommand")
+			if err != nil {
+				fmt.Println("Failed to parse revert command")
+				errorCode = internal.ErrInvalidRevertCommand
+				return
+			}
+			config.SetRevertCommand(revertCommand)
 			canAddHost := viper.GetBool("Config.CanAddHost")
 			isolateMetadata := viper.GetBool("Config.IsolateMetadata")
 			isolateProfiles := viper.GetBool("Config.IsolateProfiles")
@@ -110,10 +129,7 @@ var (
 			go func() {
 				_, ok := <-sigs
 				if ok {
-					if config.AgentStarted() {
-						config.KillAgent()
-						config.Revert()
-					}
+					config.Revert()
 					_ = lock.Unlock()
 					os.Exit(errorCode)
 				}
@@ -144,6 +160,15 @@ var (
 			}
 			// Setup
 			fmt.Println("Setting up...")
+			if len(setupCommand) > 0 {
+				fmt.Printf("Running setup command '%s'...\n", viper.GetString("Config.SetupCommand"))
+				err = config.RunSetupCommand(setupCommand)
+				if err != nil {
+					fmt.Printf("Error: %s\n", err)
+					errorCode = internal.ErrSetupCommand
+					return
+				}
+			}
 			if serverStart == "auto" {
 				announcePorts := viper.GetStringSlice("Server.AnnouncePorts")
 				portsInt := make([]int, len(announcePorts))
@@ -223,15 +248,17 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
+	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
+	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
 	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
 	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured servers will not get discovered.`)
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "e", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order ".\%s", ".\%s\%s", "..\%s" and finally "..\%s\%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
-	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "[]string{}", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. Path names need to use double backslashes or be within single quotes.`)
+	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", `The type of game client or the path. "auto" will use the Steam and then the Microsoft Store one if found. Use a path to the game launcher, "steam" or "msstore" to use the default launcher.`)
-	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", `The arguments to pass to the client launcher if it is custom. Path names need to use double backslashes or be within single quotes.`)
+	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", `The arguments to pass to the client launcher if it is custom. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
 		return err
 	}
@@ -245,6 +272,12 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Config.IsolateProfiles", rootCmd.PersistentFlags().Lookup("isolateProfiles")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Config.SetupCommand", rootCmd.PersistentFlags().Lookup("setupCommand")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Config.RevertCommand", rootCmd.PersistentFlags().Lookup("revertCommand")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Server.Start", rootCmd.PersistentFlags().Lookup("serverStart")); err != nil {
