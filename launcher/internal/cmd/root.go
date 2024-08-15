@@ -161,10 +161,15 @@ var (
 			// Setup
 			fmt.Println("Setting up...")
 			if len(setupCommand) > 0 {
-				fmt.Printf("Running setup command '%s'...\n", viper.GetString("Config.SetupCommand"))
-				err = config.RunSetupCommand(setupCommand)
-				if err != nil {
-					fmt.Printf("Error: %s\n", err)
+				fmt.Printf("Running setup command '%s' and waiting for it to exit...\n", viper.GetString("Config.SetupCommand"))
+				result := config.RunSetupCommand(setupCommand)
+				if !result.Success() {
+					if result.Err != nil {
+						fmt.Printf("Error: %s\n", result.Err)
+					}
+					if result.ExitCode != common.ErrSuccess {
+						fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+					}
 					errorCode = internal.ErrSetupCommand
 					return
 				}
@@ -248,7 +253,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
-	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
+	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. # The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
 	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
 	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)

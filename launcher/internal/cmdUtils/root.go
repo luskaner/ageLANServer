@@ -6,6 +6,7 @@ import (
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
+	"golang.org/x/sys/windows"
 )
 
 type Config struct {
@@ -131,11 +132,20 @@ func GameRunning() bool {
 	return false
 }
 
-func (c *Config) RunSetupCommand(cmd []string) (err error) {
-	err = launcherExecutor.RunCommand(cmd)
-	if err == nil {
-		c.setupCommandRan = true
+func (c *Config) RunSetupCommand(cmd []string) (result *launcherExecutor.ExecResult) {
+	var args []string
+	if len(cmd) > 1 {
+		args = cmd[1:]
 	}
+	result = launcherExecutor.ExecOptions{
+		File:           cmd[0],
+		WindowState:    windows.SW_NORMAL,
+		Wait:           true,
+		SpecialFile:    true,
+		Shell:          true,
+		UseWorkingPath: true,
+		Args:           args,
+	}.Exec()
 	return
 }
 
