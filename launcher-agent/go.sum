@@ -4,7 +4,7 @@ github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0 h1:Lv8CpAd2xq
 github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0/go.mod h1:vQ/CslrRbT5/MQfaeFR3bvfNmBt/Tb3A60hmSTGgre4=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240813200314-001649bbff63 h1:UYcA1nikKZDH8xJ5q81RItdRxqLHqNFgmkOMIZKAtHA=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240813200314-001649bbff63/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240813201233-1c278ad4c703 h1:oTwRdgwGd24X9jWxZaQ2LQoU3KCawEiGwDPIJ687Ylw=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240813201233-1c278ad4c703/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240814235549-76301384a25b h1:fvDpchTCuj6+RbbH6l1csnpLltBUwpgcIPnNu/EQ2dA=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240814235549-76301384a25b/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
 golang.org/x/sys v0.24.0 h1:Twjiwq9dn6R1fQcyiK+wQyHWfaz/BJB+YIpzU/Cv3Xg=
 golang.org/x/sys v0.24.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
