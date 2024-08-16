@@ -69,7 +69,7 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {
+func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (errorCode int) {
 	var mapCDN bool
 	ips := mapset.NewSet[string]()
 	if requiresMapCDN() {
@@ -86,15 +86,19 @@ func (c *Config) MapHosts(host string, canMap bool) (errorCode int) {
 			errorCode = internal.ErrConfigIpMap
 			return
 		} else {
-			resolvedIps := launcherCommon.HostOrIpToIps(host)
-			ok, ip := SelectBestServerIp(resolvedIps.ToSlice())
-			if !ok {
-				fmt.Println("Failed to find a reachable IP for " + host + ".")
-				errorCode = internal.ErrConfigIpMapFind
-				return
+			var ip string
+			if alreadySelectedIp {
+				ip = host
 			} else {
-				ips.Add(ip)
+				resolvedIps := launcherCommon.HostOrIpToIps(host)
+				var ok bool
+				if ok, ip = SelectBestServerIp(resolvedIps.ToSlice()); !ok {
+					fmt.Println("Failed to find a reachable IP for " + host + ".")
+					errorCode = internal.ErrConfigIpMapFind
+					return
+				}
 			}
+			ips.Add(ip)
 		}
 	} else if !server.CheckConnectionFromServer(common.Domain, true) {
 		fmt.Println("serverStart is false and host matches. " + common.Domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")

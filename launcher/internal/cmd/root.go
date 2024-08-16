@@ -174,6 +174,7 @@ var (
 					return
 				}
 			}
+			alreadySelectedIp := false
 			if serverStart == "auto" {
 				announcePorts := viper.GetStringSlice("Server.AnnouncePorts")
 				portsInt := make([]int, len(announcePorts))
@@ -187,11 +188,12 @@ var (
 					}
 				}
 				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher.exe' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, selectedServerHost := cmdUtils.ListenToServerAnnouncementsAndSelect(portsInt)
+				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
-				} else if selectedServerHost != "" {
-					serverHost = selectedServerHost
+				} else if selectedServerIp != "" {
+					serverHost = selectedServerIp
+					alreadySelectedIp = true
 					serverStart = "false"
 					if serverStop == "auto" {
 						serverStop = "false"
@@ -224,7 +226,7 @@ var (
 					return
 				}
 			}
-			errorCode = config.MapHosts(serverHost, canAddHost)
+			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp)
 			if errorCode != common.ErrSuccess {
 				errorMayBeConfig = true
 				return

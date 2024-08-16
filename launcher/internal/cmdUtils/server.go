@@ -63,7 +63,7 @@ func SelectBestServerIp(ips []string) (ok bool, ip string) {
 	return
 }
 
-func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host string) {
+func ListenToServerAnnouncementsAndSelectBestIp(ports []int) (errorCode int, ip string) {
 	errorCode = common.ErrSuccess
 	servers := server.LanServersAnnounced(ports)
 	if servers == nil {
@@ -119,9 +119,9 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 		}
 		if len(servers) == 1 {
 			fmt.Printf("Found a single server \"%s\", will connect to it...\n", serverTags[0])
-			ok, host = SelectBestServerIp(serversStr[0])
+			ok, ip = SelectBestServerIp(serversStr[0])
 			if !ok {
-				fmt.Println("Server is not reachable. Check the client can connect to", host, "on TCP port 443 (HTTPS)")
+				fmt.Println("Server is not reachable. Check the client can connect to", ip, "on TCP port 443 (HTTPS)")
 				errorCode = internal.ErrServerUnreachable
 				return
 			}
@@ -142,7 +142,7 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 					break
 				}
 				ips := serversStr[option-1]
-				ok, host = SelectBestServerIp(ips)
+				ok, ip = SelectBestServerIp(ips)
 				if ok {
 					break
 				} else {
