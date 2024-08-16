@@ -46,7 +46,7 @@ func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broa
 	*exitCode = common.ErrSuccess
 	if len(revertCmd) > 0 {
 		defer func() {
-			launcherCommonExecutor.RunCommand(revertCmd)
+			_ = launcherCommonExecutor.RunRevertCommand(revertCmd)
 		}()
 	}
 	if len(revertArgs) > 0 {

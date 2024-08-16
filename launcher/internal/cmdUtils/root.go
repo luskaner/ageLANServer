@@ -12,6 +12,7 @@ import (
 type Config struct {
 	startedAgent    bool
 	unmapIPs        bool
+	unmapCDN        bool
 	removeUserCert  bool
 	removeLocalCert bool
 	restoreMetadata bool
@@ -25,6 +26,11 @@ type Config struct {
 func (c *Config) MappedHosts() {
 	c.startedAgent = true
 	c.unmapIPs = true
+}
+
+func (c *Config) MappedCDN() {
+	c.startedAgent = true
+	c.unmapCDN = true
 }
 
 func (c *Config) LocalCert() {
@@ -57,11 +63,11 @@ func (c *Config) SetRevertCommand(cmd []string) {
 }
 
 func (c *Config) CfgAgentStarted() bool {
-	return c.startedAgent
+	return !launcherExecutor.IsAdmin() && c.startedAgent
 }
 
 func (c *Config) RequiresConfigRevert() bool {
-	return c.unmapIPs || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
+	return c.unmapIPs || c.unmapCDN || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
 }
 
 func (c *Config) RequiresRunningRevertCommand() bool {
@@ -101,7 +107,7 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles); result.Success() {
+		if result := executor.RunRevert(c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN); result.Success() {
 			fmt.Println("Cleaned up.")
 		} else {
 			fmt.Println("Failed to clean up.")
@@ -150,6 +156,6 @@ func (c *Config) RunSetupCommand(cmd []string) (result *launcherExecutor.ExecRes
 }
 
 func (c *Config) RunRevertCommand() (err error) {
-	err = launcherExecutor.RunCommand(c.revertCommand)
+	err = launcherExecutor.RunRevertCommand(c.revertCommand)
 	return
 }

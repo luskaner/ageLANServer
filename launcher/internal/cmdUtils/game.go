@@ -14,7 +14,7 @@ import (
 )
 
 func (c *Config) KillAgent() {
-	proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherAgent))
+	proc, err := commonProcess.Kill(common.GetExeFileName(false, common.LauncherAgent))
 	if err != nil && proc != nil {
 		fmt.Println("You may try killing it manually. Search for the process PID inside agent.pid if it exists")
 	}
@@ -48,7 +48,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
 		fmt.Println("Starting agent, accept any dialog from 'agent.exe' (including the firewall) if it appears...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
-		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles)
+		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart

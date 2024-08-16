@@ -8,7 +8,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 )
 
-func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, exitAgentOnError bool) (result *executor.ExecResult) {
+func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *executor.ExecResult) {
 	args := make([]string, 0)
 	args = append(args, "setup")
 	if !executor.IsAdmin() {
@@ -37,18 +37,21 @@ func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertDat
 	if backupProfiles {
 		args = append(args, "-p")
 	}
+	if mapCDN {
+		args = append(args, "-c")
+	}
 	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
-func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool) (result *executor.ExecResult) {
+func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *executor.ExecResult) {
 	args := []string{launcherCommon.ConfigRevertCmd}
-	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles)...)
+	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
 	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
-func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool) []string {
+func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
 	args := make([]string, 0)
 	if !executor.IsAdmin() {
 		args = append(args, "-g")
@@ -67,6 +70,9 @@ func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, resto
 	}
 	if restoreProfiles {
 		args = append(args, "-p")
+	}
+	if unmapCDN {
+		args = append(args, "-c")
 	}
 	return args
 }

@@ -43,7 +43,7 @@ func main() {
 				internal.RunConfig(revertFlags)
 			}
 			if len(revertCmd) > 0 {
-				launcherCommonExecutor.RunCommand(revertCmd)
+				_ = launcherCommonExecutor.RunRevertCommand(revertCmd)
 			}
 			_ = lock.Unlock()
 			os.Exit(exitCode)

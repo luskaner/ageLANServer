@@ -2,7 +2,7 @@ package executor
 
 import "golang.org/x/sys/windows"
 
-func RunCommand(cmd []string) (err error) {
+func RunRevertCommand(cmd []string) (err error) {
 	var args []string
 	if len(cmd) > 1 {
 		args = cmd[1:]

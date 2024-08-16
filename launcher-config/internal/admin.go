@@ -16,7 +16,7 @@ var pipe net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
-func RunSetUp(mapIps mapset.Set[string], addCertData []byte) (err error, exitCode int) {
+func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
 	if mapIps.Cardinality() > 9 {
 		exitCode = launcherCommon.ErrIpMapAddTooMany
@@ -32,7 +32,7 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte) (err error, exitCod
 		i++
 	}
 	if pipe != nil {
-		return runSetUpAgent(ips, addCertData)
+		return runSetUpAgent(ips, addCertData, mapCDN)
 	} else {
 		var certificate *x509.Certificate
 		if addCertData != nil {
@@ -42,17 +42,17 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte) (err error, exitCod
 				return
 			}
 		}
-		result := executor.RunSetUp(ips, certificate)
+		result := executor.RunSetUp(ips, certificate, mapCDN)
 		err, exitCode = result.Err, result.ExitCode
 	}
 	return
 }
 
-func RunRevert(unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {
+func RunRevert(unmapIPs bool, removeCert bool, unmapCDN bool, failfast bool) (err error, exitCode int) {
 	if pipe != nil {
-		return runRevertAgent(unmapIPs, removeCert)
+		return runRevertAgent(unmapIPs, removeCert, unmapCDN)
 	}
-	result := executor.RunRevert(unmapIPs, removeCert, failfast)
+	result := executor.RunRevert(unmapIPs, removeCert, unmapCDN, failfast)
 	err, exitCode = result.Err, result.ExitCode
 	return
 }
@@ -109,7 +109,7 @@ func StartAgentIfNeeded() (result *executor.ExecResult) {
 	return
 }
 
-func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
+func runRevertAgent(unmapIPs bool, removeCert bool, unmapCDN bool) (err error, exitCode int) {
 	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevert); err != nil {
 		return
 	}
@@ -118,7 +118,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IPs: unmapIPs, Certificate: removeCert}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IPs: unmapIPs, Certificate: removeCert, CDN: unmapCDN}); err != nil {
 		return
 	}
 
@@ -129,7 +129,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	return
 }
 
-func runSetUpAgent(mapIps []net.IP, certificate []byte) (err error, exitCode int) {
+func runSetUpAgent(mapIps []net.IP, certificate []byte, mapCDN bool) (err error, exitCode int) {
 	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetup); err != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func runSetUpAgent(mapIps []net.IP, certificate []byte) (err error, exitCode int
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{IPs: mapIps, Certificate: certificate}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{IPs: mapIps, Certificate: certificate, CDN: mapCDN}); err != nil {
 		return
 	}
 

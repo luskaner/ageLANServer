@@ -36,5 +36,5 @@ const (
 	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
 	ErrSetupCommand
-	ErrRevertCommand
+	ErrConfigCDNMap
 )

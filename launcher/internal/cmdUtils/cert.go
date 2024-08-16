@@ -32,7 +32,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 			} else {
 				addUserCertData = cert.Raw
 			}
-			if result := executor.RunSetUp(nil, addUserCertData, addLocalCertData, false, false, false); !result.Success() {
+			if result := executor.RunSetUp(nil, addUserCertData, addLocalCertData, false, false, false, false); !result.Success() {
 				fmt.Println("Failed to trust certificate from " + common.Domain + ".")
 				errorCode = internal.ErrConfigCertAdd
 				if result.Err != nil {

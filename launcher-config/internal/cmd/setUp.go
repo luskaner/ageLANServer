@@ -148,7 +148,7 @@ var setUpCmd = &cobra.Command{
 				hostMappings.Add(ip.String())
 			}
 		}
-		if cmd.AddLocalCertData != nil || !hostMappings.IsEmpty() {
+		if cmd.AddLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -164,17 +164,7 @@ var setUpCmd = &cobra.Command{
 				} else {
 					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
-						fmt.Println("Failed to connect to config-admin-agent after starting it, killing the process...")
-						proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
-						if err != nil {
-							fmt.Println("Failed to terminate config-admin-agent after failing to connect to it")
-							if proc != nil {
-								fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
-							}
-							os.Exit(internal.ErrStartAgentRevert)
-						} else {
-							fmt.Println("Successfully terminated config-admin-agent after failing to connect to it")
-						}
+						fmt.Println("Failed to connect to config-admin-agent after starting it. Kill the 'config-admin-agent.exe' process manually")
 						os.Exit(internal.ErrStartAgentVerify)
 					}
 				}
@@ -188,7 +178,7 @@ var setUpCmd = &cobra.Command{
 					fmt.Println("Running config-admin to add local cert and/or host mappings, accept any dialog that appears...")
 				}
 			}
-			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData)
+			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with config-admin-agent")
@@ -221,17 +211,24 @@ var setUpCmd = &cobra.Command{
 					}
 				}
 				if agentStarted {
-					fmt.Println("Failed to communicate with config-admin-agent")
+					fmt.Println("Failed to communicate with config-admin-agent. Communicating with it to shutdown...")
 					if agentEndOnError {
-						fmt.Println("Killing the process...")
-						proc, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
-						if err != nil {
-							fmt.Println("Failed to terminate config-admin-agent.")
-							if proc != nil {
-								fmt.Println("You may try killing it manually. Search for the process with PID", proc.Pid)
+						if err := internal.StopAgentIfNeeded(); err != nil {
+							failedStopAgent := true
+							if isAdmin {
+								_, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
+								if err == nil {
+									fmt.Println("Successfully killed config-admin-agent.")
+									failedStopAgent = false
+								}
+							}
+							if failedStopAgent {
+								fmt.Println("Failed to stop config-admin-agent. Kill the 'config-admin-agent.exe' process manually")
+								fmt.Println("Error message: " + err.Error())
+								os.Exit(internal.ErrStartAgentRevert)
 							}
 						} else {
-							fmt.Println("Successfully terminated config-admin-agent.")
+							fmt.Println("Successfully stopped config-admin-agent.")
 						}
 					}
 				} else {

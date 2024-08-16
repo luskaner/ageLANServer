@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
@@ -54,9 +55,16 @@ var revertCmd = &cobra.Command{
 				}
 			}
 		}
-		if cmd.UnmapIPs {
+		if cmd.UnmapCDN || cmd.UnmapIPs {
+			hosts := mapset.NewSet[string]()
+			if cmd.UnmapIPs {
+				hosts.Add(common.Domain)
+			}
+			if cmd.UnmapCDN {
+				hosts.Add(launcherCommon.CDNDomain)
+			}
 			fmt.Println("Removing IP mappings")
-			if err := internal.RemoveHosts(); err == nil {
+			if err := internal.RemoveHosts(hosts); err == nil {
 				fmt.Println("Successfully removed IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapRemove

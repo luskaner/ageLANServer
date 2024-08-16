@@ -13,10 +13,12 @@ const ConfigAdminIpcExit byte = 2
 
 type (
 	ConfigAdminIpcSetupCommand struct {
+		CDN         bool
 		IPs         []net.IP
 		Certificate []byte
 	}
 	ConfigAdminIpcRevertCommand struct {
+		CDN         bool
 		IPs         bool
 		Certificate bool
 	}

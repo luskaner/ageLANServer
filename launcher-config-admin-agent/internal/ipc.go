@@ -12,6 +12,7 @@ import (
 	"net"
 )
 
+var mappedCdn = false
 var mappedIps = false
 var addedCert = false
 
@@ -94,6 +95,9 @@ func handleSetUp(decoder *gob.Decoder) int {
 	if len(msg.IPs) > 0 && mappedIps {
 		return ErrIpsAlreadyMapped
 	}
+	if msg.CDN && mappedCdn {
+		return ErrCDNAlreadyMapped
+	}
 	if !checkIps(msg.IPs) {
 		return ErrIpsInvalid
 	}
@@ -107,9 +111,10 @@ func handleSetUp(decoder *gob.Decoder) int {
 			return ErrCertInvalid
 		}
 	}
-	result := executor.RunSetUp(msg.IPs, cert)
+	result := executor.RunSetUp(msg.IPs, cert, msg.CDN)
 	if result.Success() {
 		mappedIps = mappedIps || len(msg.IPs) > 0
+		mappedCdn = mappedCdn || msg.CDN
 		addedCert = addedCert || cert != nil
 	}
 	return result.ExitCode
@@ -122,11 +127,13 @@ func handleRevert(decoder *gob.Decoder) int {
 	}
 	revertIps := msg.IPs && mappedIps
 	revertCert := msg.Certificate && addedCert
+	revertCdn := msg.CDN && mappedCdn
 	if !revertIps && !revertCert {
 		return common.ErrSuccess
 	}
-	result := executor.RunRevert(revertIps, revertCert, true)
+	result := executor.RunRevert(revertIps, revertCert, revertCdn, true)
 	if result.Success() {
+		mappedCdn = !revertCdn
 		mappedIps = !revertIps
 		addedCert = !revertCert
 	}

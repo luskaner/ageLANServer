@@ -58,13 +58,20 @@ var setUpCmd = &cobra.Command{
 				os.Exit(internal.ErrLocalCertAdd)
 			}
 		}
-		if len(cmd.MapIPs) > 0 {
+		if len(cmd.MapIPs) > 0 || cmd.MapCDN {
 			fmt.Println("Adding IP mappings")
-			ipStrSet := mapset.NewSet[string]()
-			for _, ip := range cmd.MapIPs {
-				ipStrSet.Add(ip.String())
+			mappings := make(map[string]mapset.Set[string])
+			if len(cmd.MapIPs) > 0 {
+				mappings[common.Domain] = mapset.NewSet[string]()
+				for _, ip := range cmd.MapIPs {
+					mappings[common.Domain].Add(ip.String())
+				}
 			}
-			if ok, _ := internal.AddHosts(ipStrSet); ok {
+			if cmd.MapCDN {
+				mappings[launcherCommon.CDNDomain] = mapset.NewSet[string]()
+				mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
+			}
+			if ok, _ := internal.AddHosts(mappings); ok {
 				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd

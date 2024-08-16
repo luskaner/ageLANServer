@@ -11,4 +11,5 @@ const (
 	ErrCertAlreadyAdded
 	ErrIpsAlreadyMapped
 	ErrCertInvalid
+	ErrCDNAlreadyMapped
 )

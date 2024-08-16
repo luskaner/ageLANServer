@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func selectBestServerIp(ips []string) (ok bool, ip string) {
+func SelectBestServerIp(ips []string) (ok bool, ip string) {
 	var successIps []net.IP
 
 	for _, curIp := range ips {
@@ -119,7 +119,7 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 		}
 		if len(servers) == 1 {
 			fmt.Printf("Found a single server \"%s\", will connect to it...\n", serverTags[0])
-			ok, host = selectBestServerIp(serversStr[0])
+			ok, host = SelectBestServerIp(serversStr[0])
 			if !ok {
 				fmt.Println("Server is not reachable. Check the client can connect to", host, "on TCP port 443 (HTTPS)")
 				errorCode = internal.ErrServerUnreachable
@@ -142,7 +142,7 @@ func ListenToServerAnnouncementsAndSelect(ports []int) (errorCode int, host stri
 					break
 				}
 				ips := serversStr[option-1]
-				ok, host = selectBestServerIp(ips)
+				ok, host = SelectBestServerIp(ips)
 				if ok {
 					break
 				} else {

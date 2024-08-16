@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
+	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
@@ -81,6 +82,7 @@ var revertCmd = &cobra.Command{
 		reverseFailed := true
 		if cmd.RemoveAll {
 			cmd.UnmapIPs = true
+			cmd.UnmapCDN = true
 			cmd.RemoveLocalCert = true
 			RemoveUserCert = true
 			RestoreMetadata = true
@@ -143,7 +145,7 @@ var revertCmd = &cobra.Command{
 				}
 			}
 		}
-		if cmd.RemoveLocalCert || cmd.UnmapIPs {
+		if cmd.RemoveLocalCert || cmd.UnmapIPs || cmd.UnmapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if agentStarted {
 				fmt.Println("Communicating with config-admin-agent to remove local cert and/or host mappings...")
@@ -154,7 +156,7 @@ var revertCmd = &cobra.Command{
 					fmt.Println("Running config-admin to remove local cert and/or host mappings, accept any dialog that appears...")
 				}
 			}
-			err, exitCode := internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, !cmd.RemoveAll)
+			err, exitCode := internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with config-admin-agent")
@@ -197,20 +199,28 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		if stopAgent && internal.ConnectAgentIfNeeded() == nil {
+			errorCode := common.ErrSuccess
 			fmt.Println("Trying to stop config-admin-agent.")
 			err := internal.StopAgentIfNeeded()
+			failedStopAgent := true
 			if err == nil {
 				if internal.ConnectAgentIfNeededWithRetries(false) {
 					fmt.Println("Stopped config-admin-agent")
+					failedStopAgent = false
 				} else {
 					fmt.Println("Failed to stop config-admin-agent")
-					os.Exit(internal.ErrStopAgentVerify)
 				}
 			} else {
 				fmt.Println("Failed to trying stopping config-admin-agent")
 				fmt.Println(err)
-				os.Exit(internal.ErrStopAgent)
 			}
+			if isAdmin && failedStopAgent {
+				_, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
+				if err == nil {
+					fmt.Println("Successfully killed config-admin-agent.")
+				}
+			}
+			os.Exit(errorCode)
 		}
 	},
 }

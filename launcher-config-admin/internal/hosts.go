@@ -71,50 +71,53 @@ func unlockFile(file *os.File, lock *windows.Overlapped) error {
 	return windows.UnlockFileEx(fileHandle, 0, 1, 0, lock)
 }
 
-func hostExists(name string) (err error, exists bool, f *os.File, lock *windows.Overlapped) {
+func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File, lock *windows.Overlapped) {
 	err, f, lock = openHostsFile()
 	if f == nil {
 		return
 	}
-
+	existingHosts = mapset.NewSet[string]()
 	var line string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line = scanner.Text()
 		lineHost := host(line)
-		if lineHost == name {
-			exists = true
-			return
+		if hosts.ContainsOne(lineHost) {
+			existingHosts.Add(lineHost)
 		}
 	}
 	return
 }
 
-func missingIpMappings(ips mapset.Set[string], host string) (err error, missingIps mapset.Set[string], f *os.File, lock *windows.Overlapped) {
+func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *os.File, lock *windows.Overlapped) {
 	err, f, lock = openHostsFile()
 	if f == nil {
 		return
 	}
-	missingIps = ips.Clone()
 	var line string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line = scanner.Text()
 		lineIp, lineHost := mapping(line)
-		if lineHost == host && missingIps.ContainsOne(lineIp) {
-			missingIps.Remove(lineIp)
+		if ips, ok := (*mappings)[lineHost]; ok && ips.ContainsOne(lineIp) {
+			(*mappings)[lineHost].Remove(lineIp)
+			if (*mappings)[lineHost].IsEmpty() {
+				delete(*mappings, lineHost)
+			}
 		}
 	}
 	return
 }
 
-func AddHosts(ips mapset.Set[string]) (ok bool, err error) {
-	err, missingIps, hostsFile, lock := missingIpMappings(ips, common.Domain)
+func AddHosts(mappings map[string]mapset.Set[string]) (ok bool, err error) {
+	var hostsFile *os.File
+	var lock *windows.Overlapped
+	err, hostsFile, lock = missingIpMappings(&mappings)
 	if err != nil {
 		return
 	}
 
-	if missingIps.IsEmpty() {
+	if len(mappings) == 0 {
 		_ = unlockFile(hostsFile, lock)
 		_ = hostsFile.Close()
 		ok = true
@@ -129,10 +132,12 @@ func AddHosts(ips mapset.Set[string]) (ok bool, err error) {
 	}
 
 	err = updateHosts(hostsFile, *lock, func(f *os.File) error {
-		for ip := range missingIps.Iter() {
-			_, err = f.WriteString(fmt.Sprintf("\r\n%s\t%s\t%s", ip, common.Domain, hostEndMarking))
-			if err != nil {
-				return err
+		for hostname, ips := range mappings {
+			for ip := range ips.Iter() {
+				_, err = f.WriteString(fmt.Sprintf("\r\n%s\t%s\t%s", ip, hostname, hostEndMarking))
+				if err != nil {
+					return err
+				}
 			}
 		}
 		_, err = f.Seek(0, io.SeekStart)
@@ -210,9 +215,9 @@ func updateHosts(hostsFile *os.File, lock windows.Overlapped, updater func(file 
 	return err
 }
 
-func RemoveHosts() error {
-	err, exists, hostsFile, lock := hostExists(common.Domain)
-	if !exists {
+func RemoveHosts(hosts mapset.Set[string]) error {
+	err, existingHosts, hostsFile, lock := getExistingHosts(hosts)
+	if existingHosts.IsEmpty() {
 		if hostsFile != nil && lock != nil {
 			_ = unlockFile(hostsFile, lock)
 			_ = hostsFile.Close()
@@ -242,7 +247,7 @@ func RemoveHosts() error {
 				addLine = true
 			} else {
 				lineHost := host(line)
-				if lineHost != common.Domain {
+				if !existingHosts.ContainsOne(lineHost) {
 					addLine = true
 				}
 			}

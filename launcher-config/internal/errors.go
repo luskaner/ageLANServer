@@ -18,8 +18,6 @@ const (
 	ErrMetadataBackupRevert
 	ErrProfilesBackup
 	ErrProfilesBackupRevert
-	ErrStopAgent
-	ErrStopAgentVerify
 	ErrStartAgent
 	ErrStartAgentRevert
 	ErrStartAgentVerify
