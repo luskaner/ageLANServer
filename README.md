@@ -84,8 +84,8 @@ supported operating systems.
 The following archives are provided:
 
 * Full:
-    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_*A.B.C*_full_win_arm64.zip
-    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_*A.B.C*_full_win_x86-64.zip
+    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.zip
+    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
 * Launcher:
     * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.zip
     * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
@@ -161,7 +161,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Simplest way to use it
 
-1. **Download the asset `aoe2DELanServer_A.B.C_full_win_x86-64.zip`** from the latest
+1. **Download the asset `aoe2DELanServer_full_A.B.C_win_x86-64.zip`** from the latest
    stable release https://github.com/luskaner/aoe2DELanServer/releases
 2. **Uncompress** it somewhere (it's fully portable and with no dependencies).
 3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
