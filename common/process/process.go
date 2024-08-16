@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-func getPidPaths(exeDir string) (paths []string) {
-	name := common.Name + "-" + filepath.Base(exeDir) + ".pid"
+func getPidPaths(exePath string) (paths []string) {
+	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
 	if runtime.GOOS != "windows" {
 		if d, e := os.Stat("/var/run"); e == nil && d.IsDir() {
 			paths = append(paths, filepath.Join("/var/run", name))
@@ -24,12 +24,12 @@ func getPidPaths(exeDir string) (paths []string) {
 			paths = append(paths, filepath.Join(tmp, name))
 		}
 	}
-	paths = append(paths, filepath.Join(exeDir, name))
+	paths = append(paths, filepath.Join(filepath.Dir(exePath), name))
 	return
 }
 
 func Process(exe string) (pidPath string, proc *os.Process, err error) {
-	pidPaths := getPidPaths(filepath.Dir(exe))
+	pidPaths := getPidPaths(exe)
 	var pid int
 	for _, pidPath = range pidPaths {
 		var data []byte
