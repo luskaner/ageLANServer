@@ -29,6 +29,8 @@ github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe h1
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240814235549-76301384a25b h1:fvDpchTCuj6+RbbH6l1csnpLltBUwpgcIPnNu/EQ2dA=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240814235549-76301384a25b/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584 h1:noZeYpcI9YePO4Cg12BK1pRpT21HaKRoHJscyd7hx5s=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
 github.com/magiconair/properties v1.8.7/go.mod h1:Dhd985XPs7jluiymwWYZ0G4Z61jb3vdS329zhj2hYo0=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
