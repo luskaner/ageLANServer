@@ -48,7 +48,7 @@ Steam or Xbox Live depending on the version to fully play offline.**
 #### Pre-built releases (Stable)
 
 - Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher. 32-bit/64-bit both Arm and x86.
-- macOS: Catalina (v10.15) or higher for x86-64, Big Sur (v11) or higher for Apple Silicon (Arm64).
+- macOS: Catalina (v10.15) or higher for x86-64, any for Apple Silicon (Arm64).
 - GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm
   and x86 (other archs are considered stable but they are not included).
 
@@ -101,7 +101,7 @@ The following archives are provided:
         * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
         * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
     * macOS:
-        * **Big Sur (v11) or higher with Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
+        * **Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
         * **Catalina (v10.5) or higher with Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
         * **Universal (with above requirements)**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
 
