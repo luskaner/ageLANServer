@@ -165,7 +165,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 1. **Download the asset `aoe2DELanServer_full_A.B.C_win_x86-64.zip`** from the latest
    stable release https://github.com/luskaner/aoe2DELanServer/releases
-2. **Uncompress** it somewhere (it's fully portable and with no dependencies).
+2. **Uncompress** it somewhere.
 3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
    file**
    and modify
