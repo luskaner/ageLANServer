@@ -97,13 +97,13 @@ The following archives are provided:
         * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
     * Linux:
         * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.gz
-        * **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
-        * **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
-        * **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
+        * Kernel 3.1 or higher with **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
+        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
     * macOS:
-        * **Big Sur (v11) or higher with Apple Silicon - Arm64**: aoe2DELanServer_server_1.3.0_mac_apple-silicon.tar.gz
-        * **Catalina (v10.5) or higher with Intel - x86-64**: aoe2DELanServer_server_1.3.0_mac_intel.tar.gz
-        * **Universal (with above requirements)**: aoe2DELanServer_server_1.3.0_mac_all.tar.gz
+        * **Big Sur (v11) or higher with Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
+        * **Catalina (v10.5) or higher with Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
+        * **Universal (with above requirements)**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
 
 *Note: If you are using Antivirus it may flag one or more executables as virus, this is
 a **false positive***.
