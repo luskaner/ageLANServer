@@ -151,7 +151,9 @@ It can do the following setup steps for you:
 
 - Automatically start/stop the server or connect to an existing one automatically.
 - (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
-- (Optional) Modify the hosts file to redirect the game's API requests to the LAN server.
+- (Optional) Modify the hosts file to
+    - Redirect the game's API requests to the LAN server.
+    - Redirect the game CDN so it does not detect the official game status.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
 - Automatically find and start the game.
 
@@ -184,7 +186,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Local development
 
-Rename `go.work.example` to `go.work`
+Copy `go.work.example` to `go.work`
 
 ### System requirements
 
