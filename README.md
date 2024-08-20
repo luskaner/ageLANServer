@@ -5,7 +5,7 @@ connection **to the game server** paving the way to how the original AoE2 worked
 versions.
 
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
-Steam or Xbox Live depending on the version to fully play offline.**
+the internet and Steam or Xbox Live, depending on the version, to fully play offline.**
 
 ## Features
 
