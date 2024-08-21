@@ -81,10 +81,9 @@ func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet) (e
 	for _, restAddress := range restInterfaces {
 		var restAddressConn *net.UDPConn
 		restAddressConn, err = net.DialUDP(
-			"udp",
+			"udp4",
 			&net.UDPAddr{
-				IP:   restAddress.IP,
-				Port: priorityUdpAddress.Port,
+				IP: restAddress.IP,
 			},
 			&net.UDPAddr{
 				IP:   calculateBroadcastIp(restAddress.IP.To4(), restAddress.Mask),
