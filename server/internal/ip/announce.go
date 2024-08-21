@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -72,18 +71,9 @@ func Announce(ip net.IP, port int) {
 	buf.Write(messageBuffBytes)
 	bufBytes := buf.Bytes()
 
-	addrs := make([]string, len(connections))
-	for i, conn := range connections {
-		addrs[i] = strings.Split(conn.LocalAddr().String(), ":")[0]
-	}
-
-	fmt.Printf("Announcing on %s...\n", strings.Join(addrs, ", "))
-
 	for range ticker.C {
 		for _, conn := range connections {
 			_, _ = conn.Write(bufBytes)
 		}
 	}
-
-	fmt.Println("Announce stopped.")
 }

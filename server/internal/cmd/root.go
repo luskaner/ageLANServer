@@ -41,8 +41,8 @@ var (
 				os.Exit(common.ErrPidLock)
 			}
 			host := viper.GetString("default.Host")
-			addr := ip.ResolveHost(host)
-			if addr == nil {
+			addrs := ip.ResolveHost(host)
+			if addrs == nil || len(addrs) == 0 {
 				fmt.Println("Failed to resolve host")
 				_ = lock.Unlock()
 				os.Exit(internal.ErrResolveHost)
@@ -73,19 +73,6 @@ var (
 				}
 				writer = file
 			}
-
-			server := &http.Server{
-				Addr:    addr.String() + ":443",
-				Handler: handlers.LoggingHandler(writer, sessionMux),
-			}
-
-			if viper.GetBool("Announcement.Enabled") {
-				fmt.Println("Trying to announce server in", addr, "network to UDP port", viper.GetInt("Announcement.Port"))
-				go func() {
-					ip.Announce(addr, viper.GetInt("Announcement.Port"))
-				}()
-			}
-
 			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
 			if certificatePairFolder == "" {
 				fmt.Println("Failed to determine certificate pair folder")
@@ -94,27 +81,49 @@ var (
 			}
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-			fmt.Println("Listening on " + server.Addr)
-			go func() {
-				err := server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key))
-				if err != nil && !errors.Is(err, http.ErrServerClosed) {
-					fmt.Println("Failed to start server")
-					fmt.Println(err)
-					os.Exit(internal.ErrStartServer)
+
+			if viper.GetBool("Announcement.Enabled") {
+				fmt.Println("Announcing server to UDP port", viper.GetInt("Announcement.Port"))
+			}
+
+			var servers []*http.Server
+			for _, addr := range addrs {
+				server := &http.Server{
+					Addr:    addr.String() + ":443",
+					Handler: handlers.LoggingHandler(writer, sessionMux),
 				}
-			}()
+
+				fmt.Println("Listening on " + server.Addr)
+				go func() {
+					if viper.GetBool("Announcement.Enabled") {
+						go func() {
+							ip.Announce(addr, viper.GetInt("Announcement.Port"))
+						}()
+					}
+					err := server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key))
+					if err != nil && !errors.Is(err, http.ErrServerClosed) {
+						fmt.Println("Failed to start server")
+						fmt.Println(err)
+						os.Exit(internal.ErrStartServer)
+					}
+				}()
+				servers = append(servers, server)
+			}
+
 			<-stop
 
-			fmt.Printf("Server is shutting down...")
+			fmt.Println("Servers are shutting down...")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			if err := server.Shutdown(ctx); err != nil {
-				fmt.Printf("Server forced to shutdown: %v\n", err)
-			}
+			for _, server := range servers {
+				if err := server.Shutdown(ctx); err != nil {
+					fmt.Printf("Server %s forced to shutdown: %v\n", server.Addr, err)
+				}
 
-			fmt.Println("Server stopped")
+				fmt.Println("Server", server.Addr, "stopped")
+			}
 
 			_ = lock.Unlock()
 		},
