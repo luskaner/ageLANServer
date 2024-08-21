@@ -6,7 +6,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0
-	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.0
+	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe
 	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584
 	github.com/spf13/cobra v1.8.1
