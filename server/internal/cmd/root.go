@@ -86,11 +86,14 @@ var (
 				fmt.Println("Announcing server to UDP port", viper.GetInt("Announcement.Port"))
 			}
 
+			handler := handlers.LoggingHandler(writer, sessionMux)
+			certFile := filepath.Join(certificatePairFolder, common.Cert)
+			keyFile := filepath.Join(certificatePairFolder, common.Key)
 			var servers []*http.Server
 			for _, addr := range addrs {
 				server := &http.Server{
 					Addr:    addr.String() + ":443",
-					Handler: handlers.LoggingHandler(writer, sessionMux),
+					Handler: handler,
 				}
 
 				fmt.Println("Listening on " + server.Addr)
@@ -100,7 +103,7 @@ var (
 							ip.Announce(addr, viper.GetInt("Announcement.Port"))
 						}()
 					}
-					err := server.ListenAndServeTLS(filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key))
+					err := server.ListenAndServeTLS(certFile, keyFile)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
 						fmt.Println("Failed to start server")
 						fmt.Println(err)
