@@ -2,6 +2,7 @@ package launcher_common
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"net"
 	"strings"
 	"time"
@@ -12,20 +13,6 @@ var failedIpToHosts = make(map[string]time.Time)
 var failedHostToIps = make(map[string]time.Time)
 var ipToHosts = make(map[string]mapset.Set[string])
 var hostToIps = make(map[string]mapset.Set[string])
-
-func dnsNameToIps(host string) []string {
-	names, err := net.LookupIP(host)
-	if err != nil {
-		return nil
-	}
-	namesStr := make([]string, 0)
-	for _, name := range names {
-		if name.To4() != nil {
-			namesStr = append(namesStr, name.String())
-		}
-	}
-	return namesStr
-}
 
 func ipToDnsName(ip string) []string {
 	names, err := net.LookupAddr(ip)
@@ -87,11 +74,6 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 			} else {
 				ips.Add(ip.String())
 			}
-		} else {
-			hosts := IpToHosts(ip.String())
-			for _, h := range hosts.ToSlice() {
-				ips = ips.Union(HostOrIpToIps(h))
-			}
 		}
 		return ips
 	} else {
@@ -100,9 +82,10 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 			return cachedIps
 		}
 		ips := mapset.NewSet[string]()
-		ipsFromDns := dnsNameToIps(host)
+		ipsFromDns := common.HostToIps(host)
 		if ipsFromDns != nil {
-			for _, ipStr := range ipsFromDns {
+			for _, ipRaw := range ipsFromDns {
+				ipStr := ipRaw.String()
 				ips.Add(ipStr)
 				cacheMapping(host, ipStr)
 			}
