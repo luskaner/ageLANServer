@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe
+	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8

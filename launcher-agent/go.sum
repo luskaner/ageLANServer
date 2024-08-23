@@ -2,8 +2,8 @@ github.com/deckarep/golang-set/v2 v2.6.0 h1:XfcQbWM1LlMB8BsJ8N9vW5ehnnPVIw0je80N
 github.com/deckarep/golang-set/v2 v2.6.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
 github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1 h1:TgWp0wERP+f3unNh3eiIuzJ/nEfV/+XZBZegvMuMZSk=
 github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1/go.mod h1:vQ/CslrRbT5/MQfaeFR3bvfNmBt/Tb3A60hmSTGgre4=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe h1:1IfHEBnTM8hZWzhFhzAi+mO+Si8T2xDLjmAbf8AoHRY=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240816182051-6f3ed50dd7fe/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1 h1:LALvOGGbT3ozdZ1Cwz5FuPByPqHnw/cssT+wGGXKP/0=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584 h1:noZeYpcI9YePO4Cg12BK1pRpT21HaKRoHJscyd7hx5s=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
 golang.org/x/sys v0.24.0 h1:Twjiwq9dn6R1fQcyiK+wQyHWfaz/BJB+YIpzU/Cv3Xg=
