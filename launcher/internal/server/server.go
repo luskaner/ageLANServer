@@ -103,7 +103,7 @@ func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
 				IP:   netip.IPv4Unspecified().AsSlice(),
 				Port: port,
 			}
-			conn, err := net.ListenUDP("udp", &addr)
+			conn, err := net.ListenUDP("udp4", &addr)
 			if err != nil {
 				return
 			}

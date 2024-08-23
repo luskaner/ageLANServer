@@ -21,7 +21,7 @@ func Announce(ip net.IP, port int) {
 
 	var connections []*net.UDPConn
 	for _, targetIp := range targetIps {
-		conn, err := net.DialUDP("udp", nil, &net.UDPAddr{
+		conn, err := net.DialUDP("udp4", nil, &net.UDPAddr{
 			IP:   targetIp,
 			Port: port,
 		})

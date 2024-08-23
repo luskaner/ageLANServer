@@ -14,7 +14,7 @@ func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
 	conf := &tls.Config{
 		InsecureSkipVerify: insecureSkipVerify,
 	}
-	conn, err := tls.Dial("tcp", net.JoinHostPort(host, "443"), conf)
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), conf)
 	if err != nil {
 		return nil
 	}
