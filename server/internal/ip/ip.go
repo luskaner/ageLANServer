@@ -5,21 +5,6 @@ import (
 	"net"
 )
 
-func resolveHost(host string) []net.IP {
-	ips, err := net.LookupIP(host)
-	if err != nil {
-		return nil
-	}
-	validIps := make([]net.IP, 0)
-	for _, ip := range ips {
-		ipv4 := ip.To4()
-		if ipv4 != nil {
-			validIps = append(validIps, ipv4)
-		}
-	}
-	return validIps
-}
-
 func ResolveIps(ip net.IP) (ips []net.IP, targetIps []net.IP) {
 	interfaces, err := net.Interfaces()
 
@@ -71,7 +56,7 @@ func ResolveIps(ip net.IP) (ips []net.IP, targetIps []net.IP) {
 func ResolveHost(host string) []net.IP {
 	ip := net.ParseIP(host)
 	if ip == nil {
-		return resolveHost(host)
+		return common.HostToIps(host)
 	} else if ip.To4() == nil {
 		return nil
 	}
