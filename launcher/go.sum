@@ -25,8 +25,8 @@ github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1 h1:TgWp0wERP+
 github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1/go.mod h1:vQ/CslrRbT5/MQfaeFR3bvfNmBt/Tb3A60hmSTGgre4=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1 h1:LALvOGGbT3ozdZ1Cwz5FuPByPqHnw/cssT+wGGXKP/0=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584 h1:noZeYpcI9YePO4Cg12BK1pRpT21HaKRoHJscyd7hx5s=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5 h1:Ky0uCRb23Z4a+NF6CBbe8/spCChAUkKkCN8GDT4RhjY=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5/go.mod h1:QWrBfBAxO4kdHmFhyMGYcleS2rxT6s/9P6LGmZqORJo=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
 github.com/magiconair/properties v1.8.7/go.mod h1:Dhd985XPs7jluiymwWYZ0G4Z61jb3vdS329zhj2hYo0=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=

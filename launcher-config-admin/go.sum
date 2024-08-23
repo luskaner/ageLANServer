@@ -5,8 +5,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1 h1:LALvOGGbT3ozdZ1Cwz5FuPByPqHnw/cssT+wGGXKP/0=
 github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584 h1:noZeYpcI9YePO4Cg12BK1pRpT21HaKRoHJscyd7hx5s=
-github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240816183217-3f5c7feda584/go.mod h1:NMQapHmJN/yD5HhaPQhxDrLLMl33/G30AKf0xKj5bBw=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5 h1:Ky0uCRb23Z4a+NF6CBbe8/spCChAUkKkCN8GDT4RhjY=
+github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5/go.mod h1:QWrBfBAxO4kdHmFhyMGYcleS2rxT6s/9P6LGmZqORJo=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
 github.com/spf13/cobra v1.8.1/go.mod h1:wHxEcudfqmLYa8iTfL+OuZPbBZkmvliBWKIezN3kD9Y=
