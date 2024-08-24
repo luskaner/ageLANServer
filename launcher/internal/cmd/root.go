@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/sys/windows"
 	"mvdan.cc/sh/v3/shell"
+	"net/netip"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -211,6 +212,11 @@ var (
 				}
 				if serverHost == "" {
 					fmt.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
+					errorCode = internal.ErrInvalidServerHost
+					return
+				}
+				if addr, err := netip.ParseAddr(serverHost); err == nil && addr.Is6() {
+					fmt.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
 					errorCode = internal.ErrInvalidServerHost
 					return
 				}
