@@ -43,7 +43,7 @@ var (
 			host := viper.GetString("default.Host")
 			addrs := ip.ResolveHost(host)
 			if addrs == nil || len(addrs) == 0 {
-				fmt.Println("Failed to resolve host")
+				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
 				_ = lock.Unlock()
 				os.Exit(internal.ErrResolveHost)
 			}
