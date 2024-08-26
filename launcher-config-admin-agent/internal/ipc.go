@@ -3,13 +3,11 @@ package internal
 import (
 	"crypto/x509"
 	"encoding/gob"
-	"fmt"
-	"github.com/Microsoft/go-winio"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"golang.org/x/sys/windows"
 	"net"
+	"os"
 )
 
 var mappedCdn = false
@@ -69,24 +67,6 @@ func checkIps(ips []net.IP) bool {
 	return len(ips) < 10
 }
 
-func userSid() (err error, sid string) {
-	err, token := executor.GetCurrentProcessToken()
-	if err != nil {
-		return
-	}
-	defer func(token windows.Token) {
-		_ = token.Close()
-	}(token)
-
-	tokenUser, err := token.GetTokenUser()
-	if err != nil {
-		return
-	}
-
-	sid = tokenUser.User.Sid.String()
-	return
-}
-
 func handleSetUp(decoder *gob.Decoder) int {
 	var msg launcherCommon.ConfigAdminIpcSetupCommand
 	if err := decoder.Decode(&msg); err != nil {
@@ -141,18 +121,20 @@ func handleRevert(decoder *gob.Decoder) int {
 }
 
 func RunIpcServer() (errorCode int) {
-	pipePath := launcherCommon.ConfigAdminIpcPipe
-	_, sid := userSid()
-	pc := &winio.PipeConfig{
-		InputBufferSize:    1024,
-		OutputBufferSize:   1,
-		SecurityDescriptor: fmt.Sprintf("D:P(A;;GA;;;%s)", sid),
-		MessageMode:        true,
+	ipcPath := launcherCommon.ConfigAdminIpcName()
+
+	if err := os.Remove(ipcPath); err != nil && !os.IsNotExist(err) {
+		errorCode = ErrListen
+		return
 	}
 
-	l, err := winio.ListenPipe(pipePath, pc)
+	defer func() {
+		_ = os.Remove(ipcPath)
+	}()
+
+	l, err := net.Listen("unix", ipcPath)
 	if err != nil {
-		errorCode = ErrCreatePipe
+		errorCode = ErrListen
 		return
 	}
 	defer func(l net.Listener) {

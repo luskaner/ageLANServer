@@ -3,7 +3,6 @@ package internal
 import (
 	"crypto/x509"
 	"encoding/gob"
-	"github.com/Microsoft/go-winio"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
@@ -12,7 +11,7 @@ import (
 	"time"
 )
 
-var pipe net.Conn = nil
+var ipc net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
@@ -31,7 +30,7 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err e
 		}
 		i++
 	}
-	if pipe != nil {
+	if ipc != nil {
 		return runSetUpAgent(ips, addCertData, mapCDN)
 	} else {
 		var certificate *x509.Certificate
@@ -49,7 +48,7 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err e
 }
 
 func RunRevert(unmapIPs bool, removeCert bool, unmapCDN bool, failfast bool) (err error, exitCode int) {
-	if pipe != nil {
+	if ipc != nil {
 		return runRevertAgent(unmapIPs, removeCert, unmapCDN)
 	}
 	result := executor.RunRevert(unmapIPs, removeCert, unmapCDN, failfast)
@@ -58,18 +57,18 @@ func RunRevert(unmapIPs bool, removeCert bool, unmapCDN bool, failfast bool) (er
 }
 
 func StopAgentIfNeeded() (err error) {
-	if pipe != nil {
+	if ipc != nil {
 		err = encoder.Encode(launcherCommon.ConfigAdminIpcExit)
 		if err != nil {
 			return
 		}
-		err = pipe.Close()
+		err = ipc.Close()
 		if err != nil {
 			return
 		}
 		encoder = nil
 		decoder = nil
-		pipe = nil
+		ipc = nil
 	}
 	return
 }
@@ -87,22 +86,22 @@ func ConnectAgentIfNeededWithRetries(retryUntilSuccess bool) bool {
 }
 
 func ConnectAgentIfNeeded() (err error) {
-	if pipe != nil {
+	if ipc != nil {
 		return
 	}
 	var conn net.Conn
-	conn, err = winio.DialPipe(launcherCommon.ConfigAdminIpcPipe, nil)
+	conn, err = net.Dial("unix", launcherCommon.ConfigAdminIpcName())
 	if err != nil {
 		return
 	}
-	pipe = conn
-	encoder = gob.NewEncoder(pipe)
-	decoder = gob.NewDecoder(pipe)
+	ipc = conn
+	encoder = gob.NewEncoder(ipc)
+	decoder = gob.NewDecoder(ipc)
 	return
 }
 
 func StartAgentIfNeeded() (result *executor.ExecResult) {
-	if pipe != nil {
+	if ipc != nil {
 		return
 	}
 	result = executor.ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
