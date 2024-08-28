@@ -1,16 +1,15 @@
-package internal
+package hosts
 
 import (
 	"bufio"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"golang.org/x/sys/windows"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -19,23 +18,20 @@ var hostRegExp = regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s+(?P<ho
 
 const hostEndMarking = "#" + common.Name
 
-func openHostsFile() (err error, f *os.File, lock *windows.Overlapped) {
+func openHostsFile() (err error, f *os.File) {
+	var path string
+	if runtime.GOOS == "windows" {
+		path = filepath.Join(os.Getenv("WINDIR"), "System32", "drivers", "etc", "hosts")
+	} else {
+		path = "/etc/hosts"
+	}
 	f, err = os.OpenFile(
-		filepath.Join(os.Getenv("WINDIR"), "System32", "drivers", "etc", "hosts"),
+		path,
 		os.O_RDWR,
 		0666,
 	)
 	if f != nil {
-		fileHandle := windows.Handle(f.Fd())
-		lock = &windows.Overlapped{}
-		err = windows.LockFileEx(
-			fileHandle,
-			windows.LOCKFILE_EXCLUSIVE_LOCK,
-			0,
-			1,
-			0,
-			lock,
-		)
+		err = lockFile(f)
 		if err != nil {
 			_ = f.Close()
 			f = nil
@@ -66,13 +62,8 @@ func host(line string) string {
 	return matches[1]
 }
 
-func unlockFile(file *os.File, lock *windows.Overlapped) error {
-	fileHandle := windows.Handle(file.Fd())
-	return windows.UnlockFileEx(fileHandle, 0, 1, 0, lock)
-}
-
-func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File, lock *windows.Overlapped) {
-	err, f, lock = openHostsFile()
+func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File) {
+	err, f = openHostsFile()
 	if f == nil {
 		return
 	}
@@ -89,8 +80,8 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 	return
 }
 
-func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *os.File, lock *windows.Overlapped) {
-	err, f, lock = openHostsFile()
+func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *os.File) {
+	err, f = openHostsFile()
 	if f == nil {
 		return
 	}
@@ -111,14 +102,13 @@ func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *o
 
 func AddHosts(mappings map[string]mapset.Set[string]) (ok bool, err error) {
 	var hostsFile *os.File
-	var lock *windows.Overlapped
-	err, hostsFile, lock = missingIpMappings(&mappings)
+	err, hostsFile = missingIpMappings(&mappings)
 	if err != nil {
 		return
 	}
 
 	if len(mappings) == 0 {
-		_ = unlockFile(hostsFile, lock)
+		_ = unlockFile(hostsFile)
 		_ = hostsFile.Close()
 		ok = true
 		return
@@ -126,12 +116,12 @@ func AddHosts(mappings map[string]mapset.Set[string]) (ok bool, err error) {
 
 	_, err = hostsFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = unlockFile(hostsFile, lock)
+		_ = unlockFile(hostsFile)
 		_ = hostsFile.Close()
 		return
 	}
 
-	err = updateHosts(hostsFile, *lock, func(f *os.File) error {
+	err = updateHosts(hostsFile, func(f *os.File) error {
 		for hostname, ips := range mappings {
 			for ip := range ips.Iter() {
 				_, err = f.WriteString(fmt.Sprintf("\r\n%s\t%s\t%s", ip, hostname, hostEndMarking))
@@ -150,17 +140,12 @@ func AddHosts(mappings map[string]mapset.Set[string]) (ok bool, err error) {
 	return
 }
 
-func flushDns() (result *executor.ExecResult) {
-	result = executor.ExecOptions{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}.Exec()
-	return
-}
-
-func updateHosts(hostsFile *os.File, lock windows.Overlapped, updater func(file *os.File) error) error {
+func updateHosts(hostsFile *os.File, updater func(file *os.File) error) error {
 	closed := false
 	var tmp *os.File = nil
 
 	closeHostsFile := func() {
-		_ = unlockFile(hostsFile, &lock)
+		_ = unlockFile(hostsFile)
 		_ = hostsFile.Sync()
 		_ = hostsFile.Close()
 		closed = true
@@ -180,7 +165,8 @@ func updateHosts(hostsFile *os.File, lock windows.Overlapped, updater func(file 
 			removeTmpFile()
 		}
 	}()
-	tmp, err := os.CreateTemp("", common.Name+".*")
+	var err error
+	tmp, err = os.CreateTemp("", common.Name+".*")
 	if err != nil {
 		return err
 	}
@@ -216,10 +202,10 @@ func updateHosts(hostsFile *os.File, lock windows.Overlapped, updater func(file 
 }
 
 func RemoveHosts(hosts mapset.Set[string]) error {
-	err, existingHosts, hostsFile, lock := getExistingHosts(hosts)
+	err, existingHosts, hostsFile := getExistingHosts(hosts)
 	if existingHosts.IsEmpty() {
 		if hostsFile != nil && lock != nil {
-			_ = unlockFile(hostsFile, lock)
+			_ = unlockFile(hostsFile)
 			_ = hostsFile.Close()
 		}
 		return nil
@@ -227,12 +213,12 @@ func RemoveHosts(hosts mapset.Set[string]) error {
 
 	_, err = hostsFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = unlockFile(hostsFile, lock)
+		_ = unlockFile(hostsFile)
 		_ = hostsFile.Close()
 		return err
 	}
 
-	return updateHosts(hostsFile, *lock, func(f *os.File) error {
+	return updateHosts(hostsFile, func(f *os.File) error {
 		var lines []string
 		var line string
 

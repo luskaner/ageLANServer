@@ -7,10 +7,11 @@ import (
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/hosts"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func untrustCertificate() bool {
@@ -45,7 +46,7 @@ var setUpCmd = &cobra.Command{
 				fmt.Println("Successfully added local certificate")
 				trustedCertificate = true
 				sigs := make(chan os.Signal, 1)
-				signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 				go func() {
 					_, ok := <-sigs
 					if ok {
@@ -71,7 +72,7 @@ var setUpCmd = &cobra.Command{
 				mappings[launcherCommon.CDNDomain] = mapset.NewSet[string]()
 				mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
 			}
-			if ok, _ := internal.AddHosts(mappings); ok {
+			if ok, _ := hosts.AddHosts(mappings); ok {
 				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd

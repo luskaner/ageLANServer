@@ -8,10 +8,11 @@ import (
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/hosts"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func trustCertificate(certificate *x509.Certificate) bool {
@@ -40,7 +41,7 @@ var revertCmd = &cobra.Command{
 			if removedCertificate, err := launcherCommon.UntrustCertificate(false); err == nil {
 				fmt.Println("Successfully removed local certificate")
 				sigs := make(chan os.Signal, 1)
-				signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 				go func() {
 					_, ok := <-sigs
 					if ok {
@@ -56,15 +57,15 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		if cmd.UnmapCDN || cmd.UnmapIPs {
-			hosts := mapset.NewSet[string]()
+			hsts := mapset.NewSet[string]()
 			if cmd.UnmapIPs {
-				hosts.Add(common.Domain)
+				hsts.Add(common.Domain)
 			}
 			if cmd.UnmapCDN {
-				hosts.Add(launcherCommon.CDNDomain)
+				hsts.Add(launcherCommon.CDNDomain)
 			}
 			fmt.Println("Removing IP mappings")
-			if err := internal.RemoveHosts(hosts); err == nil {
+			if err := hosts.RemoveHosts(hsts); err == nil {
 				fmt.Println("Successfully removed IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapRemove
