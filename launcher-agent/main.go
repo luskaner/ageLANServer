@@ -4,11 +4,12 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal/watch"
 	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 )
 
 const revertCmdStart = 6
@@ -34,7 +35,7 @@ func main() {
 	}
 	var exitCode int
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, ok := <-sigs
 		if ok {
@@ -49,7 +50,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	internal.Watch(steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
+	watch.Watch(steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }
