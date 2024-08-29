@@ -16,7 +16,6 @@ type process struct {
 func ProcessesPID(names []string) map[string]uint32 {
 	processesPid := make(map[string]uint32)
 
-	// Llamada al sistema para obtener una lista de procesos
 	var allProcs []process
 	for {
 		var proc process
