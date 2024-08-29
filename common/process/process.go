@@ -2,6 +2,7 @@ package process
 
 import (
 	"errors"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"os"
 	"os/exec"
@@ -10,6 +11,9 @@ import (
 	"strconv"
 	"time"
 )
+
+const steamProcess = "AoE2DE_s.exe"
+const microsoftStoreProcess = "AoE2DE.exe"
 
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
@@ -79,4 +83,20 @@ func Kill(exe string) (proc *os.Process, err error) {
 		err = os.Remove(pidPath)
 		return
 	}
+}
+
+func GameProcesses(steam bool, microsoftStore bool) []string {
+	processes := mapset.NewSet[string]()
+	if steam {
+		processes.Add(steamProcess)
+	}
+	if microsoftStore {
+		processes.Add(microsoftStoreProcess)
+	}
+	return processes.ToSlice()
+}
+
+func AnyProcessExists(names []string) bool {
+	processes := ProcessesPID(names)
+	return len(processes) > 0
 }

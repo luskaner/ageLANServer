@@ -1,36 +1,16 @@
 package process
 
 import (
-	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/sys/windows"
 	"os"
 	"unsafe"
 )
 
-const steamProcess = "AoE2DE_s.exe"
-const microsoftStoreProcess = "AoE2DE.exe"
-
-func AnyProcessExists(names []string) bool {
-	processes := ProcessesEntryNames(names)
-	return len(processes) > 0
-}
-
-func GameProcesses(steam bool, microsoftStore bool) []string {
-	processes := mapset.NewSet[string]()
-	if steam {
-		processes.Add(steamProcess)
-	}
-	if microsoftStore {
-		processes.Add(microsoftStoreProcess)
-	}
-	return processes.ToSlice()
-}
-
-func ProcessesEntryNames(names []string) map[string]windows.ProcessEntry32 {
+func ProcessesPID(names []string) map[string]uint32 {
 	name := func(entry *windows.ProcessEntry32) string {
 		return windows.UTF16ToString(entry.ExeFile[:])
 	}
-	entries := ProcessesEntry(func(entry *windows.ProcessEntry32) bool {
+	entries := processesEntry(func(entry *windows.ProcessEntry32) bool {
 		for _, n := range names {
 			if name(entry) == n {
 				return true
@@ -38,14 +18,14 @@ func ProcessesEntryNames(names []string) map[string]windows.ProcessEntry32 {
 		}
 		return false
 	}, false)
-	processes := make(map[string]windows.ProcessEntry32)
+	processes := make(map[string]uint32)
 	for _, entry := range entries {
-		processes[name(&entry)] = entry
+		processes[name(&entry)] = entry.ProcessID
 	}
 	return processes
 }
 
-func ProcessesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly bool) []windows.ProcessEntry32 {
+func processesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly bool) []windows.ProcessEntry32 {
 	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
 		return nil
@@ -62,11 +42,11 @@ func ProcessesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly 
 		return nil
 	}
 
-	var processesEntry []windows.ProcessEntry32
+	var entries []windows.ProcessEntry32
 
 	for {
 		if matches(&procEntry) {
-			processesEntry = append(processesEntry, procEntry)
+			entries = append(entries, procEntry)
 			if firstOnly {
 				break
 			}
@@ -77,7 +57,7 @@ func ProcessesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly 
 		}
 	}
 
-	return processesEntry
+	return entries
 }
 
 func FindProcess(pid int) (proc *os.Process, err error) {
@@ -85,7 +65,7 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 	if err != nil {
 		return
 	}
-	entries := ProcessesEntry(func(entry *windows.ProcessEntry32) bool {
+	entries := processesEntry(func(entry *windows.ProcessEntry32) bool {
 		return int(entry.ProcessID) == pid
 	}, true)
 	if len(entries) == 0 {
