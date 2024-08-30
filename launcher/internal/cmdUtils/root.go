@@ -5,8 +5,9 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
-	"golang.org/x/sys/windows"
+	"runtime"
 )
 
 type Config struct {
@@ -63,7 +64,7 @@ func (c *Config) SetRevertCommand(cmd []string) {
 }
 
 func (c *Config) CfgAgentStarted() bool {
-	return !launcherExecutor.IsAdmin() && c.startedAgent
+	return !exec.IsAdmin() && c.startedAgent
 }
 
 func (c *Config) RequiresConfigRevert() bool {
@@ -131,21 +132,21 @@ func (c *Config) Revert() {
 }
 
 func GameRunning() bool {
-	if commonProcess.AnyProcessExists(commonProcess.GameProcesses(true, true)) {
+	microsoftStore := runtime.GOOS == "windows"
+	if commonProcess.AnyProcessExists(commonProcess.GameProcesses(true, microsoftStore)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}
 	return false
 }
 
-func (c *Config) RunSetupCommand(cmd []string) (result *launcherExecutor.ExecResult) {
+func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 	var args []string
 	if len(cmd) > 1 {
 		args = cmd[1:]
 	}
-	result = launcherExecutor.ExecOptions{
+	result = exec.Options{
 		File:           cmd[0],
-		WindowState:    windows.SW_NORMAL,
 		Wait:           true,
 		SpecialFile:    true,
 		Shell:          true,

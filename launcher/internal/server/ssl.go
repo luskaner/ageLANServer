@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
 	"os"
 	"path/filepath"
@@ -47,12 +47,12 @@ func ReadCertificateFromServer(host string) *x509.Certificate {
 	return nil
 }
 
-func GenerateCertificatePair(certificateFolder string) (result *executor.ExecResult) {
+func GenerateCertificatePair(certificateFolder string) (result *exec.Result) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
 	exePath := filepath.Join(baseFolder, common.GetExeFileName(false, common.ServerGenCert))
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}
-	result = executor.ExecOptions{File: exePath, Wait: true, ExitCode: true}.Exec()
+	result = exec.Options{File: exePath, Wait: true, ExitCode: true}.Exec()
 	return
 }

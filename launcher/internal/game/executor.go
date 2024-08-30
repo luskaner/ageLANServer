@@ -1,14 +1,14 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"golang.org/x/sys/windows"
-	"golang.org/x/sys/windows/registry"
+	"github.com/andygrunwald/vdf"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"os"
+	"path"
 )
 
 type Executor interface {
-	Execute(args []string) (result *commonExecutor.ExecResult)
+	Execute(args []string) (result *commonExecutor.Result)
 	GameProcesses() (steamProcess bool, microsoftStoreProcess bool)
 }
 
@@ -20,9 +20,8 @@ type CustomExecutor struct {
 
 const steamAppID = "813780"
 
-func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: "steam://rungameid/" + steamAppID, Shell: true, SpecialFile: true}.Exec()
-	return
+func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
+	return startUri("steam://rungameid/" + steamAppID)
 }
 
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
@@ -30,50 +29,14 @@ func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProc
 	return
 }
 
-func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: `shell:appsfolder\Microsoft.MSPhoenix_8wekyb3d8bbwe!App`, Shell: true, SpecialFile: true}.Exec()
+func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.Result) {
+	result = commonExecutor.Options{File: exec.Executable, Args: args}.Exec()
 	return
 }
 
-func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
-	microsoftStoreProcess = true
+func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.Result) {
+	result = commonExecutor.Options{File: exec.Executable, AsAdmin: true, ShowWindow: true, Args: args}.Exec()
 	return
-}
-
-func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: exec.Executable, Args: args}.Exec()
-	return
-}
-
-func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
-	steamProcess = true
-	microsoftStoreProcess = true
-	return
-}
-
-func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.ExecResult) {
-	result = commonExecutor.ExecOptions{File: exec.Executable, AsAdmin: true, WindowState: windows.SW_NORMAL, Args: args}.Exec()
-	return
-}
-
-func isInstalledOnSteam() bool {
-	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam\Apps\`+steamAppID, registry.QUERY_VALUE)
-	if err != nil {
-		return false
-	}
-	defer func(key registry.Key) {
-		_ = key.Close()
-	}(key)
-	val, _, err := key.GetIntegerValue("Installed")
-	if err != nil {
-		return false
-	}
-	return val == 1
-}
-
-func isInstalledOnMicrosoftStore() bool {
-	// Does not seem there is another way without cgo?
-	return commonExecutor.ExecOptions{File: "powershell", SpecialFile: true, Wait: true, ExitCode: true, Args: []string{"-Command", "if ((Get-AppxPackage).Name -eq 'Microsoft.MSPhoenix') { exit 0 } else { exit 1 }"}}.Exec().Success()
 }
 
 func isInstalledCustom(executable string) bool {
@@ -82,6 +45,43 @@ func isInstalledCustom(executable string) bool {
 		return false
 	}
 	return true
+}
+
+func isInstalledOnSteam() bool {
+	p := steamInstallationPath()
+	if p == "" {
+		return false
+	}
+	f, err := os.Open(path.Join(p, "config", "libraryfolders.vdf"))
+	if err != nil {
+		return false
+	}
+	parser := vdf.NewParser(f)
+	data, err := parser.Parse()
+	if err != nil {
+		return false
+	}
+	libraryFolders, ok := data["libraryfolders"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	for _, folder := range libraryFolders {
+		var folderMap map[string]interface{}
+		folderMap, ok = folder.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		var apps map[string]interface{}
+		apps, ok = folderMap["apps"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if _, exists := apps[steamAppID]; exists {
+			return true
+		}
+	}
+	return false
 }
 
 func MakeExecutor(executable string) Executor {

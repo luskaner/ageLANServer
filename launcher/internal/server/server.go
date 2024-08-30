@@ -11,8 +11,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"golang.org/x/sys/windows"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
 	"net/http"
 	"net/netip"
@@ -25,18 +24,18 @@ import (
 var autoServerDir = []string{`\`, fmt.Sprintf(`\%s\`, common.Server), `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
-func StartServer(stop string, executable string, args []string) (result *commonExecutor.ExecResult, executablePath string, ip string) {
+func StartServer(stop string, executable string, args []string) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
 	}
-	var windowState int
+	var showWindow bool
 	if stop == "true" {
-		windowState = windows.SW_HIDE
+		showWindow = false
 	} else {
-		windowState = windows.SW_MINIMIZE
+		showWindow = true
 	}
-	result = commonExecutor.ExecOptions{File: executablePath, Args: args, WindowState: windowState, Pid: true}.Exec()
+	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}.Exec()
 	if result.Success() {
 		// Wait up to 30s for server to start
 		for i := 0; i < 30; i++ {

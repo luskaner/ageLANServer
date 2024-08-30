@@ -5,13 +5,13 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 )
 
-func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *executor.ExecResult) {
+func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if !executor.IsAdmin() {
+	if !exec.IsAdmin() {
 		args = append(args, "-g")
 		if exitAgentOnError {
 			args = append(args, "-e")
@@ -40,20 +40,20 @@ func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertDat
 	if mapCDN {
 		args = append(args, "-c")
 	}
-	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
-func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *executor.ExecResult) {
+func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *exec.Result) {
 	args := []string{launcherCommon.ConfigRevertCmd}
 	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
-	result = executor.ExecOptions{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
 func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
 	args := make([]string, 0)
-	if !executor.IsAdmin() {
+	if !exec.IsAdmin() {
 		args = append(args, "-g")
 	}
 	if unmapIPs {

@@ -6,21 +6,22 @@ import (
 	"github.com/inconshreveable/mousetrap"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/sys/windows"
 	"mvdan.cc/sh/v3/shell"
 	"net/netip"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -34,7 +35,9 @@ var config = &cmdUtils.Config{}
 
 func parseCommandArgs(name string) (args []string, err error) {
 	cmd := viper.GetString(name)
-	cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
+	if runtime.GOOS == "windows" {
+		cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
+	}
 	args, err = shell.Fields(cmd, nil)
 	return
 }
@@ -62,8 +65,11 @@ var (
 				os.Exit(errorCode)
 			}()
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
+			if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
+				canTrustCertificateValues.Remove("user")
+			}
 			if !canTrustCertificateValues.Contains(canTrustCertificate) {
-				fmt.Printf("Invalid value for canTrustCertificate (local/user/false): %s\n", canTrustCertificate)
+				fmt.Printf("Invalid value for canTrustCertificate (%s): %s\n", strings.Join(canTrustCertificateValues.ToSlice(), "/"), canTrustCertificate)
 				errorCode = internal.ErrInvalidCanTrustCertificate
 				return
 			}
@@ -126,7 +132,7 @@ var (
 			}
 
 			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 			go func() {
 				_, ok := <-sigs
 				if ok {
@@ -188,7 +194,7 @@ var (
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher.exe' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
+				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
 				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(portsInt)
 				if errorCode != common.ErrSuccess {
 					return
@@ -257,7 +263,12 @@ func Execute() error {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
-	rootCmd.PersistentFlags().StringP("canTrustCertificate", "c", "local", `Trust the certificate of the server if needed. "false", "user" or "local" (will require admin privileges)`)
+	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
+	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+		canTrustCertificateStr += `, "user"`
+	}
+	canTrustCertificateStr += ` or local (will require admin privileges)`
+	rootCmd.PersistentFlags().StringP("canTrustCertificate", "c", "local", canTrustCertificateStr)
 	rootCmd.PersistentFlags().StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
@@ -269,9 +280,17 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "e", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order ".\%s", ".\%s\%s", "..\%s" and finally "..\%s\%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
-	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
+	serverPathArgsStr := `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`
+	if runtime.GOOS == "windows" {
+		serverPathArgsStr += " Path names need to use double backslashes or be within single quotes."
+	}
+	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", serverPathArgsStr)
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", `The type of game client or the path. "auto" will use the Steam and then the Microsoft Store one if found. Use a path to the game launcher, "steam" or "msstore" to use the default launcher.`)
-	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", `The arguments to pass to the client launcher if it is custom. You may use environment variables. Path names need to use double backslashes or be within single quotes.`)
+	clientExeArgsStr := "The arguments to pass to the client launcher if it is custom. You may use environment variables."
+	if runtime.GOOS == "windows" {
+		serverPathArgsStr += " Path names need to use double backslashes or be within single quotes."
+	}
+	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", clientExeArgsStr)
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
 		return err
 	}

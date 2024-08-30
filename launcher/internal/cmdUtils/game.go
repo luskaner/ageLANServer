@@ -1,16 +1,14 @@
 package cmdUtils
 
 import (
-	"errors"
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/game"
-	"golang.org/x/sys/windows"
 )
 
 func (c *Config) KillAgent() {
@@ -46,7 +44,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 	}
 	revertCommand := c.RevertCommand()
 	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
-		fmt.Println("Starting agent, accept any dialog from 'agent.exe' (including the firewall) if it appears...")
+		fmt.Println("Starting agent, accept any dialog from 'agent' (including the firewall) if it appears...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
 		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		if !result.Success() {
@@ -69,10 +67,10 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 	} else {
 		fmt.Println("Starting game...")
 	}
-	var result *commonExecutor.ExecResult
+	var result *commonExecutor.Result
 
 	if result = executer.Execute(args); !result.Success() && result.Err != nil {
-		if customExecutor.Executable != "" && errors.Is(result.Err, windows.ERROR_ELEVATION_REQUIRED) {
+		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
 				fmt.Println("Using a user certificate. If it fails to connect to the server, try setting the config/option setting 'CanTrustCertificate' to 'local'.")
 			}
