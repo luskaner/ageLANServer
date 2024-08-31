@@ -2,8 +2,8 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/deckarep/golang-set/v2 v2.6.0 h1:XfcQbWM1LlMB8BsJ8N9vW5ehnnPVIw0je80NsVHagjM=
 github.com/deckarep/golang-set/v2 v2.6.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1 h1:LALvOGGbT3ozdZ1Cwz5FuPByPqHnw/cssT+wGGXKP/0=
-github.com/luskaner/aoe2DELanServer/common v0.0.0-20240823210737-15135a23d3e1/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41 h1:GW3xhKCZLIxuXOIrIHsxIkZokCex2sSpttT5x8wg9hc=
+github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41/go.mod h1:aY4WgTJHSFif1uOa9H0Jscxorp9g5Ol3N6rLexYFhU8=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5 h1:Ky0uCRb23Z4a+NF6CBbe8/spCChAUkKkCN8GDT4RhjY=
 github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5/go.mod h1:QWrBfBAxO4kdHmFhyMGYcleS2rxT6s/9P6LGmZqORJo=
 golang.org/x/sys v0.24.0 h1:Twjiwq9dn6R1fQcyiK+wQyHWfaz/BJB+YIpzU/Cv3Xg=
