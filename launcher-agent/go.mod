@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41
-	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5
+	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240831201030-0c83ebf31288
 	golang.org/x/sys v0.24.0
 )
 

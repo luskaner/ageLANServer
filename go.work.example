@@ -14,5 +14,5 @@ use (
 )
 
 replace github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41 => ./common
-replace github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240823213400-58e0feedf3b5 => ./launcher-common
+replace github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240831201030-0c83ebf31288 => ./launcher-common
 replace github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1 => ./battle-server-broadcast
