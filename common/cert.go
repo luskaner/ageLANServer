@@ -15,7 +15,7 @@ func CertificatePairFolder(executablePath string) string {
 	}
 	folder := filepath.Join(parentDir, "resources", "certificates")
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		if os.Mkdir(folder, os.ModeDir) != nil {
+		if os.Mkdir(folder, 0755) != nil {
 			return ""
 		}
 	}
