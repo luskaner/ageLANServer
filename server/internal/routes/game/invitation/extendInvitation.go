@@ -26,12 +26,14 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	peer, ok := adv.GetPeer(u)
+	var peer *models.Peer
+	peer, ok = adv.GetPeer(u)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invitee, ok := models.GetUserById(q.UserId)
+	var invitee *models.User
+	invitee, ok = models.GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -42,24 +44,25 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peer.Invite(invitee)
-	inviteeSession, ok := models.GetSessionByUser(invitee)
+	var inviteeSession *models.Session
+	inviteeSession, ok = models.GetSessionByUser(invitee)
 	if ok {
-		go func() {
+		go func(userId int32, advertisementId int32, advertisementPassword string, sessId string, userProfileInfo i.A) {
 			// TODO: Wait for client to acknowledge it
 			_ = wss.SendMessage(
-				inviteeSession.GetId(),
+				sessId,
 				i.A{
 					0,
 					"ExtendInvitationMessage",
-					q.UserId,
+					userId,
 					i.A{
-						u.GetProfileInfo(false),
-						q.AdvertisementId,
-						q.AdvertisementPassword,
+						userProfileInfo,
+						advertisementId,
+						advertisementPassword,
 					},
 				},
 			)
-		}()
+		}(q.UserId, q.AdvertisementId, q.AdvertisementPassword, inviteeSession.GetId(), u.GetProfileInfo(false))
 	} // TODO: If the user is offline send it when it comes online
 	i.JSON(&w, i.A{0})
 }
