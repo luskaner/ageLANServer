@@ -4,7 +4,6 @@ import (
 	"github.com/gorilla/websocket"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -21,12 +20,8 @@ var connections sync.Map
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
 	message := websocket.FormatCloseMessage(closeCode, text)
-	if err := conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second)); err != nil {
-		log.Println(err)
-	}
-	if err := conn.Close(); err != nil {
-		log.Println(err)
-	}
+	_ = conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
+	_ = conn.Close()
 }
 
 func parseMessage(message i.H, currentSession *models.Session) (bool, uint32, *models.Session) {
@@ -65,8 +60,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 
-	var msg i.H
-	err = conn.ReadJSON(&msg)
+	var loginMsg i.H
+	err = conn.ReadJSON(&loginMsg)
 
 	if err != nil {
 		defer func() {
@@ -75,7 +70,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}()
 		return
 	}
-	reset, _, sess := parseMessage(msg, nil)
+	reset, _, sess := parseMessage(loginMsg, nil)
 	if reset {
 		timeout.Reset(timeoutTime)
 	} else {
@@ -90,14 +85,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	lock.Lock(sessionToken)
 	connections.Store(sessionToken, conn)
 	lock.Unlock(sessionToken)
-
+	var op uint32
 	for {
+		var msg i.H
 		err = conn.ReadJSON(&msg)
 		if err != nil {
 			break
 		}
-		log.Printf("Received: %v", msg)
-		reset, op, sess := parseMessage(msg, sess)
+		reset, op, sess = parseMessage(msg, sess)
 		if op == 0 {
 			if sess == nil {
 				break
@@ -117,7 +112,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		// TODO: Handle other operations
-		log.Printf("Operation: %v", op)
 	}
 
 	lock.Lock(sessionToken)
@@ -139,7 +133,6 @@ func SendMessage(sessionId string, message i.A) bool {
 	err := conn.(*websocket.Conn).WriteJSON(message)
 	lock.RUnlock(sessionId)
 	if err != nil {
-		log.Println(err)
 		return false
 	}
 
