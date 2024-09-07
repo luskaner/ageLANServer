@@ -6,6 +6,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -16,7 +17,7 @@ var upgrader = websocket.Upgrader{
 var timeoutTime = 60 * time.Minute
 
 var lock = i.NewKeyRWMutex()
-var connections = make(map[string]*websocket.Conn)
+var connections sync.Map
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
 	message := websocket.FormatCloseMessage(closeCode, text)
@@ -87,7 +88,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	sessionToken := sess.GetId()
 	lock.Lock(sessionToken)
-	connections[sessionToken] = conn
+	connections.Store(sessionToken, conn)
 	lock.Unlock(sessionToken)
 
 	for {
@@ -102,11 +103,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				break
 			} else if sess.GetId() != sessionToken {
 				lock.Lock(sessionToken)
-				delete(connections, sessionToken)
+				connections.Delete(sessionToken)
 				lock.Unlock(sessionToken)
 				sessionToken = sess.GetId()
 				lock.Lock(sessionToken)
-				connections[sessionToken] = conn
+				connections.Store(sessionToken, conn)
 				lock.Unlock(sessionToken)
 			}
 			if reset {
@@ -120,7 +121,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lock.Lock(sessionToken)
-	delete(connections, sessionToken)
+	connections.Delete(sessionToken)
 	close(done)
 	closeConn(conn, websocket.CloseNormalClosure, "Invalid message")
 }
@@ -128,14 +129,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 func SendMessage(sessionId string, message i.A) bool {
 	lock.RLock(sessionId)
 
-	conn, ok := connections[sessionId]
+	conn, ok := connections.Load(sessionId)
 
 	if !ok {
 		lock.RUnlock(sessionId)
 		return false
 	}
 
-	err := conn.WriteJSON(message)
+	err := conn.(*websocket.Conn).WriteJSON(message)
 	lock.RUnlock(sessionId)
 	if err != nil {
 		log.Println(err)
