@@ -268,23 +268,6 @@ func (adv *Advertisement) AddMessage(broadcast bool, content string, typeId uint
 	return message
 }
 
-func (adv *Advertisement) UpdateHost() bool {
-	// Assume there are more peers as otherwise the advertisement would have been deleted
-	var update bool
-	if adv.host == nil {
-		update = true
-	} else if _, ok := adv.GetPeer(adv.host.GetUser()); !ok {
-		update = true
-	} else {
-		update = false
-	}
-	if update {
-		adv.host = adv.peers.Oldest().Value
-		return true
-	}
-	return false
-}
-
 func (adv *Advertisement) Update(advFrom *shared.AdvertisementUpdateRequest) {
 	advLock.Lock(adv.id)
 	if adv.host != nil {
@@ -357,12 +340,11 @@ func (adv *Advertisement) RemovePeer(user *User) {
 	adv.peers.Delete(user)
 	removePeer(user)
 	peerLock.Unlock(id)
-	if adv.peers.Len() == 0 {
+	advLock.Lock(adv.id)
+	if adv.peers.Len() == 0 || adv.host.GetUser() == user {
+		advLock.Unlock(adv.id)
 		adv.Delete()
-	} else if adv.host.GetUser() == user {
-		removeHost(adv.host)
-		advLock.Lock(adv.id)
-		adv.host = nil
+	} else {
 		advLock.Unlock(adv.id)
 	}
 }
@@ -380,12 +362,10 @@ func (adv *Advertisement) Delete() {
 	advLock.Lock(adv.id)
 	delete(advertisementStore, adv.id)
 	host := adv.host
-	if host != nil {
-		hostId := host.GetUser().GetId()
-		hostLock.Lock(hostId)
-		removeHost(adv.host)
-		hostLock.Unlock(hostId)
-	}
+	hostId := host.GetUser().GetId()
+	hostLock.Lock(hostId)
+	removeHost(adv.host)
+	hostLock.Unlock(hostId)
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		u := el.Key
 		id := u.GetId()
