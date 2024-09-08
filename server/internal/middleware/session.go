@@ -40,6 +40,7 @@ func SessionMiddleware(next http.Handler) http.Handler {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
+			sess.ResetExpiryTimer()
 			ctx := context.WithValue(r.Context(), "session", sess)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
