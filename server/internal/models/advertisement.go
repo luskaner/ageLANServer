@@ -263,8 +263,8 @@ func (adv *Advertisement) AddMessage(broadcast bool, content string, typeId uint
 		receivers:       receivers,
 	}
 	chatLock.Lock()
+	defer chatLock.Unlock()
 	adv.chat = append(adv.chat, *message)
-	chatLock.Unlock()
 	return message
 }
 
@@ -309,8 +309,8 @@ func (adv *Advertisement) Update(advFrom *shared.AdvertisementUpdateRequest) {
 
 func GetAdvertisement(id int32) (*Advertisement, bool) {
 	advLock.RLock(id)
+	defer advLock.RUnlock(id)
 	adv, exists := advertisementStore[id]
-	advLock.RUnlock(id)
 	return adv, exists
 }
 
@@ -328,9 +328,9 @@ func (adv *Advertisement) NewPeer(u *User, race int32, team int32) *Peer {
 	}
 	userId := peer.user.GetId()
 	peerLock.Lock(userId)
+	defer peerLock.Unlock(userId)
 	adv.peers.Set(peer.user, peer)
 	addPeer(u)
-	peerLock.Unlock(userId)
 	return peer
 }
 
@@ -352,14 +352,15 @@ func (adv *Advertisement) RemovePeer(user *User) {
 func (adv *Advertisement) UpdatePeer(user *User, race int32, team int32) {
 	userId := user.GetId()
 	peerLock.Lock(userId)
+	defer peerLock.Unlock(userId)
 	peer, _ := adv.peers.Get(user)
 	peer.race = race
 	peer.team = team
-	peerLock.Unlock(userId)
 }
 
 func (adv *Advertisement) Delete() {
 	advLock.Lock(adv.id)
+	defer advLock.Unlock(adv.id)
 	delete(advertisementStore, adv.id)
 	host := adv.host
 	hostId := host.GetUser().GetId()
@@ -373,11 +374,11 @@ func (adv *Advertisement) Delete() {
 		removePeer(u)
 		peerLock.Unlock(id)
 	}
-	advLock.Unlock(adv.id)
 }
 
 func (adv *Advertisement) UpdateState(state int8) {
 	advLock.Lock(adv.id)
+	defer advLock.Unlock(adv.id)
 	previousState := adv.state
 	adv.state = state
 	if adv.state == 1 && previousState != 1 {
@@ -385,7 +386,6 @@ func (adv *Advertisement) UpdateState(state int8) {
 		adv.visible = false
 		adv.joinable = false
 	}
-	advLock.Unlock(adv.id)
 }
 
 func (adv *Advertisement) EncodePeers() i.A {

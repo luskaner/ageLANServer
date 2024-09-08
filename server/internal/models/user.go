@@ -88,6 +88,7 @@ func GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alia
 	}
 	identifier := getPlatformPath(isXbox, platformUserId)
 	Lock.Lock(identifier)
+	defer Lock.Unlock(identifier)
 	user, ok := userStore[identifier]
 	if !ok {
 		user = generate(identifier, isXbox, platformUserId, alias)
@@ -95,7 +96,6 @@ func GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alia
 		userStatIdToUserMap[user.statId] = user
 		userStore[identifier] = user
 	}
-	Lock.Unlock(identifier)
 	return user
 }
 
@@ -208,8 +208,8 @@ func (u *User) GetProfileInfo(includePresence bool) i.A {
 
 func (u *User) SetPresence(value int8) {
 	presenceLock.Lock(u)
+	defer presenceLock.Unlock(u)
 	presenceStore[u] = value
-	presenceLock.Unlock(u)
 }
 
 func (u *User) GetPresence() int8 {
