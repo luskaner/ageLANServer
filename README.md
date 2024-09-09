@@ -33,7 +33,7 @@ the internet and Steam or Xbox Live, depending on the version, to fully play off
 - Not possible as it would require internet and some access to the user profile:
     - Steam & Xbox Friends.
 - Not implemented:
-    - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a match might cause issues (see https://github.com/luskaner/aoe2DELanServer/issues/36) until the game is restarted.
+    - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a match might cause issues (see https://github.com/luskaner/aoe2DELanServer/issues/36#issuecomment-2337161881) until the game is restarted.
     - Changing player profile icon: the default will always be used.
     - Leaderboards: will appear empty.
     - Player stats: will appear empty.
