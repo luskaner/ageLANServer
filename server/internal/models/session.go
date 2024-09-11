@@ -7,16 +7,18 @@ import (
 )
 
 type Session struct {
-	id     string
-	expiry time.Time
-	user   *User
+	id              string
+	expiryTimer     *time.Timer
+	user            *User
+	expiryTimerLock sync.Mutex
 }
 
 var userIdSession sync.Map
 var sessionStore sync.Map
 
 var (
-	sessionLetters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	sessionLetters  = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	sessionDuration = 5 * time.Minute
 )
 
 func generateSessionId() string {
@@ -41,32 +43,37 @@ func (sess *Session) GetUser() *User {
 }
 
 func CreateSession(user *User) string {
-	removeSessionsExpired()
 	session := &Session{
-		id:     generateSessionId(),
-		user:   user,
-		expiry: time.Now().UTC().Add(time.Hour),
+		id:   generateSessionId(),
+		user: user,
 	}
+	session.expiryTimer = time.AfterFunc(sessionDuration, func() {
+		session.Delete()
+	})
 	sessionStore.Store(session.id, session)
 	userIdSession.Store(user.GetId(), session)
 	return session.id
 }
 
 func (sess *Session) Delete() {
+	_ = sess.expiryTimer.Stop()
 	userIdSession.Delete(sess.user.GetId())
 	sessionStore.Delete(sess.id)
+}
+
+func (sess *Session) ResetExpiryTimer() {
+	sess.expiryTimerLock.Lock()
+	defer sess.expiryTimerLock.Unlock()
+	if !sess.expiryTimer.Stop() {
+		<-sess.expiryTimer.C
+	}
+	sess.expiryTimer.Reset(sessionDuration)
 }
 
 func GetSessionById(sessionId string) (*Session, bool) {
 	value, exists := sessionStore.Load(sessionId)
 	if exists {
-		session := value.(*Session)
-		if session.Expired() {
-			session.Delete()
-			exists = false
-			session = nil
-		}
-		return session, exists
+		return value.(*Session), true
 	}
 	return nil, false
 }
@@ -74,27 +81,7 @@ func GetSessionById(sessionId string) (*Session, bool) {
 func GetSessionByUser(user *User) (*Session, bool) {
 	value, exists := userIdSession.Load(user.GetId())
 	if exists {
-		session := value.(*Session)
-		if session.Expired() {
-			session.Delete()
-			exists = false
-			session = nil
-		}
-		return session, exists
+		return value.(*Session), true
 	}
 	return nil, false
-}
-
-func (sess *Session) Expired() bool {
-	return time.Now().UTC().After(sess.expiry)
-}
-
-func removeSessionsExpired() {
-	sessionStore.Range(func(_, value interface{}) bool {
-		info := value.(*Session)
-		if info.Expired() {
-			info.Delete()
-		}
-		return true
-	})
 }

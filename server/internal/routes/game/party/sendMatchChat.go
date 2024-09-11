@@ -61,22 +61,23 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	)
 
 	messageEncoded := message.Encode()
+	var receiverSession *models.Session
 	for _, receiver := range receivers {
-		receiverSession, ok := models.GetSessionByUser(receiver)
+		receiverSession, ok = models.GetSessionByUser(receiver)
 		if !ok {
 			continue
 		}
-		go func() {
+		go func(receiverSession string, receiverUserId int32, messageEncoded i.A) {
 			wss.SendMessage(
-				receiverSession.GetId(),
+				receiverSession,
 				i.A{
 					0,
 					"MatchReceivedChatMessage",
-					receiver.GetId(),
+					receiverUserId,
 					messageEncoded,
 				},
 			)
-		}()
+		}(receiverSession.GetId(), receiver.GetId(), messageEncoded)
 	}
 	i.JSON(&w, i.A{0})
 }

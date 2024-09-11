@@ -28,12 +28,14 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	inviter, ok := models.GetUserById(q.InviterId)
+	var inviter *models.User
+	inviter, ok = models.GetUserById(q.InviterId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	peer, ok := adv.GetPeer(inviter)
+	var peer *models.Peer
+	peer, ok = adv.GetPeer(inviter)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -52,22 +54,22 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		} else {
 			acceptStr = "0"
 		}
-		go func() {
+		go func(acceptStr string, inviterSessionId string, inviterId int32, userProfileInfo i.A, advId int32) {
 			// TODO: Wait for client to acknowledge it
 			_ = wss.SendMessage(
-				inviterSession.GetId(),
+				inviterSessionId,
 				i.A{
 					0,
 					"ReplyInvitationMessage",
-					q.InviterId,
+					inviterId,
 					i.A{
-						u.GetProfileInfo(false),
-						q.AdvertisementId,
+						userProfileInfo,
+						advId,
 						acceptStr,
 					},
 				},
 			)
-		}()
+		}(acceptStr, inviterSession.GetId(), q.InviterId, u.GetProfileInfo(false), q.AdvertisementId)
 	} // TODO: If the user is offline send it when it comes online
 	i.JSON(&w, i.A{0})
 }

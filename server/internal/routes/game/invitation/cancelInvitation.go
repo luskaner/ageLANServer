@@ -27,12 +27,14 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	peer, ok := adv.GetPeer(u)
+	var peer *models.Peer
+	peer, ok = adv.GetPeer(u)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invitee, ok := models.GetUserById(q.UserId)
+	var invitee *models.User
+	invitee, ok = models.GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -43,23 +45,23 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peer.Uninvite(invitee)
-	inviteeSession, ok := models.GetSessionByUser(invitee)
+	var inviteeSession *models.Session
+	inviteeSession, ok = models.GetSessionByUser(invitee)
 	if ok {
-		go func() {
-			// TODO: Wait for client to acknowledge it
+		go func(userId int32, advertisementId int32, sessId string, userProfileInfo i.A) {
 			_ = wss.SendMessage(
-				inviteeSession.GetId(),
+				sessId,
 				i.A{
 					0,
 					"CancelInvitationMessage",
-					q.UserId,
+					userId,
 					i.A{
-						u.GetProfileInfo(false),
-						q.AdvertisementId,
+						userProfileInfo,
+						advertisementId,
 					},
 				},
 			)
-		}()
-	} // TODO: If the user is offline send it when it comes online
+		}(q.UserId, q.AdvertisementId, inviteeSession.GetId(), u.GetProfileInfo(false))
+	} // TODO: If the user is offline send it when it comes online?
 	i.JSON(&w, i.A{0})
 }

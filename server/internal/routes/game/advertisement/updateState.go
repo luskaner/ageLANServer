@@ -42,7 +42,8 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		j := 0
 		for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
 			peer := el.Value
-			sess, ok := models.GetSessionByUser(peer.GetUser())
+			var sess *models.Session
+			sess, ok = models.GetSessionByUser(peer.GetUser())
 			if !ok {
 				continue
 			}
@@ -54,24 +55,24 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 			j++
 		}
 		for k, sessionId := range sessionIds {
-			go func() {
+			go func(sessionId string, userIds []i.A, userIdIndex int, races []i.A, advStartTime int64, userIdStr []i.A, advEncoded i.A, challengeProgress []i.A) {
 				_ = wss.SendMessage(
 					sessionId,
 					i.A{
 						0,
 						"MatchStartMessage",
-						userIds[k][0],
+						userIds[userIdIndex][0],
 						i.A{
 							userIds,
 							races,
-							adv.GetStartTime(),
+							advStartTime,
 							userIdStr,
 							advEncoded,
 							challengeProgress,
 						},
 					},
 				)
-			}()
+			}(sessionId, userIds, k, races, adv.GetStartTime(), userIdStr, advEncoded, challengeProgress)
 		}
 	}
 	i.JSON(&w, i.A{0})
