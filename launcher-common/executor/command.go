@@ -1,15 +1,16 @@
 package executor
 
-import "golang.org/x/sys/windows"
+import (
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+)
 
 func RunRevertCommand(cmd []string) (err error) {
 	var args []string
 	if len(cmd) > 1 {
 		args = cmd[1:]
 	}
-	result := ExecOptions{
+	result := exec.Options{
 		File:           cmd[0],
-		WindowState:    windows.SW_NORMAL,
 		SpecialFile:    true,
 		Shell:          true,
 		UseWorkingPath: true,

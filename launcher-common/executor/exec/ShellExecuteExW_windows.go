@@ -1,12 +1,11 @@
-package executor
+package exec
 
 import (
 	"github.com/luskaner/aoe2DELanServer/common"
+	"golang.org/x/sys/windows"
 	"path/filepath"
 	"strings"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
 )
 
 var (
@@ -32,7 +31,7 @@ type SHELLEXECUTEINFO struct {
 	hProcess       windows.Handle
 }
 
-func shellExecuteEx(verb string, start bool, executable string, executableWorkingPath bool, getPid bool, show int, arg ...string) (err error, pid uint32, exitCode int) {
+func shellExecuteEx(verb string, start bool, executable string, executableWorkingPath bool, getPid bool, show int32, arg ...string) (err error, pid uint32, exitCode int) {
 	pid = 0
 	exitCode = common.ErrSuccess
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
@@ -46,7 +45,7 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 		lpVerb:       verbPtr,
 		lpFile:       exe,
 		lpParameters: args,
-		nShow:        int32(show),
+		nShow:        show,
 	}
 
 	if executableWorkingPath {

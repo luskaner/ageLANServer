@@ -1,4 +1,4 @@
-package launcher_common
+package cert
 
 import (
 	"crypto/x509"
@@ -6,11 +6,6 @@ import (
 	"golang.org/x/sys/windows"
 	"unsafe"
 )
-
-func BytesToCertificate(data []byte) *x509.Certificate {
-	cert, _ := x509.ParseCertificate(data)
-	return cert
-}
 
 func openStore(userStore bool) (windows.Handle, error) {
 	rootStr := windows.StringToUTF16Ptr("ROOT")
@@ -76,4 +71,8 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 		return
 	}
 	return
+}
+
+func SupportsUserStore() bool {
+	return true
 }

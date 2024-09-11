@@ -4,10 +4,11 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
 )
 
-func RunSetUp(IPs []net.IP, certificate *x509.Certificate, CDN bool) (result *ExecResult) {
+func RunSetUp(IPs []net.IP, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
 	if IPs != nil {
@@ -23,11 +24,11 @@ func RunSetUp(IPs []net.IP, certificate *x509.Certificate, CDN bool) (result *Ex
 	if CDN {
 		args = append(args, "-c")
 	}
-	result = ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
 	return
 }
 
-func RunRevert(IPs bool, certificate bool, CDN bool, failfast bool) (result *ExecResult) {
+func RunRevert(IPs bool, certificate bool, CDN bool, failfast bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "revert")
 	if failfast {
@@ -43,6 +44,6 @@ func RunRevert(IPs bool, certificate bool, CDN bool, failfast bool) (result *Exe
 	} else {
 		args = append(args, "-a")
 	}
-	result = ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
 	return
 }
