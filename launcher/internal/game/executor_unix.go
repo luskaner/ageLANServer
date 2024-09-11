@@ -3,7 +3,6 @@
 package game
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 )
 
@@ -25,10 +24,6 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStorePro
 }
 
 func startUri(uri string) (result *commonExecutor.Result) {
-	file := "open"
-	if launcher_common.SteamOS() {
-		file = "xdg-open"
-	}
-	result = commonExecutor.Options{File: file, Args: []string{uri}, Shell: true, SpecialFile: true}.Exec()
+	result = commonExecutor.Options{File: openCommand(), Args: []string{uri}, Shell: true, SpecialFile: true}.Exec()
 	return
 }

@@ -4,8 +4,9 @@ package cmdUtils
 
 import (
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"os"
 )
 
 func adminError(result *exec.Result) bool {
-	return result.ExitCode == 126
+	return os.IsPermission(result.Err)
 }
