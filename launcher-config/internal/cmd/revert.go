@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func addUserCert(removedUserCert *x509.Certificate) bool {
 	fmt.Println("Adding previously removed user certificate")
-	if err := launcherCommon.TrustCertificate(true, removedUserCert); err == nil {
+	if err := cert.TrustCertificate(true, removedUserCert); err == nil {
 		fmt.Println("Successfully added user certificate")
 		return true
 	} else {
@@ -70,7 +70,7 @@ var revertCmd = &cobra.Command{
 		var restoredMetadata bool
 		var restoredProfiles bool
 		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
 			_, ok := <-sigs
 			if ok {
@@ -78,7 +78,7 @@ var revertCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		isAdmin := executor.IsAdmin()
+		isAdmin := exec.IsAdmin()
 		reverseFailed := true
 		if cmd.RemoveAll {
 			cmd.UnmapIPs = true
@@ -91,7 +91,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RemoveUserCert {
 			fmt.Println("Removing user certificate, accept any dialog that appears...")
-			if removedUserCert, _ := launcherCommon.UntrustCertificate(true); removedUserCert != nil {
+			if removedUserCert, _ := cert.UntrustCertificate(true); removedUserCert != nil {
 				fmt.Println("Successfully removed user certificate")
 			} else {
 				fmt.Println("Failed to remove user certificate")

@@ -6,19 +6,20 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func removeUserCert() bool {
 	fmt.Println("Removing previously added user certificate, accept any dialog that appears...")
-	if _, err := launcherCommon.UntrustCertificate(true); err == nil {
+	if _, err := cert.UntrustCertificate(true); err == nil {
 		fmt.Println("Successfully removed user certificate")
 		return true
 	} else {
@@ -80,7 +81,7 @@ var setUpCmd = &cobra.Command{
 		var backedUpMetadata bool
 		var backedUpProfiles bool
 		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, windows.SIGINT, windows.SIGTERM)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
 			_, ok := <-sigs
 			if ok {
@@ -88,15 +89,15 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		isAdmin := executor.IsAdmin()
+		isAdmin := exec.IsAdmin()
 		if AddUserCertData != nil {
 			fmt.Println("Adding user certificate, accept any dialog that appears...")
-			cert := launcherCommon.BytesToCertificate(AddUserCertData)
-			if cert == nil {
+			crt := cert.BytesToCertificate(AddUserCertData)
+			if crt == nil {
 				fmt.Println("Failed to parse certificate")
 				os.Exit(internal.ErrUserCertAddParse)
 			}
-			if err := launcherCommon.TrustCertificate(true, cert); err == nil {
+			if err := cert.TrustCertificate(true, crt); err == nil {
 				fmt.Println("Successfully added user certificate")
 				addedUserCert = true
 			} else {

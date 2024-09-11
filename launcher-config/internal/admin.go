@@ -6,7 +6,9 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
 	"time"
 )
@@ -35,7 +37,7 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err e
 	} else {
 		var certificate *x509.Certificate
 		if addCertData != nil {
-			certificate = launcherCommon.BytesToCertificate(addCertData)
+			certificate = cert.BytesToCertificate(addCertData)
 			if certificate == nil {
 				exitCode = ErrUserCertAddParse
 				return
@@ -100,11 +102,11 @@ func ConnectAgentIfNeeded() (err error) {
 	return
 }
 
-func StartAgentIfNeeded() (result *executor.ExecResult) {
+func StartAgentIfNeeded() (result *exec.Result) {
 	if ipc != nil {
 		return
 	}
-	result = executor.ExecOptions{File: common.GetExeFileName(true, common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
+	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
 	return
 }
 
