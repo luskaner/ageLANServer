@@ -3,7 +3,7 @@
 package hosts
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"golang.org/x/sys/unix"
 	"os"
 	"runtime"
@@ -36,9 +36,9 @@ func unlockFile(file *os.File) (err error) {
 	return
 }
 
-func flushDns() (result *executor.ExecResult) {
+func flushDns() (result *exec.Result) {
 	if runtime.GOOS == "darwin" {
-		result = executor.ExecOptions{File: "sh", UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"-c", "dscacheutil -flushcache && killall -HUP mDNSResponder"}}.Exec()
+		result = exec.Options{File: "dscacheutil", ExitCode: true, Wait: true, Args: []string{"-flushcache && killall -HUP mDNSResponder"}}.Exec()
 	}
 	return
 }

@@ -5,6 +5,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/hosts"
@@ -16,7 +17,7 @@ import (
 
 func untrustCertificate() bool {
 	fmt.Println("Removing previously added local certificate")
-	if _, err := launcherCommon.UntrustCertificate(false); err != nil {
+	if _, err := cert.UntrustCertificate(false); err != nil {
 		fmt.Println("Successfully removed local certificate")
 		return true
 	} else {
@@ -37,12 +38,12 @@ var setUpCmd = &cobra.Command{
 		trustedCertificate := false
 		if len(cmd.AddLocalCertData) > 0 {
 			fmt.Println("Adding local certificate")
-			cert := launcherCommon.BytesToCertificate(cmd.AddLocalCertData)
-			if cert == nil {
+			crt := cert.BytesToCertificate(cmd.AddLocalCertData)
+			if crt == nil {
 				fmt.Println("Failed to parse certificate")
 				os.Exit(internal.ErrLocalCertAddParse)
 			}
-			if err := launcherCommon.TrustCertificate(false, cert); err == nil {
+			if err := cert.TrustCertificate(false, crt); err == nil {
 				fmt.Println("Successfully added local certificate")
 				trustedCertificate = true
 				sigs := make(chan os.Signal, 1)

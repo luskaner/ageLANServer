@@ -1,7 +1,7 @@
 package hosts
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"golang.org/x/sys/windows"
 	"os"
 )
@@ -31,7 +31,7 @@ func unlockFile(file *os.File) (err error) {
 	return
 }
 
-func flushDns() (result *executor.ExecResult) {
-	result = executor.ExecOptions{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}.Exec()
+func flushDns() (result *exec.Result) {
+	result = exec.Options{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}.Exec()
 	return
 }

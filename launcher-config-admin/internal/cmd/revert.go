@@ -6,6 +6,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/hosts"
@@ -17,7 +18,7 @@ import (
 
 func trustCertificate(certificate *x509.Certificate) bool {
 	fmt.Println("Adding previously removed local certificate")
-	if err := launcherCommon.TrustCertificate(false, certificate); err == nil {
+	if err := cert.TrustCertificate(false, certificate); err == nil {
 		fmt.Println("Successfully added local certificate")
 		return true
 	} else {
@@ -38,7 +39,7 @@ var revertCmd = &cobra.Command{
 		var removedCertificate *x509.Certificate
 		if cmd.RemoveLocalCert {
 			fmt.Println("Removing local certificate")
-			if removedCertificate, err := launcherCommon.UntrustCertificate(false); err == nil {
+			if removedCertificate, err := cert.UntrustCertificate(false); err == nil {
 				fmt.Println("Successfully removed local certificate")
 				sigs := make(chan os.Signal, 1)
 				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
