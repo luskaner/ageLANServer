@@ -1,10 +1,9 @@
 package game
 
 import (
-	"github.com/andygrunwald/vdf"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/steam"
 	"os"
-	"path"
 )
 
 type Executor interface {
@@ -18,10 +17,8 @@ type CustomExecutor struct {
 	Executable string
 }
 
-const steamAppID = "813780"
-
 func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
-	return startUri("steam://rungameid/" + steamAppID)
+	return startUri(steam.OpenUri())
 }
 
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
@@ -47,48 +44,11 @@ func isInstalledCustom(executable string) bool {
 	return true
 }
 
-func isInstalledOnSteam() bool {
-	p := steamInstallationPath()
-	if p == "" {
-		return false
-	}
-	f, err := os.Open(path.Join(p, "config", "libraryfolders.vdf"))
-	if err != nil {
-		return false
-	}
-	parser := vdf.NewParser(f)
-	data, err := parser.Parse()
-	if err != nil {
-		return false
-	}
-	libraryFolders, ok := data["libraryfolders"].(map[string]interface{})
-	if !ok {
-		return false
-	}
-
-	for _, folder := range libraryFolders {
-		var folderMap map[string]interface{}
-		folderMap, ok = folder.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		var apps map[string]interface{}
-		apps, ok = folderMap["apps"].(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if _, exists := apps[steamAppID]; exists {
-			return true
-		}
-	}
-	return false
-}
-
 func MakeExecutor(executable string) Executor {
 	if executable != "auto" {
 		switch executable {
 		case "steam":
-			if isInstalledOnSteam() {
+			if steam.GameInstalled() {
 				return SteamExecutor{}
 			}
 		case "msstore":
@@ -102,7 +62,7 @@ func MakeExecutor(executable string) Executor {
 		}
 		return nil
 	}
-	if isInstalledOnSteam() {
+	if steam.GameInstalled() {
 		return SteamExecutor{}
 	}
 	if isInstalledOnMicrosoftStore() {

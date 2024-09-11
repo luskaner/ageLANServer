@@ -2,7 +2,6 @@ package game
 
 import (
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"golang.org/x/sys/windows/registry"
 )
 
 func isInstalledOnMicrosoftStore() bool {
@@ -24,22 +23,6 @@ func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.R
 func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
 	microsoftStoreProcess = true
 	return
-}
-
-func steamInstallationPath() (path string) {
-	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam`, registry.QUERY_VALUE)
-	if err != nil {
-		return
-	}
-	defer func(key registry.Key) {
-		_ = key.Close()
-	}(key)
-	var val string
-	val, _, err = key.GetStringValue("SteamPath")
-	if err != nil {
-		return
-	}
-	return val
 }
 
 func startUri(uri string) (result *commonExecutor.Result) {

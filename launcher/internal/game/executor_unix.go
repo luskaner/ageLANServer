@@ -3,13 +3,20 @@
 package game
 
 import (
+	"github.com/luskaner/aoe2DELanServer/launcher-common"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"os"
-	"path"
 )
 
+// MicrosoftStoreExecutor is not supported on non-Windows platforms
 func isInstalledOnMicrosoftStore() bool {
 	return false
+}
+func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.Result) {
+	// Should not be called
+	return
+}
+func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+	return
 }
 
 func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
@@ -17,32 +24,11 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStorePro
 	return
 }
 
-func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.Result) {
-	// Should not be called
-	return
-}
-
-func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
-	// Should not be called
-	return
-}
-
-func steamInstallationPath() (path string) {
-	path = homeDirPath()
-	if info, err := os.Stat(path); err != nil || !info.IsDir() {
-		path = ""
-	}
-	return
-}
-
-func homeDirPath() (p string) {
-	if homeDir, err := os.UserHomeDir(); err == nil {
-		p = path.Join(homeDir, dir)
-	}
-	return
-}
-
 func startUri(uri string) (result *commonExecutor.Result) {
-	result = commonExecutor.Options{File: "open " + uri, Shell: true, SpecialFile: true}.Exec()
+	file := "open"
+	if launcher_common.SteamOS() {
+		file = "xdg-open"
+	}
+	result = commonExecutor.Options{File: file, Args: []string{uri}, Shell: true, SpecialFile: true}.Exec()
 	return
 }
