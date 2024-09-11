@@ -7,6 +7,7 @@ retract v1.2.0-rc.3
 retract v1.2.0-rc.4
 
 require (
+	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41
