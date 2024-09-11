@@ -8,6 +8,14 @@ tasks:
     cmds:
       - cp -r server/resources build/server/resources
       - go build -o build/server/bin/genCert ./server-genCert
+  prepare-launcher:
+    platforms: [ linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 ]
+    deps: [ prepare-server-base, build-config-all ]
+    cmds:
+      - go build -o build/server ./server
+      - mkdir -p build/launcher/resources
+      - cp -f launcher/resources/config.ini build/launcher/resources/config.ini
+      - go build -o build/launcher/bin/agent ./launcher-agent
   prepare-server-genCert:
     cmds:
       - mkdir -p build/server/resources

@@ -8,21 +8,8 @@ tasks:
     cmds:
       - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
       - go build -o build/server/bin/genCert.exe ./server-genCert
-  build-config:
-    internal: true
-    cmds:
-      - go build -o build/launcher/bin/config.exe ./launcher-config
-  build-config-admin:
-    cmds:
-      - go build -o build/launcher/bin/config-admin.exe ./launcher-config-admin
-  build-config-admin-agent:
-    deps: [ build-config-admin ]
-    cmds:
-      - go build -o build/launcher/bin/config-admin-agent.exe ./launcher-config-admin-agent
-  build-config-all:
-    deps: [ build-config, build-config-admin-agent ]
   prepare-launcher:
-    platforms: [ windows/amd64 ]
+    platforms: [ windows/amd64, windows/arm64 ]
     deps: [ prepare-server-base, build-config-all ]
     cmds:
       - go build -o build/server ./server

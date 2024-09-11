@@ -15,5 +15,18 @@ tasks:
     deps: [ debug:prepare-server-base ]
     cmds:
       - build/server/bin/genCert{{exeExt}} -r
+  build-config:
+    internal: true
+    cmds:
+      - go build -o build/launcher/bin/config{exeExt}} ./launcher-config
+  build-config-admin:
+    cmds:
+      - go build -o build/launcher/bin/config-admin{exeExt}} ./launcher-config-admin
+  build-config-admin-agent:
+    deps: [ build-config-admin ]
+    cmds:
+      - go build -o build/launcher/bin/config-admin-agent{exeExt}} ./launcher-config-admin-agent
+  build-config-all:
+    deps: [ build-config, build-config-admin-agent ]
 includes:
   debug: ./Taskfile.{{if eq OS "windows"}}windows{{else}}unix{{end}}.yml
