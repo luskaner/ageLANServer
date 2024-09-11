@@ -243,13 +243,15 @@ var setUpCmd = &cobra.Command{
 
 func initSetUp() {
 	cmd.InitSetUp(setUpCmd)
-	setUpCmd.Flags().BytesBase64VarP(
-		&AddUserCertData,
-		"userCert",
-		"u",
-		nil,
-		"Add the certificate to the user's trusted root store",
-	)
+	if cert.SupportsUserStore() {
+		setUpCmd.Flags().BytesBase64VarP(
+			&AddUserCertData,
+			"userCert",
+			"u",
+			nil,
+			"Add the certificate to the user's trusted root store",
+		)
+	}
 	setUpCmd.Flags().BoolVarP(
 		&BackupMetadata,
 		"metadata",

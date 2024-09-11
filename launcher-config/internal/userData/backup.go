@@ -24,7 +24,7 @@ func (d *Data) absolutePath() string {
 }
 
 func Path() string {
-	return filepath.Join(os.Getenv("USERPROFILE"), finalPath)
+	return filepath.Join(basePath(), finalPath)
 }
 
 func (d *Data) switchPaths(backupPath string, currentPath string) bool {

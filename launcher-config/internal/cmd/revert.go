@@ -84,7 +84,9 @@ var revertCmd = &cobra.Command{
 			cmd.UnmapIPs = true
 			cmd.UnmapCDN = true
 			cmd.RemoveLocalCert = true
-			RemoveUserCert = true
+			if cert.SupportsUserStore() {
+				RemoveUserCert = true
+			}
 			RestoreMetadata = true
 			RestoreProfiles = true
 			reverseFailed = false
@@ -232,13 +234,15 @@ var stopAgent bool
 
 func initRevert() {
 	cmd.InitRevert(revertCmd)
-	revertCmd.Flags().BoolVarP(
-		&RemoveUserCert,
-		"userCert",
-		"u",
-		false,
-		"Remove the certificate from the user's trusted root store",
-	)
+	if cert.SupportsUserStore() {
+		revertCmd.Flags().BoolVarP(
+			&RemoveUserCert,
+			"userCert",
+			"u",
+			false,
+			"Remove the certificate from the user's trusted root store",
+		)
+	}
 	revertCmd.Flags().BoolVarP(
 		&RestoreMetadata,
 		"metadata",
