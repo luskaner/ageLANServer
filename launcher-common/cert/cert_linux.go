@@ -93,7 +93,7 @@ func TrustCertificate(_ bool, cert *x509.Certificate) error {
 	return nil
 }
 
-func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
+func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
 	var certPath string
 	err, certPath = getCertPath(cert)
 	if err != nil {
@@ -105,47 +105,6 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 	}
 
 	var certFile *os.File
-
-	certFile, err = os.CreateTemp("", "*")
-	if err != nil {
-		return
-	}
-
-	err = certFile.Close()
-	if err != nil {
-		return
-	}
-
-	result := exec.Options{
-		AsAdmin:  true,
-		Wait:     true,
-		ExitCode: true,
-		Shell:    true,
-		File:     "cp",
-		Args:     []string{"-f", certPath, certFile.Name()},
-	}.Exec()
-
-	if !result.Success() {
-		err = result.Err
-		return
-	}
-
-	if !exec.IsAdmin() {
-		result = exec.Options{
-			AsAdmin:  true,
-			Wait:     true,
-			ExitCode: true,
-			Shell:    true,
-			File:     "chmod",
-			Args:     []string{"666", certFile.Name()},
-		}.Exec()
-
-		if !result.Success() {
-			err = result.Err
-			return
-		}
-	}
-
 	certFile, err = os.Open(certFile.Name())
 
 	if err != nil {
