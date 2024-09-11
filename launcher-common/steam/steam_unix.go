@@ -16,3 +16,7 @@ func HomeDirPath() (p string) {
 	}
 	return
 }
+
+func UserProfilePath() string {
+	return path.Join(dir, "steamapps", "compatdata", appID, "pfx", "drive_c", "users", "steamuser")
+}
