@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"time"
 )
@@ -17,11 +16,6 @@ const microsoftStoreProcess = "AoE2DE.exe"
 
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
-	if runtime.GOOS != "windows" {
-		if d, e := os.Stat("/var/run"); e == nil && d.IsDir() {
-			paths = append(paths, filepath.Join("/var/run", name))
-		}
-	}
 	tmp := os.TempDir()
 	if tmp != "" {
 		if d, e := os.Stat(tmp); e == nil && d.IsDir() {
