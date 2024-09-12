@@ -9,8 +9,10 @@ tasks:
       - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
       - go build -o build/server/bin/genCert.exe ./server-genCert
   prepare-launcher:
-    platforms: [ windows/amd64, windows/arm64 ]
-    deps: [ prepare-server-base, build-config-all ]
+    platforms: [ windows ]
+    deps:
+      - prepare-server-base
+      - :build-config-all
     cmds:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
