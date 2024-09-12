@@ -67,11 +67,12 @@ var BackupMetadata bool
 var BackupProfiles bool
 var agentStart bool
 var agentEndOnError bool
+var storeString = "local"
 
 var setUpCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Setups configuration",
-	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS server\n* Certificate to the user/local machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
+	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
 	Run: func(_ *cobra.Command, _ []string) {
 		if len(cmd.MapIPs) > 9 {
 			fmt.Println("Too many IPs. Up to 9 can be mapped")
@@ -165,7 +166,7 @@ var setUpCmd = &cobra.Command{
 				} else {
 					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
-						fmt.Println("Failed to connect to config-admin-agent after starting it. Kill the 'config-admin-agent.exe' process manually")
+						fmt.Println("Failed to connect to config-admin-agent after starting it. Kill the 'config-admin-agent' process manually")
 						os.Exit(internal.ErrStartAgentVerify)
 					}
 				}
@@ -224,7 +225,7 @@ var setUpCmd = &cobra.Command{
 								}
 							}
 							if failedStopAgent {
-								fmt.Println("Failed to stop config-admin-agent. Kill the 'config-admin-agent.exe' process manually")
+								fmt.Println("Failed to stop config-admin-agent. Kill the 'config-admin-agent' process manually")
 								fmt.Println("Error message: " + err.Error())
 								os.Exit(internal.ErrStartAgentRevert)
 							}
@@ -242,6 +243,9 @@ var setUpCmd = &cobra.Command{
 }
 
 func initSetUp() {
+	if cert.SupportsUserStore() {
+		storeString = storeString + "/user"
+	}
 	cmd.InitSetUp(setUpCmd)
 	if cert.SupportsUserStore() {
 		setUpCmd.Flags().BytesBase64VarP(

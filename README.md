@@ -5,7 +5,7 @@ connection **to the game server** paving the way to how the original AoE2 worked
 versions.
 
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
-the internet and Steam or Xbox Live, depending on the version, to fully play offline.**
+the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
 ## Features
 
@@ -33,7 +33,9 @@ the internet and Steam or Xbox Live, depending on the version, to fully play off
 - Not possible as it would require internet and some access to the user profile:
     - Steam & Xbox Friends.
 - Not implemented:
-    - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a match might cause issues (see https://github.com/luskaner/aoe2DELanServer/issues/36#issuecomment-2337161881) until the game is restarted.
+    - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a
+      match might cause issues (see https://github.com/luskaner/aoe2DELanServer/issues/36#issuecomment-2337161881) until
+      the game is restarted.
     - Changing player profile icon: the default will always be used.
     - Leaderboards: will appear empty.
     - Player stats: will appear empty.
@@ -49,7 +51,7 @@ the internet and Steam or Xbox Live, depending on the version, to fully play off
 #### Pre-built releases (Stable)
 
 - Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher. 32-bit/64-bit both Arm and x86.
-- macOS: Catalina (v10.15) or higher for x86-64, any for Apple Silicon (Arm64).
+- macOS: Catalina (v10.15) or higher.
 - GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm
   and x86 (other archs are considered stable but they are not included).
 
@@ -66,14 +68,23 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
+- SteamOS: 3.
+- Ubuntu: 24.04 LTS (x86-64/arm64).
+- macOS: Catalina (v10.15) or higher.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
-- If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require
-  admin rights elevation.
+
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
+require
+admin rights elevation.**
+
+#### Buildable (Experimental)
+
+Other 64-bit architecture variants of Ubuntu 24.04 LTS.
 
 ### Client
 
-- Age of Empires 2 Definitive Edition - Steam or Microsoft Store.
+- Age of Empires 2 Definitive Edition - Steam or Microsoft Store (only Windows).
 - Up-to-date version of the game.
 
 ## Binaries
@@ -85,11 +96,21 @@ supported operating systems.
 The following archives are provided:
 
 * Full:
-    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.zip
-    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
+    * Windows:
+        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
+        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.zip
+    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_full_*A.B.C*_mac.tar.gz
+    * SteamOS/Ubuntu:
+        * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.zip
+        * **Arm64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.zip
 * Launcher:
-    * **Windows 11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.zip
-    * **Windows 10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
+    * Windows:
+        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
+        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.zip
+    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_launcher_*A.B.C*_mac.tar.gz
+    * SteamOS/Ubuntu:
+        * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.zip
+        * **Arm64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.zip
 * Server:
     * Windows:
         * **10 (or higher) on Arm (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
@@ -101,10 +122,7 @@ The following archives are provided:
         * Kernel 3.1 or higher with **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
         * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
         * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS:
-        * **Apple Silicon - Arm64**: aoe2DELanServer_server_*A.B.C*_mac_apple-silicon.tar.gz
-        * **Catalina (v10.15) or higher with Intel - x86-64**: aoe2DELanServer_server_*A.B.C*_mac_intel.tar.gz
-        * **Universal (with above requirements)**: aoe2DELanServer_server_*A.B.C*_mac_all.tar.gz
+    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.gz
 
 *Note: If you are using Antivirus it may flag one or more executables as virus, this is
 a **false positive***.
@@ -164,18 +182,18 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Simplest way to use it
 
-1. **Download the asset `aoe2DELanServer_full_A.B.C_win_x86-64.zip`** from the latest
+1. **Download the proper *full* asset from the latest.
    stable release https://github.com/luskaner/aoe2DELanServer/releases
 2. **Uncompress** it somewhere.
 3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
    file**
    and modify
-   the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher.exe` (no quotes needed).
+   the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher` (no quotes needed).
    You will need to use a custom launcher for 100% offline play.
-4. **Execute `launcher/launcher.exe`**: you will be asked for admin elevation and confirmation of other dialogs as
+4. **Execute `launcher/launcher`**: you will be asked for admin elevation and confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
-5. **Repeat the above steps for every PC** you want to play in LAN with by running the `launcher.exe`, the first PC to
+5. **Repeat the above steps for every PC** you want to play in LAN with by running the `launcher`, the first PC to
    launch
    it will host the "server" and the rest will auto-discover and connect to it.
 6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server**. Setting it to

@@ -198,8 +198,8 @@ archives:
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
       - launcher/resources
-      - src: launcher-config/resources/*
-        dst: launcher/
+      - src: launcher-config/resources/cleanup.{{ if eq .Os "windows" }}bat{{ else }}sh{{ end }}
+        dst: launcher/cleanup.bat
     format_overrides:
       - goos: windows
         format: zip
@@ -242,8 +242,8 @@ archives:
         dst: docs/README.txt
       - src: launcher-config/README.md
         dst: docs/README-config.txt
-      - src: launcher-config/resources/*
-        dst: .
+      - src: launcher-config/resources/cleanup.{{ if eq .Os "windows" }}bat{{ else }}sh{{ end }}
+        strip_parent: true
     name_template: >-
       {{- .ProjectName }}_launcher_
       {{- .RawVersion }}_

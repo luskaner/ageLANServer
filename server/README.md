@@ -1,4 +1,5 @@
 # Server
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/server)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/server)
 
 The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
@@ -21,7 +22,7 @@ directory.
 The easiest way to generate a self-signed certificate is by running the ``bin/genCert`` executable (more
 info [here](../server-genCert) or you may leave
 that to
-the ```launcher.exe``` if you are hosting and running the launcher on same PC.
+the ```launcher``` if you are hosting and running the launcher on same PC.
 
 ### Main
 

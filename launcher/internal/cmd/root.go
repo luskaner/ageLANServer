@@ -153,7 +153,7 @@ var (
 					config.Revert()
 					fmt.Print("Program finished with errors")
 					if errorMayBeConfig {
-						fmt.Print(", you may try running \"cleanup.bat\" as regular user")
+						fmt.Print(", you may try running \"cleanup\" as regular user")
 					}
 					if mousetrap.StartedByExplorer() {
 						fmt.Println(", press the Enter key to exit...")

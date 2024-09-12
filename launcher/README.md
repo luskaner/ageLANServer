@@ -1,21 +1,28 @@
 # Launcher
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/launcher)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/launcher)
 
 The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
 system and reverting that configuration upon exit.
 
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
-Steam or Xbox Live depending on the version to fully play offline.**
+Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
 ## System Requirements
 
-- Windows:
-    * 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-    * 11 on Arm (no S mode) or higher (possibly Server 2025 or higher) all Arm64.
-- Admin rights if:
-    - You allow it to handle the hosts file.
-    - You allow it to handle the local PC certificates.
-    - If the game launcher requires it.
+- SteamOS: 3.
+- Ubuntu: 24.04 LTS (x86-64/arm64).
+- macOS: Catalina (v10.15) or higher.
+- Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
+  Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
+
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
+require
+admin rights elevation.**
+
+#### Buildable (Experimental)
+
+Other 64-bit architecture variants of Ubuntu 24.04 LTS.
 
 ## Features
 
