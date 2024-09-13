@@ -3,13 +3,17 @@ package internal
 import (
 	"crypto/x509"
 	"encoding/gob"
+	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
+	"os"
+	"runtime"
 	"time"
 )
 
@@ -91,6 +95,9 @@ func ConnectAgentIfNeeded() (err error) {
 	if ipc != nil {
 		return
 	}
+	if _, err := os.Stat(launcherCommon.ConfigAdminIpcName()); err == nil {
+		_ = os.Remove(launcherCommon.ConfigAdminIpcName())
+	}
 	var conn net.Conn
 	conn, err = net.Dial("unix", launcherCommon.ConfigAdminIpcName())
 	if err != nil {
@@ -106,7 +113,22 @@ func StartAgentIfNeeded() (result *exec.Result) {
 	if ipc != nil {
 		return
 	}
-	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdminAgent), AsAdmin: true, Pid: true}.Exec()
+	fmt.Println("Starting agent...")
+	waitForStart := !exec.IsAdmin() && runtime.GOOS != "windows"
+	if waitForStart {
+		fmt.Println("Waiting up to 30s for agent to start...")
+	}
+	file := common.GetExeFileName(true, common.LauncherConfigAdminAgent)
+	result = exec.Options{File: file, AsAdmin: true, Pid: true}.Exec()
+	if waitForStart && result.Success() {
+		for i := 0; i < 30; i++ {
+			_, proc, _ := process.Process(file)
+			if proc != nil {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+	}
 	return
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -177,7 +178,13 @@ var setUpCmd = &cobra.Command{
 				if isAdmin {
 					fmt.Println("Running config-admin to add local cert and/or host mappings...")
 				} else {
-					fmt.Println("Running config-admin to add local cert and/or host mappings, accept any dialog that appears...")
+					msgStr := "Running config-admin to add local cert and/or host mappings, "
+					if runtime.GOOS == "windows" {
+						msgStr += "accept any dialog that appears..."
+					} else {
+						msgStr += "authorize it if needed..."
+					}
+					fmt.Println(msgStr)
 				}
 			}
 			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData, cmd.MapCDN)
@@ -244,7 +251,7 @@ var setUpCmd = &cobra.Command{
 
 func initSetUp() {
 	if cert.SupportsUserStore() {
-		storeString = storeString + "/user"
+		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
 	if cert.SupportsUserStore() {

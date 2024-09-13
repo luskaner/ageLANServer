@@ -38,7 +38,7 @@ func unlockFile(file *os.File) (err error) {
 
 func flushDns() (result *exec.Result) {
 	if runtime.GOOS == "darwin" {
-		result = exec.Options{File: "dscacheutil", ExitCode: true, Wait: true, Args: []string{"-flushcache && killall -HUP mDNSResponder"}}.Exec()
+		result = exec.Options{File: "dscacheutil", ExitCode: true, Wait: true, Args: []string{"-flushcache", "&&", "killall", "-HUP", "mDNSResponder"}}.Exec()
 	}
 	return
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"io"
 	"os"
 )
 
@@ -85,12 +86,13 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 
 	if !userStore && !exec.IsAdmin() {
 		result = exec.Options{
-			AsAdmin:  true,
-			Wait:     true,
-			ExitCode: true,
-			Shell:    true,
-			File:     "chmod",
-			Args:     []string{"666", certFile.Name()},
+			SpecialFile: true,
+			AsAdmin:     true,
+			Wait:        true,
+			ExitCode:    true,
+			Shell:       true,
+			File:        "chmod",
+			Args:        []string{"666", certFile.Name()},
 		}.Exec()
 
 		if !result.Success() {
@@ -109,7 +111,7 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 	}()
 
 	var certBytes []byte
-	_, err = certFile.Read(certBytes)
+	certBytes, err = io.ReadAll(certFile)
 
 	if err != nil {
 		return

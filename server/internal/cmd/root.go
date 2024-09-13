@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
+	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/files"
 	"github.com/luskaner/aoe2DELanServer/server/internal/ip"
@@ -21,6 +22,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -39,6 +41,12 @@ var (
 			if err := lock.Lock(); err != nil {
 				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
 				os.Exit(common.ErrPidLock)
+			}
+			if exec.IsAdmin() {
+				fmt.Println("Running as administrator, this is not recommended for security reasons.")
+				if runtime.GOOS == "linux" {
+					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen to the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
+				}
 			}
 			host := viper.GetString("default.Host")
 			addrs := ip.ResolveHost(host)

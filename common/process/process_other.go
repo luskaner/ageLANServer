@@ -3,8 +3,9 @@
 package process
 
 import (
+	"errors"
+	"golang.org/x/sys/unix"
 	"os"
-	"syscall"
 )
 
 func FindProcess(pid int) (proc *os.Process, err error) {
@@ -12,7 +13,7 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 	if err != nil {
 		return
 	}
-	if err = proc.Signal(syscall.Signal(0)); err == nil {
+	if err = proc.Signal(unix.Signal(0)); err != nil && !errors.Is(err, unix.EPERM) {
 		proc = nil
 	}
 	return

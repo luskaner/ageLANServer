@@ -4,17 +4,21 @@ package cert
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"io"
 	"os"
 )
 
 func updateStore() error {
 	options := exec.Options{
-		AsAdmin:  true,
-		Wait:     true,
-		ExitCode: true,
+		SpecialFile: true,
+		AsAdmin:     true,
+		Wait:        true,
+		ExitCode:    true,
 	}
 	switch {
 	case launcher_common.Ubuntu():
@@ -25,7 +29,7 @@ func updateStore() error {
 	return options.Exec().Err
 }
 
-func getCertPath(cert *x509.Certificate) (err error, certPath string) {
+func getCertPath() (err error, certPath string) {
 	var storePath string
 	switch {
 	case launcher_common.Ubuntu():
@@ -44,12 +48,12 @@ func getCertPath(cert *x509.Certificate) (err error, certPath string) {
 		return
 	}
 
-	certPath = fmt.Sprintf("%s/%s.crt", storePath, cert.Subject.CommonName)
+	certPath = fmt.Sprintf("%s/%s.crt", storePath, common.Domain)
 	return
 }
 
 func TrustCertificate(_ bool, cert *x509.Certificate) error {
-	err, certPath := getCertPath(cert)
+	err, certPath := getCertPath()
 	if err != nil {
 		return err
 	}
@@ -61,7 +65,12 @@ func TrustCertificate(_ bool, cert *x509.Certificate) error {
 		return err
 	}
 
-	_, err = certFile.Write(cert.Raw)
+	pemData := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	})
+
+	_, err = certFile.Write(pemData)
 	if err != nil {
 		return err
 	}
@@ -71,31 +80,22 @@ func TrustCertificate(_ bool, cert *x509.Certificate) error {
 		return err
 	}
 
-	result := exec.Options{
-		AsAdmin:  true,
-		Wait:     true,
-		ExitCode: true,
-		Shell:    true,
-		File:     "mv",
-		Args:     []string{"-f", certFile.Name(), certPath},
-	}.Exec()
-
-	if !result.Success() {
-		_ = os.Remove(certFile.Name())
-		return result.Err
-	}
-
-	err = updateStore()
+	err = os.Rename(certFile.Name(), certPath)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	err = os.Chmod(certPath, 0644)
+	if err != nil {
+		return err
+	}
+
+	return updateStore()
 }
 
 func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
 	var certPath string
-	err, certPath = getCertPath(cert)
+	err, certPath = getCertPath()
 	if err != nil {
 		return
 	}
@@ -105,47 +105,32 @@ func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
 	}
 
 	var certFile *os.File
-	certFile, err = os.Open(certFile.Name())
+	certFile, err = os.Open(certPath)
 
 	if err != nil {
 		return
 	}
-
-	defer func() {
-		_ = os.Remove(certFile.Name())
-	}()
 
 	var certBytes []byte
-	_, err = certFile.Read(certBytes)
+	certBytes, err = io.ReadAll(certFile)
 
 	if err != nil {
 		return
 	}
 
-	cert, err = x509.ParseCertificate(certBytes)
+	block, _ := pem.Decode(certBytes)
+	cert, err = x509.ParseCertificate(block.Bytes)
 
 	if err != nil {
 		return
 	}
 
-	err = exec.Options{
-		AsAdmin:  true,
-		Wait:     true,
-		ExitCode: true,
-		Shell:    true,
-		File:     "rm",
-		Args:     []string{certPath},
-	}.Exec().Err
-
+	err = os.Remove(certFile.Name())
 	if err != nil {
 		return
 	}
 
 	err = updateStore()
-	if err != nil {
-		return
-	}
-
 	return
 }
 

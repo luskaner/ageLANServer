@@ -13,6 +13,7 @@ func RunRevertCommand(cmd []string) (err error) {
 		File:           cmd[0],
 		SpecialFile:    true,
 		Shell:          true,
+		Wait:           true,
 		UseWorkingPath: true,
 		Args:           args,
 	}.Exec()

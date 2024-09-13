@@ -88,7 +88,7 @@ func execCustomExecutable(executable string, wait bool, executableWorkingPath bo
 	if wait {
 		err = cmd.Run()
 	} else {
-		err = cmd.Start()
+		err = startCmd(cmd)
 	}
 	return err, cmd
 }

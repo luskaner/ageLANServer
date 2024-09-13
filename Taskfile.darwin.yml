@@ -9,7 +9,7 @@ tasks:
       - cp -r server/resources build/server/resources
       - go build -o build/server/bin/genCert ./server-genCert
   prepare-launcher:
-    platforms: [ linux, darwin ]
+    platforms: [ darwin ]
     deps:
       - prepare-server-base
       - :build-config-all

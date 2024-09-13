@@ -189,7 +189,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 			return
 		}
 	}
-	fmt.Println("Starting server, accept any dialog if it appears...")
+	fmt.Println("Starting server, authorize 'server' in firewall if it appears...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -212,6 +212,8 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 			if result.ExitCode != common.ErrSuccess {
 				fmt.Printf(`Exit code: %d. See documentation for "server" to check what it means`+"\n", result.ExitCode)
 			}
+		} else {
+			fmt.Println("Try running the server manually.")
 		}
 	}
 	return

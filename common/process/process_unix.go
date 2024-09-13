@@ -22,15 +22,19 @@ func ProcessesPID(names []string) map[string]uint32 {
 		if pid, err = strconv.ParseUint(proc.Name(), 10, 32); err == nil {
 			var cmdline []byte
 			cmdline, err = os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
-			if err == nil {
-				cmdlineStr := string(cmdline)
-				var args []string
-				args, err = shell.Fields(cmdlineStr, nil)
-				cmdlineName := filepath.Base(args[0])
-				for _, name := range names {
-					if cmdlineName == name {
-						processesPid[name] = uint32(pid)
-					}
+			if err != nil {
+				continue
+			}
+			cmdlineStr := string(cmdline)
+			var args []string
+			args, err = shell.Fields(cmdlineStr, nil)
+			if err != nil || len(args) == 0 {
+				continue
+			}
+			cmdlineName := filepath.Base(args[0])
+			for _, name := range names {
+				if cmdlineName == name {
+					processesPid[name] = uint32(pid)
 				}
 			}
 		}

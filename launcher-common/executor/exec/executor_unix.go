@@ -18,9 +18,9 @@ func terminalArgs() []string {
 	return nil
 }
 
-func adminArgs() []string {
-	if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-		return []string{"sudo", "-EH"}
+func adminArgs(wait bool) []string {
+	if !wait || !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
+		return []string{"pkexec", "--keep-cwd"}
 	}
-	return []string{"pkexec", "--keep-cwd"}
+	return []string{"sudo", "-EH"}
 }

@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-var autoServerDir = []string{`\`, fmt.Sprintf(`\%s\`, common.Server), `\..\`, fmt.Sprintf(`\..\%s\`, common.Server)}
+var autoServerDir = []string{fmt.Sprintf("%c", filepath.Separator), fmt.Sprintf(`%c%s%c`, filepath.Separator, common.Server, filepath.Separator), fmt.Sprintf(`%c..%c`, filepath.Separator, filepath.Separator), fmt.Sprintf(`%c..%c%s%c`, filepath.Separator, filepath.Separator, common.Server, filepath.Separator)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
 func StartServer(stop string, executable string, args []string) (result *commonExecutor.Result, executablePath string, ip string) {
@@ -82,10 +82,11 @@ func GetExecutablePath(executable string) string {
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
+	client := HttpClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
 	}
-	client := &http.Client{Transport: tr}
+	client.Transport = tr
 	resp, err := client.Get("https://" + host + "/test")
 	if err != nil {
 		return false

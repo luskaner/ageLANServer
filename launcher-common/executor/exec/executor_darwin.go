@@ -4,6 +4,6 @@ func terminalArgs() []string {
 	return []string{"open", "-a", "Terminal", "--args"}
 }
 
-func adminArgs() []string {
+func adminArgs(_ bool) []string {
 	return []string{"sudo"}
 }

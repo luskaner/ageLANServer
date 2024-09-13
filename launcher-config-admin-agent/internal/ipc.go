@@ -141,6 +141,10 @@ func RunIpcServer() (errorCode int) {
 		_ = l.Close()
 	}(l)
 
+	if err = os.Chmod(ipcPath, 0666); err != nil {
+		return
+	}
+
 	var conn net.Conn
 	for {
 		conn, err = l.Accept()

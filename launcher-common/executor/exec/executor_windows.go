@@ -2,6 +2,7 @@ package exec
 
 import (
 	"golang.org/x/sys/windows"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -66,4 +67,8 @@ func (options Options) exec() (result *Result) {
 		return options.standardExec()
 	}
 	return
+}
+
+func startCmd(cmd *exec.Cmd) error {
+	return cmd.Start()
 }

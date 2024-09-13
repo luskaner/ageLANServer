@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -155,7 +156,13 @@ var revertCmd = &cobra.Command{
 				if isAdmin {
 					fmt.Println("Running config-admin to remove local cert and/or host mappings...")
 				} else {
-					fmt.Println("Running config-admin to remove local cert and/or host mappings, accept any dialog that appears...")
+					msgStr := "Running config-admin to remove local cert and/or host mappings, "
+					if runtime.GOOS == "windows" {
+						msgStr += "accept any dialog that appears..."
+					} else {
+						msgStr += "authorize it if needed..."
+					}
+					fmt.Println(msgStr)
 				}
 			}
 			err, exitCode := internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
