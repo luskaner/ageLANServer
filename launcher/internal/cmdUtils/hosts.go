@@ -12,15 +12,13 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
 	"io"
 	"net/http"
-	"runtime"
 	"time"
 )
 
 const timeLayout = "2006-01-02 15:04:05"
 
 func requiresMapCDN() bool {
-	client := server.HttpClient()
-	client.Timeout = 3 * time.Second
+	client := http.Client{Timeout: 3}
 	resp, err := client.Get(fmt.Sprintf("https://%s/aoe/rl-server-status.json", launcherCommon.CDNDomain))
 	if err != nil {
 		return false
@@ -109,13 +107,7 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 		if commonExecutor.IsAdmin() {
 			fmt.Println("Adding host to hosts file.")
 		} else {
-			msgStr := "Adding host to hosts file, "
-			if runtime.GOOS == "windows" {
-				msgStr += `accept any dialog from "config-admin-agent" if it appears...`
-			} else {
-				msgStr += `authorize "config-admin-agent" if needed...`
-			}
-			fmt.Println(msgStr)
+			fmt.Println("Adding host to hosts file, authorize \"config-admin-agent\" if needed...")
 		}
 		if result := executor.RunSetUp(ips, nil, nil, false, false, mapCDN, true); !result.Success() {
 			fmt.Println("Failed to add host.")

@@ -3,10 +3,8 @@
 package hosts
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"golang.org/x/sys/unix"
 	"os"
-	"runtime"
 )
 
 var lock *unix.Flock_t
@@ -36,9 +34,6 @@ func unlockFile(file *os.File) (err error) {
 	return
 }
 
-func flushDns() (result *exec.Result) {
-	if runtime.GOOS == "darwin" {
-		result = exec.Options{File: "dscacheutil", ExitCode: true, Wait: true, Args: []string{"-flushcache", "&&", "killall", "-HUP", "mDNSResponder"}}.Exec()
-	}
-	return
+func hostsPath() string {
+	return "/etc/hosts"
 }

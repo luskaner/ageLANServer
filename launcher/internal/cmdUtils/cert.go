@@ -6,7 +6,6 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
-	"runtime"
 )
 
 func (c *Config) AddCert(canAdd string) (errorCode int) {
@@ -17,11 +16,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 				certMsg += ", accept the dialog."
 			} else {
 				if !c.CfgAgentStarted() {
-					if runtime.GOOS == "windows" {
-						certMsg += `, accept any dialog from "config-admin-agent" if it appears.`
-					} else {
-						certMsg += `, authorize "config-admin-agent" if needed.`
-					}
+					certMsg += `, authorize "config-admin-agent" if needed.`
 				}
 			}
 			fmt.Println(certMsg)

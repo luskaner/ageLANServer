@@ -6,14 +6,12 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
 	"os"
-	"runtime"
 	"time"
 )
 
@@ -114,20 +112,11 @@ func StartAgentIfNeeded() (result *exec.Result) {
 		return
 	}
 	fmt.Println("Starting agent...")
-	waitForStart := !exec.IsAdmin() && runtime.GOOS != "windows"
-	if waitForStart {
-		fmt.Println("Waiting up to 30s for agent to start...")
-	}
+	preAgentStart()
 	file := common.GetExeFileName(true, common.LauncherConfigAdminAgent)
 	result = exec.Options{File: file, AsAdmin: true, Pid: true}.Exec()
-	if waitForStart && result.Success() {
-		for i := 0; i < 30; i++ {
-			_, proc, _ := process.Process(file)
-			if proc != nil {
-				break
-			}
-			time.Sleep(time.Second)
-		}
+	if result.Success() {
+		postAgentStart(file)
 	}
 	return
 }

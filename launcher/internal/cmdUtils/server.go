@@ -189,7 +189,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 			return
 		}
 	}
-	fmt.Println("Starting server, authorize 'server' in firewall if it appears...")
+	fmt.Println("Starting server, authorize 'server' in firewall if needed...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -201,7 +201,9 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 	result, serverExe, ip = server.StartServer(stopStr, executable, args)
 	if result.Success() {
 		fmt.Println("Server started.")
-		c.SetServerExe(serverExe)
+		if stop {
+			c.SetServerExe(serverExe)
+		}
 	} else {
 		fmt.Println("Could not start server.")
 		errorCode = internal.ErrServerStart

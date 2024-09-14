@@ -11,8 +11,6 @@ func RunRevertCommand(cmd []string) (err error) {
 	}
 	result := exec.Options{
 		File:           cmd[0],
-		SpecialFile:    true,
-		Shell:          true,
 		Wait:           true,
 		UseWorkingPath: true,
 		Args:           args,

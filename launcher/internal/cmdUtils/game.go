@@ -2,7 +2,6 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
@@ -36,15 +35,16 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 		return
 	}
 	var broadcastBattleServer bool
-	if canBroadcastBattleServer == "auto" {
-		mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()
-		if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
-			broadcastBattleServer = true
-		}
+	if canBroadcastBattleServer == "auto" && game.RequiresBattleServerBroadcast() {
+		canBroadcastBattleServer = "true"
 	}
 	revertCommand := c.RevertCommand()
 	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
-		fmt.Println("Starting agent, authorize 'agent' in firewall if it appears...")
+		fmt.Print("Starting agent")
+		if canBroadcastBattleServer == "true" {
+			fmt.Print(", authorize 'agent' in firewall if needed")
+		}
+		fmt.Println("...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
 		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		if !result.Success() {
@@ -63,7 +63,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 		}
 	}
 	if _, ok := executer.(game.CustomExecutor); ok {
-		fmt.Println("Starting game, accept any dialog if it appears...")
+		fmt.Println("Starting game, authorize it if needed...")
 	} else {
 		fmt.Println("Starting game...")
 	}

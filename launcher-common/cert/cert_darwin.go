@@ -137,7 +137,3 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 
 	return
 }
-
-func SupportsUserStore() bool {
-	return true
-}

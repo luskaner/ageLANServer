@@ -6,7 +6,6 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
 )
 
 func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
@@ -42,9 +41,6 @@ func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertDat
 		args = append(args, "-c")
 	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
-	if addUserCertData != nil || addLocalCertData != nil {
-		server.ReloadSystemCertPool()
-	}
 	return
 }
 
@@ -52,9 +48,6 @@ func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restore
 	args := []string{launcherCommon.ConfigRevertCmd}
 	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
-	if removeUserCert || removeLocalCert {
-		server.ReloadSystemCertPool()
-	}
 	return
 }
 

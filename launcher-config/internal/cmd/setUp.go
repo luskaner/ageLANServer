@@ -6,10 +6,10 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
 	"os"
@@ -19,8 +19,8 @@ import (
 )
 
 func removeUserCert() bool {
-	fmt.Println("Removing previously added user certificate, accept any dialog that appears...")
-	if _, err := cert.UntrustCertificate(true); err == nil {
+	fmt.Println("Removing previously added user certificate, authorize it if needed ...")
+	if _, err := wrapper.RemoveUserCert(); err == nil {
 		fmt.Println("Successfully removed user certificate")
 		return true
 	} else {
@@ -93,13 +93,13 @@ var setUpCmd = &cobra.Command{
 		}()
 		isAdmin := exec.IsAdmin()
 		if AddUserCertData != nil {
-			fmt.Println("Adding user certificate, accept any dialog that appears...")
-			crt := cert.BytesToCertificate(AddUserCertData)
+			fmt.Println("Adding user certificate, authorize it if needed...")
+			crt := wrapper.BytesToCertificate(AddUserCertData)
 			if crt == nil {
 				fmt.Println("Failed to parse certificate")
 				os.Exit(internal.ErrUserCertAddParse)
 			}
-			if err := cert.TrustCertificate(true, crt); err == nil {
+			if err := wrapper.AddUserCert(crt); err == nil {
 				fmt.Println("Successfully added user certificate")
 				addedUserCert = true
 			} else {
@@ -178,13 +178,7 @@ var setUpCmd = &cobra.Command{
 				if isAdmin {
 					fmt.Println("Running config-admin to add local cert and/or host mappings...")
 				} else {
-					msgStr := "Running config-admin to add local cert and/or host mappings, "
-					if runtime.GOOS == "windows" {
-						msgStr += "accept any dialog that appears..."
-					} else {
-						msgStr += "authorize it if needed..."
-					}
-					fmt.Println(msgStr)
+					fmt.Println("Running config-admin to add local cert and/or host mappings, authorize it if needed...")
 				}
 			}
 			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData, cmd.MapCDN)
@@ -249,12 +243,12 @@ var setUpCmd = &cobra.Command{
 	},
 }
 
-func initSetUp() {
-	if cert.SupportsUserStore() {
+func InitSetUp() {
+	if runtime.GOOS != "linux" {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
-	if cert.SupportsUserStore() {
+	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(
 			&AddUserCertData,
 			"userCert",
@@ -299,5 +293,5 @@ func initSetUp() {
 	if err != nil {
 		panic(err)
 	}
-	rootCmd.AddCommand(setUpCmd)
+	RootCmd.AddCommand(setUpCmd)
 }

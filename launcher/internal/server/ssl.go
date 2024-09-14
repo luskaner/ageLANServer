@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
@@ -10,31 +11,17 @@ import (
 	"path/filepath"
 )
 
-func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	conf := &tls.Config{
-		InsecureSkipVerify: insecureSkipVerify,
-	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), conf)
-	if err != nil {
-		return nil
-	}
-	return conn
-}
-
 func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
-	conn := connectToServer(host, insecureSkipVerify)
-	if conn == nil {
-		return false
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	return conn != nil
+	// 22 exit code means the host could be accessed and ssl certificate was tested (if specified)
+	return HttpGet(fmt.Sprintf("https://%s", host), insecureSkipVerify) == 22
 }
 
 func ReadCertificateFromServer(host string) *x509.Certificate {
-	conn := connectToServer(host, true)
-	if conn == nil {
+	conf := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), conf)
+	if err != nil {
 		return nil
 	}
 	defer func() {

@@ -4,6 +4,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"golang.org/x/sys/windows"
 	"os"
+	"path/filepath"
 )
 
 var lock *windows.Overlapped
@@ -34,4 +35,8 @@ func unlockFile(file *os.File) (err error) {
 func flushDns() (result *exec.Result) {
 	result = exec.Options{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}.Exec()
 	return
+}
+
+func hostsPath() string {
+	return filepath.Join(os.Getenv("WINDIR"), "System32", "drivers", "etc", "hosts")
 }

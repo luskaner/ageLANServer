@@ -37,4 +37,5 @@ const (
 	ErrInvalidRevertCommand
 	ErrSetupCommand
 	ErrConfigCDNMap
+	ErrSteamRoot
 )

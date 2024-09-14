@@ -40,12 +40,13 @@ var (
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
 				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
 			if exec.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
-					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen to the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
+					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
 				}
 			}
 			host := viper.GetString("default.Host")

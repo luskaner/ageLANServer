@@ -5,6 +5,7 @@ package exec
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -22,9 +23,12 @@ func (options Options) exec() (result *Result) {
 	if options.AsAdmin {
 		args = append(args, adminArgs(options.Wait)...)
 	}
-	if shell := options.Shell || options.SpecialFile; shell {
+	if shell := options.Shell || options.ShowWindow; shell {
 		args = append(args, shellArgs()...)
 		joinArgsIndex = len(args)
+		if !options.UseWorkingPath {
+			args = append(args, []string{"cd", filepath.Dir(options.File), "&&"}...)
+		}
 	}
 	args = append(args, options.File)
 	args = append(args, options.Args...)
@@ -46,7 +50,7 @@ func shellArgs() []string {
 
 func startCmd(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
+		Setsid:     true,
 	}
 	return cmd.Start()
 }

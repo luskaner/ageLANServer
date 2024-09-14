@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/cert"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
+	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
 	"os"
@@ -19,7 +19,7 @@ import (
 
 func addUserCert(removedUserCert *x509.Certificate) bool {
 	fmt.Println("Adding previously removed user certificate")
-	if err := cert.TrustCertificate(true, removedUserCert); err == nil {
+	if err := wrapper.AddUserCert(removedUserCert); err == nil {
 		fmt.Println("Successfully added user certificate")
 		return true
 	} else {
@@ -65,7 +65,7 @@ func undoRevert(removedUserCert *x509.Certificate, restoredMetadata bool, restor
 var revertCmd = &cobra.Command{
 	Use:   "revert",
 	Short: "Reverts configuration",
-	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS server\n* Certificate to the user/local machine's trusted root store\n* User metadata\n* User profiles",
+	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata\n* User profiles",
 	Run: func(_ *cobra.Command, _ []string) {
 		var removedUserCert *x509.Certificate
 		var restoredMetadata bool
@@ -85,7 +85,7 @@ var revertCmd = &cobra.Command{
 			cmd.UnmapIPs = true
 			cmd.UnmapCDN = true
 			cmd.RemoveLocalCert = true
-			if cert.SupportsUserStore() {
+			if runtime.GOOS != "linux" {
 				RemoveUserCert = true
 			}
 			RestoreMetadata = true
@@ -93,8 +93,8 @@ var revertCmd = &cobra.Command{
 			reverseFailed = false
 		}
 		if RemoveUserCert {
-			fmt.Println("Removing user certificate, accept any dialog that appears...")
-			if removedUserCert, _ := cert.UntrustCertificate(true); removedUserCert != nil {
+			fmt.Println("Removing user certificate, authorize it if needed...")
+			if removedUserCert, _ := wrapper.RemoveUserCert(); removedUserCert != nil {
 				fmt.Println("Successfully removed user certificate")
 			} else {
 				fmt.Println("Failed to remove user certificate")
@@ -156,13 +156,7 @@ var revertCmd = &cobra.Command{
 				if isAdmin {
 					fmt.Println("Running config-admin to remove local cert and/or host mappings...")
 				} else {
-					msgStr := "Running config-admin to remove local cert and/or host mappings, "
-					if runtime.GOOS == "windows" {
-						msgStr += "accept any dialog that appears..."
-					} else {
-						msgStr += "authorize it if needed..."
-					}
-					fmt.Println(msgStr)
+					fmt.Println("Running config-admin to remove local cert and/or host mappings, authorize it if needed...")
 				}
 			}
 			err, exitCode := internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
@@ -239,9 +233,12 @@ var RestoreMetadata bool
 var RestoreProfiles bool
 var stopAgent bool
 
-func initRevert() {
+func InitRevert() {
+	if runtime.GOOS != "linux" {
+		storeString = "user/" + storeString
+	}
 	cmd.InitRevert(revertCmd)
-	if cert.SupportsUserStore() {
+	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(
 			&RemoveUserCert,
 			"userCert",
@@ -275,5 +272,5 @@ func initRevert() {
 	if err != nil {
 		panic(err)
 	}
-	rootCmd.AddCommand(revertCmd)
+	RootCmd.AddCommand(revertCmd)
 }

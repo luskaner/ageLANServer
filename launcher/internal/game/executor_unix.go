@@ -24,6 +24,6 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStorePro
 }
 
 func startUri(uri string) (result *commonExecutor.Result) {
-	result = commonExecutor.Options{File: openCommand(), Args: []string{uri}, Shell: true, SpecialFile: true}.Exec()
+	result = commonExecutor.Options{File: openCommand(), Args: []string{uri}, SpecialFile: true, Pid: true}.Exec()
 	return
 }

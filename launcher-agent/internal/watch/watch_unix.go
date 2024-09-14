@@ -3,26 +3,19 @@
 package watch
 
 import (
-	"golang.org/x/sys/unix"
+	"fmt"
 	"os"
-	"os/signal"
+	"time"
 )
 
 func waitForProcess(pid uint32) bool {
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, unix.SIGCHLD)
-
+	procPath := fmt.Sprintf("/proc/%d", pid)
 	for {
-		sig := <-sigc
-		if sig == unix.SIGCHLD {
-			var status unix.WaitStatus
-			_, err := unix.Wait4(int(pid), &status, unix.WNOHANG, nil)
-			if err != nil {
-				return false
-			}
-			if status.Exited() {
-				return true
-			}
+		if _, err := os.Stat(procPath); os.IsNotExist(err) {
+			return true
 		}
+		time.Sleep(10 * time.Second)
 	}
 }
+
+func rebroadcastBattleServer(_ *int) {}

@@ -7,9 +7,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 )
 
@@ -19,14 +17,8 @@ var hostRegExp = regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s+(?P<ho
 const hostEndMarking = "#" + common.Name
 
 func openHostsFile() (err error, f *os.File) {
-	var path string
-	if runtime.GOOS == "windows" {
-		path = filepath.Join(os.Getenv("WINDIR"), "System32", "drivers", "etc", "hosts")
-	} else {
-		path = "/etc/hosts"
-	}
 	f, err = os.OpenFile(
-		path,
+		hostsPath(),
 		os.O_RDWR,
 		0666,
 	)

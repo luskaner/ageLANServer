@@ -1,7 +1,6 @@
 package watch
 
 import (
-	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
 	"github.com/luskaner/aoe2DELanServer/common"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
@@ -37,19 +36,13 @@ func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broa
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(steamProcess, microsoftStoreProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
+		if serverExe != "-" {
+			_, _ = commonProcess.Kill(serverExe)
+		}
 		return
 	}
 	if broadcastBattleServer {
-		mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()
-		if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
-			if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
-				go func() {
-					_ = battle_server_broadcast.CloneAnnouncements(mostPriority, restInterfaces)
-				}()
-			} else {
-				*exitCode = internal.ErrBattleServerTimeOutStart
-			}
-		}
+		rebroadcastBattleServer(exitCode)
 	}
 	var PID uint32
 	for _, p := range processes {

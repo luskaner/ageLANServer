@@ -3,11 +3,13 @@ package main
 import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
+	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal/watch"
 	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"syscall"
 )
@@ -19,10 +21,21 @@ func main() {
 	if err := lock.Lock(); err != nil {
 		os.Exit(common.ErrPidLock)
 	}
-	steamProcess, _ := strconv.ParseBool(os.Args[1])
-	microsoftStoreProcess, _ := strconv.ParseBool(os.Args[2])
+	var steamProcess bool
+	if runtime.GOOS == "windows" {
+		steamProcess, _ = strconv.ParseBool(os.Args[1])
+	} else {
+		steamProcess = true
+	}
+	var microsoftStoreProcess bool
+	if runtime.GOOS == "windows" {
+		microsoftStoreProcess, _ = strconv.ParseBool(os.Args[2])
+	}
 	serverExe := os.Args[3]
-	broadcastBattleServer, _ := strconv.ParseBool(os.Args[4])
+	var broadcastBattleServer bool
+	if runtime.GOOS == "windows" {
+		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
+	}
 	revertCmdLength, _ := strconv.ParseInt(os.Args[5], 10, 64)
 	revertCmdEnd := revertCmdStart + revertCmdLength
 	var revertCmd []string
@@ -45,6 +58,9 @@ func main() {
 			}
 			if len(revertCmd) > 0 {
 				_ = launcherCommonExecutor.RunRevertCommand(revertCmd)
+			}
+			if serverExe != "-" {
+				_, _ = commonProcess.Kill(serverExe)
 			}
 			_ = lock.Unlock()
 			os.Exit(exitCode)

@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
-	"net/http"
 	"net/netip"
 	"os"
 	"path"
@@ -82,16 +80,7 @@ func GetExecutablePath(executable string) string {
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
-	client := HttpClient()
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
-	}
-	client.Transport = tr
-	resp, err := client.Get("https://" + host + "/test")
-	if err != nil {
-		return false
-	}
-	return resp.StatusCode == http.StatusOK
+	return HttpGet(fmt.Sprintf("https://%s/test", host), insecureSkipVerify) == common.ErrSuccess
 }
 
 func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
