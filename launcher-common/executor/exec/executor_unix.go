@@ -3,19 +3,62 @@
 package exec
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/hairyhenderson/go-which"
 	"golang.org/x/term"
+	"mvdan.cc/sh/v3/shell"
 	"os"
 )
 
+// Source: https://github.com/i3/i3/blob/next/i3-sensible-terminal
+var terminalApplications = []string{
+	"$TERMINAL",
+	"x-terminal-emulator",
+	"mate-terminal",
+	"gnome-terminal",
+	"terminator",
+	"xfce4-terminal",
+	"urxvt",
+	"rxvt",
+	"termit",
+	"Eterm",
+	"aterm",
+	"uxterm",
+	"xterm",
+	"roxterm",
+	"termite",
+	"lxterminal",
+	"terminology",
+	"st",
+	"qterminal",
+	"lilyterm",
+	"tilix",
+	"terminix",
+	"konsole",
+	"kitty",
+	"guake",
+	"tilda",
+	"alacritty",
+	"hyper",
+	"wezterm",
+	"rio",
+}
+
 func terminalArgs() []string {
-	switch {
-	case launcher_common.Ubuntu():
-		return []string{"x-terminal-emulator", "-e"}
-	case launcher_common.SteamOS():
-		return []string{"konsole", "-e"}
+	var terminal string
+	for _, executable := range terminalApplications {
+		expandedTerminal, err := shell.Expand(executable, nil)
+		if err != nil {
+			continue
+		}
+		terminal = which.Which(expandedTerminal)
+		if terminal != "" {
+			break
+		}
 	}
-	return nil
+	if terminal == "" {
+		return []string{}
+	}
+	return []string{terminal, "-e"}
 }
 
 func adminArgs(wait bool) []string {

@@ -2,185 +2,179 @@
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 version: 2
 builds:
-  - id: server_32
+  - id: server_32_windows
     main: ./server
     binary: server
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - "386"
-      - arm
-  - id: server_64
+    goos: [ windows ]
+    goarch: [ "386", arm ]
+  - id: server_32_linux
     main: ./server
     binary: server
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: server_64_full
+    goos: [ linux ]
+    goarch: [ "386", arm ]
+  - id: server_64_windows
+    main: ./server
+    binary: server
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: server_64_unix
+    main: ./server
+    binary: server
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: server_64_full_windows
     main: ./server
     binary: server/server
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: server-genCert_32
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: server_64_full_unix
+    main: ./server
+    binary: server/server
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: server-genCert_32_windows
     main: ./server-genCert
     binary: bin/genCert
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - "386"
-      - arm
-  - id: server-genCert_64
+    goos: [ windows ]
+    goarch: [ "386", arm ]
+  - id: server-genCert_32_linux
     main: ./server-genCert
     binary: bin/genCert
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: server-genCert_64_full
+    goos: [ linux ]
+    goarch: [ "386", arm ]
+  - id: server-genCert_64_windows
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: server-genCert_64_unix
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: server-genCert_64_full_windows
     main: ./server-genCert
     binary: server/bin/genCert
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: server-genCert_64_full_unix
+    main: ./server-genCert
+    binary: server/bin/genCert
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher_windows
     main: ./launcher
     binary: launcher
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher_full
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher_unix
+    main: ./launcher
+    binary: launcher
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher_full_windows
     main: ./launcher
     binary: launcher/launcher
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-agent
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher_full_unix
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-agent_windows
     main: ./launcher-agent
     binary: bin/agent
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-agent_full
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-agent_unix
+    main: ./launcher-agent
+    binary: bin/agent
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-agent_full_windows
     main: ./launcher-agent
     binary: launcher/bin/agent
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-agent_full_unix
+    main: ./launcher-agent
+    binary: launcher/bin/agent
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config_windows
     main: ./launcher-config
     binary: bin/config
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config_full
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config_unix
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config_full_windows
     main: ./launcher-config
     binary: launcher/bin/config
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config-admin
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config_full_unix
+    main: ./launcher-config
+    binary: launcher/bin/config
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin_windows
     main: ./launcher-config-admin
     binary: bin/config-admin
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config-admin_full
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin_unix
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin_full_windows
     main: ./launcher-config-admin
     binary: launcher/bin/config-admin
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config-admin-agent
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin_full_unix
+    main: ./launcher-config-admin
+    binary: launcher/bin/config-admin
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin-agent_windows
     main: ./launcher-config-admin-agent
     binary: bin/config-admin-agent
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-  - id: launcher-config-admin-agent_full
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin-agent_unix
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin-agent_full_windows
     main: ./launcher-config-admin-agent
     binary: launcher/bin/config-admin-agent
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
+    goos: [ windows ]
+    goarch: [ amd64, arm64 ]
+  - id: launcher-config-admin-agent_full_unix
+    main: ./launcher-config-admin-agent
+    binary: launcher/bin/config-admin-agent
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
 archives:
-  - id: all
+  - id: all_windows
     builds:
-      - server_64_full
-      - server-genCert_64_full
-      - launcher_full
-      - launcher-agent_full
-      - launcher-config_full
-      - launcher-config-admin_full
-      - launcher-config-admin-agent_full
+      - server_64_full_windows
+      - server-genCert_64_full_windows
+      - launcher_full_windows
+      - launcher-agent_full_windows
+      - launcher-config_full_windows
+      - launcher-config-admin_full_windows
+      - launcher-config-admin-agent_full_windows
     name_template: >-
       {{- .ProjectName }}_full_
-      {{- .RawVersion }}_
-      {{- with .Os }}
-        {{- if eq . "windows"}}win
-        {{- else if eq . "darwin"}}mac
-        {{- else }}{{ . }}
-        {{- end }}
-      {{- end}}
+      {{- .RawVersion }}_win
       {{- if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
@@ -198,22 +192,62 @@ archives:
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
       - launcher/resources
-      - src: launcher-config/resources/cleanup.{{ if eq .Os "windows" }}bat{{ else }}sh{{ end }}
+      - src: launcher-config/resources/cleanup.bat
         dst: launcher/cleanup.bat
-    format_overrides:
-      - goos: windows
-        format: zip
-  - id: server
-    builds: [ server_32, server-genCert_32, server_64, server-genCert_64 ]
+    format: zip
+  - id: all_unix
+    builds:
+      - server_64_full_unix
+      - server-genCert_64_full_unix
+      - launcher_full_unix
+      - launcher-agent_full_unix
+      - launcher-config_full_unix
+      - launcher-config-admin_full_unix
+      - launcher-config-admin-agent_full_unix
     name_template: >-
-      {{- .ProjectName }}_server_
+      {{- .ProjectName }}_full_
       {{- .RawVersion }}_
       {{- with .Os }}
-        {{- if eq . "windows"}}win
-        {{- else if eq . "darwin"}}mac
+        {{- if eq . "darwin"}}mac
         {{- else }}{{ . }}
         {{- end }}
-      {{- end}}
+      {{- end }}
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    files:
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: README.md
+        dst: docs/README
+      - src: server/README.md
+        dst: server/docs/README
+      - server/resources/config
+      - src: server/resources/unix/server.sh
+        dst: server/server.sh
+        info:
+          - mode: 744
+      - server/resources/responses
+      - src: launcher/README.md
+        dst: launcher/docs/README
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config
+      - launcher/resources
+      - src: launcher/resources/unix/launcher.sh
+      - dst: launcher/launcher.sh
+        info:
+          - mode: 744
+      - src: launcher-config/resources/cleanup.sh
+        dst: launcher/cleanup.sh
+  - id: server_windows
+    builds:
+      - server_32_windows
+      - server-genCert_32_windows
+      - server_64_windows
+      - server-genCert_64_windows
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_win
       {{- if eq .Arch "386" }}_x86-32
       {{- else if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm" }}_arm32
@@ -228,11 +262,43 @@ archives:
         dst: docs/LICENSE.txt
       - src: README.md
         dst: docs/README.txt
-    format_overrides:
-      - goos: windows
-        format: zip
-  - id: launcher
-    builds: [ launcher, launcher-agent, launcher-config, launcher-config-admin, launcher-config-admin-agent ]
+    format: zip
+  - id: server_unix
+    builds: [ server_32_linux, server-genCert_32_linux, server_64_unix, server-genCert_64_unix ]
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_
+      {{- with .Os }}
+        {{- else if eq . "darwin"}}mac
+        {{- else }}{{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if eq .Arch "386" }}_x86-32
+      {{- else if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm" }}_arm32
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    files:
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/unix/launcher.sh
+        dst: server.sh
+        info:
+          - mode: 744
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: README.md
+        dst: docs/README
+    allow_different_binary_count: true
+  - id: launcher_windows
+    builds:
+      - launcher_windows
+      - launcher-agent_windows
+      - launcher-config_windows
+      - launcher-config-admin_windows
+      - launcher-config-admin-agent_windows
     files:
       - src: launcher/resources
         dst: resources
@@ -242,64 +308,89 @@ archives:
         dst: docs/README.txt
       - src: launcher-config/README.md
         dst: docs/README-config.txt
-      - src: launcher-config/resources/cleanup.{{ if eq .Os "windows" }}bat{{ else }}sh{{ end }}
-        strip_parent: true
+      - src: launcher-config/resources/cleanup.bat
+        dst: cleanup.bat
+    name_template: >-
+      {{- .ProjectName }}_launcher_
+      {{- .RawVersion }}_win
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    format: zip
+  - id: launcher_unix
+    builds:
+      - launcher_unix
+      - launcher-agent_unix
+      - launcher-config_unix
+      - launcher-config-admin_unix
+      - launcher-config-admin-agent_unix
+    files:
+      - src: launcher/resources/config.ini
+        dst: resources/config.ini
+      - src: launcher/resources/unix/launcher.sh
+        dst: launcher.sh
+        info:
+          - mode: 744
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: launcher/README.md
+        dst: docs/README
+      - src: launcher-config/README.md
+        dst: docs/README-config
+      - src: launcher-config/resources/cleanup.sh
+        dst: cleanup.sh
     name_template: >-
       {{- .ProjectName }}_launcher_
       {{- .RawVersion }}_
       {{- with .Os }}
-        {{- if eq . "windows"}}win
         {{- else if eq . "darwin"}}mac
         {{- else }}{{ . }}
         {{- end }}
-      {{- end}}
+      {{- end }}
       {{- if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
-    format_overrides:
-      - goos: windows
-        format: zip
 universal_binaries:
-  - id: server_64
+  - id: server_64_unix
     name_template: 'server'
     replace: true
-  - id: server-genCert_64
+  - id: server-genCert_64_unix
     name_template: 'bin/genCert'
     replace: true
-  - id: server_64_full
+  - id: server_64_full_unix
     name_template: 'server/server'
     replace: true
-  - id: server-genCert_64_full
+  - id: server-genCert_64_full_unix
     name_template: 'server/bin/genCert'
     replace: true
-  - id: launcher
+  - id: launcher_unix
     name_template: 'launcher'
     replace: true
-  - id: launcher-agent
+  - id: launcher-agent_unix
     name_template: 'bin/agent'
     replace: true
-  - id: launcher-config
+  - id: launcher-config_unix
     name_template: 'bin/config'
     replace: true
-  - id: launcher-config-admin
+  - id: launcher-config-admin_unix
     name_template: 'bin/config-admin'
     replace: true
-  - id: launcher-config-admin-agent
+  - id: launcher-config-admin-agent_unix
     name_template: 'bin/config-admin-agent'
     replace: true
-  - id: launcher_full
+  - id: launcher_full_unix
     name_template: 'launcher/launcher'
     replace: true
-  - id: launcher-agent_full
+  - id: launcher-agent_full_unix
     name_template: 'launcher/bin/agent'
     replace: true
-  - id: launcher-config_full
+  - id: launcher-config_full_unix
     name_template: 'launcher/bin/config'
     replace: true
-  - id: launcher-config-admin_full
+  - id: launcher-config-admin_full_unix
     name_template: 'launcher/bin/config-admin'
     replace: true
-  - id: launcher-config-admin-agent_full
+  - id: launcher-config-admin-agent_full_unix
     name_template: 'launcher/bin/config-admin-agent'
     replace: true
 checksum:

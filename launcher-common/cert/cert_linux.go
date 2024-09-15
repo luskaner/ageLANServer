@@ -6,49 +6,60 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/hairyhenderson/go-which"
 	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"io"
 	"os"
+	"path"
 )
 
+var updateStoreBinaries = []string{
+	// Debian, OpenSUSE
+	"update-ca-certificates",
+	// Fedora, Arch Linux
+	"update-ca-trust",
+}
+
+var certStorePaths = []string{
+	// Arch
+	"/etc/ca-certificates/trust-source/anchors",
+	// Debian
+	"/usr/local/share/ca-certificates",
+	// Fedora
+	"/etc/pki/ca-trust/source/anchors",
+	// OpenSUSE
+	"/etc/pki/trust/anchors",
+}
+
 func updateStore() error {
-	options := exec.Options{
+	binary := which.Which(updateStoreBinaries...)
+	if binary == "" {
+		return fmt.Errorf("update store binary not found")
+	}
+	return exec.Options{
+		File:        binary,
 		SpecialFile: true,
 		AsAdmin:     true,
 		Wait:        true,
 		ExitCode:    true,
-	}
-	switch {
-	case launcher_common.Ubuntu():
-		options.File = "update-ca-certificates"
-	case launcher_common.SteamOS():
-		options.File = "trust extract-compat"
-	}
-	return options.Exec().Err
+	}.Exec().Err
 }
 
 func getCertPath() (err error, certPath string) {
-	var storePath string
-	switch {
-	case launcher_common.Ubuntu():
-		storePath = "/usr/local/share/ca-certificates"
-	case launcher_common.SteamOS():
-		storePath = "/etc/ca-certificates/trust-source/anchors"
+	var stat os.FileInfo
+	var foundPath string
+	for _, dir := range certStorePaths {
+		if stat, err = os.Stat(dir); err == nil && stat.IsDir() {
+			foundPath = dir
+			break
+		}
 	}
-
-	if storePath == "" {
-		err = fmt.Errorf("unsupported OS")
+	if foundPath == "" {
+		err = fmt.Errorf("cert store not found")
 		return
 	}
-
-	if _, err = os.Stat(storePath); os.IsNotExist(err) {
-		err = fmt.Errorf("store path does not exist")
-		return
-	}
-
-	certPath = fmt.Sprintf("%s/%s.crt", storePath, common.Domain)
+	certPath = path.Join(foundPath, fmt.Sprintf("%s.crt", common.Domain))
 	return
 }
 

@@ -14,7 +14,7 @@ func OpenUri() string {
 }
 
 func GameInstalled() bool {
-	p := HomeDirPath()
+	p := ConfigPath()
 	if p == "" {
 		return false
 	}
