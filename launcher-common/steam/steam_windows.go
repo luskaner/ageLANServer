@@ -2,7 +2,7 @@ package steam
 
 import "golang.org/x/sys/windows/registry"
 
-func HomeDirPath() (path string) {
+func ConfigPath() (path string) {
 	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam`, registry.QUERY_VALUE)
 	if err != nil {
 		return
