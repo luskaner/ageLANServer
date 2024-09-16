@@ -10,7 +10,7 @@ Steam or Xbox Live, depending on the platform and version, to fully play offline
 
 ## System Requirements
 
-- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) are with official Steam installations are preferred. *arm64*
+- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations are preferred. *arm64*
   variant need a compatilibity layer to run
   x86-64 programs.
 - macOS: Catalina (v10.15) or higher.
