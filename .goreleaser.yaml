@@ -440,8 +440,10 @@ archives:
     builds:
       - server_32_windows
       - server-genCert_32_windows
-      - server_64_windows
-      - server-genCert_64_windows
+      - server_64_windows_amd64
+      - server_64_windows_arm64
+      - server-genCert_64_windows_amd64
+      - server-genCert_64_windows_arm64
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_win
