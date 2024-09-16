@@ -68,8 +68,9 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- SteamOS: 3.
-- Ubuntu: 24.04 LTS (x86-64/arm64).
+- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) are with official Steam installations are preferred. *arm64*
+  variant need a compatilibity layer to run
+  x86-64 programs.
 - macOS: Catalina (v10.15) or higher.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
@@ -80,7 +81,7 @@ admin rights elevation.**
 
 #### Buildable (Experimental)
 
-Other 64-bit architecture variants of Ubuntu 24.04 LTS.
+Other 64-bit architecture variants of linux as long as it has a compatibility layer to run x86-64 programs.
 
 ### Client
 
@@ -98,19 +99,19 @@ The following archives are provided:
 * Full:
     * Windows:
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
-        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.zip
+        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
     * macOS - Catalina (v10.15) or higher: aoe2DELanServer_full_*A.B.C*_mac.tar.gz
-    * SteamOS/Ubuntu:
-        * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.zip
-        * **Arm64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.zip
+    * GNU/Linux::
+        * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
+        * **Arm64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
-        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.zip
+        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
     * macOS - Catalina (v10.15) or higher: aoe2DELanServer_launcher_*A.B.C*_mac.tar.gz
-    * SteamOS/Ubuntu:
-        * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.zip
-        * **Arm64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.zip
+    * GNU/Linux:
+        * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.tar.xz
+        * **Arm64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
         * **10 (or higher) on Arm (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
@@ -118,11 +119,11 @@ The following archives are provided:
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
         * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
     * Linux:
-        * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.gz
-        * Kernel 3.1 or higher with **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.gz
-        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.gz
+        * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
+        * Kernel 3.1 or higher with **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.xz
+        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.xz
+        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.xz
+    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.xz
 
 *Note: If you are using Antivirus it may flag one or more executables as virus, this is
 a **false positive***.
@@ -188,7 +189,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
    file**
    and modify
-   the `Client.Executable` section to point to the game launcher path, e.g `C:\AoE2DE\launcher` (no quotes needed).
+   the `Client.Executable` section to point to the game launcher path.
    You will need to use a custom launcher for 100% offline play.
 4. **Execute `launcher/launcher`**: you will be asked for admin elevation and confirmation of other dialogs as
    needed, you

@@ -18,7 +18,7 @@ Resides in `bin` subdirectory.
 CLI is available. You can see the available options with
 `config -h`.
 
-You may run `cleanup.bat` to revert all changes (forced).
+You may run `cleanup` to revert all changes (forced).
 
 ## Exit Codes
 

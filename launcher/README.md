@@ -10,8 +10,9 @@ Steam or Xbox Live, depending on the platform and version, to fully play offline
 
 ## System Requirements
 
-- SteamOS: 3.
-- Ubuntu: 24.04 LTS (x86-64/arm64).
+- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) are with official Steam installations are preferred. *arm64*
+  variant need a compatilibity layer to run
+  x86-64 programs.
 - macOS: Catalina (v10.15) or higher.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
@@ -22,7 +23,7 @@ admin rights elevation.**
 
 #### Buildable (Experimental)
 
-Other 64-bit architecture variants of Ubuntu 24.04 LTS.
+Other 64-bit architecture variants of linux as long as it has a compatibility layer to run x86-64 programs.
 
 ## Features
 
