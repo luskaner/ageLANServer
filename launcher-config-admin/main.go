@@ -20,6 +20,7 @@ func main() {
 	if !parentCheck.ParentMatches() {
 		fmt.Printf("This program should only be run through \"%s\", not directly. You can use the same arguments and more.\n", common.LauncherConfig)
 	}
+	common.ChdirToExe()
 	cmd.Version = version
 	err := cmd.Execute()
 	if err != nil {

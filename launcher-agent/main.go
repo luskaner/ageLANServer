@@ -21,6 +21,7 @@ func main() {
 	if err := lock.Lock(); err != nil {
 		os.Exit(common.ErrPidLock)
 	}
+	common.ChdirToExe()
 	var steamProcess bool
 	if runtime.GOOS == "windows" {
 		steamProcess, _ = strconv.ParseBool(os.Args[1])
