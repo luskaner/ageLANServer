@@ -68,7 +68,8 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations are preferred. *arm64*
+- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations on x86-64 are preferred.
+  *arm64*
   variant need a compatilibity layer to run
   x86-64 programs.
 - macOS: Catalina (v10.15) or higher.
