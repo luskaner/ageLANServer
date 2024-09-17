@@ -118,7 +118,9 @@ The following archives are provided:
         * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
     * Linux:
         * **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
-        * Kernel 3.1 or higher with **Arm32**: aoe2DELanServer_server_*A.B.C*_linux_arm32.tar.xz
+        * Kernel 3.1 or higher with **Arm32**:
+            * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_armel.tar.xz
+            * ARMv6 (armhf): aoe2DELanServer_server_*A.B.C*_linux_armhf.tar.xz
         * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.xz
         * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.xz
     * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.xz

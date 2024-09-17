@@ -11,7 +11,6 @@ import (
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"net"
-	"os"
 	"time"
 )
 
@@ -92,9 +91,6 @@ func ConnectAgentIfNeededWithRetries(retryUntilSuccess bool) bool {
 func ConnectAgentIfNeeded() (err error) {
 	if ipc != nil {
 		return
-	}
-	if _, err := os.Stat(launcherCommon.ConfigAdminIpcName()); err == nil {
-		_ = os.Remove(launcherCommon.ConfigAdminIpcName())
 	}
 	var conn net.Conn
 	conn, err = net.Dial("unix", launcherCommon.ConfigAdminIpcName())

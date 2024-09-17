@@ -7,16 +7,19 @@ builds:
     binary: server
     goos: [ windows ]
     goarch: [ "386", arm ]
+    goarm: [ "7" ]
   - id: server_32_linux
     main: ./server
     binary: server
     goos: [ linux ]
     goarch: [ "386", arm ]
+    goarm: [ "5", "6" ]
   - id: server_64_windows_amd64
     main: ./server
     binary: server
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: server_64_windows_arm64
     main: ./server
     binary: server
@@ -27,16 +30,19 @@ builds:
     binary: server
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: server_64_macos
     main: ./server
     binary: server
     goos: [ darwin ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: server_64_full_windows_amd64
     main: ./server
     binary: server/server
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: server_64_full_windows_arm64
     main: ./server
     binary: server/server
@@ -47,21 +53,26 @@ builds:
     binary: server/server
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: server-genCert_32_windows
     main: ./server-genCert
     binary: bin/genCert
     goos: [ windows ]
     goarch: [ "386", arm ]
+    goamd64: [ "v1" ]
+    goarm: [ "7" ]
   - id: server-genCert_32_linux
     main: ./server-genCert
     binary: bin/genCert
     goos: [ linux ]
     goarch: [ "386", arm ]
+    goarm: [ "5", "6" ]
   - id: server-genCert_64_windows_amd64
     main: ./server-genCert
     binary: bin/genCert
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: server-genCert_64_windows_arm64
     main: ./server-genCert
     binary: bin/genCert
@@ -72,6 +83,7 @@ builds:
     binary: bin/genCert
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: server-genCert_64_macos
     main: ./server-genCert
     binary: bin/genCert
@@ -82,6 +94,7 @@ builds:
     binary: server/bin/genCert
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: server-genCert_64_full_windows_arm64
     main: ./server-genCert
     binary: server/bin/genCert
@@ -92,11 +105,13 @@ builds:
     binary: server/bin/genCert
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher_windows_amd64
     main: ./launcher
     binary: launcher
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher_windows_arm64
     main: ./launcher
     binary: launcher
@@ -107,11 +122,13 @@ builds:
     binary: launcher
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher_full_windows_amd64
     main: ./launcher
     binary: launcher/launcher
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher_full_windows_arm64
     main: ./launcher
     binary: launcher/launcher
@@ -122,11 +139,13 @@ builds:
     binary: launcher/launcher
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-agent_windows_amd64
     main: ./launcher-agent
     binary: bin/agent
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-agent_windows_arm64
     main: ./launcher-agent
     binary: bin/agent
@@ -137,11 +156,13 @@ builds:
     binary: bin/agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-agent_full_windows_amd64
     main: ./launcher-agent
     binary: launcher/bin/agent
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-agent_full_windows_arm64
     main: ./launcher-agent
     binary: launcher/bin/agent
@@ -152,11 +173,13 @@ builds:
     binary: launcher/bin/agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config_windows_amd64
     main: ./launcher-config
     binary: bin/config
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config_windows_arm64
     main: ./launcher-config
     binary: bin/config
@@ -167,11 +190,13 @@ builds:
     binary: bin/config
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config_full_windows_amd64
     main: ./launcher-config
     binary: launcher/bin/config
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config_full_windows_arm64
     main: ./launcher-config
     binary: launcher/bin/config
@@ -182,11 +207,13 @@ builds:
     binary: launcher/bin/config
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin_windows_amd64
     main: ./launcher-config-admin
     binary: bin/config-admin
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin_windows_arm64
     main: ./launcher-config-admin
     binary: bin/config-admin
@@ -197,11 +224,13 @@ builds:
     binary: bin/config-admin
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin_full_windows_amd64
     main: ./launcher-config-admin
     binary: launcher/bin/config-admin
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin_full_windows_arm64
     main: ./launcher-config-admin
     binary: launcher/bin/config-admin
@@ -212,11 +241,13 @@ builds:
     binary: launcher/bin/config-admin
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin-agent_windows_amd64
     main: ./launcher-config-admin-agent
     binary: bin/config-admin-agent
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin-agent_windows_arm64
     main: ./launcher-config-admin-agent
     binary: bin/config-admin-agent
@@ -227,11 +258,13 @@ builds:
     binary: bin/config-admin-agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin-agent_full_windows_amd64
     main: ./launcher-config-admin-agent
     binary: launcher/bin/config-admin-agent
     goos: [ windows ]
     goarch: [ amd64 ]
+    goamd64: [ "v1" ]
   - id: launcher-config-admin-agent_full_windows_arm64
     main: ./launcher-config-admin-agent
     binary: launcher/bin/config-admin-agent
@@ -242,6 +275,7 @@ builds:
     binary: launcher/bin/config-admin-agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
 archives:
   - id: all_windows_amd64
     builds:
@@ -376,7 +410,8 @@ archives:
       {{- .RawVersion }}_linux
       {{- if eq .Arch "386" }}_x86-32
       {{- else if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arch "arm" }}_arm32
+      {{- else if eq .Arm "5" }}_armel
+      {{- else if eq .Arm "6" }}_armhf
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
     files:
