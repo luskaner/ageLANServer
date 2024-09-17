@@ -7,7 +7,7 @@ This executable makes and revert configuration changes and is executed by `launc
 - Isolated metadata directory.
 - Isolated profiles directory.
 - Hosts file (via `config-admin`).
-- Install of a self-signed certificate for the current user (only macOS/Windows) or local (in this case via
+- Install of a self-signed certificate for the current user (only on Windows) or local (in this case via
   `config-admin`).
 
 It is also responsible for managing the lifecycle and communicating with `config-admin-agent`.

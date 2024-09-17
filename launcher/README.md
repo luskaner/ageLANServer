@@ -14,7 +14,6 @@ Steam or Xbox Live, depending on the platform and version, to fully play offline
   *arm64*
   variant need a compatilibity layer to run
   x86-64 programs.
-- macOS: Catalina (v10.15) or higher.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
 

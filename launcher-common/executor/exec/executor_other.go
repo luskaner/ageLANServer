@@ -3,16 +3,13 @@
 package exec
 
 import (
+	"golang.org/x/term"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
 )
-
-func IsAdmin() bool {
-	return os.Geteuid() == 0
-}
 
 func (options Options) exec() (result *Result) {
 	var args []string
@@ -50,7 +47,14 @@ func shellArgs() []string {
 
 func startCmd(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid:     true,
+		Setsid: true,
 	}
 	return cmd.Start()
+}
+
+func adminArgs(wait bool) []string {
+	if !wait || !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
+		return visualAdminArgs()
+	}
+	return []string{"sudo", "-EH"}
 }

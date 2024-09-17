@@ -7,7 +7,6 @@ require (
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41
 	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240831201030-0c83ebf31288
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sys v0.24.0
 )
 
 require (

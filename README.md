@@ -72,7 +72,6 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
   *arm64*
   variant need a compatilibity layer to run
   x86-64 programs.
-- macOS: Catalina (v10.15) or higher.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
 
@@ -101,7 +100,6 @@ The following archives are provided:
     * Windows:
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
         * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
-    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_full_*A.B.C*_mac.tar.gz
     * GNU/Linux::
         * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
         * **Arm64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
@@ -109,7 +107,6 @@ The following archives are provided:
     * Windows:
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
         * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
-    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_launcher_*A.B.C*_mac.tar.gz
     * GNU/Linux:
         * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.tar.xz
         * **Arm64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz

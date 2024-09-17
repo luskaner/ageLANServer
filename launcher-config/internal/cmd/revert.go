@@ -4,9 +4,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
@@ -79,7 +79,7 @@ var revertCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		isAdmin := exec.IsAdmin()
+		isAdmin := executor.IsAdmin()
 		reverseFailed := true
 		if cmd.RemoveAll {
 			cmd.UnmapIPs = true

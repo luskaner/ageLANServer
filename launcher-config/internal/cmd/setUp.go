@@ -4,10 +4,10 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
@@ -91,7 +91,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		isAdmin := exec.IsAdmin()
+		isAdmin := executor.IsAdmin()
 		if AddUserCertData != nil {
 			fmt.Println("Adding user certificate, authorize it if needed...")
 			crt := wrapper.BytesToCertificate(AddUserCertData)

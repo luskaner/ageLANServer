@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 )
@@ -11,7 +12,7 @@ import (
 func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if !exec.IsAdmin() {
+	if !executor.IsAdmin() {
 		args = append(args, "-g")
 		if exitAgentOnError {
 			args = append(args, "-e")
@@ -53,7 +54,7 @@ func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restore
 
 func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
 	args := make([]string, 0)
-	if !exec.IsAdmin() {
+	if !executor.IsAdmin() {
 		args = append(args, "-g")
 	}
 	if unmapIPs {

@@ -47,11 +47,6 @@ builds:
     binary: server/server
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: server_64_full_macos
-    main: ./server
-    binary: server/server
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: server-genCert_32_windows
     main: ./server-genCert
     binary: bin/genCert
@@ -97,11 +92,6 @@ builds:
     binary: server/bin/genCert
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: server-genCert_64_full_macos
-    main: ./server-genCert
-    binary: server/bin/genCert
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher_windows_amd64
     main: ./launcher
     binary: launcher
@@ -116,11 +106,6 @@ builds:
     main: ./launcher
     binary: launcher
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-  - id: launcher_macos
-    main: ./launcher
-    binary: launcher
-    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
   - id: launcher_full_windows_amd64
     main: ./launcher
@@ -137,11 +122,6 @@ builds:
     binary: launcher/launcher
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: launcher_full_macos
-    main: ./launcher
-    binary: launcher/launcher
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher-agent_windows_amd64
     main: ./launcher-agent
     binary: bin/agent
@@ -156,11 +136,6 @@ builds:
     main: ./launcher-agent
     binary: bin/agent
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-  - id: launcher-agent_macos
-    main: ./launcher-agent
-    binary: bin/agent
-    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
   - id: launcher-agent_full_windows_amd64
     main: ./launcher-agent
@@ -177,11 +152,6 @@ builds:
     binary: launcher/bin/agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: launcher-agent_full_macos
-    main: ./launcher-agent
-    binary: launcher/bin/agent
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher-config_windows_amd64
     main: ./launcher-config
     binary: bin/config
@@ -196,11 +166,6 @@ builds:
     main: ./launcher-config
     binary: bin/config
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-  - id: launcher-config_macos
-    main: ./launcher-config
-    binary: bin/config
-    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
   - id: launcher-config_full_windows_amd64
     main: ./launcher-config
@@ -217,11 +182,6 @@ builds:
     binary: launcher/bin/config
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: launcher-config_full_macos
-    main: ./launcher-config
-    binary: launcher/bin/config
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher-config-admin_windows_amd64
     main: ./launcher-config-admin
     binary: bin/config-admin
@@ -236,11 +196,6 @@ builds:
     main: ./launcher-config-admin
     binary: bin/config-admin
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-  - id: launcher-config-admin_macos
-    main: ./launcher-config-admin
-    binary: bin/config-admin
-    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
   - id: launcher-config-admin_full_windows_amd64
     main: ./launcher-config-admin
@@ -257,11 +212,6 @@ builds:
     binary: launcher/bin/config-admin
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: launcher-config-admin_full_macos
-    main: ./launcher-config-admin
-    binary: launcher/bin/config-admin
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher-config-admin-agent_windows_amd64
     main: ./launcher-config-admin-agent
     binary: bin/config-admin-agent
@@ -277,11 +227,6 @@ builds:
     binary: bin/config-admin-agent
     goos: [ linux ]
     goarch: [ amd64, arm64 ]
-  - id: launcher-config-admin-agent_macos
-    main: ./launcher-config-admin-agent
-    binary: bin/config-admin-agent
-    goos: [ darwin ]
-    goarch: [ amd64, arm64 ]
   - id: launcher-config-admin-agent_full_windows_amd64
     main: ./launcher-config-admin-agent
     binary: launcher/bin/config-admin-agent
@@ -296,11 +241,6 @@ builds:
     main: ./launcher-config-admin-agent
     binary: launcher/bin/config-admin-agent
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-  - id: launcher-config-admin-agent_full_macos
-    main: ./launcher-config-admin-agent
-    binary: launcher/bin/config-admin-agent
-    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
 archives:
   - id: all_windows_amd64
@@ -403,39 +343,6 @@ archives:
         info:
           mode: 0744
     format: tar.xz
-  - id: all_macos
-    builds:
-      - server_64_full_macos
-      - server-genCert_64_full_macos
-      - launcher_full_macos
-      - launcher-agent_full_macos
-      - launcher-config_full_macos
-      - launcher-config-admin_full_macos
-      - launcher-config-admin-agent_full_macos
-    name_template: >-
-      {{- .ProjectName }}_full_
-      {{- .RawVersion }}_mac
-      {{- if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arch "arm64" }}_arm64
-      {{- end }}
-    files:
-      - src: LICENSE
-        dst: docs/LICENSE
-      - src: README.md
-        dst: docs/README
-      - src: server/README.md
-        dst: server/docs/README
-      - server/resources/config
-      - server/resources/responses
-      - src: launcher/README.md
-        dst: launcher/docs/README
-      - src: launcher-config/README.md
-        dst: launcher/docs/README-config
-      - launcher/resources/config.ini
-      - src: launcher-config/resources/unix/cleanup.sh
-        dst: launcher/cleanup.command
-        info:
-          mode: 0744
   - id: server_windows
     builds:
       - server_32_windows
@@ -497,6 +404,7 @@ archives:
       {{- .RawVersion }}_mac
       {{- if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
+      {{- else }}
       {{- end }}
     files:
       - src: server/resources/config
@@ -578,32 +486,6 @@ archives:
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
     format: tar.xz
-  - id: launcher_macos
-    builds:
-      - launcher_macos
-      - launcher-agent_macos
-      - launcher-config_macos
-      - launcher-config-admin_macos
-      - launcher-config-admin-agent_macos
-    files:
-      - src: launcher/resources/config.ini
-        dst: resources/config.ini
-      - src: LICENSE
-        dst: docs/LICENSE
-      - src: launcher/README.md
-        dst: docs/README
-      - src: launcher-config/README.md
-        dst: docs/README-config
-      - src: launcher-config/resources/unix/cleanup.sh
-        dst: cleanup.command
-        info:
-          mode: 0744
-    name_template: >-
-      {{- .ProjectName }}_launcher_
-      {{- .RawVersion }}_mac
-      {{- if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arch "arm64" }}_arm64
-      {{- end }}
 universal_binaries:
   - id: server_64_macos
     name_template: 'server'
@@ -611,45 +493,9 @@ universal_binaries:
   - id: server-genCert_64_macos
     name_template: 'bin/genCert'
     replace: true
-  - id: server_64_full_macos
-    name_template: 'server/server'
-    replace: true
-  - id: server-genCert_64_full_macos
-    name_template: 'server/bin/genCert'
-    replace: true
-  - id: launcher_macos
-    name_template: 'launcher'
-    replace: true
-  - id: launcher-agent_macos
-    name_template: 'bin/agent'
-    replace: true
-  - id: launcher-config_macos
-    name_template: 'bin/config'
-    replace: true
-  - id: launcher-config-admin_macos
-    name_template: 'bin/config-admin'
-    replace: true
-  - id: launcher-config-admin-agent_macos
-    name_template: 'bin/config-admin-agent'
-    replace: true
-  - id: launcher_full_macos
-    name_template: 'launcher/launcher'
-    replace: true
-  - id: launcher-agent_full_macos
-    name_template: 'launcher/bin/agent'
-    replace: true
-  - id: launcher-config_full_macos
-    name_template: 'launcher/bin/config'
-    replace: true
-  - id: launcher-config-admin_full_macos
-    name_template: 'launcher/bin/config-admin'
-    replace: true
-  - id: launcher-config-admin-agent_full_macos
-    name_template: 'launcher/bin/config-admin-agent'
-    replace: true
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
 signs:
   - artifacts: checksum
-    cmd: gpg2
+    cmd: gpg
     args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]

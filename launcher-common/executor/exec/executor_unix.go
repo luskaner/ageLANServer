@@ -4,9 +4,7 @@ package exec
 
 import (
 	"github.com/hairyhenderson/go-which"
-	"golang.org/x/term"
 	"mvdan.cc/sh/v3/shell"
-	"os"
 )
 
 // Source: https://github.com/i3/i3/blob/next/i3-sensible-terminal
@@ -61,9 +59,6 @@ func terminalArgs() []string {
 	return []string{terminal, "-e"}
 }
 
-func adminArgs(wait bool) []string {
-	if !wait || !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
-		return []string{"pkexec", "--keep-cwd"}
-	}
-	return []string{"sudo", "-EH"}
+func visualAdminArgs() []string {
+	return []string{"pkexec", "--keep-cwd"}
 }

@@ -5,8 +5,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/inconshreveable/mousetrap"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
@@ -59,7 +59,7 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			isAdmin := commonExecutor.IsAdmin()
+			isAdmin := executor.IsAdmin()
 			errorMayBeConfig := false
 			var errorCode = common.ErrSuccess
 			defer func() {
@@ -67,7 +67,7 @@ var (
 				os.Exit(errorCode)
 			}()
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
-			if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
+			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")
 			}
 			if !canTrustCertificateValues.Contains(canTrustCertificate) {
@@ -280,7 +280,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
-	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+	if runtime.GOOS == "windows" {
 		canTrustCertificateStr += `, "user"`
 	}
 	canTrustCertificateStr += ` or local (will require admin privileges)`

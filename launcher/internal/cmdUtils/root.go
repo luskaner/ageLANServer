@@ -3,6 +3,7 @@ package cmdUtils
 import (
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
+	commonExecutor "github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
 	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
@@ -64,7 +65,7 @@ func (c *Config) SetRevertCommand(cmd []string) {
 }
 
 func (c *Config) CfgAgentStarted() bool {
-	return !exec.IsAdmin() && c.startedAgent
+	return !commonExecutor.IsAdmin() && c.startedAgent
 }
 
 func (c *Config) RequiresConfigRevert() bool {
@@ -131,9 +132,14 @@ func (c *Config) Revert() {
 	}
 }
 
+func anyProcessExists(names []string) bool {
+	processes := commonProcess.ProcessesPID(names)
+	return len(processes) > 0
+}
+
 func GameRunning() bool {
 	microsoftStore := runtime.GOOS == "windows"
-	if commonProcess.AnyProcessExists(commonProcess.GameProcesses(true, microsoftStore)) {
+	if anyProcessExists(commonProcess.GameProcesses(true, microsoftStore)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}

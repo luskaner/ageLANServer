@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/files"
 	"github.com/luskaner/aoe2DELanServer/server/internal/ip"
@@ -43,7 +43,7 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			if exec.IsAdmin() {
+			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
 					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))

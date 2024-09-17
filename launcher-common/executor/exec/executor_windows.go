@@ -7,15 +7,6 @@ import (
 	"strings"
 )
 
-func IsAdmin() bool {
-	var token windows.Token
-	err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_QUERY, &token)
-	if err != nil {
-		return false
-	}
-	return token.IsElevated()
-}
-
 func shellExecute(verb string, file string, executableWorkingPath bool, showWindow int32, arg ...string) error {
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
 	exe, _ := windows.UTF16PtrFromString(file)

@@ -89,8 +89,3 @@ func GameProcesses(steam bool, microsoftStore bool) []string {
 	}
 	return processes.ToSlice()
 }
-
-func AnyProcessExists(names []string) bool {
-	processes := ProcessesPID(names)
-	return len(processes) > 0
-}

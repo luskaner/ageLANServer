@@ -3,6 +3,7 @@ package exec
 import (
 	"errors"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,7 +38,7 @@ func (options Options) Exec() (result *Result) {
 		result.Err = errors.New("no file specified")
 		return
 	}
-	options.AsAdmin = options.AsAdmin && !IsAdmin()
+	options.AsAdmin = options.AsAdmin && !executor.IsAdmin()
 	if !options.SpecialFile {
 		options.File = getExecutablePath(options.File)
 	}
