@@ -49,8 +49,8 @@ var (
 					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
 				}
 			}
-			host := viper.GetString("default.Host")
-			addrs := ip.ResolveHost(host)
+			hosts := viper.GetStringSlice("default.Hosts")
+			addrs := ip.ResolveHosts(hosts)
 			if addrs == nil || len(addrs) == 0 {
 				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
 				_ = lock.Unlock()
@@ -148,7 +148,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce server in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts")
-	rootCmd.PersistentFlags().StringP("host", "n", netip.IPv4Unspecified().String(), "The host the server will bind to.")
+	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.PersistentFlags().Lookup("announce")); err != nil {
@@ -157,7 +157,7 @@ func Execute() error {
 	if err := viper.BindPFlag("Announcement.Port", rootCmd.PersistentFlags().Lookup("announcePort")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("default.Host", rootCmd.PersistentFlags().Lookup("host")); err != nil {
+	if err := viper.BindPFlag("default.Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("default.LogToConsole", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {
