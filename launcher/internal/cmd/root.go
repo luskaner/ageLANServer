@@ -164,6 +164,8 @@ var (
 					if mousetrap.StartedByExplorer() {
 						fmt.Println(", closing in 10 seconds...")
 						time.Sleep(10 * time.Second)
+					} else {
+						fmt.Println()
 					}
 				} else {
 					config.Revert()
@@ -174,6 +176,8 @@ var (
 					if mousetrap.StartedByExplorer() {
 						fmt.Println(", press the Enter key to exit...")
 						_, _ = fmt.Scanln()
+					} else {
+						fmt.Println()
 					}
 				}
 			}()
