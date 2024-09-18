@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0
 	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41
+	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
 	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240831201030-0c83ebf31288
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0

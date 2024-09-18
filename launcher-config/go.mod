@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240831191818-f545951d6d41
+	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
 	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240831201030-0c83ebf31288
 	github.com/spf13/cobra v1.8.1
 )
