@@ -25,12 +25,17 @@ builds:
     binary: server
     goos: [ windows ]
     goarch: [ arm64 ]
-  - id: server_64_linux
+  - id: server_64_x86_linux
     main: ./server
     binary: server
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
+    goarch: [ amd64 ]
     goamd64: [ "v1" ]
+  - id: server_64_arm_linux
+    main: ./server
+    binary: server
+    goos: [ linux ]
+    goarch: [ arm64 ]
   - id: server_64_macos
     main: ./server
     binary: server
@@ -78,12 +83,17 @@ builds:
     binary: bin/genCert
     goos: [ windows ]
     goarch: [ arm64 ]
-  - id: server-genCert_64_linux
+  - id: server-genCert_64_x86_linux
     main: ./server-genCert
     binary: bin/genCert
     goos: [ linux ]
-    goarch: [ amd64, arm64 ]
+    goarch: [ amd64 ]
     goamd64: [ "v1" ]
+  - id: server-genCert_64_arm_linux
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ linux ]
+    goarch: [ arm64 ]
   - id: server-genCert_64_macos
     main: ./server-genCert
     binary: bin/genCert
@@ -403,17 +413,9 @@ archives:
       - src: README.md
         dst: docs/README.txt
     format: zip
-  - id: server_linux
-    builds: [ server_32_linux, server-genCert_32_linux, server_64_linux, server-genCert_64_linux ]
-    name_template: >-
-      {{- .ProjectName }}_server_
-      {{- .RawVersion }}_linux
-      {{- if eq .Arch "386" }}_x86-32
-      {{- else if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arm "5" }}_armel
-      {{- else if eq .Arm "6" }}_armhf
-      {{- else if eq .Arch "arm64" }}_arm64
-      {{- end }}
+  - id: server_linux_tar_xz
+    builds: [ server_64_arm_linux, server-genCert_64_arm_linux ]
+    name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_linux_arm64"
     files:
       - src: server/resources/config
         dst: resources/config
@@ -432,6 +434,33 @@ archives:
       - src: README.md
         dst: docs/README
     format: tar.xz
+  - id: server_linux_tar_gz
+    builds: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_linux
+      {{- if eq .Arch "386" }}_x86-32
+      {{- else if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arm "5" }}_armel
+      {{- else if eq .Arm "6" }}_armhf
+      {{- end }}
+    files:
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/unix/server.sh
+        dst: server.sh
+        info:
+          mode: 0744
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: server-genCert/resources/unix/genCert.sh
+        dst: bin/genCert.sh
+        info:
+          mode: 0744
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: README.md
+        dst: docs/README
   - id: server_macos
     builds: [ server_64_macos, server-genCert_64_macos ]
     name_template: >-
