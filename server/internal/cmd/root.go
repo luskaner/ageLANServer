@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
+	"log"
 	"net/http"
 	"net/netip"
 	"os"
@@ -99,10 +100,12 @@ var (
 			certFile := filepath.Join(certificatePairFolder, common.Cert)
 			keyFile := filepath.Join(certificatePairFolder, common.Key)
 			var servers []*http.Server
+			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			for _, addr := range addrs {
 				server := &http.Server{
-					Addr:    addr.String() + ":443",
-					Handler: handler,
+					Addr:     addr.String() + ":443",
+					Handler:  handler,
+					ErrorLog: customLogger,
 				}
 
 				fmt.Println("Listening on " + server.Addr)
