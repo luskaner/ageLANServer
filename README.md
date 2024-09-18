@@ -116,7 +116,7 @@ The following archives are provided:
         * **10 IoT on Arm (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
         * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
         * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
-    * Linux:
+    * GNU/Linux:
         * Kernel 3.1 or higher with **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 or higher with **Arm32**:
             * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.xz
