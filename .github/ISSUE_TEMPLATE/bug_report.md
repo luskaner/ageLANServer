@@ -7,6 +7,8 @@ assignees: luskaner
 
 ---
 
+**MAKE SURE YOU HAVE READ https://github.com/luskaner/aoe2DELanServer/wiki/Questions-and-Answers-(QA) FIRST**
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
