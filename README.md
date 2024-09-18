@@ -146,6 +146,7 @@ Exceptions on tag/commit signature:
     * *v1.2.0-rc.5*: mantainer error.
 * Commits:
     * *631cfa1* through *9eb66cf* (*both included*): rebase and merge PR issue.
+    * *55697d4*: rebase of dependabot.
 
 ## Installation
 
