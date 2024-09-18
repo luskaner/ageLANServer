@@ -441,8 +441,8 @@ archives:
       {{- .RawVersion }}_linux
       {{- if eq .Arch "386" }}_x86-32
       {{- else if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arm "5" }}_armel
-      {{- else if eq .Arm "6" }}_armhf
+      {{- else if eq .Arm "5" }}_arm-5
+      {{- else if eq .Arm "6" }}_arm-6
       {{- end }}
     files:
       - src: server/resources/config
