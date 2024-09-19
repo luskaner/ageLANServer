@@ -119,11 +119,11 @@ The following archives are provided:
     * GNU/Linux:
         * Kernel 3.1 or higher with **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 or higher with **Arm32**:
-            * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.xz
-            * ARMv6 (sometimes called armhf): aoe2DELanServer_server_*A.B.C*_linux_arm-6.tar.xz
-        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.xz
-        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.xz
-    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.xz
+            * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.gz
+            * ARMv6 (sometimes called armhf): aoe2DELanServer_server_*A.B.C*_linux_arm-6.tar.gz
+        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
+    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.gz
 
 *Note: If you are using Antivirus it may flag one or more executables as virus, this is
 a **false positive***.
