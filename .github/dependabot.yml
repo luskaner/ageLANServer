@@ -7,6 +7,8 @@ version: 2
 updates:
   - package-ecosystem: "gomod" # See documentation for possible values
     directories: # Location of package manifests
-      - "**/*"
+      - "/common"
+      - "/launcher*"
+      - "/server*"
     schedule:
       interval: "weekly"
