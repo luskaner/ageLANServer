@@ -70,18 +70,13 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 - GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations on x86-64 are preferred.
   *arm64*
-  variant need a compatilibity layer to run
-  x86-64 programs.
+  variant is not currently supported by Steam but it is being worked on.
 - Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
   Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require
 admin rights elevation.**
-
-#### Buildable (Experimental)
-
-Other 64-bit architecture variants of linux as long as it has a compatibility layer to run x86-64 programs.
 
 ### Client
 
