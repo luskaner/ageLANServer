@@ -2,13 +2,7 @@
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 1.4.x   | ✓         |
-| 1.3.x   | ✗         |
-| 1.2.x   | ✗         |
-| 1.1.x   | ✗         |
-| 1.0.x   | ✗         |
+Only the latest estable version is supported.
 
 ## Reporting a Vulnerability
 
