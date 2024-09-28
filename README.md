@@ -179,8 +179,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 ## Simplest way to use it
 
-1. **Download** the proper *full* asset from the latest.
-   stable release https://github.com/luskaner/aoe2DELanServer/releases
+1. **Download** the proper *full* asset from the latest
+   stable release from https://github.com/luskaner/aoe2DELanServer/releases.
 2. **Uncompress** it somewhere.
 3. If not using the Steam or Microsoft Store launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
    file**
