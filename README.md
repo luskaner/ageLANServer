@@ -230,7 +230,6 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
     <summary>Launcher instructions</summary>
     
 1. **Download** the proper *launcher* asset from latest stable release from https://github.com/luskaner/aoe2DELanServer/releases.
-2. **Generate the certificate** by simply executing `bin/genCert`.
 3. If needed **edit the [config](launcher/resources/config.ini) file**. You will need to edit the `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use a custom launcher for 100% offline play.
 4. **Run** the `launcher` binary/script.
 
