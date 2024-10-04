@@ -86,7 +86,7 @@ admin rights elevation.**
 
 ### Client
 
-- Age of Empires 2 Definitive Edition - Steam or Microsoft Store (Xbox) (only Windows).
+- Age of Empires 2 Definitive Edition on Steam (Microsoft Store - Xbox - is also supported on Windows).
 - Up-to-date version of the game.
 
 ## Binaries
