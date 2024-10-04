@@ -1,3 +1,7 @@
+# Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
+
 # How to contribute
 
 Create a [pull request](https://github.com/luskaner/aoe2DELanServer/pulls) with your code towards the main branch
