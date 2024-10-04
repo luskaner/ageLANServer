@@ -157,7 +157,7 @@ Exceptions on tag/commit signature:
 
 ## Installation
 
-Both the launcher and server work out of the box without any installation. Just download the compressed archives,
+Both the launcher and server work out of the box without any installation. Just download the archives,
 decompress and run them.
 
 ## How it works
@@ -196,8 +196,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 1. **Download** the proper *full* asset from the latest
    stable release from https://github.com/luskaner/aoe2DELanServer/releases.
 2. **Uncompress** it somewhere.
-3. If not using the Steam or Microsoft Store (Xbox) launcher, **edit the [launcher/config.ini](launcher/resources/config.ini)
-   file**
+3. If not using the Steam or Microsoft Store (Xbox) launcher, **edit the [config](launcher/resources/config.ini)
+   file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
    You will need to use a custom launcher for 100% offline play.
@@ -213,6 +213,28 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
    and sending an invite as needed. You can share the link to join the lobby automatically (only works if already
    in-game).
+
+## Separate server and launcher execution
+
+<details>
+    <summary>Server instructions</summary>
+
+1. **Download** the proper *server* asset from latest stable release from https://github.com/luskaner/aoe2DELanServer/releases.
+2. **Generate the certificate** by simply executing `bin/genCert`.
+3. If needed **edit the [config](server/resources/config/config.ini) file**.
+4. **Run** the `server` binary/script.
+
+</details>
+
+<details>
+    <summary>Launcher instructions</summary>
+    
+1. **Download** the proper *launcher* asset from latest stable release from https://github.com/luskaner/aoe2DELanServer/releases.
+2. **Generate the certificate** by simply executing `bin/genCert`.
+3. If needed **edit the [config](launcher/resources/config.ini) file**. You will need to edit the `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use a custom launcher for 100% offline play.
+4. **Run** the `launcher` binary/script.
+
+</details>
 
 ## Development
 
