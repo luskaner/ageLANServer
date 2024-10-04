@@ -7,6 +7,8 @@ versions.
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
+*See more details in [Questions and Answers (QA)](https://github.com/luskaner/aoe2DELanServer/wiki/Questions-and-Answers-(QA))*
+
 ## Features
 
 - Co-Op Campaigns.
