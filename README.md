@@ -47,22 +47,22 @@ the internet and Steam or Xbox Live, depending on the platform and version, to f
 
 </details>
 
-## System Requirements
+## Minimum system requirements
 
 ### Server
 
-#### Pre-built releases (Stable)
+#### Stable
 
-- Windows: 10 or higher (no S edition nor S mode), Server 2016 or higher. 32-bit/64-bit both Arm and x86.
-- macOS: Catalina (v10.15) or higher.
-- GNU/Linux: kernel 2.6.32 or higher (see [here](https://go.dev/wiki/Linux) for more details). 32-bit/64-bit both Arm
-  and x86 (other archs are considered stable but they are not included).
+- Windows 10 (no S edition/mode).
+- Windows Server 2016.
+- Windows IoT.
+- Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
+- macOS: Catalina (v10.15).
 
-Admin rights or firewall permission to listen to port 443 for https will likely be required (once or repeatedly)
-depending on the operating system.
+Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating system.
 
 <details>
-<summary>Buildable (Experimental)</summary>
+<summary>Experimental</summary>
     
 - BSD-based (OpenBSD, DragonFly BSD, FreeBSD and NetBSD).
 - Solaris-based (Solaris and Illumos).
@@ -74,20 +74,19 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations on x86-64 are preferred.
-  *arm64*
-  variant is not currently supported by Steam but it is being worked on.
-- Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-  Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
+- Windows (no S edition/mode):
+  - 10 on x86-64 (recommended).
+  - 11 on ARM.
+- GNU/Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
-**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
-require
-admin rights elevation.**
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
 
 ### Client
 
-- Age of Empires 2 Definitive Edition on Steam (Microsoft Store - Xbox - is also supported on Windows).
-- Up-to-date version of the game.
+- Age of Empires 2 Definitive Edition on Steam (Microsoft Store or Xbox version is also supported on Windows where applicable).
+- Up-to-date* version of the game.
+
+*Note: Older versions since ~late 2023 should work but are not recommended.*
 
 ## Binaries
 
@@ -99,37 +98,36 @@ supported operating systems.
     
 * Full:
     * Windows:
-        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
-        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
     * GNU/Linux::
         * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
-        * **Arm64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
+        * **ARM64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
-        * **11 (or higher) on Arm (64 bits)**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
     * GNU/Linux:
         * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.tar.xz
-        * **Arm64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz
+        * **ARM64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10 (or higher) on Arm (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
-        * **10 IoT on Arm (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
-        * **10 (or higher) x86-64 (64 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
-        * **10 x86-32 (32 bits)**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
+        * **10 on ARM64**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
+        * **IoT on ARM32**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
+        * **10 on x86-64**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
+        * **10 on x86-32**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
     * GNU/Linux:
-        * Kernel 3.1 or higher with **Arm64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
-        * Kernel 2.6.23 or higher with **Arm32**:
+        * Kernel 3.1 on **ARM64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
+        * Kernel 2.6.23 on **ARM32**:
             * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.gz
             * ARMv6 (sometimes called armhf): aoe2DELanServer_server_*A.B.C*_linux_arm-6.tar.gz
-        * Kernel 2.6.23 or higher with **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 or higher with **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15) or higher: aoe2DELanServer_server_*A.B.C*_mac.tar.gz
+        * Kernel 2.6.23 on **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 on **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
+    * macOS - Catalina (v10.15): aoe2DELanServer_server_*A.B.C*_mac.tar.gz
   
 </details>
 
-*Note: If you are using Antivirus it may flag one or more executables as virus, this is
-a **false positive***.
+*Note: If you are using Antivirus it may flag one or more executables as virus, this is a **false positive***.
 
 ### Verification
 
@@ -165,15 +163,13 @@ decompress and run them.
 ### Server
 
 The server is simple web server that listens to the game's API requests. The server reimplements
-the minimum required API surface to allow the game to work in LAN mode. It is completely safe as no data sent from the
-client
-is stored or sent to any other server.
+the minimum required API surface to allow the game to work in LAN mode. NO data is stored or sent via the internet.
 
 *Note: See the [server README](server/README.md) for more details.*
 
 ### Launcher
 
-The launcher allows to easily play the game in LAN mode while allowing the official launcher to be used for online play.
+The launcher allows to easily play the game in LAN mode while still allowing the official launcher to be used for online play.
 
 <details>
     <summary>Features</summary>
