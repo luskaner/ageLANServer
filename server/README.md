@@ -5,13 +5,28 @@
 The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
 
-## System requirements
+## Minimum system requirements
 
-The server supports a very wide variety of operating systems and architectures. Basically any system you can
-compile [Go](https://go.dev/wiki/MinimumRequirements) 1.22 for. If you are a developer it can support even more
-operating systems by using the
-older Go version 1.20 (few code changes might be required) that would enable Windows 7 or higher support, macOS
-High Sierra 10.13 or higher ... etc.
+#### Stable
+
+- Windows 10 (no S edition/mode).
+- Windows Server 2016.
+- Windows IoT.
+- Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
+- macOS: Catalina (v10.15).
+
+Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating system.
+
+<details>
+<summary>Experimental</summary>
+    
+- BSD-based (OpenBSD, DragonFly BSD, FreeBSD and NetBSD).
+- Solaris-based (Solaris and Illumos).
+- AIX.
+
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
+    
+</details>
 
 ## Configuration
 
