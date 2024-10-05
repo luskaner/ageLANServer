@@ -77,7 +77,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows (no S edition/mode):
   - 10 on x86-64 (recommended).
   - 11 on ARM.
-- GNU/Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
 
@@ -100,14 +100,14 @@ supported operating systems.
     * Windows:
         * **10 on x86-64**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
         * **11 on ARM**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
-    * GNU/Linux::
+    * Linux::
         * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
         * **10 on x86-64**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
         * **11 on ARM**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
-    * GNU/Linux:
+    * Linux:
         * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz
 * Server:
@@ -116,7 +116,7 @@ supported operating systems.
         * **IoT on ARM32**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
         * **10 on x86-64**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
         * **10 on x86-32**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
-    * GNU/Linux:
+    * Linux:
         * Kernel 3.1 on **ARM64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 on **ARM32**:
             * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.gz
