@@ -13,7 +13,7 @@ Steam or Xbox Live, depending on the platform and version, to fully play offline
 - Windows (no S edition/mode):
   - 10 on x86-64 (recommended).
   - 11 on ARM.
-- GNU/Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
 
