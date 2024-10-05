@@ -8,15 +8,14 @@ system and reverting that configuration upon exit.
 **You will still need a way to bypass the *online-only* restriction that is imposed by the game to being connected to
 Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-## System Requirements
+## Minimum system Requirements
 
-- GNU/Linux: recent SteamOS and Ubuntu (or derivatives) with official Steam installations on x86-64 are preferred. *arm64* variant is not currently supported by Steam but it is being worked on.
-- Windows: 10 (no S edition nor S mode) or higher, (possibly Server 2016 or higher) all x86-64 (same as the game).
-  Windows 11 on Arm (arm64) or higher, (possibly Server 2025 or higher) - no S mode - is also supported.
+- Windows (no S edition/mode):
+  - 10 on x86-64 (recommended).
+  - 11 on ARM.
+- GNU/Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
-**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
-require
-admin rights elevation.**
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
 
 ## Features
 
