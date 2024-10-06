@@ -1,5 +1,9 @@
 # Age of Empires 2 Definitive Edition LAN Server
 
+<a href="https://trackgit.com">
+<img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/m1xjf9ctynz143flycm1" alt="trackgit-views" />
+</a>
+
 AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
 connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE
 versions.
