@@ -34,7 +34,7 @@ the internet and Steam or Xbox Live, depending on the platform and version, to f
     - Steam & Xbox Friends.
 - Not implemented:
     - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a
-      match might cause issues (see [QA](https://github.com/luskaner/aoe2DELanServer/wiki/Questions-and-Answers-(QA)) for more details).
+      match might cause issues (see [Troubleshooting](https://github.com/luskaner/aoe2DELanServer/wiki/Troubleshooting) for more details).
     - Changing player profile icon: the default will always be used.
     - Leaderboards: will appear empty.
     - Player stats: will appear empty.
