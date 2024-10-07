@@ -6,7 +6,7 @@ require (
 	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
 	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240918225240-55697d48fe22
-	golang.org/x/sys v0.25.0
+	golang.org/x/sys v0.26.0
 )
 
 require (
