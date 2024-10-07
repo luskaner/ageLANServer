@@ -12,8 +12,8 @@ require (
 	github.com/hairyhenderson/go-which v0.2.0
 	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sys v0.25.0
-	golang.org/x/term v0.24.0
+	golang.org/x/sys v0.26.0
+	golang.org/x/term v0.25.0
 	mvdan.cc/sh/v3 v3.9.0
 )
 
