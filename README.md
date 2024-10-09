@@ -4,7 +4,7 @@ AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** g
 connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE
 versions.
 
-**You will still need a *custom launcher* to bypass the *online-only* restriction that is imposed by the game to being connected to
+**You will still need a *custom launcher* (see [here](https://github.com/luskaner/aoe2DELanServerLauncherCompanion?tab=readme-ov-file#configuratiom) how to obtain one for Steam) to bypass the *online-only* restriction that is imposed by the game to being connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
 *See more details in [Questions and Answers (QA)](https://github.com/luskaner/aoe2DELanServer/wiki/Questions-and-Answers-(QA))*.
