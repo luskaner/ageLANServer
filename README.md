@@ -100,7 +100,7 @@ supported operating systems.
     * Windows:
         * **10 on x86-64**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
         * **11 on ARM**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
-    * Linux::
+    * Linux:
         * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
