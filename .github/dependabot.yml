@@ -11,4 +11,4 @@ updates:
       - "/launcher*"
       - "/server*"
     schedule:
-      interval: "weekly"
+      interval: "daily"
