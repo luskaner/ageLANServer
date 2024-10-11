@@ -29,4 +29,4 @@ tasks:
   build-config-all:
     deps: [ build-config, build-config-admin-agent ]
 includes:
-  debug: ./Taskfile.{{OS}}.yml
+  debug: ./Taskfile.{{if eq OS "windows"}}windows{{else}}unix{{end}}.yml
