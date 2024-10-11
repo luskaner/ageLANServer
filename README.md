@@ -145,8 +145,6 @@ maintainer.
 4. Verify the ```..._checksums.txt``` file with the ```..._checksums.txt.sig``` file.
 5. Verify the SHA-256 checksum list inside ```..._checksums.txt``` with the downloaded archives.
 
-</details>
-
 Exceptions on tag/commit signature:
 
 * Tags:
@@ -154,6 +152,8 @@ Exceptions on tag/commit signature:
 * Commits:
     * *631cfa1* through *9eb66cf* (*both included*): rebase and merge PR issue.
     * *55697d4*: rebase of dependabot.
+
+</details>
 
 ## Installation
 
