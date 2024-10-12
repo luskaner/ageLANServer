@@ -1,6 +1,6 @@
 ## Docker
 
-Both a [Dockerfile](../server-docker/Dockerfile) and a [docker-compose](../server-docker/Dockerfile) files are
+Both a [Dockerfile](Dockerfile) and a [docker-compose](compose.yml) files are
 available.
 You can either first build the Dockerfile and then run it like:
 
