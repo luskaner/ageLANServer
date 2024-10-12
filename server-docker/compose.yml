@@ -1,0 +1,7 @@
+services:
+  server:
+    container_name: aoe2DELanServer
+    build:
+      context: ..
+      dockerfile: server-docker/Dockerfile
+    network_mode: "host"
