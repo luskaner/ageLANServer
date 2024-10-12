@@ -18,7 +18,7 @@ FROM alpine:3.20 AS compressor
 RUN apk add --no-cache upx
 WORKDIR /app
 COPY --from=compiler /app/build/server .
-RUN upx --ultra-brute server
+RUN upx --lzma server
 # Execute
 FROM scratch
 EXPOSE 443
