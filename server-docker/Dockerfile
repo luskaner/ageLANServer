@@ -9,17 +9,22 @@ COPY server server
 COPY server-genCert server-genCert
 RUN mkdir build
 RUN cp -r server/resources build/resources
-RUN go build -o build/bin/genCert ./server-genCert
-RUN go build -o build/server ./server
-RUN build/bin/genCert
-RUN rm -rf build/bin
-RUN rm -rf build/resources/unix
-
+RUN go build -o build/bin/genCert ./server-genCert && \
+    build/bin/genCert && \
+    rm -rf build/bin
+RUN go build -ldflags="-s -w" -o build/server ./server
+# Compress
+FROM alpine:3.20 AS compressor
+RUN apk add --no-cache upx
+WORKDIR /app
+COPY --from=compiler /app/build/server .
+RUN upx --ultra-brute server
 # Execute
-FROM alpine:3.20
+FROM scratch
 EXPOSE 443
 VOLUME /app/resources
 VOLUME /app/logs
 WORKDIR /app
-COPY --from=compiler /app/build .
+COPY --from=compiler /app/build/resources resources
+COPY --from=compressor /app/server .
 ENTRYPOINT ["./server"]

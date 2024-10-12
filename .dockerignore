@@ -1,0 +1,17 @@
+.github
+.git
+battle-server-broadcast
+build
+launcher*/
+server/resources/unix
+.dockerignore
+.gitignore
+.env*
+*.md
+go.work
+go.work.sum
+LICENSE
+release_public.key
+Taskfile*
+Dockerfile*
+compose.yml
