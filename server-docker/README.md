@@ -10,4 +10,4 @@ or just use the docker-compose file directly:
 
 ``docker compose up``
 
-*Note: There are issues on Windows regarding UDP broadcasts due to Docker running on a VM.*
+*Note: There are issues on non Linux OSes regarding UDP broadcasts due to Docker running on a VM.*
