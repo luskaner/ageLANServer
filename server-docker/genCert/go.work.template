@@ -1,0 +1,8 @@
+go 1.22.0
+
+use (
+	common
+	server-genCert
+)
+
+replace github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57 => ./common

@@ -1,7 +1,24 @@
+name: aoe2DELanServer
 services:
-  server:
-    container_name: aoe2DELanServer
+  gen-cert:
     build:
       context: ..
-      dockerfile: server-docker/Dockerfile
+      dockerfile: server-docker/genCert/Dockerfile
+    volumes:
+      - certs:/app/resources/certificates
+    network_mode: none
+  server:
+    build:
+      context: ..
+      dockerfile: server-docker/server/Dockerfile
+    depends_on:
+      - gen-cert
+    volumes:
+      - config:/app/resources/config
+      - logs:/app/logs
+      - certs:/app/resources/certificates:ro
     network_mode: "host"
+volumes:
+  certs:
+  config:
+  logs:

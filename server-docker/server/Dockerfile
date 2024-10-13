@@ -3,15 +3,12 @@
 # Compile
 FROM golang:1.22-alpine3.20 AS compiler
 WORKDIR /app
-COPY server-docker/go.work.template go.work
+COPY server-docker/server/go.work.template go.work
 COPY common common
 COPY server server
-COPY server-genCert server-genCert
 RUN mkdir build
 RUN cp -r server/resources build/resources
-RUN go build -o build/bin/genCert ./server-genCert && \
-    build/bin/genCert && \
-    rm -rf build/bin
+RUN mkdir -p build/resources/certificates
 RUN go build -ldflags="-s -w" -o build/server ./server
 # Compress
 FROM alpine:3.20 AS compressor
@@ -22,7 +19,8 @@ RUN upx --lzma server
 # Execute
 FROM scratch
 EXPOSE 443
-VOLUME /app/resources
+VOLUME /app/resources/config
+VOLUME /app/resources/certificates
 VOLUME /app/logs
 WORKDIR /app
 COPY --from=compiler /app/build/resources resources

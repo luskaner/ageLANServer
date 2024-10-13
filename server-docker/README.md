@@ -1,13 +1,6 @@
 ## Docker
 
-Both a [Dockerfile](Dockerfile) and a [docker-compose](compose.yml) files are
-available.
-You can either first build the Dockerfile and then run it like:
-
-``docker run -p 443:443 -p 31978:31978/udp --network=host <image>``
-
-or just use the docker-compose file directly:
-
-``docker compose up``
+Both a [server Dockerfile](server/Dockerfile) and [Gen-Cert Dockerfile](genCert/Dockerfile) are available. In order to
+orchestrate the server, a [docker-compose](compose.yml) file is also available.
 
 *Note: There are issues on non Linux OSes regarding UDP broadcasts due to Docker running on a VM.*
