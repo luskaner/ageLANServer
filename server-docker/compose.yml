@@ -14,7 +14,7 @@ services:
     depends_on:
       - gen-cert
     volumes:
-      - config:/app/resources/config
+      - config:/app/resources/config:ro
       - logs:/app/logs
       - certs:/app/resources/certificates:ro
     network_mode: "host"
