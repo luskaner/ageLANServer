@@ -198,7 +198,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
-   You will need to use a custom launcher for 100% offline play.
+   **You will need to use a custom launcher (plus what my other [repo](https://github.com/luskaner/aoe2DELanServerLauncherCompanion) provides) for 100% offline play**.
 4. **Execute `launcher/launcher`**: you will be asked for admin elevation and confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
