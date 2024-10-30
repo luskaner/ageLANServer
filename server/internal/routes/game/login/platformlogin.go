@@ -2,9 +2,10 @@ package login
 
 import (
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
 	"time"
 )
@@ -27,17 +28,54 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
 	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
 	i.RngLock.Unlock()
-	game := middleware.Age2Game(r)
-	users := game.Users()
-	u := users.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	game := models.G(r)
+	title := game.Title()
+	u := game.Users().GetOrCreateUser(title, r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	u.SetPresence(1)
 	sess, ok := models.GetSessionByUserId(u.GetId())
 	if ok {
 		sess.Delete()
 	}
 	sessionId := models.CreateSession(req.GameId, u.GetId())
+	if title == common.GameAoE3 {
+		sess, _ = models.GetSessionById(sessionId)
+		wss.SendOrStoreMessage(
+			sess,
+			"PresenceMessage",
+			i.A{u.GetProfileInfo(true)},
+		)
+	}
 	profileInfo := u.GetProfileInfo(false)
 	profileId := u.GetProfileId()
+	extraProfileInfoList := i.A{}
+	if title != common.GameAoE3 {
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo())
+	}
+	var unknownProfileInfoList i.A
+	switch title {
+	case common.GameAoE2:
+		unknownProfileInfoList = i.A{
+			i.A{2, profileId, 0, "", t2},
+			i.A{39, profileId, 671, "", t2},
+			i.A{41, profileId, 191, "", t2},
+			i.A{42, profileId, 480, "", t2},
+			i.A{44, profileId, 0, "", t2},
+			i.A{45, profileId, 0, "", t2},
+			i.A{46, profileId, 0, "", t2},
+			i.A{47, profileId, 0, "", t2},
+			i.A{48, profileId, 0, "", t2},
+			i.A{50, profileId, 0, "", t2},
+			i.A{60, profileId, 1, "", t2},
+			i.A{142, profileId, 1, "", t3},
+			i.A{171, profileId, 1, "", t2},
+			i.A{172, profileId, 4, "", t2},
+			i.A{173, profileId, 1, "", t2},
+		}
+	case common.GameAoE3:
+		unknownProfileInfoList = i.A{
+			i.A{291, u.GetId(), 16, "", t2},
+		}
+	}
 	response := i.A{
 		0,
 		sessionId,
@@ -58,7 +96,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		0,
 		nil,
-		game.Resources().Login,
+		game.Resources().LoginData,
 		i.A{
 			0,
 			profileInfo,
@@ -72,24 +110,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 				i.A{},
 				i.A{},
 			},
-			i.A{u.GetExtraProfileInfo()},
-			i.A{
-				i.A{2, profileId, 0, "", t2},
-				i.A{39, profileId, 671, "", t2},
-				i.A{41, profileId, 191, "", t2},
-				i.A{42, profileId, 480, "", t2},
-				i.A{44, profileId, 0, "", t2},
-				i.A{45, profileId, 0, "", t2},
-				i.A{46, profileId, 0, "", t2},
-				i.A{47, profileId, 0, "", t2},
-				i.A{48, profileId, 0, "", t2},
-				i.A{50, profileId, 0, "", t2},
-				i.A{60, profileId, 1, "", t2},
-				i.A{142, profileId, 1, "", t3},
-				i.A{171, profileId, 1, "", t2},
-				i.A{172, profileId, 4, "", t2},
-				i.A{173, profileId, 1, "", t2},
-			},
+			extraProfileInfoList,
+			unknownProfileInfoList,
 			nil,
 			i.A{},
 			nil,

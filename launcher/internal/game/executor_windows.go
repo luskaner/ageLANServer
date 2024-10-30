@@ -13,6 +13,9 @@ func appNameSuffix(id string) string {
 	switch id {
 	case common.GameAoE2:
 		return "MSPhoenix"
+	case common.GameAoE3:
+		// TODO: Check if this is correct
+		return "MSBoston"
 	default:
 		return ""
 	}

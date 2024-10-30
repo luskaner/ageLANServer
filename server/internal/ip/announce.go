@@ -60,7 +60,7 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	var messageBuff bytes.Buffer
 	enc := gob.NewEncoder(&messageBuff)
 	err := enc.Encode(common.AnnounceMessageData001{
-		GameIds: viper.GetStringSlice("default.Games"),
+		GameIds: viper.GetStringSlice("Games"),
 	})
 	if err != nil {
 		fmt.Println("Error encoding message data.")

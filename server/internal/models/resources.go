@@ -20,7 +20,9 @@ var CloudFolder = filepath.Join(responsesFolder, "cloud")
 
 type MainResources struct {
 	keyedFilenames  mapset.Set[string]
-	Login           []i.A
+	Login           *orderedmap.OrderedMap[string, string]
+	ChatChannels    map[string]MainChatChannel
+	LoginData       []i.A
 	ArrayFiles      map[string]i.A
 	KeyedFiles      map[string][]byte
 	nameToSignature map[string]string
@@ -32,9 +34,22 @@ func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[stri
 	r.KeyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
+	r.Login = orderedmap.New[string, string]()
 	r.initializeLogin(gameId)
+	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
 	r.initializeCloud(gameId)
+}
+
+func (r *MainResources) initializeChatChannels(gameId string) {
+	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "chatChannels.json"))
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &r.ChatChannels)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (r *MainResources) initializeLogin(gameId string) {
@@ -42,15 +57,14 @@ func (r *MainResources) initializeLogin(gameId string) {
 	if err != nil {
 		panic(err)
 	}
-	var login = orderedmap.New[string, any]()
-	err = json.Unmarshal(data, login)
+	err = json.Unmarshal(data, r.Login)
 	if err != nil {
 		panic(err)
 	}
-	r.Login = make([]i.A, login.Len())
+	r.LoginData = make([]i.A, r.Login.Len())
 	j := 0
-	for el := login.Oldest(); el != nil; el = el.Next() {
-		r.Login[j] = i.A{el.Key, el.Value}
+	for el := r.Login.Oldest(); el != nil; el = el.Next() {
+		r.LoginData[j] = i.A{el.Key, el.Value}
 		j++
 	}
 }

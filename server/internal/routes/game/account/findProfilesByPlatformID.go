@@ -9,6 +9,7 @@ import (
 )
 
 func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
+	// TODO: Check it works in AoE3 if not empty
 	platformIdsStr := r.PostFormValue("platformIDs")
 	if len(platformIdsStr) < 1 {
 		i.JSON(&w, i.A{2, i.A{}})
@@ -25,7 +26,7 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 		platformIdsMap[platformId] = struct{}{}
 	}
 	sess, _ := middleware.Session(r)
-	users := middleware.Age2Game(r).Users()
+	users := models.G(r).Users()
 	u, _ := users.GetUserById(sess.GetUserId())
 	profileInfo := users.GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		if u == currentUser {

@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 )
 
@@ -93,7 +94,7 @@ var revertCmd = &cobra.Command{
 			RestoreProfiles = true
 			reverseFailed = false
 		}
-		if (restoredMetadata || restoredProfiles) && !common.ValidGame(gameId) {
+		if (restoredMetadata || restoredProfiles) && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
@@ -248,8 +249,8 @@ func InitRevert() {
 		&gameId,
 		"game",
 		"e",
-		common.GameAoE2,
-		fmt.Sprintf(`Game type. Only "%s" is currently supported.`, common.GameAoE2),
+		"",
+		fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")),
 	)
 	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(

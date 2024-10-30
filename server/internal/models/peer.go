@@ -10,7 +10,7 @@ type MainPeer struct {
 	user          *MainUser
 	race          int32
 	team          int32
-	invites       *i.SafeSet[User]
+	invites       *i.SafeSet[*MainUser]
 	lock          *sync.RWMutex
 }
 

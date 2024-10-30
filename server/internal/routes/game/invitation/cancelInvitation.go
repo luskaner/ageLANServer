@@ -21,7 +21,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	u, _ := game.Users().GetUserById(sess.GetUserId())
 	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok {
@@ -48,20 +48,14 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 	var inviteeSession *models.Session
 	inviteeSession, ok = models.GetSessionByUserId(invitee.GetId())
 	if ok {
-		go func(userId int32, advertisementId int32, sessId string, userProfileInfo i.A) {
-			_ = wss.SendMessage(
-				sessId,
-				i.A{
-					0,
-					"CancelInvitationMessage",
-					userId,
-					i.A{
-						userProfileInfo,
-						advertisementId,
-					},
-				},
-			)
-		}(q.UserId, q.AdvertisementId, inviteeSession.GetId(), u.GetProfileInfo(false))
-	} // TODO: If the user is offline send it when it comes online?
+		wss.SendOrStoreMessage(
+			inviteeSession,
+			"CancelInvitationMessage",
+			i.A{
+				u.GetProfileInfo(false),
+				q.AdvertisementId,
+			},
+		)
+	}
 	i.JSON(&w, i.A{0})
 }

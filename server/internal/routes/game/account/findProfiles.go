@@ -15,7 +15,7 @@ func FindProfiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	users := game.Users()
 	u, _ := users.GetUserById(sess.GetUserId())
 	profileInfo := users.GetProfileInfo(true, func(currentUser *models.MainUser) bool {

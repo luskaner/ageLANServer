@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/spf13/viper"
 	"hash"
@@ -15,15 +16,18 @@ import (
 )
 
 type MainUser struct {
-	id             int32
-	statId         int32
-	alias          string
-	platformUserId uint64
-	profileId      int32
-	reliclink      int32
-	isXbox         bool
-	presence       int8
-	lock           *sync.Mutex
+	id               int32
+	statId           int32
+	alias            string
+	platformUserId   uint64
+	profileId        int32
+	profileMetadata  string
+	profileUintFlag1 uint8
+	reliclink        int32
+	isXbox           bool
+	presence         int8
+	lock             *sync.Mutex
+	chatChannels     map[int32]*MainChatChannel
 }
 
 type MainUsers struct {
@@ -38,7 +42,7 @@ func (users *MainUsers) Initialize() {
 	users.hasherLock = &sync.Mutex{}
 }
 
-func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId uint64, alias string) *MainUser {
+func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) *MainUser {
 	users.hasherLock.Lock()
 	_, _ = users.hasher.Write([]byte(identifier))
 	hsh := users.hasher.Sum(nil)
@@ -47,14 +51,17 @@ func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId 
 	users.hasherLock.Unlock()
 	rng := rand.New(rand.NewSource(int64(seed)))
 	return &MainUser{
-		id:             rng.Int31(),
-		statId:         rng.Int31(),
-		profileId:      rng.Int31(),
-		reliclink:      rng.Int31(),
-		alias:          alias,
-		platformUserId: platformUserId,
-		isXbox:         isXbox,
-		lock:           &sync.Mutex{},
+		id:               rng.Int31(),
+		statId:           rng.Int31(),
+		profileId:        rng.Int31(),
+		profileMetadata:  profileMetadata,
+		profileUintFlag1: profileUIntFlag1,
+		reliclink:        rng.Int31(),
+		alias:            alias,
+		platformUserId:   platformUserId,
+		isXbox:           isXbox,
+		lock:             &sync.Mutex{},
+		chatChannels:     map[int32]*MainChatChannel{},
 	}
 }
 
@@ -79,8 +86,8 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int63n(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alias string) *MainUser {
-	if viper.GetBool("default.GeneratePlatformUserId") {
+func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox bool, platformUserId uint64, alias string) *MainUser {
+	if viper.GetBool("GeneratePlatformUserId") {
 		ipStr, _, err := net.SplitHostPort(remoteAddr)
 		if err != nil {
 			ip := net.ParseIP(ipStr)
@@ -100,7 +107,15 @@ func (users *MainUsers) GetOrCreateUser(remoteAddr string, isXbox bool, platform
 	identifier := getPlatformPath(isXbox, platformUserId)
 	mainUser, ok := users.store.Load(identifier)
 	if !ok {
-		mainUser = users.generate(identifier, isXbox, platformUserId, alias)
+		var profileMetadata string
+		if gameId == common.GameAoE3 {
+			profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
+		}
+		var profileUIntFlag1 uint8
+		if gameId != common.GameAoE3 {
+			profileUIntFlag1 = 0
+		}
+		mainUser = users.generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
 		users.store.Store(identifier, mainUser)
 	}
 	return mainUser
@@ -206,11 +221,11 @@ func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
 		time.Now().UTC().Unix() - randomTimeDiff,
 		u.GetId(),
 		u.GetPlatformPath(),
-		"",
+		u.GetProfileMetadata(),
 		u.GetAlias(),
 		"",
 		u.GetStatId(),
-		1,
+		u.GetProfileUintFlag1(),
 		1,
 		0,
 		nil,
@@ -234,6 +249,35 @@ func (u *MainUser) SetPresence(value int8) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.presence = value
+}
+
+func (u *MainUser) GetProfileMetadata() string {
+	return u.profileMetadata
+}
+
+func (u *MainUser) GetProfileUintFlag1() uint8 {
+	return u.profileUintFlag1
+}
+
+func (u *MainUser) JoinChatChannel(channel *MainChatChannel) {
+	u.chatChannels[channel.GetId()] = channel
+	channel.AddUser(u)
+}
+
+func (u *MainUser) LeaveChatChannel(channel *MainChatChannel) {
+	delete(u.chatChannels, channel.GetId())
+	channel.RemoveUser(u)
+}
+
+func (u *MainUser) LeaveAllChannels() {
+	for _, channel := range u.chatChannels {
+		channel.RemoveUser(u)
+	}
+	u.chatChannels = map[int32]*MainChatChannel{}
+}
+
+func (u *MainUser) SendChatChannelMessage(channel *MainChatChannel, text string) {
+	u.chatChannels[channel.GetId()].AddMessage(u, text)
 }
 
 func (users *MainUsers) getUsers() []*MainUser {

@@ -3,6 +3,7 @@ package relationship
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
@@ -19,7 +20,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	u, _ := middleware.Age2Game(r).Users().GetUserById(sess.GetUserId())
+	u, _ := models.G(r).Users().GetUserById(sess.GetUserId())
 	u.SetPresence(int8(presence))
 	i.JSON(&w, i.A{0})
 }

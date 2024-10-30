@@ -148,3 +148,12 @@ func SendMessage(sessionId string, message i.A) bool {
 
 	return true
 }
+
+func SendOrStoreMessage(session *models.Session, action string, message i.A) {
+	finalMessage := i.A{0, action, session.GetUserId(), message}
+	go func(session *models.Session, finalMessage i.A) {
+		if ok := SendMessage(session.GetId(), finalMessage); !ok {
+			session.AddMessage(finalMessage)
+		}
+	}(session, finalMessage)
+}

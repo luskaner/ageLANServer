@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 )
 
@@ -91,7 +92,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		if (BackupMetadata || BackupProfiles) && !common.ValidGame(gameId) {
+		if (BackupMetadata || BackupProfiles) && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
@@ -256,8 +257,8 @@ func InitSetUp() {
 		&gameId,
 		"game",
 		"e",
-		common.GameAoE2,
-		fmt.Sprintf(`Game type. Only "%s" is currently supported.`, common.GameAoE2),
+		"",
+		fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")),
 	)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(

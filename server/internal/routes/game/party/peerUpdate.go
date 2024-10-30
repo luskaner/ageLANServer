@@ -17,7 +17,7 @@ func PeerUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	sess, _ := middleware.Session(r)
 	users := make([]*models.MainUser, length)
-	gameUsers := middleware.Age2Game(r).Users()
+	gameUsers := models.G(r).Users()
 	currentUser, _ := gameUsers.GetUserById(sess.GetUserId())
 	// Only the host can update peers
 	if adv.GetHost() != currentUser {

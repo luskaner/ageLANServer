@@ -9,9 +9,9 @@ import (
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	u, _ := game.Users().GetUserById(sess.GetUserId())
-	advertisements := middleware.Age2Game(r).Advertisements()
+	advertisements := models.G(r).Advertisements()
 	advIds := advertisements.FindAdvertisements(func(adv *models.MainAdvertisement) bool {
 		_, found := adv.GetPeer(u)
 		return found
@@ -19,6 +19,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	for _, advId := range advIds {
 		advertisements.RemovePeer(advId, u)
 	}
+	u.LeaveAllChannels()
 	u.SetPresence(0)
 	sess.Delete()
 	i.JSON(&w, i.A{0})

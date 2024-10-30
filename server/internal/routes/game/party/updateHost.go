@@ -2,7 +2,7 @@ package party
 
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
@@ -14,7 +14,7 @@ func UpdateHost(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	_, ok := middleware.Age2Game(r).Advertisements().GetAdvertisement(int32(advId))
+	_, ok := models.G(r).Advertisements().GetAdvertisement(int32(advId))
 	if !ok {
 		i.JSON(&w, i.A{2})
 	} else {

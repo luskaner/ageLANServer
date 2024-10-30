@@ -11,7 +11,7 @@ func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	// As we don't have knowledge of friends, nor it is supposed to be many players on the server
 	// just return all online users as if they were friends
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	currentUser, _ := game.Users().GetUserById(sess.GetUserId())
 	profileInfo := game.Users().GetProfileInfo(true, func(u *models.MainUser) bool {
 		return u != currentUser && u.GetPresence() > 0

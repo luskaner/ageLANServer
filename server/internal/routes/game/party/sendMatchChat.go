@@ -2,19 +2,20 @@ package party
 
 import (
 	"encoding/json"
+	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
+	"strconv"
 )
 
 type request struct {
-	ToProfileIdsStr string `schema:"to_profile_ids"`
-	MessageTypeID   uint8  `schema:"messageTypeID"`
-	MatchID         int32  `schema:"match_id"`
-	Broadcast       bool   `schema:"broadcast"`
-	Message         string `schema:"message"`
+	MessageTypeID uint8  `schema:"messageTypeID"`
+	MatchID       int32  `schema:"match_id"`
+	Broadcast     bool   `schema:"broadcast"`
+	Message       string `schema:"message"`
 }
 
 func SendMatchChat(w http.ResponseWriter, r *http.Request) {
@@ -25,12 +26,27 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var toProfileIds []int32
-	err := json.Unmarshal([]byte(req.ToProfileIdsStr), &toProfileIds)
-	if err != nil {
-		i.JSON(&w, i.A{2})
-		return
+	game := models.G(r)
+	if game.Title() == common.GameAoE3 {
+		profileIdStr := r.FormValue("to_profile_id")
+		if profileIdStr == "" {
+			i.JSON(&w, i.A{0})
+			return
+		}
+		profileId, err := strconv.Atoi(profileIdStr)
+		if err != nil {
+			i.JSON(&w, i.A{2})
+			return
+		}
+		toProfileIds = append(toProfileIds, int32(profileId))
+	} else {
+		err := json.Unmarshal([]byte(r.FormValue("to_profile_ids")), &toProfileIds)
+		if err != nil {
+			i.JSON(&w, i.A{2})
+			return
+		}
 	}
-	game := middleware.Age2Game(r)
+
 	adv, ok := game.Advertisements().GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
@@ -69,17 +85,11 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			continue
 		}
-		go func(receiverSession string, receiverUserId int32, messageEncoded i.A) {
-			wss.SendMessage(
-				receiverSession,
-				i.A{
-					0,
-					"MatchReceivedChatMessage",
-					receiverUserId,
-					messageEncoded,
-				},
-			)
-		}(receiverSession.GetId(), receiver.GetId(), messageEncoded)
+		wss.SendOrStoreMessage(
+			receiverSession,
+			"MatchReceivedChatMessage",
+			messageEncoded,
+		)
 	}
 	i.JSON(&w, i.A{0})
 }

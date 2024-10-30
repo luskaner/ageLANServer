@@ -9,8 +9,8 @@ LogToConsole = false
 # are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
 GeneratePlatformUserId = false
 
-# Games that the server will accept. Currently, only "age2" is supported.
-Games = ['age2']
+# Games that the server will accept. Currently, "age2" and "age3" are supported.
+Games = ['age2', 'age3']
 
 [Announcement]
 

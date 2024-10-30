@@ -15,7 +15,7 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	gameUsers := game.Users()
 	currentUser, _ := gameUsers.GetUserById(sess.GetUserId())
 	// Only the host can add peers

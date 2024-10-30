@@ -3,6 +3,7 @@ package advertisement
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
@@ -15,7 +16,7 @@ func Leave(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	advertisements := game.Advertisements()
 	adv, ok := advertisements.GetAdvertisement(int32(advId))
 	if !ok {

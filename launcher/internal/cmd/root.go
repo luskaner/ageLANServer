@@ -107,7 +107,7 @@ var (
 				return
 			}
 			gameId := viper.GetString("Game")
-			if !common.ValidGame(gameId) {
+			if !common.SupportedGames.ContainsOne(gameId) {
 				fmt.Println("Invalid game type")
 				errorCode = launcherCommon.ErrInvalidGame
 				return
@@ -318,7 +318,7 @@ func Execute() error {
 	if runtime.GOOS == "windows" {
 		pathNamesInfo += " Path names need to use double backslashes or be within single quotes."
 	}
-	rootCmd.PersistentFlags().StringP("game", "e", common.GameAoE2, fmt.Sprintf(`Game type. Only "%s" is currently supported.`, common.GameAoE2))
+	rootCmd.PersistentFlags().StringP("game", "e", "", fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")))
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
@@ -414,18 +414,15 @@ func initConfig() {
 	} else {
 		viper.SetConfigName("config")
 	}
-	if err := viper.ReadInConfig(); err == nil {
+	if err := viper.MergeInConfig(); err == nil {
 		fmt.Println("Using main config file:", viper.ConfigFileUsed())
 	}
 	if gameCfgFile != "" {
 		viper.SetConfigFile(gameCfgFile)
 	} else {
 		viper.SetConfigName("config.game")
-		if err := viper.MergeInConfig(); err != nil {
-			fmt.Println("Failed to merge game config file:", err)
-		}
 	}
-	if err := viper.ReadInConfig(); err == nil {
+	if err := viper.MergeInConfig(); err == nil {
 		fmt.Println("Using game config file:", viper.ConfigFileUsed())
 	}
 	viper.AutomaticEnv()

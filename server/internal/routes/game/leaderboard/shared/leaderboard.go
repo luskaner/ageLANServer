@@ -3,7 +3,6 @@ package shared
 import (
 	"encoding/json"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 )
@@ -16,9 +15,9 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	}
 
 	message := i.A{0, i.A{}, i.A{}, i.A{}}
-	users := middleware.Age2Game(r).Users()
+	users := models.G(r).Users()
 	for _, id := range ids {
-		var u models.User
+		var u *models.MainUser
 		var ok bool
 		if isProfileId {
 			u, ok = users.GetUserById(id)

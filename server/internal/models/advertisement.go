@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/advertisement/shared"
 	"github.com/wk8/go-ordered-map/v2"
@@ -12,12 +13,12 @@ import (
 
 type ModDll struct {
 	file     string
-	checksum uint32
+	checksum int32
 }
 
 type Observers struct {
 	enabled  bool
-	delay    bool
+	delay    uint32
 	password string
 }
 
@@ -31,10 +32,10 @@ type MainAdvertisement struct {
 	ip                string
 	automatchPollId   int32
 	relayRegion       string
-	appBinaryChecksum uint32
+	appBinaryChecksum int32
 	mapName           string
 	description       string
-	dataChecksum      uint32
+	dataChecksum      int32
 	host              *MainUser
 	modDll            ModDll
 	modName           string
@@ -76,7 +77,7 @@ func (advs *MainAdvertisements) Initialize(users *MainUsers) {
 	advs.users = users
 }
 
-func (adv *MainAdvertisement) GetModDllChecksum() uint32 {
+func (adv *MainAdvertisement) GetModDllChecksum() int32 {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
 	return adv.modDll.checksum
@@ -142,13 +143,13 @@ func (adv *MainAdvertisement) GetHost() *MainUser {
 	return adv.host
 }
 
-func (adv *MainAdvertisement) GetAppBinaryChecksum() uint32 {
+func (adv *MainAdvertisement) GetAppBinaryChecksum() int32 {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
 	return adv.appBinaryChecksum
 }
 
-func (adv *MainAdvertisement) GetDataChecksum() uint32 {
+func (adv *MainAdvertisement) GetDataChecksum() int32 {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
 	return adv.dataChecksum
@@ -331,7 +332,7 @@ func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, rac
 		user:          u,
 		race:          race,
 		team:          team,
-		invites:       i.NewSafeSet[User](),
+		invites:       i.NewSafeSet[*MainUser](),
 		lock:          &sync.RWMutex{},
 	}
 	userId := peer.user.GetId()
@@ -347,7 +348,7 @@ func (advs *MainAdvertisements) RemovePeer(adv *MainAdvertisement, user *MainUse
 	adv.peers.Delete(user)
 	advs.removePeer(user)
 	adv.peerLock.Unlock(user.GetId())
-	if adv.peers.Len() == 0 || adv.host == user {
+	if adv.host == user {
 		advs.Delete(adv)
 	}
 }
@@ -396,7 +397,7 @@ func (adv *MainAdvertisement) EncodePeers() i.A {
 	return peers
 }
 
-func (adv *MainAdvertisement) Encode() i.A {
+func (adv *MainAdvertisement) Encode(gameId string) i.A {
 	var visible uint8
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
@@ -422,6 +423,33 @@ func (adv *MainAdvertisement) Encode() i.A {
 		started = 1
 	} else {
 		started = 0
+	}
+	if gameId == common.GameAoE3 {
+		return i.A{
+			adv.id,
+			adv.platformSessionId,
+			"0",
+			adv.host.GetId(),
+			started,
+			adv.description,
+			visible,
+			adv.mapName,
+			adv.options,
+			passworded,
+			adv.maxPlayers,
+			adv.slotInfo,
+			adv.matchType,
+			adv.EncodePeers(),
+			0,
+			0,
+			0,
+			0,
+			1,
+			1,
+			startTime,
+			adv.relayRegion,
+			nil,
+		}
 	}
 	return i.A{
 		adv.id,
@@ -466,12 +494,12 @@ func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdverti
 	return res
 }
 
-func (advs *MainAdvertisements) FindAdvertisementsEncoded(matches func(adv *MainAdvertisement) bool) []i.A {
+func (advs *MainAdvertisements) FindAdvertisementsEncoded(gameId string, matches func(adv *MainAdvertisement) bool) []i.A {
 	var res []i.A
 	advsOriginal := advs.FindAdvertisements(matches)
 	for _, adv := range advsOriginal {
 		adv.lock.RLock()
-		res = append(res, adv.Encode())
+		res = append(res, adv.Encode(gameId))
 		adv.lock.RUnlock()
 	}
 	return res
@@ -504,7 +532,7 @@ func (advs *MainAdvertisements) addPeer(user *MainUser) {
 }
 
 func (advs *MainAdvertisements) removePeer(user *MainUser) {
-	if !advs.isPeer(user) {
+	if advs.isPeer(user) {
 		advs.peers.Delete(user)
 	}
 }

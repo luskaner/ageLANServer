@@ -46,14 +46,14 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			gameSet := mapset.NewSet[string](viper.GetStringSlice("default.Games")...)
+			gameSet := mapset.NewSet[string](viper.GetStringSlice("Games")...)
 			if gameSet.IsEmpty() {
 				fmt.Println("No games specified")
 				_ = lock.Unlock()
 				os.Exit(internal.ErrGames)
 			}
 			for game := range gameSet.Iter() {
-				if !common.ValidGame(game) {
+				if !common.SupportedGames.ContainsOne(game) {
 					fmt.Println("Invalid game specified:", game)
 					_ = lock.Unlock()
 					os.Exit(internal.ErrGames)
@@ -65,7 +65,7 @@ var (
 					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
 				}
 			}
-			hosts := viper.GetStringSlice("default.Hosts")
+			hosts := viper.GetStringSlice("Hosts")
 			addrs := ip.ResolveHosts(hosts)
 			if addrs == nil || len(addrs) == 0 {
 				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
@@ -74,10 +74,10 @@ var (
 			}
 			mux := http.NewServeMux()
 			initializer.InitializeGames(gameSet)
-			routes.Initialize(mux)
+			routes.Initialize(mux, gameSet)
 			gameMux := middleware.GameMiddleware(mux)
 			sessionMux := middleware.SessionMiddleware(gameMux)
-			logToConsole := viper.GetBool("default.LogToConsole")
+			logToConsole := viper.GetBool("LogToConsole")
 			var writer io.Writer
 			if logToConsole {
 				writer = os.Stdout
@@ -129,9 +129,10 @@ var (
 			}
 			for _, addr := range addrs {
 				server := &http.Server{
-					Addr:     addr.String() + ":443",
-					Handler:  handler,
-					ErrorLog: customLogger,
+					Addr:        addr.String() + ":443",
+					Handler:     handler,
+					ErrorLog:    customLogger,
+					IdleTimeout: time.Second * 20,
 				}
 
 				fmt.Println("Listening on " + server.Addr)
@@ -180,7 +181,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
 	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the server using Broadcast.")
 	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the server using Multicast or Broadcast.")
-	rootCmd.PersistentFlags().StringArrayP("games", "e", []string{common.GameAoE2}, fmt.Sprintf(`Games that the server will accept. Currently, only "%s" is supported.`, common.GameAoE2))
+	rootCmd.PersistentFlags().StringArrayP("games", "e", common.SupportedGames.ToSlice(), fmt.Sprintf(`Games that the server will accept. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")))
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
@@ -199,16 +200,16 @@ func Execute() error {
 	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.PersistentFlags().Lookup("announceMulticastGroup")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("default.Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
+	if err := viper.BindPFlag("Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("default.Games", rootCmd.PersistentFlags().Lookup("games")); err != nil {
+	if err := viper.BindPFlag("Games", rootCmd.PersistentFlags().Lookup("games")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("default.LogToConsole", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {
+	if err := viper.BindPFlag("LogToConsole", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("default.GeneratePlatformUserId", rootCmd.PersistentFlags().Lookup("generatePlatformUserId")); err != nil {
+	if err := viper.BindPFlag("GeneratePlatformUserId", rootCmd.PersistentFlags().Lookup("generatePlatformUserId")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()

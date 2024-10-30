@@ -2,10 +2,10 @@ package chat
 
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 )
 
-func GetChatChannels(w http.ResponseWriter, _ *http.Request) {
-	// What even are chat channels? plus the server seems to always return the same thing
-	i.JSON(&w, i.A{0, i.A{}, 100})
+func GetChatChannels(w http.ResponseWriter, r *http.Request) {
+	i.JSON(&w, i.A{0, models.G(r).ChatChannels().Encode(), 100})
 }

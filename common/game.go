@@ -1,7 +1,10 @@
 package common
 
-const GameAoE2 = "age2"
+import mapset "github.com/deckarep/golang-set/v2"
 
-func ValidGame(game string) bool {
-	return game == GameAoE2
-}
+const (
+	GameAoE2 = "age2"
+	GameAoE3 = "age3"
+)
+
+var SupportedGames = mapset.NewSet[string](GameAoE2, GameAoE3)

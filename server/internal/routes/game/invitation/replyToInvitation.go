@@ -22,7 +22,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	game := middleware.Age2Game(r)
+	game := models.G(r)
 	u, _ := game.Users().GetUserById(sess.GetUserId())
 	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok {
@@ -46,7 +46,8 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peer.Uninvite(u)
-	inviterSession, ok := models.GetSessionByUserId(inviter.GetId())
+	var inviterSession *models.Session
+	inviterSession, ok = models.GetSessionByUserId(inviter.GetId())
 	if ok {
 		var acceptStr string
 		if q.Accept {
@@ -54,22 +55,15 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		} else {
 			acceptStr = "0"
 		}
-		go func(acceptStr string, inviterSessionId string, inviterId int32, userProfileInfo i.A, advId int32) {
-			// TODO: Wait for client to acknowledge it
-			_ = wss.SendMessage(
-				inviterSessionId,
-				i.A{
-					0,
-					"ReplyInvitationMessage",
-					inviterId,
-					i.A{
-						userProfileInfo,
-						advId,
-						acceptStr,
-					},
-				},
-			)
-		}(acceptStr, inviterSession.GetId(), q.InviterId, u.GetProfileInfo(false), q.AdvertisementId)
-	} // TODO: If the user is offline send it when it comes online
+		wss.SendOrStoreMessage(
+			inviterSession,
+			"ReplyInvitationMessage",
+			i.A{
+				u.GetProfileInfo(false),
+				q.AdvertisementId,
+				acceptStr,
+			},
+		)
+	}
 	i.JSON(&w, i.A{0})
 }

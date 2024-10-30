@@ -2,7 +2,6 @@ package shared
 
 import (
 	"encoding/json"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"net/http"
 	"strconv"
@@ -37,7 +36,7 @@ func ParseParameters(r *http.Request) (*models.MainAdvertisement, int, []int32, 
 	advId, err := strconv.ParseInt(advIdStr, 10, 32)
 	var adv *models.MainAdvertisement
 	if err == nil {
-		adv, _ = middleware.Age2Game(r).Advertisements().GetAdvertisement(int32(advId))
+		adv, _ = models.G(r).Advertisements().GetAdvertisement(int32(advId))
 	}
 	length := min(len(profileIds), len(raceIds), len(statGroupIds), len(teamIds))
 	return adv, length, profileIds, raceIds, statGroupIds, teamIds

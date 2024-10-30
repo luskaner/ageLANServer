@@ -15,6 +15,8 @@ func steamProcess(gameId string) string {
 	switch gameId {
 	case common.GameAoE2:
 		return "AoE2DE_s.exe"
+	case common.GameAoE3:
+		return "AoE3DE_s.exe"
 	default:
 		return ""
 	}
@@ -24,6 +26,9 @@ func microsoftStoreProcess(gameId string) string {
 	switch gameId {
 	case common.GameAoE2:
 		return "AoE2DE.exe"
+	case common.GameAoE3:
+		// TODO: Check if this is correct
+		return "AoE3DE.exe"
 	default:
 		return ""
 	}

@@ -1,8 +1,9 @@
 package advertisement
 
 import (
+	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/advertisement/shared"
 	"net/http"
 )
@@ -13,17 +14,33 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	advertisements := middleware.Age2Game(r).Advertisements()
+	game := models.G(r)
+	gameTitle := game.Title()
+	if gameTitle == common.GameAoE3 {
+		q.Joinable = true
+	}
+
+	advertisements := models.G(r).Advertisements()
 	adv, ok := advertisements.GetAdvertisement(q.Id)
 	if !ok {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
 	advertisements.Update(adv, &q)
-	i.JSON(&w,
-		i.A{
-			0,
-			adv.Encode(),
-		},
-	)
+
+	if gameTitle == common.GameAoE3 {
+		i.JSON(&w,
+			i.A{
+				0,
+			},
+		)
+	} else {
+		i.JSON(&w,
+			i.A{
+				0,
+				adv.Encode(gameTitle),
+			},
+		)
+	}
+
 }
