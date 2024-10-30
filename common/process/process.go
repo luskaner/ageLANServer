@@ -27,7 +27,6 @@ func microsoftStoreProcess(gameId string) string {
 	case common.GameAoE2:
 		return "AoE2DE.exe"
 	case common.GameAoE3:
-		// TODO: Check if this is correct
 		return "AoE3DE.exe"
 	default:
 		return ""

@@ -234,7 +234,7 @@ func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
 		i.A{},
 	}
 	if includePresence {
-		profileInfo = append(profileInfo, i.A{u.GetPresence(), nil, i.A{}}...)
+		profileInfo = append(profileInfo, u.GetPresence(), nil, i.A{})
 	}
 	return profileInfo
 }

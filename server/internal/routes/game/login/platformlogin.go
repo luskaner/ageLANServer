@@ -37,14 +37,11 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		sess.Delete()
 	}
 	sessionId := models.CreateSession(req.GameId, u.GetId())
-	if title == common.GameAoE3 {
-		sess, _ = models.GetSessionById(sessionId)
-		wss.SendOrStoreMessage(
-			sess,
-			"PresenceMessage",
-			i.A{u.GetProfileInfo(true)},
-		)
-	}
+	wss.SendOrStoreMessage(
+		sess,
+		"PresenceMessage",
+		i.A{u.GetProfileInfo(true)},
+	)
 	profileInfo := u.GetProfileInfo(false)
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}

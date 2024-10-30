@@ -71,44 +71,32 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		advertisements.NewPeer(storedAdv, u, adv.Race, adv.Team)
-
+		response := i.A{
+			0,
+			storedAdv.GetId(),
+			"authtoken",
+			"",
+			0,
+			0,
+			0,
+			storedAdv.GetRelayRegion(),
+			storedAdv.EncodePeers(),
+			0,
+		}
 		if gameTitle == common.GameAoE3 {
-			i.JSON(&w,
-				i.A{
-					0,
-					storedAdv.GetId(),
-					"authtoken",
-					"",
-					0,
-					0,
-					0,
-					storedAdv.GetRelayRegion(),
-					storedAdv.EncodePeers(),
-					0,
-					"0",
-				},
-			)
-		} else {
-			i.JSON(&w,
-				i.A{
-					0,
-					storedAdv.GetId(),
-					"authtoken",
-					"",
-					0,
-					0,
-					0,
-					storedAdv.GetRelayRegion(),
-					storedAdv.EncodePeers(),
-					0,
-					0,
-					nil,
-					nil,
-					"0",
-					storedAdv.GetDescription(),
-				},
+			response = append(response, "0")
+		}
+		if gameTitle == common.GameAoE2 {
+			response = append(
+				response,
+				0,
+				nil,
+				nil,
+				"0",
+				storedAdv.GetDescription(),
 			)
 		}
+		i.JSON(&w, response)
 	} else {
 		returnError(&w)
 	}

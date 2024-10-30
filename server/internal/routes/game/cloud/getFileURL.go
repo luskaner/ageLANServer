@@ -27,22 +27,18 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		finalPart := fileData.Key
-		if gameTitle == common.GameAoE3 {
-			descriptions[j] = i.A{
-				name,
-				fileData.Length,
-				fileData.Id,
-				fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
-			}
-		} else {
-			descriptions[j] = i.A{
-				name,
-				fileData.Length,
-				fileData.Id,
-				fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
-				finalPart,
-			}
+		description := i.A{
+			fileData.Length,
+			fileData.Id,
+			fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
 		}
+		if gameTitle == common.GameAoE2 {
+			description = append(
+				description,
+				finalPart,
+			)
+		}
+		descriptions[j] = description
 	}
 	i.JSON(&w, i.A{0, descriptions})
 }

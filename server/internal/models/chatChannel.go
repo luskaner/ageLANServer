@@ -94,7 +94,10 @@ type MainChatChannels struct {
 func (channels *MainChatChannels) Initialize(chatChannels map[string]MainChatChannel) {
 	channels.index = orderedmap.New[int32, *MainChatChannel]()
 	for id, channel := range chatChannels {
-		idInt, _ := strconv.Atoi(id)
+		idInt, err := strconv.ParseInt(id, 10, 32)
+		if err != nil {
+			panic(err)
+		}
 		channel.users = orderedmap.New[int32, *MainUser]()
 		channel.usersLock = &sync.RWMutex{}
 		channel.messagesLock = &sync.RWMutex{}

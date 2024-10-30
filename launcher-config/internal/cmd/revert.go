@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/aoe2DELanServer/common"
+	commonCmd "github.com/luskaner/aoe2DELanServer/common/cmd"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
@@ -15,7 +16,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 )
 
@@ -245,13 +245,7 @@ func InitRevert() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitRevert(revertCmd)
-	revertCmd.Flags().StringVarP(
-		&gameId,
-		"game",
-		"e",
-		"",
-		fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")),
-	)
+	commonCmd.GameVarCommand(revertCmd.Flags(), &gameId)
 	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(
 			&RemoveUserCert,

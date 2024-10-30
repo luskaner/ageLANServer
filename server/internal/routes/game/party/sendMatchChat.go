@@ -33,7 +33,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 			i.JSON(&w, i.A{0})
 			return
 		}
-		profileId, err := strconv.Atoi(profileIdStr)
+		profileId, err := strconv.ParseInt(profileIdStr, 10, 32)
 		if err != nil {
 			i.JSON(&w, i.A{2})
 			return

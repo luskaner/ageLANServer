@@ -9,7 +9,6 @@ import (
 )
 
 func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check it works in AoE3 if not empty
 	platformIdsStr := r.PostFormValue("platformIDs")
 	if len(platformIdsStr) < 1 {
 		i.JSON(&w, i.A{2, i.A{}})

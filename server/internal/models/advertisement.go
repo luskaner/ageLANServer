@@ -424,44 +424,30 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 	} else {
 		started = 0
 	}
-	if gameId == common.GameAoE3 {
-		return i.A{
-			adv.id,
-			adv.platformSessionId,
-			"0",
-			adv.host.GetId(),
-			started,
-			adv.description,
-			visible,
-			adv.mapName,
-			adv.options,
-			passworded,
-			adv.maxPlayers,
-			adv.slotInfo,
-			adv.matchType,
-			adv.EncodePeers(),
-			0,
-			0,
-			0,
-			0,
-			1,
-			1,
-			startTime,
-			adv.relayRegion,
-			nil,
-		}
-	}
-	return i.A{
+	response := i.A{
 		adv.id,
 		adv.platformSessionId,
-		0,
-		"",
-		"",
 		"0",
+	}
+	if gameId == common.GameAoE2 {
+		response = append(
+			response,
+			"",
+			"",
+			"0",
+		)
+	}
+	response = append(
+		response,
 		adv.host.GetId(),
 		started,
 		adv.description,
-		adv.description,
+	)
+	if gameId == common.GameAoE2 {
+		response = append(response, adv.description)
+	}
+	response = append(
+		response,
 		visible,
 		adv.mapName,
 		adv.options,
@@ -479,7 +465,8 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 		startTime,
 		adv.relayRegion,
 		nil,
-	}
+	)
+	return response
 }
 
 func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdvertisement) bool) []*MainAdvertisement {

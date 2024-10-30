@@ -8,7 +8,6 @@ import (
 )
 
 func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check If AoE3 calls this
 	matchIdsStr := r.URL.Query().Get("match_ids")
 	var advsIds []int32
 	err := json.Unmarshal([]byte(matchIdsStr), &advsIds)

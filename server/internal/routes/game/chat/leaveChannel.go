@@ -15,7 +15,7 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	chatChannelId, err := strconv.Atoi(chatChannelIdStr)
+	chatChannelId, err := strconv.ParseInt(chatChannelIdStr, 10, 32)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return

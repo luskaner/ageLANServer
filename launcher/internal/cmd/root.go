@@ -5,6 +5,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/inconshreveable/mousetrap"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/cmd"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
@@ -318,7 +319,7 @@ func Execute() error {
 	if runtime.GOOS == "windows" {
 		pathNamesInfo += " Path names need to use double backslashes or be within single quotes."
 	}
-	rootCmd.PersistentFlags().StringP("game", "e", "", fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")))
+	cmd.GameCommand(rootCmd.PersistentFlags())
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)

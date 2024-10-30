@@ -7,6 +7,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/aoe2DELanServer/common/cmd"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	"github.com/luskaner/aoe2DELanServer/common/pidLock"
 	"github.com/luskaner/aoe2DELanServer/server/internal"
@@ -181,6 +182,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
 	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the server using Broadcast.")
 	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the server using Multicast or Broadcast.")
+	cmd.GamesCommand(rootCmd.PersistentFlags())
 	rootCmd.PersistentFlags().StringArrayP("games", "e", common.SupportedGames.ToSlice(), fmt.Sprintf(`Games that the server will accept. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")))
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")

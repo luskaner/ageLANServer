@@ -8,9 +8,12 @@ import (
 )
 
 func GetAvailableCommunityEvents(w http.ResponseWriter, r *http.Request) {
-	if models.G(r).Title() == common.GameAoE3 {
-		i.JSON(&w, i.A{0, i.A{}, i.A{}})
-	} else {
-		i.JSON(&w, i.A{0, i.A{}, i.A{}, i.A{}, i.A{}, i.A{}, i.A{}})
+	response := i.A{0, i.A{}, i.A{}}
+	if models.G(r).Title() == common.GameAoE2 {
+		response = append(
+			response,
+			i.A{}, i.A{}, i.A{}, i.A{},
+		)
 	}
+	i.JSON(&w, response)
 }

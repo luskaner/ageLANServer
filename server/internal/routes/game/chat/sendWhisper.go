@@ -19,7 +19,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	targetUserId, err := strconv.Atoi(targetUserIdStr)
+	targetUserId, err := strconv.ParseInt(targetUserIdStr, 10, 32)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return

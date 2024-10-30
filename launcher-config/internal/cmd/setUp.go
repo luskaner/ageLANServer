@@ -4,6 +4,7 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/aoe2DELanServer/common"
+	commonCmd "github.com/luskaner/aoe2DELanServer/common/cmd"
 	"github.com/luskaner/aoe2DELanServer/common/executor"
 	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
 	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
@@ -15,7 +16,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 )
 
@@ -253,13 +253,7 @@ func InitSetUp() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
-	setUpCmd.Flags().StringVarP(
-		&gameId,
-		"game",
-		"e",
-		"",
-		fmt.Sprintf(`Game type. %s are supported.`, strings.Join(common.SupportedGames.ToSlice(), ", ")),
-	)
+	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameId)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(
 			&AddUserCertData,
