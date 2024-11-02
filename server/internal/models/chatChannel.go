@@ -40,32 +40,44 @@ func (channel *MainChatChannel) Encode() internal.A {
 	}
 }
 
-func (channel *MainChatChannel) EncodeUsers() internal.A {
-	c := make(internal.A, 0, channel.users.Len())
+func (channel *MainChatChannel) encodeUsers() internal.A {
 	i := 0
-	channel.usersLock.RLock()
+	c := make(internal.A, channel.users.Len())
 	for el := channel.users.Oldest(); el != nil; el = el.Next() {
 		c[i] = internal.A{0, el.Value.GetProfileInfo(false)}
 		i++
 	}
-	channel.usersLock.RUnlock()
 	return c
+}
+
+func (channel *MainChatChannel) EncodeUsers() internal.A {
+	channel.usersLock.RLock()
+	defer channel.usersLock.RUnlock()
+	return channel.encodeUsers()
+}
+
+func (channel *MainChatChannel) getUsers() []*MainUser {
+	i := 0
+	users := make([]*MainUser, channel.users.Len())
+	for el := channel.users.Oldest(); el != nil; el = el.Next() {
+		users[i] = el.Value
+		i++
+	}
+	return users
 }
 
 func (channel *MainChatChannel) GetUsers() []*MainUser {
 	channel.usersLock.RLock()
-	notifyUsers := make([]*MainUser, 0, channel.users.Len())
-	for el := channel.users.Oldest(); el != nil; el = el.Next() {
-		notifyUsers = append(notifyUsers, el.Value)
-	}
-	channel.usersLock.RUnlock()
-	return notifyUsers
+	defer channel.usersLock.RUnlock()
+	return channel.getUsers()
 }
 
-func (channel *MainChatChannel) AddUser(user *MainUser) {
+func (channel *MainChatChannel) AddUser(user *MainUser) internal.A {
 	channel.usersLock.Lock()
+	defer channel.usersLock.Unlock()
+	encodedUsers := channel.encodeUsers()
 	channel.users.Set(user.GetId(), user)
-	channel.usersLock.Unlock()
+	return encodedUsers
 }
 
 func (channel *MainChatChannel) RemoveUser(user *MainUser) {
@@ -76,8 +88,8 @@ func (channel *MainChatChannel) RemoveUser(user *MainUser) {
 
 func (channel *MainChatChannel) HasUser(user *MainUser) bool {
 	channel.usersLock.RLock()
+	defer channel.usersLock.RUnlock()
 	_, ok := channel.users.Load(user.GetId())
-	channel.usersLock.RUnlock()
 	return ok
 }
 

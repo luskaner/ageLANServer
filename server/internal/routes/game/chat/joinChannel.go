@@ -1,6 +1,8 @@
 package chat
 
 import (
+	"encoding/json"
+	"fmt"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
@@ -10,6 +12,7 @@ import (
 )
 
 func JoinChannel(w http.ResponseWriter, r *http.Request) {
+	// FIXME: Channels might show duplicate users (including the count)
 	chatChannelIdStr := r.Form.Get("chatroomID")
 	if chatChannelIdStr == "" {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
@@ -27,22 +30,29 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	user, _ := game.Users().GetUserById(sess.GetUserId())
+	users := game.Users()
+	user, _ := users.GetUserById(sess.GetUserId())
 	if chatChannel.HasUser(user) {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
-	i.JSON(&w, i.A{0, chatChannelIdStr, 0, chatChannel.EncodeUsers()})
-	user.JoinChatChannel(chatChannel)
+	encodedUsers := user.JoinChatChannel(chatChannel)
+	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
+	jsonData, err := json.Marshal(i.A{0, chatChannelIdStr, 0, encodedUsers})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r.RemoteAddr, string(jsonData))
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false)}}
-	existingUsers := chatChannel.GetUsers()
-	for _, existingUser := range existingUsers {
+	for _, userId := range users.GetUserIds() {
 		var existingUserSession *models.Session
-		existingUserSession, ok = models.GetSessionByUserId(existingUser.GetId())
-		wss.SendOrStoreMessage(
-			existingUserSession,
-			"ChannelJoinMessage",
-			staticResponse,
-		)
+		existingUserSession, ok = models.GetSessionByUserId(userId)
+		if ok {
+			wss.SendOrStoreMessage(
+				existingUserSession,
+				"ChannelJoinMessage",
+				staticResponse,
+			)
+		}
 	}
 }

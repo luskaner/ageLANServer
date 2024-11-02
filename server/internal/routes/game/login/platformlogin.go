@@ -5,6 +5,7 @@ import (
 	"github.com/luskaner/aoe2DELanServer/common"
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/relationship"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
 	"time"
@@ -30,19 +31,30 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	i.RngLock.Unlock()
 	game := models.G(r)
 	title := game.Title()
-	u := game.Users().GetOrCreateUser(title, r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
-	u.SetPresence(1)
+	users := game.Users()
+	u := users.GetOrCreateUser(title, r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	sess, ok := models.GetSessionByUserId(u.GetId())
 	if ok {
 		sess.Delete()
 	}
 	sessionId := models.CreateSession(req.GameId, u.GetId())
-	wss.SendOrStoreMessage(
-		sess,
-		"PresenceMessage",
-		i.A{u.GetProfileInfo(true)},
-	)
+	sess, _ = models.GetSessionById(sessionId)
+	relationship.ChangePresence(users, u, 1)
 	profileInfo := u.GetProfileInfo(false)
+	if title == common.GameAoE3 {
+		for _, user := range users.GetUserIds() {
+			if user != u.GetId() {
+				currentSess, currentOk := models.GetSessionByUserId(user)
+				if currentOk {
+					wss.SendOrStoreMessage(
+						currentSess,
+						"FriendAcceptMessage",
+						i.A{profileInfo},
+					)
+				}
+			}
+		}
+	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title != common.GameAoE3 {
@@ -97,16 +109,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.A{
 			0,
 			profileInfo,
-			i.A{
-				0,
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-			},
+			relationship.RelationShips(title, users, u),
 			extraProfileInfoList,
 			unknownProfileInfoList,
 			nil,

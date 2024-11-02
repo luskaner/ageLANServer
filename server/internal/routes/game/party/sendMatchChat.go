@@ -19,6 +19,7 @@ type request struct {
 }
 
 func SendMatchChat(w http.ResponseWriter, r *http.Request) {
+	// FIXME: AoE3 duplicate messages/wrong total
 	var req request
 	if err := i.Bind(r, &req); err != nil {
 		i.JSON(&w, i.A{2})

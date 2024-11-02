@@ -56,9 +56,8 @@ var (
 	canTrustCertificateValues      = mapset.NewSet[string](falseValue, "user", "local")
 	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
-		Use: filepath.Base(os.Args[0]),
-		// TODO: Add more games as they become implemented
-		Short: "launcher discovers and configures AoE 2:DE to connect to the local LAN server",
+		Use:   filepath.Base(os.Args[0]),
+		Short: "launcher discovers and configures AoE 2 and AoE 3 (both DE) to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}

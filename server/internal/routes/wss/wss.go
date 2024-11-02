@@ -126,7 +126,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		sess.ResetExpiryTimer()
-		// TODO: Handle other operations
 	}
 }
 

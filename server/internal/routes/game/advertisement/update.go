@@ -16,15 +16,16 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	gameTitle := game.Title()
-	if gameTitle == common.GameAoE3 {
-		q.Joinable = true
-	}
 
 	advertisements := models.G(r).Advertisements()
 	adv, ok := advertisements.GetAdvertisement(q.Id)
 	if !ok {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
+	}
+	if gameTitle == common.GameAoE3 {
+		q.PlatformSessionId = adv.GetPlatformSessionId()
+		q.Joinable = true
 	}
 	advertisements.Update(adv, &q)
 

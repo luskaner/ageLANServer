@@ -28,6 +28,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 		}
 		finalPart := fileData.Key
 		description := i.A{
+			name,
 			fileData.Length,
 			fileData.Id,
 			fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),

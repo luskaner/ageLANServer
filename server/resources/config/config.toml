@@ -14,10 +14,10 @@ Games = ['age2', 'age3']
 
 [Announcement]
 
-# Whether to announce the server using Multicast
+# Whether to announce the server using Multicast. More efficient but less compatible than Broadcast.
 Multicast = true
-# Whether to announce the server using Broadcast
-Broadcast = false
+# Whether to announce the server using Broadcast.
+Broadcast = true
 # Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
 Port = 31978
 # Multicast group to announce to (IPv4 only).

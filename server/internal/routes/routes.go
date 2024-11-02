@@ -154,9 +154,19 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	if gameSet.ContainsOne(common.GameAoE3) {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformLobbyID", advertisement.UpdatePlatformLobbyID)
 	}
-	advertisementGroup.HandleFunc("GET", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
+	if gameSet.ContainsOne(common.GameAoE2) {
+		advertisementGroup.HandleFunc("GET", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
+	}
+	if gameSet.ContainsOne(common.GameAoE3) {
+		advertisementGroup.HandleFunc("POST", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
+	}
 	advertisementGroup.HandleFunc("GET", "/getAdvertisements", advertisement.GetAdvertisements)
-	advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
+	if gameSet.ContainsOne(common.GameAoE3) {
+		advertisementGroup.HandleFunc("POST", "/findAdvertisements", advertisement.FindAdvertisements)
+	}
+	if gameSet.ContainsOne(common.GameAoE2) {
+		advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
+	}
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)
 
 	chatGroup := gameGroup.Subgroup("/chat")

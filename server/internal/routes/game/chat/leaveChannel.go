@@ -9,6 +9,23 @@ import (
 	"strconv"
 )
 
+func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32) {
+	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false)}
+	for _, userId := range users.GetUserIds() {
+		if userId == user.GetId() {
+			continue
+		}
+		existingUserSession, ok := models.GetSessionByUserId(userId)
+		if ok {
+			wss.SendOrStoreMessage(
+				existingUserSession,
+				"ChannelLeaveMessage",
+				staticResponse,
+			)
+		}
+	}
+}
+
 func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 	chatChannelIdStr := r.Form.Get("chatroomID")
 	if chatChannelIdStr == "" {
@@ -27,22 +44,13 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	user, _ := game.Users().GetUserById(sess.GetUserId())
+	users := game.Users()
+	user, _ := users.GetUserById(sess.GetUserId())
 	if !chatChannel.HasUser(user) {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	user.LeaveChatChannel(chatChannel)
 	i.JSON(&w, i.A{0})
-	staticResponse := i.A{chatChannelIdStr, user.GetProfileInfo(false)}
-	existingUsers := chatChannel.GetUsers()
-	for _, existingUser := range existingUsers {
-		var existingUserSession *models.Session
-		existingUserSession, ok = models.GetSessionByUserId(existingUser.GetId())
-		wss.SendOrStoreMessage(
-			existingUserSession,
-			"ChannelLeaveMessage",
-			staticResponse,
-		)
-	}
+	NotifyLeaveChannel(users, user, chatChannel.GetId())
 }

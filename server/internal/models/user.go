@@ -16,18 +16,20 @@ import (
 )
 
 type MainUser struct {
-	id               int32
-	statId           int32
-	alias            string
-	platformUserId   uint64
-	profileId        int32
-	profileMetadata  string
-	profileUintFlag1 uint8
-	reliclink        int32
-	isXbox           bool
-	presence         int8
-	lock             *sync.Mutex
-	chatChannels     map[int32]*MainChatChannel
+	id                int32
+	statId            int32
+	alias             string
+	platformUserId    uint64
+	profileId         int32
+	profileMetadata   string
+	profileUintFlag1  uint8
+	reliclink         int32
+	isXbox            bool
+	presence          int8
+	presenceLock      *sync.RWMutex
+	chatChannels      map[int32]*MainChatChannel
+	advertisement     *MainAdvertisement
+	advertisementLock *sync.RWMutex
 }
 
 type MainUsers struct {
@@ -51,17 +53,18 @@ func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId 
 	users.hasherLock.Unlock()
 	rng := rand.New(rand.NewSource(int64(seed)))
 	return &MainUser{
-		id:               rng.Int31(),
-		statId:           rng.Int31(),
-		profileId:        rng.Int31(),
-		profileMetadata:  profileMetadata,
-		profileUintFlag1: profileUIntFlag1,
-		reliclink:        rng.Int31(),
-		alias:            alias,
-		platformUserId:   platformUserId,
-		isXbox:           isXbox,
-		lock:             &sync.Mutex{},
-		chatChannels:     map[int32]*MainChatChannel{},
+		id:                rng.Int31(),
+		statId:            rng.Int31(),
+		profileId:         rng.Int31(),
+		profileMetadata:   profileMetadata,
+		profileUintFlag1:  profileUIntFlag1,
+		reliclink:         rng.Int31(),
+		alias:             alias,
+		platformUserId:    platformUserId,
+		isXbox:            isXbox,
+		presenceLock:      &sync.RWMutex{},
+		chatChannels:      map[int32]*MainChatChannel{},
+		advertisementLock: &sync.RWMutex{},
 	}
 }
 
@@ -112,8 +115,8 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox
 			profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		}
 		var profileUIntFlag1 uint8
-		if gameId != common.GameAoE3 {
-			profileUIntFlag1 = 0
+		if gameId == common.GameAoE3 {
+			profileUIntFlag1 = 1
 		}
 		mainUser = users.generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
 		users.store.Store(identifier, mainUser)
@@ -190,6 +193,16 @@ func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
 	return nil, false
 }
 
+func (users *MainUsers) GetUserIds() []int32 {
+	userIds := make([]int32, users.store.Len())
+	j := 0
+	for u := range users.store.Iter() {
+		userIds[j] = u.Value.GetId()
+		j++
+	}
+	return userIds
+}
+
 func (u *MainUser) GetExtraProfileInfo() i.A {
 	return i.A{
 		u.statId,
@@ -240,14 +253,14 @@ func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
 }
 
 func (u *MainUser) GetPresence() int8 {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.presenceLock.RLock()
+	defer u.presenceLock.RUnlock()
 	return u.presence
 }
 
 func (u *MainUser) SetPresence(value int8) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.presenceLock.Lock()
+	defer u.presenceLock.Unlock()
 	u.presence = value
 }
 
@@ -259,9 +272,15 @@ func (u *MainUser) GetProfileUintFlag1() uint8 {
 	return u.profileUintFlag1
 }
 
-func (u *MainUser) JoinChatChannel(channel *MainChatChannel) {
+func (u *MainUser) GetAdvertisement() *MainAdvertisement {
+	u.advertisementLock.RLock()
+	defer u.advertisementLock.RUnlock()
+	return u.advertisement
+}
+
+func (u *MainUser) JoinChatChannel(channel *MainChatChannel) i.A {
 	u.chatChannels[channel.GetId()] = channel
-	channel.AddUser(u)
+	return channel.AddUser(u)
 }
 
 func (u *MainUser) LeaveChatChannel(channel *MainChatChannel) {
@@ -269,15 +288,24 @@ func (u *MainUser) LeaveChatChannel(channel *MainChatChannel) {
 	channel.RemoveUser(u)
 }
 
-func (u *MainUser) LeaveAllChannels() {
+func (u *MainUser) GetChannels() []*MainChatChannel {
+	channels := make([]*MainChatChannel, len(u.chatChannels))
+	j := 0
 	for _, channel := range u.chatChannels {
-		channel.RemoveUser(u)
+		channels[j] = channel
+		j++
 	}
-	u.chatChannels = map[int32]*MainChatChannel{}
+	return channels
 }
 
 func (u *MainUser) SendChatChannelMessage(channel *MainChatChannel, text string) {
 	u.chatChannels[channel.GetId()].AddMessage(u, text)
+}
+
+func (u *MainUser) SetAdvertisement(adv *MainAdvertisement) {
+	u.advertisementLock.Lock()
+	defer u.advertisementLock.Unlock()
+	u.advertisement = adv
 }
 
 func (users *MainUsers) getUsers() []*MainUser {

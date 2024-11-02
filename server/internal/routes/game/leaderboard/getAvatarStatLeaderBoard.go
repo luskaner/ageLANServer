@@ -6,6 +6,5 @@ import (
 )
 
 func GetAvatarStatLeaderBoard(w http.ResponseWriter, _ *http.Request) {
-	// TODO Check it works (aoe3)
 	i.JSON(&w, i.A{0, i.A{}, i.A{}})
 }

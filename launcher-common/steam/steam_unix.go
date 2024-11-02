@@ -6,10 +6,10 @@ import (
 	"path"
 )
 
-func UserProfilePath() string {
+func UserProfilePath(gameId string) string {
 	suffix := ConfigPath()
 	if suffix == "" {
 		return ""
 	}
-	return path.Join(suffix, "steamapps", "compatdata", appID, "pfx", "drive_c", "users", "steamuser")
+	return path.Join(suffix, "steamapps", "compatdata", AppId(gameId), "pfx", "drive_c", "users", "steamuser")
 }

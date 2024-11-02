@@ -57,13 +57,10 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			returnError(&w)
 			return
 		}
-		if advertisements.IsInAdvertisement(u) {
-			if gameTitle == common.GameAoE3 {
-				// TODO: Leave advertisement to enable Rematch
-			} else {
-				returnError(&w)
-				return
-			}
+		// Leave the previous match if the user is already in one
+		// Necessary for AoE3 but might as well do it for all
+		if existingAdv := u.GetAdvertisement(); existingAdv != nil {
+			advertisements.RemovePeer(existingAdv, u)
 		}
 		storedAdv := advertisements.Store(&adv)
 		if storedAdv == nil {

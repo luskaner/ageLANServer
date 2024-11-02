@@ -64,15 +64,11 @@ type MainAdvertisement struct {
 }
 
 type MainAdvertisements struct {
-	peers *i.SafeSet[*MainUser]
-	hosts *i.SafeSet[*MainUser]
 	store *i.SafeMap[int32, *MainAdvertisement]
 	users *MainUsers
 }
 
 func (advs *MainAdvertisements) Initialize(users *MainUsers) {
-	advs.peers = i.NewSafeSet[*MainUser]()
-	advs.hosts = i.NewSafeSet[*MainUser]()
 	advs.store = i.NewSafeMap[int32, *MainAdvertisement]()
 	advs.users = users
 }
@@ -185,6 +181,12 @@ func (adv *MainAdvertisement) GetVersionFlags() uint32 {
 	return adv.versionFlags
 }
 
+func (adv *MainAdvertisement) GetPlatformSessionId() uint64 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
+	return adv.platformSessionId
+}
+
 func (adv *MainAdvertisement) GetPeers() *orderedmap.OrderedMap[*MainUser, *MainPeer] {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
@@ -287,11 +289,11 @@ func (advs *MainAdvertisements) Update(adv *MainAdvertisement, advFrom *shared.A
 func (advs *MainAdvertisements) update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
 	adv.lock.Lock()
 	if adv.host != nil {
-		advs.removeHost(adv.host)
+		adv.host.SetAdvertisement(nil)
 		adv.host = nil
 	}
 	adv.host, _ = advs.users.GetUserById(advFrom.HostId)
-	advs.addHost(adv.host)
+	adv.host.SetAdvertisement(adv)
 	adv.automatchPollId = advFrom.AutomatchPollId
 	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
 	adv.mapName = advFrom.MapName
@@ -323,9 +325,9 @@ func (advs *MainAdvertisements) GetAdvertisement(id int32) (*MainAdvertisement, 
 }
 
 func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, race int32, team int32) *MainPeer {
-	if advs.isPeer(u) {
+	if peer, ok := adv.GetPeer(u); ok {
 		// Ignore already added peers (via host & join)
-		return nil
+		return peer
 	}
 	peer := &MainPeer{
 		advertisement: adv,
@@ -339,14 +341,14 @@ func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, rac
 	adv.peerLock.Lock(userId)
 	defer adv.peerLock.Unlock(userId)
 	adv.peers.Set(peer.user, peer)
-	advs.addPeer(u)
+	u.SetAdvertisement(adv)
 	return peer
 }
 
 func (advs *MainAdvertisements) RemovePeer(adv *MainAdvertisement, user *MainUser) {
 	adv.peerLock.Lock(user.GetId())
 	adv.peers.Delete(user)
-	advs.removePeer(user)
+	user.SetAdvertisement(nil)
 	adv.peerLock.Unlock(user.GetId())
 	if adv.host == user {
 		advs.Delete(adv)
@@ -365,9 +367,9 @@ func (advs *MainAdvertisements) Delete(adv *MainAdvertisement) {
 	adv.lock.Lock()
 	defer adv.lock.Unlock()
 	advs.store.Delete(adv.id)
-	advs.removeHost(adv.host)
+	adv.host.SetAdvertisement(nil)
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
-		advs.removePeer(el.Key)
+		el.Value.GetUser().SetAdvertisement(nil)
 	}
 }
 
@@ -381,6 +383,12 @@ func (adv *MainAdvertisement) UpdateState(state int8) {
 		adv.visible = false
 		adv.joinable = false
 	}
+}
+
+func (adv *MainAdvertisement) UpdatePlatformSessionId(sessionId uint64) {
+	adv.lock.Lock()
+	defer adv.lock.Unlock()
+	adv.platformSessionId = sessionId
 }
 
 func (adv *MainAdvertisement) EncodePeers() i.A {
@@ -490,48 +498,4 @@ func (advs *MainAdvertisements) FindAdvertisementsEncoded(gameId string, matches
 		adv.lock.RUnlock()
 	}
 	return res
-}
-
-func (advs *MainAdvertisements) IsInAdvertisement(user *MainUser) bool {
-	return advs.IsHost(user) || advs.IsPeer(user)
-}
-
-func (advs *MainAdvertisements) IsPeer(user *MainUser) bool {
-	return advs.isPeer(user)
-}
-
-func (advs *MainAdvertisements) IsHost(user *MainUser) bool {
-	return advs.isHost(user)
-}
-
-func (advs *MainAdvertisements) isPeer(user *MainUser) bool {
-	return advs.peers.Has(user)
-}
-
-func (advs *MainAdvertisements) isHost(user *MainUser) bool {
-	return advs.hosts.Has(user)
-}
-
-func (advs *MainAdvertisements) addPeer(user *MainUser) {
-	if !advs.isPeer(user) {
-		advs.peers.Add(user)
-	}
-}
-
-func (advs *MainAdvertisements) removePeer(user *MainUser) {
-	if advs.isPeer(user) {
-		advs.peers.Delete(user)
-	}
-}
-
-func (advs *MainAdvertisements) addHost(user *MainUser) {
-	if !advs.isHost(user) {
-		advs.hosts.Add(user)
-	}
-}
-
-func (advs *MainAdvertisements) removeHost(user *MainUser) {
-	if advs.isHost(user) {
-		advs.hosts.Delete(user)
-	}
 }

@@ -2,6 +2,7 @@ package chat
 
 import (
 	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
 	"github.com/luskaner/aoe2DELanServer/server/internal/models"
 	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 )
 
 func SendWhisper(w http.ResponseWriter, r *http.Request) {
+	// FIXME: Show people as offline always
 	text := r.Form.Get("message")
 	if text == "" {
 		i.JSON(&w, i.A{2})
@@ -29,13 +31,14 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	user, _ := models.G(r).Users().GetUserById(session.GetUserId())
+	currentSession, _ := middleware.Session(r)
+	currentUser, _ := models.G(r).Users().GetUserById(currentSession.GetUserId())
 	i.JSON(&w, i.A{0})
 	wss.SendOrStoreMessage(
 		session,
 		"PersonalChatMessage",
 		i.A{
-			user.GetProfileInfo(false),
+			currentUser.GetProfileInfo(false),
 			"",
 			text,
 		},

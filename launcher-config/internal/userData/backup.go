@@ -36,7 +36,7 @@ func (d Data) absolutePath(gameId string) string {
 }
 
 func Path(gameId string) string {
-	return filepath.Join(basePath(), finalPath(gameId))
+	return filepath.Join(basePath(gameId), finalPath(gameId))
 }
 
 func (d Data) switchPaths(gameId, backupPath string, currentPath string) bool {
