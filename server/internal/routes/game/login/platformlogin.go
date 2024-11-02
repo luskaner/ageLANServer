@@ -109,7 +109,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.A{
 			0,
 			profileInfo,
-			relationship.RelationShips(title, users, u),
+			relationship.Relationships(title, users, u),
 			extraProfileInfoList,
 			unknownProfileInfoList,
 			nil,

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func RelationShips(gameTitle string, users *models.MainUsers, user *models.MainUser) i.A {
+func Relationships(gameTitle string, users *models.MainUsers, user *models.MainUser) i.A {
 	profileInfo := users.GetProfileInfo(true, func(u *models.MainUser) bool {
 		return u != user && u.GetPresence() > 0
 	})
@@ -29,5 +29,5 @@ func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	users := game.Users()
 	currentUser, _ := users.GetUserById(sess.GetUserId())
-	i.JSON(&w, RelationShips(game.Title(), users, currentUser))
+	i.JSON(&w, Relationships(game.Title(), users, currentUser))
 }
