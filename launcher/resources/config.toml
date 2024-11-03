@@ -13,7 +13,8 @@ CanTrustCertificate = 'local'
 CanBroadcastBattleServer = 'auto'
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
 IsolateMetadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared
+# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
+# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
 IsolateProfiles = false
 
 [Server]
@@ -27,7 +28,7 @@ Start = 'auto'
 # 4. '../server/'
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
-# {Game} will be replaced by the game name.
+# {Game} will be replaced by the game name. Default, only start the server for the given name.
 # Windows: Path names need to use double backslashes or be within single quotes.
 # Note: You may use environment variables.
 ExecutableArgs = ['-e', '{Game}']

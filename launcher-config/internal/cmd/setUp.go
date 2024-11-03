@@ -96,6 +96,7 @@ var setUpCmd = &cobra.Command{
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
+		fmt.Printf("Setting up configuration for %s...\n", gameId)
 		isAdmin := executor.IsAdmin()
 		if AddUserCertData != nil {
 			fmt.Println("Adding user certificate, authorize it if needed...")

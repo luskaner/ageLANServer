@@ -7,7 +7,7 @@ COPY server-docker/server/go.work.template go.work
 COPY common common
 COPY server server
 RUN mkdir build
-RUN cp -r server/resources build/resources
+RUN cp -r server/resources build/resources && rm -rf build/resources/windows && rm -rf build/resources/unix
 RUN mkdir -p build/resources/certificates
 RUN go build -ldflags="-s -w" -o build/server ./server
 # Compress

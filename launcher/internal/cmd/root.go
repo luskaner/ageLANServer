@@ -202,7 +202,7 @@ var (
 				return
 			}
 			// Setup
-			fmt.Println("Setting up...")
+			fmt.Printf("Setting up %s...\n", gameId)
 			if len(setupCommand) > 0 {
 				fmt.Printf("Running setup command '%s' and waiting for it to exit...\n", viper.GetString("Config.SetupCommand"))
 				result := config.RunSetupCommand(setupCommand)

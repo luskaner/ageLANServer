@@ -311,17 +311,22 @@ archives:
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
       - launcher/resources/config.toml
-      - launcher/resources/config.game.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe3.toml
-      - src: launcher/resources/windows/launch_aoe2.bat
-        dst: launcher/launch_aoe2.bat
-      - src: launcher/resources/windows/launch_aoe3.bat
-        dst: launcher/launch_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup.bat
-        dst: launcher/cleanup.bat
+      - src: server/resources/windows/server_aoe2.bat
+        dst: server/server_aoe2.bat
+      - src: server/resources/windows/server_aoe3.bat
+        dst: server/server_aoe3.bat
+      - src: launcher/resources/windows/launcher_aoe2.bat
+        dst: launcher/launcher_aoe2.bat
+      - src: launcher/resources/windows/launcher_aoe3.bat
+        dst: launcher/launcher_aoe3.bat
+      - src: launcher-config/resources/windows/cleanup_aoe2.bat
+        dst: launcher/cleanup_aoe2.bat
+      - src: launcher-config/resources/windows/cleanup_aoe3.bat
+        dst: launcher/cleanup_aoe3.bat
     format: zip
   - id: all_windows_arm64
     builds:
@@ -347,17 +352,22 @@ archives:
       - src: launcher-config/README.md
         dst: launcher/docs/README-config.txt
       - launcher/resources/config.toml
-      - launcher/resources/config.game.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe3.toml
-      - src: launcher/resources/windows/launch_aoe2.bat
-        dst: launcher/launch_aoe2.bat
-      - src: launcher/resources/windows/launch_aoe3.bat
-        dst: launcher/launch_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup.bat
-        dst: launcher/cleanup.bat
+      - src: server/resources/windows/server_aoe2.bat
+        dst: server/server_aoe2.bat
+      - src: server/resources/windows/server_aoe3.bat
+        dst: server/server_aoe3.bat
+      - src: launcher/resources/windows/launcher_aoe2.bat
+        dst: launcher/launcher_aoe2.bat
+      - src: launcher/resources/windows/launcher_aoe3.bat
+        dst: launcher/launcher_aoe3.bat
+      - src: launcher-config/resources/windows/cleanup_aoe2.bat
+        dst: launcher/cleanup_aoe2.bat
+      - src: launcher-config/resources/windows/cleanup_aoe3.bat
+        dst: launcher/cleanup_aoe3.bat
     format: tar.xz
   - id: all_linux
     builds:
@@ -382,8 +392,12 @@ archives:
       - src: server/README.md
         dst: server/docs/README
       - server/resources/config
-      - src: server/resources/unix/server.sh
-        dst: server/server.sh
+      - src: server/resources/unix/server_aoe2.sh
+        dst: server/server_aoe2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/server_aoe3.sh
+        dst: server/server_aoe3.sh
         info:
           mode: 0744
       - server/resources/responses
@@ -396,21 +410,24 @@ archives:
       - src: launcher-config/README.md
         dst: launcher/docs/README-config
       - launcher/resources/config.toml
-      - launcher/resources/config.game.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.aoe3.toml
-      - src: launcher/resources/unix/launch_aoe2.sh
-        dst: launcher/launch_aoe2.sh
+      - src: launcher/resources/unix/launcher_aoe2.sh
+        dst: launcher/launcher_aoe2.sh
         info:
           mode: 0744
-      - src: launcher/resources/unix/launch_aoe3.sh
-        dst: launcher/launch_aoe3.sh
+      - src: launcher/resources/unix/launcher_aoe3.sh
+        dst: launcher/launcher_aoe3.sh
         info:
           mode: 0744
-      - src: launcher-config/resources/unix/cleanup.sh
-        dst: launcher/unix/cleanup.sh
+      - src: launcher-config/resources/unix/cleanup_aoe2.sh
+        dst: launcher/cleanup_aoe2.sh
+        info:
+          mode: 0744
+      - src: launcher-config/resources/unix/cleanup_aoe3.sh
+        dst: launcher/cleanup_aoe3.sh
         info:
           mode: 0744
     format: tar.xz
@@ -431,6 +448,10 @@ archives:
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
     files:
+      - src: server/resources/windows/server_aoe2.bat
+        dst: server_aoe2.bat
+      - src: server/resources/windows/server_aoe3.bat
+        dst: server_aoe3.bat
       - src: server/resources/config
         dst: resources/config
       - src: server/resources/responses
@@ -446,8 +467,12 @@ archives:
     files:
       - src: server/resources/config
         dst: resources/config
-      - src: server/resources/unix/server.sh
-        dst: server.sh
+      - src: server/resources/unix/server_aoe2.sh
+        dst: server_aoe2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/server_aoe3.sh
+        dst: server_aoe3.sh
         info:
           mode: 0744
       - src: server/resources/responses
@@ -474,8 +499,12 @@ archives:
     files:
       - src: server/resources/config
         dst: resources/config
-      - src: server/resources/unix/server.sh
-        dst: server.sh
+      - src: server/resources/unix/server_aoe2.sh
+        dst: server_aoe2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/server_aoe3.sh
+        dst: server_aoe3.sh
         info:
           mode: 0744
       - src: server/resources/responses
@@ -498,6 +527,14 @@ archives:
       {{- else }}
       {{- end }}
     files:
+      - src: server/resources/unix/server_aoe2.sh
+        dst: server_aoe2.command
+        info:
+          mode: 0744
+      - src: server/resources/unix/server_aoe3.sh
+        dst: server_aoe3.command
+        info:
+          mode: 0744
       - src: server/resources/config
         dst: resources/config
       - src: server/resources/responses
@@ -517,8 +554,6 @@ archives:
       - src: launcher/resources/config.toml
         dst: resources/config.toml
       - src: launcher/resources/config.game.toml
-        dst: resources/config.game.toml
-      - src: launcher/resources/config.game.toml
         dst: resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: resources/config.aoe3.toml
@@ -528,12 +563,14 @@ archives:
         dst: docs/README.txt
       - src: launcher-config/README.md
         dst: docs/README-config.txt
-      - src: launcher/resources/windows/launch_aoe2.bat
-        dst: launch_aoe2.bat
-      - src: launcher/resources/windows/launch_aoe3.bat
-        dst: launch_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup.bat
-        dst: cleanup.bat
+      - src: launcher/resources/windows/launcher_aoe2.bat
+        dst: launcher_aoe2.bat
+      - src: launcher/resources/windows/launcher_aoe3.bat
+        dst: launcher_aoe3.bat
+      - src: launcher-config/resources/windows/cleanup_aoe2.bat
+        dst: cleanup_aoe2.bat
+      - src: launcher-config/resources/windows/cleanup_aoe3.bat
+        dst: cleanup_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
     format: zip
   - id: launcher_windows_arm64
@@ -547,8 +584,6 @@ archives:
       - src: launcher/resources/config.toml
         dst: resources/config.toml
       - src: launcher/resources/config.game.toml
-        dst: resources/config.game.toml
-      - src: launcher/resources/config.game.toml
         dst: resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: resources/config.aoe3.toml
@@ -558,12 +593,14 @@ archives:
         dst: docs/README.txt
       - src: launcher-config/README.md
         dst: docs/README-config.txt
-      - src: launcher/resources/windows/launch_aoe2.bat
-        dst: launch_aoe2.bat
-      - src: launcher/resources/windows/launch_aoe3.bat
-        dst: launch_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup.bat
-        dst: cleanup.bat
+      - src: launcher/resources/windows/launcher_aoe2.bat
+        dst: launcher_aoe2.bat
+      - src: launcher/resources/windows/launcher_aoe3.bat
+        dst: launcher_aoe3.bat
+      - src: launcher-config/resources/windows/cleanup_aoe2.bat
+        dst: cleanup_aoe2.bat
+      - src: launcher-config/resources/windows/cleanup_aoe3.bat
+        dst: cleanup_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
     format: tar.xz
   - id: launcher_linux
@@ -577,8 +614,6 @@ archives:
       - src: launcher/resources/config.toml
         dst: resources/config.toml
       - src: launcher/resources/config.game.toml
-        dst: resources/config.game.toml
-      - src: launcher/resources/config.game.toml
         dst: resources/config.aoe2.toml
       - src: launcher/resources/config.game.toml
         dst: resources/config.aoe3.toml
@@ -588,16 +623,20 @@ archives:
         dst: docs/README
       - src: launcher-config/README.md
         dst: docs/README-config
-      - src: launcher/resources/unix/launch_aoe2.sh
-        dst: launch_age2.sh
+      - src: launcher/resources/unix/launcher_aoe2.sh
+        dst: launcher_age2.sh
         info:
           mode: 0744
-      - src: launcher/resources/unix/launch_aoe3.sh
-        dst: launch_age3.sh
+      - src: launcher/resources/unix/launcher_aoe3.sh
+        dst: launcher_age3.sh
         info:
           mode: 0744
-      - src: launcher-config/resources/unix/cleanup.sh
-        dst: cleanup.sh
+      - src: launcher-config/resources/unix/cleanup_aoe2.sh
+        dst: cleanup_aoe2.sh
+        info:
+          mode: 0744
+      - src: launcher-config/resources/unix/cleanup_aoe3.sh
+        dst: cleanup_aoe3.sh
         info:
           mode: 0744
     name_template: >-

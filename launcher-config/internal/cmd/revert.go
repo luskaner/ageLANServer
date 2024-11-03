@@ -98,6 +98,7 @@ var revertCmd = &cobra.Command{
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
+		fmt.Printf("Reverting configuration for %s...\n", gameId)
 		if RemoveUserCert {
 			fmt.Println("Removing user certificate, authorize it if needed...")
 			if removedUserCert, _ := wrapper.RemoveUserCert(); removedUserCert != nil {
@@ -238,7 +239,6 @@ var RemoveUserCert bool
 var RestoreMetadata bool
 var RestoreProfiles bool
 var stopAgent bool
-var gameId string
 
 func InitRevert() {
 	if runtime.GOOS != "linux" {

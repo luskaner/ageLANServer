@@ -60,6 +60,7 @@ var (
 					os.Exit(internal.ErrGames)
 				}
 			}
+			fmt.Printf("Games: %s\n", strings.Join(gameSet.ToSlice(), ", "))
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
