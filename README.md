@@ -246,9 +246,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
-   You will need to use a custom launcher for 100% offline play.
-4. **Execute `launcher/launcher-aoe2` or `launcher/launcher-aoe3`**: you will be asked for admin elevation and
-   confirmation of other dialogs as
+   **You will need to use a custom launcher (plus what my other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
+4. **Execute `launcher/launcher-aoe2` or `launcher/launcher-aoe3`**: you will be asked for admin elevation and confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
 5. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
