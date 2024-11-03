@@ -4,8 +4,8 @@ package internal
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	"github.com/luskaner/aoe2DELanServer/common/process"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/process"
 	"time"
 )
 

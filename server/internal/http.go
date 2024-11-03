@@ -7,18 +7,22 @@ import (
 	"net/http"
 )
 
-type A []interface{}
+type A []any
 type H map[string]any
 
 var decoder = schema.NewDecoder()
 
+func writeJSONHeader(w *http.ResponseWriter) {
+	(*w).Header().Set("Content-Type", "application/json;charset=utf-8")
+}
+
 func JSON(w *http.ResponseWriter, data any) {
-	(*w).Header().Set("Content-Type", "application/json")
+	writeJSONHeader(w)
 	_ = json.NewEncoder(*w).Encode(data)
 }
 
 func RawJSON(w *http.ResponseWriter, data []byte) {
-	(*w).Header().Set("Content-Type", "application/json")
+	writeJSONHeader(w)
 	_, _ = (*w).Write(data)
 }
 

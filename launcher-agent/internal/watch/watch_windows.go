@@ -1,8 +1,8 @@
 package watch
 
 import (
-	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/battle-server-broadcast"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"golang.org/x/sys/windows"
 )
 

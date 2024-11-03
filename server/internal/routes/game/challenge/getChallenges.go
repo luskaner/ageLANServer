@@ -1,10 +1,10 @@
 package challenge
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 
 func GetChallenges(w http.ResponseWriter, r *http.Request) {
-	files.ReturnSignedAsset("challenges.json", &w, r, false)
+	models.G(r).Resources().ReturnSignedAsset("challenges.json", &w, r, false)
 }

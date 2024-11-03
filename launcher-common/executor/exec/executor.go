@@ -2,8 +2,8 @@ package exec
 
 import (
 	"errors"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
 	"os"
 	"os/exec"
 	"path/filepath"

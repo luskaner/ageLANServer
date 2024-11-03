@@ -4,15 +4,18 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/inconshreveable/mousetrap"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/cmdUtils"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
+	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"mvdan.cc/sh/v3/shell"
+	"net"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -33,8 +36,11 @@ var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)
 var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
-func parseCommandArgs(name string) (args []string, err error) {
-	cmd := viper.GetString(name)
+func parseCommandArgs(name string, values map[string]string) (args []string, err error) {
+	cmd := strings.Join(viper.GetStringSlice(name), " ")
+	for key, value := range values {
+		cmd = strings.ReplaceAll(cmd, fmt.Sprintf(`{%s}`, key), value)
+	}
 	if runtime.GOOS == "windows" {
 		cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
 	}
@@ -45,12 +51,13 @@ func parseCommandArgs(name string) (args []string, err error) {
 var (
 	Version                        string
 	cfgFile                        string
+	gameCfgFile                    string
 	autoTrueFalseValues            = mapset.NewSet[string](autoValue, trueValue, falseValue)
 	canTrustCertificateValues      = mapset.NewSet[string](falseValue, "user", "local")
 	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE 2:DE to connect to the local LAN server",
+		Short: "launcher discovers and configures AoE 2 and AoE 3 (both DE) to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
@@ -99,28 +106,37 @@ var (
 				errorCode = internal.ErrInvalidServerStop
 				return
 			}
-			serverArgs, err := parseCommandArgs("Server.ExecutableArgs")
+			gameId := viper.GetString("Game")
+			if !common.SupportedGames.ContainsOne(gameId) {
+				fmt.Println("Invalid game type")
+				errorCode = launcherCommon.ErrInvalidGame
+				return
+			}
+			serverValues := map[string]string{
+				"Game": gameId,
+			}
+			serverArgs, err := parseCommandArgs("Server.ExecutableArgs", serverValues)
 			if err != nil {
 				fmt.Println("Failed to parse server executable arguments")
 				errorCode = internal.ErrInvalidServerArgs
 				return
 			}
 			var clientArgs []string
-			clientArgs, err = parseCommandArgs("Client.ExecutableArgs")
+			clientArgs, err = parseCommandArgs("Client.ExecutableArgs", nil)
 			if err != nil {
 				fmt.Println("Failed to parse server executable arguments")
 				errorCode = internal.ErrInvalidClientArgs
 				return
 			}
 			var setupCommand []string
-			setupCommand, err = parseCommandArgs("Config.SetupCommand")
+			setupCommand, err = parseCommandArgs("Config.SetupCommand", nil)
 			if err != nil {
 				fmt.Println("Failed to parse setup command")
 				errorCode = internal.ErrInvalidSetupCommand
 				return
 			}
 			var revertCommand []string
-			revertCommand, err = parseCommandArgs("Config.RevertCommand")
+			revertCommand, err = parseCommandArgs("Config.RevertCommand", nil)
 			if err != nil {
 				fmt.Println("Failed to parse revert command")
 				errorCode = internal.ErrInvalidRevertCommand
@@ -181,12 +197,12 @@ var (
 					}
 				}
 			}()
-			if cmdUtils.GameRunning() {
+			if cmdUtils.GameRunning(gameId) {
 				errorCode = internal.ErrGameAlreadyRunning
 				return
 			}
 			// Setup
-			fmt.Println("Setting up...")
+			fmt.Printf("Setting up %s...\n", gameId)
 			if len(setupCommand) > 0 {
 				fmt.Printf("Running setup command '%s' and waiting for it to exit...\n", viper.GetString("Config.SetupCommand"))
 				result := config.RunSetupCommand(setupCommand)
@@ -203,19 +219,24 @@ var (
 			}
 			alreadySelectedIp := false
 			if serverStart == "auto" {
-				announcePorts := viper.GetStringSlice("Server.AnnouncePorts")
-				portsInt := make([]int, len(announcePorts))
-				for i, str := range announcePorts {
-					if portInt, err := strconv.Atoi(str); err == nil {
-						portsInt[i] = portInt
+				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
+				portsStr := make([]string, len(announcePorts))
+				for i, portInt := range announcePorts {
+					portsStr[i] = strconv.Itoa(portInt)
+				}
+				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
+				multicastIPs := make([]net.IP, len(multicastIPsStr))
+				for i, str := range multicastIPsStr {
+					if IP := net.ParseIP(str); err == nil && IP.To4() != nil && IP.IsMulticast() {
+						multicastIPs[i] = IP
 					} else {
-						fmt.Printf(`Invalid announce port "%s"\n`, str)
-						errorCode = internal.ErrAnnouncementPort
+						fmt.Printf(`Invalid multicast group "%s"\n`, str)
+						errorCode = internal.ErrAnnouncementMulticastGroup
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(announcePorts, ", "), common.AnnounceVersionLatest)
-				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(portsInt)
+				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(portsStr, ", "), common.AnnounceVersionLatest)
+				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(gameId, multicastIPs, announcePorts)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
@@ -268,12 +289,12 @@ var (
 				errorMayBeConfig = true
 				return
 			}
-			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
+			errorCode = config.IsolateUserData(gameId, isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
 				errorMayBeConfig = true
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(gameId, clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )
@@ -281,7 +302,8 @@ var (
 func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.ini in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
 	if runtime.GOOS == "windows" {
@@ -296,6 +318,7 @@ func Execute() error {
 	if runtime.GOOS == "windows" {
 		pathNamesInfo += " Path names need to use double backslashes or be within single quotes."
 	}
+	cmd.GameCommand(rootCmd.PersistentFlags())
 	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
@@ -303,9 +326,10 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
 	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
 	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured servers will not get discovered.`)
+	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured servers will not get discovered via Multicast.`)
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
-	rootCmd.PersistentFlags().StringP("serverPath", "e", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s", "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
+	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s", "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, serverExe, common.Server, serverExe, serverExe, common.Server, serverExe))
 	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
 	if runtime.GOOS == "windows" {
@@ -356,6 +380,9 @@ func Execute() error {
 	if err := viper.BindPFlag("Server.AnnouncePorts", rootCmd.PersistentFlags().Lookup("serverAnnouncePorts")); err != nil {
 		return err
 	}
+	if err := viper.BindPFlag("Server.AnnounceMulticastGroups", rootCmd.PersistentFlags().Lookup("serverAnnounceMulticastGroups")); err != nil {
+		return err
+	}
 	if err := viper.BindPFlag("Server.Host", rootCmd.PersistentFlags().Lookup("server")); err != nil {
 		return err
 	}
@@ -371,21 +398,32 @@ func Execute() error {
 	if err := viper.BindPFlag("Client.ExecutableArgs", rootCmd.PersistentFlags().Lookup("clientExeArgs")); err != nil {
 		return err
 	}
+	if err := viper.BindPFlag("Game", rootCmd.PersistentFlags().Lookup("game")); err != nil {
+		return err
+	}
 	return rootCmd.Execute()
 }
 
 func initConfig() {
+	for _, configPath := range configPaths {
+		viper.AddConfigPath(configPath)
+	}
+	viper.SetConfigType("toml")
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		for _, configPath := range configPaths {
-			viper.AddConfigPath(configPath)
-		}
-		viper.SetConfigType("ini")
 		viper.SetConfigName("config")
 	}
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := viper.MergeInConfig(); err == nil {
+		fmt.Println("Using main config file:", viper.ConfigFileUsed())
 	}
+	if gameCfgFile != "" {
+		viper.SetConfigFile(gameCfgFile)
+	} else {
+		viper.SetConfigName("config.game")
+	}
+	if err := viper.MergeInConfig(); err == nil {
+		fmt.Println("Using game config file:", viper.ConfigFileUsed())
+	}
+	viper.AutomaticEnv()
 }

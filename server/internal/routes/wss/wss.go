@@ -3,11 +3,10 @@ package wss
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -16,7 +15,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 var lock = i.NewKeyRWMutex()
-var connections sync.Map
+var connections = i.NewSafeMap[string, *websocket.Conn]()
 var writeWait = 1 * time.Second
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
@@ -127,7 +126,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		sess.ResetExpiryTimer()
-		// TODO: Handle other operations
 	}
 }
 
@@ -141,11 +139,20 @@ func SendMessage(sessionId string, message i.A) bool {
 		return false
 	}
 
-	err := conn.(*websocket.Conn).WriteJSON(message)
+	err := conn.WriteJSON(message)
 	lock.RUnlock(sessionId)
 	if err != nil {
 		return false
 	}
 
 	return true
+}
+
+func SendOrStoreMessage(session *models.Session, action string, message i.A) {
+	finalMessage := i.A{0, action, session.GetUserId(), message}
+	go func(session *models.Session, finalMessage i.A) {
+		if ok := SendMessage(session.GetId(), finalMessage); !ok {
+			session.AddMessage(finalMessage)
+		}
+	}(session, finalMessage)
 }

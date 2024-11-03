@@ -19,10 +19,14 @@ type CloudfilesIndex struct {
 	Checksum string
 }
 
-type CloudFilesIndexMap map[string]CloudfilesIndex
+type CloudFiles struct {
+	baseFolder  string
+	Value       map[string]CloudfilesIndex
+	Credentials *Credentials
+}
 
-func (m *CloudFilesIndexMap) GetByKey(key string) (string, *CloudfilesIndex, bool) {
-	for filename, file := range *m {
+func (m *CloudFiles) GetByKey(key string) (string, *CloudfilesIndex, bool) {
+	for filename, file := range (*m).Value {
 		if file.Key == key {
 			return filename, &file, true
 		}
@@ -30,26 +34,27 @@ func (m *CloudFilesIndexMap) GetByKey(key string) (string, *CloudfilesIndex, boo
 	return "", nil, false
 }
 
-func (m *CloudFilesIndexMap) ReadFile(baseFolder string, name string) ([]byte, error) {
-	_, ok := (*m)[name]
+func (m *CloudFiles) ReadFile(name string) ([]byte, error) {
+	_, ok := (*m).Value[name]
 	if !ok {
 		return nil, os.ErrInvalid
 	}
-	return os.ReadFile(filepath.Join(baseFolder, name))
+	return os.ReadFile(filepath.Join(m.baseFolder, name))
 }
 
-func Build(configFolder string, baseFolder string) *CloudFilesIndexMap {
+func BuildCloudfilesIndex(configFolder string, baseFolder string) *CloudFiles {
 	data, err := os.ReadFile(filepath.Join(configFolder, "cloudfilesIndex.json"))
 	if err != nil {
 		panic(err)
 	}
-	var index CloudFilesIndexMap
-	err = json.Unmarshal(data, &index)
+	index := CloudFiles{baseFolder: baseFolder, Credentials: &Credentials{}}
+	err = json.Unmarshal(data, &index.Value)
 	if err != nil {
 		panic(err)
 	}
-	for i, fileInfo := range index {
-		data, err := index.ReadFile(baseFolder, i)
+	index.Credentials.Initialize()
+	for i, fileInfo := range index.Value {
+		data, err = index.ReadFile(i)
 		if err != nil {
 			panic(err)
 		}
@@ -57,7 +62,7 @@ func Build(configFolder string, baseFolder string) *CloudFilesIndexMap {
 		hash := md5.Sum(data)
 		hashSlice := hash[:]
 		fileInfo.Checksum = base64.StdEncoding.EncodeToString(hashSlice)
-		index[i] = fileInfo
+		index.Value[i] = fileInfo
 	}
 	return &index
 }

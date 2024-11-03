@@ -3,17 +3,35 @@ package steam
 import (
 	"fmt"
 	"github.com/andygrunwald/vdf"
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path"
 )
 
-const appID = "813780"
-
-func OpenUri() string {
-	return fmt.Sprintf("steam://rungameid/%s", appID)
+type Game struct {
+	AppId string
 }
 
-func GameInstalled() bool {
+func NewGame(id string) Game {
+	return Game{AppId: AppId(id)}
+}
+
+func AppId(id string) string {
+	switch id {
+	case common.GameAoE2:
+		return "813780"
+	case common.GameAoE3:
+		return "933110"
+	default:
+		return ""
+	}
+}
+
+func (g Game) OpenUri() string {
+	return fmt.Sprintf("steam://rungameid/%s", g.AppId)
+}
+
+func (g Game) GameInstalled() bool {
 	p := ConfigPath()
 	if p == "" {
 		return false
@@ -46,7 +64,7 @@ func GameInstalled() bool {
 		if !ok {
 			continue
 		}
-		if _, exists := apps[appID]; exists {
+		if _, exists := apps[g.AppId]; exists {
 			return true
 		}
 	}

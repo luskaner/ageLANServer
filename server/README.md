@@ -1,6 +1,6 @@
 # Server
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/server)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/server)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/server)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/server)
 
 The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
@@ -42,36 +42,55 @@ the ```launcher``` if you are hosting and running the launcher on same PC.
 
 ### Main
 
-The few configuration options are available in the [`config.ini`](resources/config/config.ini) file. The file is
+The few configuration options are available in the [`config.toml`](resources/config/config.toml) file. The file is
 self-explanatory and should be easy to understand.
 
 ### Login
 
-The configuration file sent to the client upon login is [`login.json`](resources/config/login.json). Some options are
+The configuration file sent to the client upon login is `login.json` inside the game subdirectory in `resources/config`.
+Some options
+are
 easy to understand while others might require researching.
 
 ### Cloud
 
 The game connects to a static cloud to download assets. The server is configured to replace the original calls to
-itself. The configuration file is [`cloudfilesIndex.json`](resources/config/cloudfilesIndex.json) and the corresponding
+itself. The configuration file is `cloudfilesIndex.json` inside the game subdirectory in `resources/config` and the
+corresponding
 files reside in the [`cloud`](resources/responses/cloud) directory.
+
+### AoE III only
+
+#### Chat Channels
+
+The chat channels are defined in the [`chatChannels.json`](resources/config/age3/chatChannels.json) file.
 
 ### Other static responses
 
 The server also serves some static responses for the game to work. The files are located in
-the [`responses`](resources/responses) base directory:
+the [`responses`](resources/responses) base directory.
 
-- [`Achievements`](resources/responses/achievements.json): List of achievements.
-- [`Leaderboards`](resources/responses/leaderboards.json): List of leaderboards.
-- [`Automatch maps`](resources/responses/automatchMaps.json): List of maps for automatch.
-- [`Challenges`](resources/responses/challenges.json): List of challenges.
-- [`Presence Data`](resources/responses/presenceData.json): Presence data. Basically if a player is online, offline or
+#### AoE II
+
+- [`Achievements`](resources/responses/age2/achievements.json): List of achievements.
+- [`Leaderboards`](resources/responses/age2/leaderboards.json): List of leaderboards.
+- [`Automatch maps`](resources/responses/age2/automatchMaps.json): List of maps for automatch.
+- [`Challenges`](resources/responses/age2/challenges.json): List of challenges.
+- [`Presence Data`](resources/responses/age2/presenceData.json): Presence data. Basically if a player is online, offline
+  or
   away.
-- [`Item Definitions`](resources/responses/itemDefinitions.json): Definitions of items. Includes rewards, challenges and
+- [`Item Definitions`](resources/responses/age2/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
   other items.
-- [`Item Bundle Items`](resources/responses/itemBundleItems.json): Grouping of items into bundles.
+- [`Item Bundle Items`](resources/responses/age2/itemBundleItems.json): Grouping of items into bundles.
 
-*Note: These files might require updates to work with future game versions.*
+#### AoE III
+
+- [`Achievements`](resources/responses/age3/achievements.json): List of achievements.
+- [`Leaderboards`](resources/responses/age3/leaderboards.json): List of leaderboards.
+- [`Item Definitions`](resources/responses/age3/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
+  other items.
 
 ## Command Line
 

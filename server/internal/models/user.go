@@ -3,47 +3,68 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/spf13/viper"
+	"hash"
 	"hash/fnv"
 	"math/rand"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 )
 
-type User struct {
-	id             int32
-	statId         int32
-	alias          string
-	platformUserId uint64
-	profileId      int32
-	reliclink      int32
-	isXbox         bool
+type MainUser struct {
+	id                int32
+	statId            int32
+	alias             string
+	platformUserId    uint64
+	profileId         int32
+	profileMetadata   string
+	profileUintFlag1  uint8
+	reliclink         int32
+	isXbox            bool
+	presence          int8
+	presenceLock      *sync.RWMutex
+	chatChannels      map[int32]*MainChatChannel
+	advertisement     *MainAdvertisement
+	advertisementLock *sync.RWMutex
 }
 
-var presenceStore = make(map[*User]int8)
-var userStore = make(map[string]*User)
-var userIdToUserMap = make(map[int32]*User)
-var userStatIdToUserMap = make(map[int32]*User)
-var hasher = fnv.New64a()
-var Lock = i.NewKeyMutex()
-var presenceLock = i.NewKeyRWMutex()
+type MainUsers struct {
+	store      *i.SafeMap[string, *MainUser]
+	hasher     hash.Hash64
+	hasherLock *sync.Mutex
+}
 
-func generate(identifier string, isXbox bool, platformUserId uint64, alias string) *User {
-	_, _ = hasher.Write([]byte(identifier))
-	hash := hasher.Sum(nil)
-	seed := binary.BigEndian.Uint64(hash)
-	hasher.Reset()
+func (users *MainUsers) Initialize() {
+	users.store = i.NewSafeMap[string, *MainUser]()
+	users.hasher = fnv.New64a()
+	users.hasherLock = &sync.Mutex{}
+}
+
+func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) *MainUser {
+	users.hasherLock.Lock()
+	_, _ = users.hasher.Write([]byte(identifier))
+	hsh := users.hasher.Sum(nil)
+	seed := binary.BigEndian.Uint64(hsh)
+	users.hasher.Reset()
+	users.hasherLock.Unlock()
 	rng := rand.New(rand.NewSource(int64(seed)))
-	return &User{
-		id:             rng.Int31(),
-		statId:         rng.Int31(),
-		profileId:      rng.Int31(),
-		reliclink:      rng.Int31(),
-		alias:          alias,
-		platformUserId: platformUserId,
-		isXbox:         isXbox,
+	return &MainUser{
+		id:                rng.Int31(),
+		statId:            rng.Int31(),
+		profileId:         rng.Int31(),
+		profileMetadata:   profileMetadata,
+		profileUintFlag1:  profileUIntFlag1,
+		reliclink:         rng.Int31(),
+		alias:             alias,
+		platformUserId:    platformUserId,
+		isXbox:            isXbox,
+		presenceLock:      &sync.RWMutex{},
+		chatChannels:      map[int32]*MainChatChannel{},
+		advertisementLock: &sync.RWMutex{},
 	}
 }
 
@@ -68,8 +89,8 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int63n(9e15) + 1e15)
 }
 
-func GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alias string) *User {
-	if viper.GetBool("default.GeneratePlatformUserId") {
+func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox bool, platformUserId uint64, alias string) *MainUser {
+	if viper.GetBool("GeneratePlatformUserId") {
 		ipStr, _, err := net.SplitHostPort(remoteAddr)
 		if err != nil {
 			ip := net.ParseIP(ipStr)
@@ -87,35 +108,39 @@ func GetOrCreateUser(remoteAddr string, isXbox bool, platformUserId uint64, alia
 		}
 	}
 	identifier := getPlatformPath(isXbox, platformUserId)
-	Lock.Lock(identifier)
-	defer Lock.Unlock(identifier)
-	user, ok := userStore[identifier]
+	mainUser, ok := users.store.Load(identifier)
 	if !ok {
-		user = generate(identifier, isXbox, platformUserId, alias)
-		userIdToUserMap[user.id] = user
-		userStatIdToUserMap[user.statId] = user
-		userStore[identifier] = user
+		var profileMetadata string
+		if gameId == common.GameAoE3 {
+			profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
+		}
+		var profileUIntFlag1 uint8
+		if gameId == common.GameAoE3 {
+			profileUIntFlag1 = 1
+		}
+		mainUser = users.generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
+		users.store.Store(identifier, mainUser)
 	}
-	return user
+	return mainUser
 }
 
-func (u *User) GetId() int32 {
+func (u *MainUser) GetId() int32 {
 	return u.id
 }
 
-func (u *User) GetStatId() int32 {
+func (u *MainUser) GetStatId() int32 {
 	return u.statId
 }
 
-func (u *User) GetProfileId() int32 {
+func (u *MainUser) GetProfileId() int32 {
 	return u.profileId
 }
 
-func (u *User) GetReliclink() int32 {
+func (u *MainUser) GetReliclink() int32 {
 	return u.reliclink
 }
 
-func (u *User) GetAlias() string {
+func (u *MainUser) GetAlias() string {
 	return u.alias
 }
 
@@ -132,11 +157,11 @@ func getPlatformPath(isXbox bool, platformUserId uint64) string {
 	return fmt.Sprintf("/%s/%s", prefix, fullPlatformUserId)
 }
 
-func (u *User) GetPlatformPath() string {
+func (u *MainUser) GetPlatformPath() string {
 	return getPlatformPath(u.isXbox, u.platformUserId)
 }
 
-func (u *User) GetPlatformId() int {
+func (u *MainUser) GetPlatformId() int {
 	var prefix int
 	if u.isXbox {
 		prefix = 9
@@ -146,21 +171,39 @@ func (u *User) GetPlatformId() int {
 	return prefix
 }
 
-func (u *User) GetPlatformUserID() uint64 {
+func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func GetUserByStatId(id int32) (*User, bool) {
-	user, ok := userStatIdToUserMap[id]
-	return user, ok
+func (users *MainUsers) GetUserByStatId(id int32) (*MainUser, bool) {
+	for u := range users.store.Iter() {
+		if u.Value.statId == id {
+			return u.Value, true
+		}
+	}
+	return nil, false
 }
 
-func GetUserById(id int32) (*User, bool) {
-	user, ok := userIdToUserMap[id]
-	return user, ok
+func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
+	for u := range users.store.Iter() {
+		if u.Value.id == id {
+			return u.Value, true
+		}
+	}
+	return nil, false
 }
 
-func (u *User) GetExtraProfileInfo() i.A {
+func (users *MainUsers) GetUserIds() []int32 {
+	userIds := make([]int32, users.store.Len())
+	j := 0
+	for u := range users.store.Iter() {
+		userIds[j] = u.Value.GetId()
+		j++
+	}
+	return userIds
+}
+
+func (u *MainUser) GetExtraProfileInfo() i.A {
 	return i.A{
 		u.statId,
 		0,
@@ -183,55 +226,102 @@ func (u *User) GetExtraProfileInfo() i.A {
 	}
 }
 
-func (u *User) GetProfileInfo(includePresence bool) i.A {
+func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
+	i.RngLock.Lock()
+	randomTimeDiff := i.Rng.Int63n(300-50+1) + 50
+	i.RngLock.Unlock()
 	profileInfo := i.A{
-		time.Now().UTC().Unix() - i.Rng.Int63n(300-50+1) + 50,
-		u.id,
+		time.Now().UTC().Unix() - randomTimeDiff,
+		u.GetId(),
 		u.GetPlatformPath(),
+		u.GetProfileMetadata(),
+		u.GetAlias(),
 		"",
-		u.alias,
-		"",
-		u.statId,
-		1,
+		u.GetStatId(),
+		u.GetProfileUintFlag1(),
 		1,
 		0,
 		nil,
-		strconv.FormatUint(u.platformUserId, 10),
+		strconv.FormatUint(u.GetPlatformUserID(), 10),
 		u.GetPlatformId(),
 		i.A{},
 	}
 	if includePresence {
-		profileInfo = append(profileInfo, i.A{u.GetPresence(), nil, i.A{}}...)
+		profileInfo = append(profileInfo, u.GetPresence(), nil, i.A{})
 	}
 	return profileInfo
 }
 
-func (u *User) SetPresence(value int8) {
-	presenceLock.Lock(u)
-	defer presenceLock.Unlock(u)
-	presenceStore[u] = value
+func (u *MainUser) GetPresence() int8 {
+	u.presenceLock.RLock()
+	defer u.presenceLock.RUnlock()
+	return u.presence
 }
 
-func (u *User) GetPresence() int8 {
-	presenceLock.RLock(u)
-	defer presenceLock.RUnlock(u)
-	return presenceStore[u]
+func (u *MainUser) SetPresence(value int8) {
+	u.presenceLock.Lock()
+	defer u.presenceLock.Unlock()
+	u.presence = value
 }
 
-func getUsers() []*User {
-	users := make([]*User, len(userStore))
+func (u *MainUser) GetProfileMetadata() string {
+	return u.profileMetadata
+}
+
+func (u *MainUser) GetProfileUintFlag1() uint8 {
+	return u.profileUintFlag1
+}
+
+func (u *MainUser) GetAdvertisement() *MainAdvertisement {
+	u.advertisementLock.RLock()
+	defer u.advertisementLock.RUnlock()
+	return u.advertisement
+}
+
+func (u *MainUser) JoinChatChannel(channel *MainChatChannel) i.A {
+	u.chatChannels[channel.GetId()] = channel
+	return channel.AddUser(u)
+}
+
+func (u *MainUser) LeaveChatChannel(channel *MainChatChannel) {
+	delete(u.chatChannels, channel.GetId())
+	channel.RemoveUser(u)
+}
+
+func (u *MainUser) GetChannels() []*MainChatChannel {
+	channels := make([]*MainChatChannel, len(u.chatChannels))
 	j := 0
-	for _, u := range userStore {
-		users[j] = u
+	for _, channel := range u.chatChannels {
+		channels[j] = channel
 		j++
 	}
-	return users
+	return channels
 }
 
-func GetProfileInfo(includePresence bool, matches func(user *User) bool) []i.A {
-	users := getUsers()
+func (u *MainUser) SendChatChannelMessage(channel *MainChatChannel, text string) {
+	u.chatChannels[channel.GetId()].AddMessage(u, text)
+}
+
+func (u *MainUser) SetAdvertisement(adv *MainAdvertisement) {
+	u.advertisementLock.Lock()
+	defer u.advertisementLock.Unlock()
+	u.advertisement = adv
+}
+
+func (users *MainUsers) getUsers() []*MainUser {
+	us := make([]*MainUser, users.store.Len())
+	j := 0
+	for u := range users.store.Iter() {
+		us[j] = u.Value
+		j++
+	}
+	return us
+}
+
+func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool) []i.A {
+	us := users.getUsers()
 	var presenceData = make([]i.A, 0)
-	for _, u := range users {
+	for _, u := range us {
 		if matches(u) {
 			presenceData = append(presenceData, u.GetProfileInfo(includePresence))
 		}

@@ -2,12 +2,12 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/game"
+	"github.com/luskaner/ageLANServer/common"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/game"
 )
 
 func (c *Config) KillAgent() {
@@ -17,9 +17,9 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	fmt.Println("Looking for the game...")
-	executer := game.MakeExecutor(executable)
+	executer := game.MakeExecutor(gameId, executable)
 	var customExecutor game.CustomExecutor
 	switch executer.(type) {
 	case game.SteamExecutor:
@@ -46,7 +46,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 		}
 		fmt.Println("...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
-		result := executor.RunAgent(steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
+		result := executor.RunAgent(gameId, steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart

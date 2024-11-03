@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 )
 
 const (
@@ -10,4 +10,6 @@ const (
 	ErrCreateLogsDir
 	ErrCreateLogFile
 	ErrStartServer
+	ErrMulticastGroup
+	ErrGames
 )

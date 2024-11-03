@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+	"github.com/luskaner/ageLANServer/common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/spf13/cobra"
 	"net"
 )

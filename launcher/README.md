@@ -1,6 +1,6 @@
 # Launcher
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/launcher)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/launcher)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher)
 
 The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
 system and reverting that configuration upon exit.
@@ -8,11 +8,13 @@ system and reverting that configuration upon exit.
 ## Minimum system Requirements
 
 - Windows (no S edition/mode):
-  - 10 on x86-64 (recommended).
-  - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+    - 10 on x86-64 (recommended).
+    - 11 on ARM.
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (
+  plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
-**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
+require admin rights elevation.**
 
 ## Features
 
@@ -39,7 +41,8 @@ CLI is available with similar options as the configuration. You can see the avai
 
 ## Configuration
 
-The configuration options are available in the [`config.ini`](resources/config.ini) file. The file contains comments
+The configuration options are available in the [`config.toml`](resources/config.toml) and [
+`config.game.toml`](resources/config.game.toml) files. The files contain comments
 that
 should help you understand the options.
 

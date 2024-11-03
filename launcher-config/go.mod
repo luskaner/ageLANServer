@@ -1,11 +1,11 @@
-module github.com/luskaner/aoe2DELanServer/launcher-config
+module github.com/luskaner/ageLANServer/launcher-config
 
 go 1.22.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
-	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240918225240-55697d48fe22
+	github.com/luskaner/ageLANServer/common v0.0.0-20240918220359-d75d77863d57
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20240918225240-55697d48fe22
 	github.com/spf13/cobra v1.8.1
 )
 

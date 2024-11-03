@@ -1,51 +1,88 @@
-# Age of Empires 2 Definitive Edition LAN Server
+# Age LAN Server
 
-AoE2:DE LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
-connection **to the game server** paving the way to how the original AoE2 worked plus many features new to HD and DE
-versions.
+Age LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
+connection **to the game server**  ensuring the game LAN functionality is still available even if the official
+server
+is in maintenance or are eventually shutdown.
 
-**You will still need a *custom launcher* to bypass the *online-only* restriction that is imposed by the game to being connected to
+Currently supported games:
+
+* **Age of Empires II: Definitive Edition**.
+* **Age of Empires III: Definitive Edition**.
+
+**You will still need a *custom launcher* to bypass the *online-only* restriction that is imposed by the game to being
+connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-ℹ️ My other [project](https://github.com/luskaner/aoe2DELanServerLauncherCompanion) provides the files and information to download a Steam Emulator and play 100% offline.
+ℹ️ My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information
+to download a Steam Emulator and play 100% offline.
 
-*See more details in [Questions and Answers (QA)](https://github.com/luskaner/aoe2DELanServer/wiki/Questions-and-Answers-(QA))*.
+*See more details
+in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA))*.
 
 ## Features
 
 - Co-Op Campaigns.
-- Scenarios (including transferring the map):
-    - Event Scenarios (will change depending on the server version and might require a update).
-    - Custom Scenarios.
-- ... all other game modes available by creating a lobby **only with server as "Use Local Lan Server"**.
+- Scenarios.
+- Map transferring in-lobby.
 - Rematch.
 - Restore game.
 - Data mods.
 - Invite player to lobby.
-- Share lobby link (joining it only works if the game is already running).
+- Share lobby link.
 - Player Search.
-- Chatting.
+- Lobby chatting.
 - Crossplay Steam & Xbox.
 
-## Unsupported features
+### AoE III
+
 <details>
-<summary>List of unsupported features</summary>
-    
-- Spectate games: Not compatible with Battle Server, would require a re-implementation.
-- Not possible as it would require internet and some access to the user profile:
-    - Steam & Xbox Friends.
-- Not implemented:
-    - Achievements: only the official server should be able to. Meeting the requirements of an achievement during a
-      match might cause issues (see [Troubleshooting](https://github.com/luskaner/aoe2DELanServer/wiki/Troubleshooting) for more details).
-    - Changing player profile icon: the default will always be used.
-    - Leaderboards: will appear empty.
-    - Player stats: will appear empty.
-    - Clans: all players are without clans. Browsing clan will appear empty and creating one will always result in
-      error.
-    - Lobby ban player: will appear like it works but doesn't.
-    - Report player: will appear like it works but doesn't.
-    - Quick Play: no matchmaking is implemented, use official servers for this mode.
-    - Ranked: no matchmaking is implemented, use official servers for this mode.
+<summary>List of features</summary>
+
+- Channels.
+- Whispering.
+
+</details>
+
+### Limitations
+
+<details>
+<summary>List of limitations</summary>
+
+- Joining a game lobby from a link only works if the game is already running.
+- Steam Workshop integration only works if using the official launcher.
+- Lobbies can only be created in [LAN mode](...) which has its own limitations:
+    - No Quick play.
+    - No Ranked.
+    - No Spectate.
+- Xbox and Steam friend integration.
+
+</details>
+
+#### AoE III
+
+<details>
+<summary>List of limitations</summary>
+
+- Friend list will instead show all online users as if they were friends.
+
+</details>
+
+## Unimplemented features
+
+<details>
+<summary>List of unimplemented features</summary>
+
+- Achievements: only the official server should be able to. Meeting the requirements of an achievement during a
+  match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
+  for more details).
+- Changing player profile icon: the default will always be used.
+- Leaderboards: will appear empty.
+- Player stats: will appear empty.
+- Clans: all players are without clans. Browsing clan will appear empty and creating one will always result in
+  error.
+- Lobby ban player: will appear like it works but doesn't.
+- Report/Block player: will appear like it works but doesn't.
 
 </details>
 
@@ -61,72 +98,81 @@ the internet and Steam or Xbox Live, depending on the platform and version, to f
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Catalina (v10.15).
 
-Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating system.
+Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
+system.
 
 <details>
 <summary>Experimental</summary>
-    
+
 - BSD-based (OpenBSD, DragonFly BSD, FreeBSD and NetBSD).
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
 Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
-    
+
 </details>
 
 ### Launcher
 
 - Windows (no S edition/mode):
-  - 10 on x86-64 (recommended).
-  - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+    - 10 on x86-64 (recommended).
+    - 11 on ARM.
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (
+  plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
-**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will require admin rights elevation.**
+**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
+require admin rights elevation.**
 
 ### Client
 
-- Age of Empires 2 Definitive Edition on Steam (Microsoft Store or Xbox version is also supported on Windows where applicable).
-- Up-to-date* version of the game.
-
-*Note: Older versions since ~late 2023 should work but are not recommended.*
+- Game:
+    - Age of Empires II Definitive Edition
+      on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
+      or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
+      Windows*).
+    - Age of Empires III Definitive Edition
+      on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
+      or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
+      Windows*).
+- Up-to-date (*or at least from ~late 2023*) version of the game.
 
 ## Binaries
 
-See the [releases page](https://github.com/luskaner/aoe2DELanServer/releases) for server and launcher binaries for a
+See the [releases page](https://github.com/luskaner/ageLANServer/releases) for server and launcher binaries for a
 subset of
 supported operating systems.
 <details>
     <summary>Provided archives</summary>
-    
+
 * Full:
     * Windows:
-        * **10 on x86-64**: aoe2DELanServer_full_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: aoe2DELanServer_full_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ageLANServer_full_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ageLANServer_full_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: aoe2DELanServer_full_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: aoe2DELanServer_full_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ageLANServer_full_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ageLANServer_full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 on x86-64**: aoe2DELanServer_launcher_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: aoe2DELanServer_launcher_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ageLANServer_launcher_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ageLANServer_launcher_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: aoe2DELanServer_launcher_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: aoe2DELanServer_launcher_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ageLANServer_launcher_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ageLANServer_launcher_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10, Server 2025 or IoT on ARM64**: aoe2DELanServer_server_*A.B.C*_win_arm64.zip
-        * **10 IoT on ARM32**: aoe2DELanServer_server_*A.B.C*_win_arm32.zip
-        * **10, Server 2016 or IoT on x86-64**: aoe2DELanServer_server_*A.B.C*_win_x86-64.zip
-        * **10 or 10 IoT on x86-32**: aoe2DELanServer_server_*A.B.C*_win_x86-32.zip
+        * **10, Server 2025 or IoT on ARM64**: ageLANServer_server_*A.B.C*_win_arm64.zip
+        * **10 IoT on ARM32**: ageLANServer_server_*A.B.C*_win_arm32.zip
+        * **10, Server 2016 or IoT on x86-64**: ageLANServer_server_*A.B.C*_win_x86-64.zip
+        * **10 or 10 IoT on x86-32**: ageLANServer_server_*A.B.C*_win_x86-32.zip
     * Linux:
-        * Kernel 3.1 on **ARM64**: aoe2DELanServer_server_*A.B.C*_linux_arm64.tar.xz
+        * Kernel 3.1 on **ARM64**: ageLANServer_server_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 on **ARM32**:
-            * ARMv5 (armel): aoe2DELanServer_server_*A.B.C*_linux_arm-5.tar.gz
-            * ARMv6 (sometimes called armhf): aoe2DELanServer_server_*A.B.C*_linux_arm-6.tar.gz
-        * Kernel 2.6.23 on **x86-64**: aoe2DELanServer_server_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 on **x86-32**: aoe2DELanServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15): aoe2DELanServer_server_*A.B.C*_mac.tar.gz
-  
+            * ARMv5 (armel): ageLANServer_server_*A.B.C*_linux_arm-5.tar.gz
+            * ARMv6 (sometimes called armhf): ageLANServer_server_*A.B.C*_linux_arm-6.tar.gz
+        * Kernel 2.6.23 on **x86-64**: ageLANServer_server_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 on **x86-32**: ageLANServer_server_*A.B.C*_linux_x86-32.tar.gz
+    * macOS - Catalina (v10.15): ageLANServer_server_*A.B.C*_mac.tar.gz
+
 </details>
 
 *Note: If you are using Antivirus it may flag one or more executables as virus, this is a **false positive***.
@@ -171,11 +217,12 @@ the minimum required API surface to allow the game to work in LAN mode. NO data 
 
 ### Launcher
 
-The launcher allows to easily play the game in LAN mode while still allowing the official launcher to be used for online play.
+The launcher allows to easily play the game in LAN mode while still allowing the official launcher to be used for online
+play.
 
 <details>
     <summary>Features</summary>
-    
+
 - Automatically start/stop the server or connect to an existing one automatically.
 - (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
 - (Optional) Modify the hosts file to
@@ -192,20 +239,24 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 ## Simplest way to use it
 
 1. **Download** the proper *full* asset from the latest
-   stable release from https://github.com/luskaner/aoe2DELanServer/releases.
+   stable release from https://github.com/luskaner/ageLANServer/releases.
 2. **Uncompress** it somewhere.
-3. If not using the Steam or Microsoft Store (Xbox) launcher, **edit the [config](launcher/resources/config.ini)
+3. If not using the Steam or Xbox launcher, **edit the `launcher/resources/config.aoe2.toml`
+   or `launcher/resources/config.aoe3.toml`
    file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
-   **You will need to use a custom launcher (plus what my other [repo](https://github.com/luskaner/aoe2DELanServerLauncherCompanion) provides) for 100% offline play**.
-4. **Execute `launcher/launcher`**: you will be asked for admin elevation and confirmation of other dialogs as
+   **You will need to use a custom launcher (plus what my
+   other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
+4. **Execute `launcher/launcher-aoe2` or `launcher/launcher-aoe3`**: you will be asked for admin elevation and
+   confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
-5. **Repeat the above steps for every PC** you want to play in LAN with by running the `launcher`, the first PC to
+5. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
    launch
    it will host the "server" and the rest will auto-discover and connect to it.
-6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server**. Setting it to
+6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II) or
+   select **LAN** before creating the Lobby (AoE III). In AoE II, setting it to
    public
    visibility is recommended.
 7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
@@ -217,19 +268,26 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 <details>
     <summary>Server instructions</summary>
 
-1. **Download** the proper *server* asset from latest stable release from https://github.com/luskaner/aoe2DELanServer/releases.
+1. **Download** the proper *server* asset from latest stable release
+   from https://github.com/luskaner/ageLANServer/releases.
 2. **Generate the certificate** by simply executing `bin/genCert`.
-3. If needed **edit the [config](server/resources/config/config.ini) file**.
-4. **Run** the `server` binary/script.
+3. If needed **edit the [config](server/resources/config/config.toml) file**.
+4. **Run** the `server` binary for all games or the `server-` game-specific script.
 
 </details>
 
 <details>
     <summary>Launcher instructions</summary>
-    
-1. **Download** the proper *launcher* asset from latest stable release from https://github.com/luskaner/aoe2DELanServer/releases.
-3. If needed **edit the [config](launcher/resources/config.ini) file**. You will need to edit the `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use a custom launcher for 100% offline play.
-4. **Run** the `launcher` binary/script.
+
+1. **Download** the proper *launcher* asset from latest stable release
+   from https://github.com/luskaner/ageLANServer/releases.
+3. If needed **edit the `launcher/resources/config.aoe2.toml` or `launcher/resources/config.aoe3.toml` file**. You will
+   need to edit the
+   `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use
+   a custom launcher for 100% offline play.
+4. **Run** the `launcher-aoe2` or `launcher-aoe3` Shell script.
+
+*Note: If you have any issues run the `cleanup-aoe2` or `cleanup-aoe3` Shell script.*
 
 </details>
 
@@ -241,10 +299,14 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-- Owning a **legal license** of Age of Empires 2 Definitive Edition (and all relevant DLC's).
+- Owning a **legal license** of Age of Empires II Definitive Edition or Age of Empires III Definitive Edition (and all
+  relevant DLC's).
 - Comply with all the game terms of service.
 - Use this software for personal use.
 - Use this software in a LAN environment.
 
-Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires LLC,
-World's Edge LLC, or any other entity that is involved in the development of Age of Empires 2 Definitive Edition.
+Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires,
+World's Edge, Tantalus Media, Wicked Witch, CaptureAge or any other entity that is involved in the development of
+Age of Empires II Definitive
+Edition or
+Age of Empires III Definitive Edition.

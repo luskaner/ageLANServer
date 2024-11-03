@@ -1,4 +1,4 @@
-module github.com/luskaner/aoe2DELanServer/common
+module github.com/luskaner/ageLANServer/common
 
 go 1.22.0
 

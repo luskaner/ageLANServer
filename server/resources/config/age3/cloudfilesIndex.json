@@ -1,0 +1,18 @@
+{
+  "patchdata-28.0.2": {
+    "key": "game/eb9f3179a46ec7692d9f4c7bbd4aa3c1733a0b00b901c3e49c1713e2981979f4",
+    "type": "application/octet-stream",
+    "id": 1248332430,
+    "version": "2019-02-02",
+    "etag": "0x8DCF44DBD58D2A3",
+    "created": "Sat, 26 Oct 2024 22:41:06 GMT"
+  },
+  "patchmanifest-28.0": {
+    "key": "game/dc1e9f32475177e13552c6e16feb310d20b32f5e7a7588b3aa6b66ba073e1f70",
+    "type": "application/octet-stream",
+    "id": 100831546,
+    "version": "2019-02-02",
+    "etag": "0x8DCF44E1CCA2DB2",
+    "created": "Thu, 24 Oct 2024 17:05:50 GMT"
+  }
+}

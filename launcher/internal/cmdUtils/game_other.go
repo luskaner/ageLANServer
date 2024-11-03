@@ -3,7 +3,7 @@
 package cmdUtils
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"os"
 )
 

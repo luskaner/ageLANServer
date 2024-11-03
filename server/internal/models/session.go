@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"sync"
 	"time"
 )
@@ -9,12 +9,16 @@ import (
 type Session struct {
 	id              string
 	expiryTimer     *time.Timer
-	user            *User
+	userId          int32
 	expiryTimerLock sync.Mutex
+	gameId          string
+	messages        []internal.A
+	messagesLock    sync.RWMutex
+	messagesIndex   uint8
 }
 
-var userIdSession sync.Map
-var sessionStore sync.Map
+var userIdSession = internal.NewSafeMap[int32, *Session]()
+var sessionStore = internal.NewSafeMap[string, *Session]()
 
 var (
 	sessionLetters  = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
@@ -22,10 +26,12 @@ var (
 )
 
 func generateSessionId() string {
+	sessionId := make([]rune, 30)
 	for {
-		sessionId := make([]rune, 30)
 		for i := range sessionId {
+			internal.RngLock.Lock()
 			sessionId[i] = sessionLetters[internal.Rng.Intn(len(sessionLetters))]
+			internal.RngLock.Unlock()
 		}
 		sessionIdStr := string(sessionId)
 		if _, exists := GetSessionById(sessionIdStr); !exists {
@@ -38,26 +44,83 @@ func (sess *Session) GetId() string {
 	return sess.id
 }
 
-func (sess *Session) GetUser() *User {
-	return sess.user
+func (sess *Session) GetUserId() int32 {
+	return sess.userId
 }
 
-func CreateSession(user *User) string {
+func (sess *Session) GetGameId() string {
+	return sess.gameId
+}
+
+func (sess *Session) AddMessage(message internal.A) {
+	for {
+		sess.messagesLock.RLock()
+		if sess.messagesIndex == uint8(len(sess.messages)) {
+			sess.messagesLock.RUnlock()
+			time.Sleep(time.Millisecond * 100)
+			continue
+		}
+		sess.messagesLock.RUnlock()
+		sess.messagesLock.Lock()
+		sess.messages[sess.messagesIndex] = message
+		sess.messagesIndex++
+		sess.messagesLock.Unlock()
+		break
+	}
+}
+
+func (sess *Session) WaitForMessages(ackNum uint) (uint, []internal.A) {
+	results := make([]internal.A, 0)
+	timer := time.NewTimer(time.Second * 19)
+	defer timer.Stop()
+
+	returnFn := func() (uint, []internal.A) {
+		if len(results) > 0 {
+			ackNum++
+		}
+		return ackNum, results
+	}
+
+	for {
+		select {
+		case <-timer.C:
+			return returnFn()
+		default:
+			var i uint8
+			sess.messagesLock.RLock()
+			for i = 0; i < sess.messagesIndex; i++ {
+				results = append(results, sess.messages[i])
+			}
+			sess.messagesLock.RUnlock()
+			sess.messagesLock.Lock()
+			sess.messagesIndex = 0
+			sess.messagesLock.Unlock()
+			if len(results) > 0 {
+				return returnFn()
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
+}
+
+func CreateSession(gameId string, userId int32) string {
 	session := &Session{
-		id:   generateSessionId(),
-		user: user,
+		id:       generateSessionId(),
+		userId:   userId,
+		gameId:   gameId,
+		messages: make([]internal.A, 10),
 	}
 	session.expiryTimer = time.AfterFunc(sessionDuration, func() {
 		session.Delete()
 	})
 	sessionStore.Store(session.id, session)
-	userIdSession.Store(user.GetId(), session)
+	userIdSession.Store(userId, session)
 	return session.id
 }
 
 func (sess *Session) Delete() {
 	_ = sess.expiryTimer.Stop()
-	userIdSession.Delete(sess.user.GetId())
+	userIdSession.Delete(sess.userId)
 	sessionStore.Delete(sess.id)
 }
 
@@ -71,17 +134,9 @@ func (sess *Session) ResetExpiryTimer() {
 }
 
 func GetSessionById(sessionId string) (*Session, bool) {
-	value, exists := sessionStore.Load(sessionId)
-	if exists {
-		return value.(*Session), true
-	}
-	return nil, false
+	return sessionStore.Load(sessionId)
 }
 
-func GetSessionByUser(user *User) (*Session, bool) {
-	value, exists := userIdSession.Load(user.GetId())
-	if exists {
-		return value.(*Session), true
-	}
-	return nil, false
+func GetSessionByUserId(userId int32) (*Session, bool) {
+	return userIdSession.Load(userId)
 }

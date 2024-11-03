@@ -1,11 +1,11 @@
-module github.com/luskaner/aoe2DELanServer/launcher-agent
+module github.com/luskaner/ageLANServer/launcher-agent
 
 go 1.22.0
 
 require (
-	github.com/luskaner/aoe2DELanServer/battle-server-broadcast v1.2.1
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
-	github.com/luskaner/aoe2DELanServer/launcher-common v0.0.0-20240918225240-55697d48fe22
+	github.com/luskaner/ageLANServer/battle-server-broadcast v1.2.1
+	github.com/luskaner/ageLANServer/common v0.0.0-20240918220359-d75d77863d57
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20240918225240-55697d48fe22
 	golang.org/x/sys v0.26.0
 )
 

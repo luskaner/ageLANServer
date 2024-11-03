@@ -1,9 +1,9 @@
 package advertisement
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
@@ -16,18 +16,20 @@ func Leave(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	adv, ok := models.GetAdvertisement(int32(advId))
+	game := models.G(r)
+	advertisements := game.Advertisements()
+	adv, ok := advertisements.GetAdvertisement(int32(advId))
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	currentUser := sess.GetUser()
+	currentUser, _ := game.Users().GetUserById(sess.GetUserId())
 	_, isPeer := adv.GetPeer(currentUser)
 	if !isPeer {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	adv.RemovePeer(currentUser)
+	advertisements.RemovePeer(adv, currentUser)
 	i.JSON(&w,
 		i.A{0},
 	)

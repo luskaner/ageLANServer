@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/common/executor"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"io"
 	"net/http"
 	"time"
@@ -109,7 +109,7 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 		} else {
 			fmt.Println("Adding host to hosts file, authorize \"config-admin-agent\" if needed...")
 		}
-		if result := executor.RunSetUp(ips, nil, nil, false, false, mapCDN, true); !result.Success() {
+		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true); !result.Success() {
 			fmt.Println("Failed to add host.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())

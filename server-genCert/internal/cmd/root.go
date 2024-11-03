@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/server-genCert/internal"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server-genCert/internal"
 	"github.com/spf13/cobra"
 	"os"
 	"path"

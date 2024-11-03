@@ -1,5 +1,6 @@
 # Server GenCert
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/server-genCert)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/server-genCert)
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/server-genCert)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/server-genCert)
 
 Generates the SSL certificate needed for server. Generates the `resources/certificates/key.pem`
 and `resources/certificates/cert.pem` upon execution. Resides in `bin` subdirectory.

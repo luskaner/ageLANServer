@@ -1,6 +1,6 @@
 package internal
 
-import launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
+import launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 
 const (
 	ErrGameTimeoutStart = iota + launcherCommon.ErrLast

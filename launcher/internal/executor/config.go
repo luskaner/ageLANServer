@@ -3,19 +3,23 @@ package executor
 import (
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
-func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
+	if game != "" {
+		args = append(args, "-e")
+		args = append(args, game)
+	}
 	if !executor.IsAdmin() {
 		args = append(args, "-g")
 		if exitAgentOnError {
-			args = append(args, "-e")
+			args = append(args, "-r")
 		}
 	}
 	if mapIps != nil {
@@ -45,15 +49,17 @@ func RunSetUp(mapIps mapset.Set[string], addUserCertData []byte, addLocalCertDat
 	return
 }
 
-func RunRevert(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *exec.Result) {
+func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *exec.Result) {
 	args := []string{launcherCommon.ConfigRevertCmd}
-	args = append(args, RevertFlags(unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
+	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
 }
 
-func RevertFlags(unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
 	args := make([]string, 0)
+	args = append(args, "-e")
+	args = append(args, game)
 	if !executor.IsAdmin() {
 		args = append(args, "-g")
 	}

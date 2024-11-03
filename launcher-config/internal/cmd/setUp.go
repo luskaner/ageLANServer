@@ -3,14 +3,15 @@ package cmd
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-config/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd/wrapper"
-	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/userData"
+	"github.com/luskaner/ageLANServer/common"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executor"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd"
+	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
+	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
@@ -31,7 +32,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	fmt.Println("Restoring previously backed up metadata")
-	if userData.Metadata.Restore() {
+	if userData.Metadata(gameId).Restore(gameId) {
 		fmt.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -42,7 +43,7 @@ func restoreMetadata() bool {
 
 func restoreProfiles() bool {
 	fmt.Println("Restoring previously backed up profiles")
-	if userData.RestoreProfiles(true) {
+	if userData.RestoreProfiles(gameId, true) {
 		fmt.Println("Successfully restored profiles")
 		return true
 	} else {
@@ -91,6 +92,11 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
+		if (BackupMetadata || BackupProfiles) && !common.SupportedGames.ContainsOne(gameId) {
+			fmt.Println("Invalid game type")
+			os.Exit(launcherCommon.ErrInvalidGame)
+		}
+		fmt.Printf("Setting up configuration for %s...\n", gameId)
 		isAdmin := executor.IsAdmin()
 		if AddUserCertData != nil {
 			fmt.Println("Adding user certificate, authorize it if needed...")
@@ -110,7 +116,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupMetadata {
 			fmt.Println("Backing up metadata")
-			if userData.Metadata.Backup() {
+			if userData.Metadata(gameId).Backup(gameId) {
 				fmt.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
@@ -126,7 +132,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupProfiles {
 			fmt.Println("Backing up profiles")
-			if userData.BackupProfiles() {
+			if userData.BackupProfiles(gameId) {
 				fmt.Println("Successfully backed up profiles")
 				backedUpProfiles = true
 			} else {
@@ -248,6 +254,7 @@ func InitSetUp() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
+	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameId)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(
 			&AddUserCertData,
@@ -281,7 +288,7 @@ func InitSetUp() {
 	setUpCmd.Flags().BoolVarP(
 		&agentEndOnError,
 		"agentEndOnError",
-		"e",
+		"r",
 		false,
 		"Stop the config-admin-agent if it is running and any admin action failed.",
 	)

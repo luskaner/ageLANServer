@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/server-genCert/internal/cmd"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server-genCert/internal/cmd"
 	"github.com/spf13/cobra"
 )
 

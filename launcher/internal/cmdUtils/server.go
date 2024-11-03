@@ -3,11 +3,11 @@ package cmdUtils
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/server"
+	"github.com/luskaner/ageLANServer/common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"net"
 	"sort"
 	"strings"
@@ -63,21 +63,27 @@ func SelectBestServerIp(ips []string) (ok bool, ip string) {
 	return
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(ports []int) (errorCode int, ip string) {
+func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []net.IP, ports []int) (errorCode int, ip string) {
 	errorCode = common.ErrSuccess
-	servers := server.LanServersAnnounced(ports)
+	servers := server.LanServersAnnounced(multicastIPs, ports)
 	if servers == nil {
 		fmt.Println("Could not listen to server announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
 		errorCode = internal.ErrListenServerAnnouncements
 	}
 	if servers != nil && len(servers) > 0 {
 		var ok bool
-		serverTags := make([]string, len(servers))
-		i := 0
+		var serverTags []string
 		var serversStr [][]string
 		announcedNewerVersion := false
 		announcedOlderVersion := false
 		for _, data := range servers {
+			if data.Version >= common.AnnounceVersion1 {
+				announceData := data.Data.(common.AnnounceMessageData001)
+				gameIdSet := mapset.NewSet[string](announceData.GameIds...)
+				if !gameIdSet.ContainsOne(gameId) {
+					continue
+				}
+			}
 			ips := data.Ips.ToSlice()
 			sort.Strings(ips)
 			hosts := mapset.NewSet[string]()
@@ -107,9 +113,8 @@ func ListenToServerAnnouncementsAndSelectBestIp(ports []int) (errorCode int, ip 
 			}
 			format += " %s"
 			strVars = append(strVars, suffix)
-			serverTags[i] = fmt.Sprintf(format, strVars...)
+			serverTags = append(serverTags, fmt.Sprintf(format, strVars...))
 			serversStr = append(serversStr, ips)
-			i++
 		}
 		if announcedNewerVersion {
 			fmt.Println("Found at least a server with a newer version than the client. The launcher should be upgraded.")
@@ -129,7 +134,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(ports []int) (errorCode int, ip 
 			var option int
 			for {
 				fmt.Println("Found the following servers:")
-				for i = range serversStr {
+				for i := range serversStr {
 					fmt.Printf("%d. %s\n", i+1, serverTags[i])
 				}
 				fmt.Printf("Enter the number of the server (1-%d): ", len(serversStr))

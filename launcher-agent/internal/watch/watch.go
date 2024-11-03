@@ -1,10 +1,10 @@
 package watch
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
-	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, revertCmd []string, exitCode *int) {
+func Watch(gameId string, steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, revertCmd []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertCmd) > 0 {
 		defer func() {
@@ -33,7 +33,7 @@ func Watch(steamProcess bool, microsoftStoreProcess bool, serverExe string, broa
 			internal.RunConfig(revertArgs)
 		}()
 	}
-	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(steamProcess, microsoftStoreProcess))
+	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, microsoftStoreProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
 		if serverExe != "-" {

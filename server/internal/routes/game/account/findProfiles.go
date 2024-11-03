@@ -1,9 +1,9 @@
 package account
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strings"
 )
@@ -15,8 +15,10 @@ func FindProfiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	profileInfo := models.GetProfileInfo(true, func(currentUser *models.User) bool {
+	game := models.G(r)
+	users := game.Users()
+	u, _ := users.GetUserById(sess.GetUserId())
+	profileInfo := users.GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		if u == currentUser {
 			return false
 		}

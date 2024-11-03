@@ -7,10 +7,11 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/common"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"golang.org/x/net/ipv4"
 	"net"
 	"net/netip"
 	"os"
@@ -83,24 +84,70 @@ func LanServer(host string, insecureSkipVerify bool) bool {
 	return HttpGet(fmt.Sprintf("https://%s/test", host), insecureSkipVerify) == common.ErrSuccess
 }
 
-func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
-	results := make(chan map[uuid.UUID]*common.AnnounceMessage)
-
+func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn {
+	var connections []*net.UDPConn
+	var multicastIfs []*net.Interface
+	if len(multicastIPs) > 0 {
+		interfaces, err := net.Interfaces()
+		if err == nil {
+			var addrs []net.Addr
+			for _, i := range interfaces {
+				addrs, err = i.Addrs()
+				if err != nil {
+					continue
+				}
+				for _, addr := range addrs {
+					v, addrOk := addr.(*net.IPNet)
+					if !addrOk {
+						continue
+					}
+					var IP net.IP
+					if IP = v.IP.To4(); IP == nil {
+						continue
+					}
+					if i.Flags&net.FlagRunning != 0 && i.Flags&net.FlagMulticast != 0 {
+						multicastIfs = append(multicastIfs, &i)
+					}
+				}
+			}
+		}
+	}
 	for _, port := range ports {
-		go func(port int) {
-			addr := net.UDPAddr{
-				IP:   netip.IPv4Unspecified().AsSlice(),
-				Port: port,
+		addr := &net.UDPAddr{
+			IP:   netip.IPv4Unspecified().AsSlice(),
+			Port: port,
+		}
+		conn, err := net.ListenUDP("udp4", addr)
+		if err != nil {
+			continue
+		}
+		if len(multicastIPs) > 0 {
+			p := ipv4.NewPacketConn(conn)
+			for _, multicastIP := range multicastIPs {
+				multicastAddr := &net.UDPAddr{
+					IP:   multicastIP,
+					Port: port,
+				}
+				for _, multicastIf := range multicastIfs {
+					_ = p.JoinGroup(multicastIf, multicastAddr)
+				}
 			}
-			conn, err := net.ListenUDP("udp4", &addr)
-			if err != nil {
-				return
-			}
+		}
+		connections = append(connections, conn)
+	}
+	return connections
+}
+
+func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*common.AnnounceMessage {
+	results := make(chan map[uuid.UUID]*common.AnnounceMessage)
+	connections := announcementConnections(multicastIPs, ports)
+	for _, conn := range connections {
+		go func() {
 			defer func(conn *net.UDPConn) {
 				_ = conn.Close()
 			}(conn)
 
-			err = conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+			err := conn.SetReadDeadline(time.Now().Add(15 * time.Second))
 			if err != nil {
 				return
 			}
@@ -145,6 +192,12 @@ func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
 					if err = dec.Decode(&msg); err == nil {
 						data = msg
 					}
+				case common.AnnounceVersion1:
+					var msg common.AnnounceMessageData001
+					dec := gob.NewDecoder(messageBuffer)
+					if err = dec.Decode(&msg); err == nil {
+						data = msg
+					}
 				}
 				ip := serverAddr.IP.String()
 				var m *common.AnnounceMessage
@@ -161,7 +214,7 @@ func LanServersAnnounced(ports []int) map[uuid.UUID]*common.AnnounceMessage {
 			}
 
 			results <- servers
-		}(port)
+		}()
 	}
 
 	servers := make(map[uuid.UUID]*common.AnnounceMessage)

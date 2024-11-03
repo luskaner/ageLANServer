@@ -2,6 +2,6 @@ package userData
 
 import "os"
 
-func basePath() string {
+func basePath(_ string) string {
 	return os.Getenv("USERPROFILE")
 }
