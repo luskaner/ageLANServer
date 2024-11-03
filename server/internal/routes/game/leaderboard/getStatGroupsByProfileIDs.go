@@ -1,12 +1,19 @@
 package leaderboard
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/leaderboard/shared"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/shared"
 	"net/http"
 )
 
 func GetStatGroupsByProfileIDs(w http.ResponseWriter, r *http.Request) {
-	response := shared.GetStatGroups(r.URL.Query().Get("profileids"), true, true)
+	response := shared.GetStatGroups(
+		r,
+		r.URL.Query().Get("profileids"),
+		true,
+		models.G(r).Title() != common.GameAoE3,
+	)
 	i.JSON(&w, response)
 }

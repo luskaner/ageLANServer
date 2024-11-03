@@ -1,4 +1,4 @@
-name: aoe2DELanServer
+name: ageLANServer
 services:
   gen-cert:
     build:

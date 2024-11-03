@@ -2,16 +2,17 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/common/executor"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	launcherExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"runtime"
 )
 
 type Config struct {
+	gameId          string
 	startedAgent    bool
 	unmapIPs        bool
 	unmapCDN        bool
@@ -64,6 +65,10 @@ func (c *Config) SetRevertCommand(cmd []string) {
 	c.revertCommand = cmd
 }
 
+func (c *Config) SetGameId(id string) {
+	c.gameId = id
+}
+
 func (c *Config) CfgAgentStarted() bool {
 	return !commonExecutor.IsAdmin() && c.startedAgent
 }
@@ -109,7 +114,7 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN); result.Success() {
+		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN); result.Success() {
 			fmt.Println("Cleaned up.")
 		} else {
 			fmt.Println("Failed to clean up.")
@@ -137,9 +142,9 @@ func anyProcessExists(names []string) bool {
 	return len(processes) > 0
 }
 
-func GameRunning() bool {
+func GameRunning(gameId string) bool {
 	microsoftStore := runtime.GOOS == "windows"
-	if anyProcessExists(commonProcess.GameProcesses(true, microsoftStore)) {
+	if anyProcessExists(commonProcess.GameProcesses(gameId, true, microsoftStore)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}

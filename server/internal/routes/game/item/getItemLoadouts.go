@@ -1,7 +1,7 @@
 package item
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 )
 

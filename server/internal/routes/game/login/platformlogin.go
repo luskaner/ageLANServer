@@ -2,9 +2,11 @@ package login
 
 import (
 	"fmt"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
+	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 	"net/http"
 	"time"
 )
@@ -13,6 +15,7 @@ type request struct {
 	AccountType    string `schema:"accountType"`
 	PlatformUserId uint64 `schema:"platformUserID"`
 	Alias          string `schema:"alias"`
+	GameId         string `schema:"title"`
 }
 
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
@@ -22,17 +25,66 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
+	i.RngLock.Lock()
 	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
 	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
-	u := models.GetOrCreateUser(r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
-	u.SetPresence(1)
-	sess, ok := models.GetSessionByUser(u)
+	i.RngLock.Unlock()
+	game := models.G(r)
+	title := game.Title()
+	users := game.Users()
+	u := users.GetOrCreateUser(title, r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	sess, ok := models.GetSessionByUserId(u.GetId())
 	if ok {
 		sess.Delete()
 	}
-	sessionId := models.CreateSession(u)
+	sessionId := models.CreateSession(req.GameId, u.GetId())
+	sess, _ = models.GetSessionById(sessionId)
+	relationship.ChangePresence(users, u, 1)
 	profileInfo := u.GetProfileInfo(false)
+	if title == common.GameAoE3 {
+		for _, user := range users.GetUserIds() {
+			if user != u.GetId() {
+				currentSess, currentOk := models.GetSessionByUserId(user)
+				if currentOk {
+					wss.SendOrStoreMessage(
+						currentSess,
+						"FriendAcceptMessage",
+						i.A{profileInfo},
+					)
+				}
+			}
+		}
+	}
 	profileId := u.GetProfileId()
+	extraProfileInfoList := i.A{}
+	if title != common.GameAoE3 {
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo())
+	}
+	var unknownProfileInfoList i.A
+	switch title {
+	case common.GameAoE2:
+		unknownProfileInfoList = i.A{
+			i.A{2, profileId, 0, "", t2},
+			i.A{39, profileId, 671, "", t2},
+			i.A{41, profileId, 191, "", t2},
+			i.A{42, profileId, 480, "", t2},
+			i.A{44, profileId, 0, "", t2},
+			i.A{45, profileId, 0, "", t2},
+			i.A{46, profileId, 0, "", t2},
+			i.A{47, profileId, 0, "", t2},
+			i.A{48, profileId, 0, "", t2},
+			i.A{50, profileId, 0, "", t2},
+			i.A{60, profileId, 1, "", t2},
+			i.A{142, profileId, 1, "", t3},
+			i.A{171, profileId, 1, "", t2},
+			i.A{172, profileId, 4, "", t2},
+			i.A{173, profileId, 1, "", t2},
+		}
+	case common.GameAoE3:
+		unknownProfileInfoList = i.A{
+			i.A{291, u.GetId(), 16, "", t2},
+		}
+	}
 	response := i.A{
 		0,
 		sessionId,
@@ -53,38 +105,13 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		0,
 		nil,
-		files.Login,
+		game.Resources().LoginData,
 		i.A{
 			0,
 			profileInfo,
-			i.A{
-				0,
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-				i.A{},
-			},
-			i.A{u.GetExtraProfileInfo()},
-			i.A{
-				i.A{2, profileId, 0, "", t2},
-				i.A{39, profileId, 671, "", t2},
-				i.A{41, profileId, 191, "", t2},
-				i.A{42, profileId, 480, "", t2},
-				i.A{44, profileId, 0, "", t2},
-				i.A{45, profileId, 0, "", t2},
-				i.A{46, profileId, 0, "", t2},
-				i.A{47, profileId, 0, "", t2},
-				i.A{48, profileId, 0, "", t2},
-				i.A{50, profileId, 0, "", t2},
-				i.A{60, profileId, 1, "", t2},
-				i.A{142, profileId, 1, "", t3},
-				i.A{171, profileId, 1, "", t2},
-				i.A{172, profileId, 4, "", t2},
-				i.A{173, profileId, 1, "", t2},
-			},
+			relationship.Relationships(title, users, u),
+			extraProfileInfoList,
+			unknownProfileInfoList,
 			nil,
 			i.A{},
 			nil,

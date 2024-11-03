@@ -3,9 +3,9 @@ package internal
 import (
 	"crypto/x509"
 	"encoding/gob"
-	"github.com/luskaner/aoe2DELanServer/common"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"net"
 	"os"
 )

@@ -1,8 +1,8 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/steam"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher-common/steam"
 	"os"
 )
 
@@ -11,14 +11,22 @@ type Executor interface {
 	GameProcesses() (steamProcess bool, microsoftStoreProcess bool)
 }
 
-type SteamExecutor struct{}
-type MicrosoftStoreExecutor struct{}
+type baseExecutor struct {
+	gameId string
+}
+
+type SteamExecutor struct {
+	baseExecutor
+}
+type MicrosoftStoreExecutor struct {
+	baseExecutor
+}
 type CustomExecutor struct {
 	Executable string
 }
 
 func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
-	return startUri(steam.OpenUri())
+	return startUri(steam.NewGame(exec.gameId).OpenUri())
 }
 
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
@@ -44,16 +52,33 @@ func isInstalledCustom(executable string) bool {
 	return true
 }
 
-func MakeExecutor(executable string) Executor {
+func steamExecutor(gameId string) (ok bool, executor Executor) {
+	steamGame := steam.NewGame(gameId)
+	if steamGame.GameInstalled() {
+		ok = true
+		executor = SteamExecutor{baseExecutor{gameId: gameId}}
+	}
+	return
+}
+
+func microsoftStoreExecutor(gameId string) (ok bool, executor Executor) {
+	if isInstalledOnMicrosoftStore(gameId) {
+		ok = true
+		executor = MicrosoftStoreExecutor{baseExecutor{gameId: gameId}}
+	}
+	return
+}
+
+func MakeExecutor(gameId string, executable string) Executor {
 	if executable != "auto" {
 		switch executable {
 		case "steam":
-			if steam.GameInstalled() {
-				return SteamExecutor{}
+			if ok, executor := steamExecutor(gameId); ok {
+				return executor
 			}
 		case "msstore":
-			if isInstalledOnMicrosoftStore() {
-				return MicrosoftStoreExecutor{}
+			if ok, executor := microsoftStoreExecutor(gameId); ok {
+				return executor
 			}
 		default:
 			if isInstalledCustom(executable) {
@@ -62,11 +87,11 @@ func MakeExecutor(executable string) Executor {
 		}
 		return nil
 	}
-	if steam.GameInstalled() {
-		return SteamExecutor{}
+	if ok, executor := steamExecutor(gameId); ok {
+		return executor
 	}
-	if isInstalledOnMicrosoftStore() {
-		return MicrosoftStoreExecutor{}
+	if ok, executor := microsoftStoreExecutor(gameId); ok {
+		return executor
 	}
 	return nil
 }

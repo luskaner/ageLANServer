@@ -1,10 +1,10 @@
 package relationship
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 
 func GetPresenceData(w http.ResponseWriter, r *http.Request) {
-	files.ReturnSignedAsset("presenceData.json", &w, r, false)
+	models.G(r).Resources().ReturnSignedAsset("presenceData.json", &w, r, false)
 }

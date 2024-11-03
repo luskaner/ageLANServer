@@ -6,6 +6,7 @@ tasks:
   prepare-server-base:
     internal: true
     cmds:
+      - powershell New-Item -Path "build/server/resources" -ItemType Directory -ErrorAction Ignore -Force
       - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
       - go build -o build/server/bin/genCert.exe ./server-genCert
   prepare-launcher:
@@ -16,7 +17,8 @@ tasks:
     cmds:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
-      - powershell Copy-Item -Path launcher/resources/config.ini -Destination build/launcher/resources/config.ini -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.toml -Destination build/launcher/resources/config.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.game.toml -ErrorAction Ignore -Force
       - go build -o build/launcher/bin/agent.exe ./launcher-agent
   prepare-server-genCert:
     cmds:

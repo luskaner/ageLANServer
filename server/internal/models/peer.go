@@ -1,36 +1,42 @@
 package models
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"sync"
 )
 
-type Peer struct {
-	advertisement *Advertisement
-	user          *User
+type MainPeer struct {
+	advertisement *MainAdvertisement
+	user          *MainUser
 	race          int32
 	team          int32
-	invites       map[*User]interface{}
+	invites       *i.SafeSet[*MainUser]
+	lock          *sync.RWMutex
 }
 
-var invitesLock = i.NewKeyRWMutex()
-
-func (peer *Peer) GetAdvertisement() *Advertisement {
-	return peer.advertisement
+func (peer *MainPeer) GetAdvertisementId() int32 {
+	return peer.advertisement.GetId()
 }
 
-func (peer *Peer) GetUser() *User {
+func (peer *MainPeer) GetUser() *MainUser {
 	return peer.user
 }
 
-func (peer *Peer) GetRace() int32 {
+func (peer *MainPeer) GetRace() int32 {
+	peer.lock.RLock()
+	defer peer.lock.RUnlock()
 	return peer.race
 }
 
-func (peer *Peer) GetTeam() int32 {
+func (peer *MainPeer) GetTeam() int32 {
+	peer.lock.RLock()
+	defer peer.lock.RUnlock()
 	return peer.team
 }
 
-func (peer *Peer) Encode() i.A {
+func (peer *MainPeer) Encode() i.A {
+	peer.lock.RLock()
+	defer peer.lock.RUnlock()
 	return i.A{
 		peer.advertisement.GetId(),
 		peer.user.GetId(),
@@ -38,28 +44,25 @@ func (peer *Peer) Encode() i.A {
 		peer.user.GetStatId(),
 		peer.race,
 		peer.team,
-		peer.advertisement.ip,
+		peer.advertisement.GetIp(),
 	}
 }
 
-func (peer *Peer) Invite(user *User) {
-	userId := user.GetId()
-	invitesLock.Lock(userId)
-	defer invitesLock.Unlock(userId)
-	peer.invites[user] = struct{}{}
+func (peer *MainPeer) Invite(user *MainUser) {
+	peer.invites.Add(user)
 }
 
-func (peer *Peer) Uninvite(user *User) {
-	userId := user.GetId()
-	invitesLock.Lock(userId)
-	defer invitesLock.Unlock(userId)
-	delete(peer.invites, user)
+func (peer *MainPeer) Uninvite(user *MainUser) {
+	peer.invites.Delete(user)
 }
 
-func (peer *Peer) IsInvited(user *User) bool {
-	userId := user.GetId()
-	invitesLock.RLock(userId)
-	defer invitesLock.RUnlock(userId)
-	_, ok := peer.invites[user]
-	return ok
+func (peer *MainPeer) IsInvited(user *MainUser) bool {
+	return peer.invites.Has(user)
+}
+
+func (peer *MainPeer) Update(race int32, team int32) {
+	peer.lock.Lock()
+	defer peer.lock.Unlock()
+	peer.race = race
+	peer.team = team
 }

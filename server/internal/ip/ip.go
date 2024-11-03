@@ -2,11 +2,11 @@ package ip
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"net"
 )
 
-func ResolveIps(ip net.IP) (ips []net.IP, targetIps []net.IP) {
+func ResolveAddrs(listenIP net.IP, multicastIP net.IP, targetPort int, broadcast bool, multicast bool) (sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	interfaces, err := net.Interfaces()
 
 	if err != nil {
@@ -26,31 +26,47 @@ func ResolveIps(ip net.IP) (ips []net.IP, targetIps []net.IP) {
 		}
 
 		for _, addr := range addrs {
-			var currentIp net.IP
+			var currentIP net.IP
 			v, ok := addr.(*net.IPNet)
 			if !ok {
 				continue
 			}
 
-			currentIp = v.IP
-			currentIpv4 := currentIp.To4()
-			if currentIpv4 == nil {
+			currentIP = v.IP
+			currentIPv4 := currentIP.To4()
+			if currentIPv4 == nil {
 				continue
 			}
 
-			if ip.IsUnspecified() || currentIpv4.Equal(ip) {
-				ips = append(ips, currentIpv4.Mask(v.Mask))
-				var targetIp net.IP
-				if i.Flags&net.FlagBroadcast != 0 {
-					targetIp = common.CalculateBroadcastIp(currentIpv4, v.Mask)
-				} else {
-					targetIp = currentIpv4
+			if listenIP.IsUnspecified() || currentIPv4.Equal(listenIP) {
+				if broadcast {
+					sourceIPs = append(sourceIPs, currentIPv4)
+					if i.Flags&net.FlagBroadcast != 0 {
+						targetAddrs = append(targetAddrs, &net.UDPAddr{
+							IP:   common.CalculateBroadcastIp(currentIPv4, v.Mask),
+							Port: targetPort,
+						})
+					} else {
+						targetAddrs = append(targetAddrs, &net.UDPAddr{
+							IP:   currentIPv4,
+							Port: targetPort,
+						})
+					}
 				}
-				targetIps = append(targetIps, targetIp)
+
+				if multicast && i.Flags&net.FlagMulticast != 0 {
+					sourceIPs = append(sourceIPs, currentIPv4)
+					targetAddrs = append(
+						targetAddrs,
+						&net.UDPAddr{
+							IP:   multicastIP,
+							Port: targetPort,
+						},
+					)
+				}
 			}
 		}
 	}
-
 	return
 }
 

@@ -2,9 +2,10 @@ package cloud
 
 import (
 	"encoding/json"
-	"github.com/luskaner/aoe2DELanServer/common"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	"fmt"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 
@@ -13,20 +14,32 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 	var names []string
 	err := json.Unmarshal([]byte(namesStr), &names)
 	if err != nil {
-		i.JSON(&w, i.A{2, i.A{}})
+		i.JSON(&w, i.A{2, i.A{nil}})
 		return
 	}
+	game := models.G(r)
 	descriptions := make(i.A, len(names))
+	gameTitle := game.Title()
 	for j, name := range names {
-		fileData := files.CloudFiles[name]
+		fileData, ok := game.Resources().CloudFiles.Value[name]
+		if !ok {
+			i.JSON(&w, i.A{2, i.A{nil}})
+			return
+		}
 		finalPart := fileData.Key
-		descriptions[j] = i.A{
+		description := i.A{
 			name,
 			fileData.Length,
 			fileData.Id,
-			"https://" + common.Domain + "/cloudfiles/" + finalPart,
-			finalPart,
+			fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
 		}
+		if gameTitle == common.GameAoE2 {
+			description = append(
+				description,
+				finalPart,
+			)
+		}
+		descriptions[j] = description
 	}
 	i.JSON(&w, i.A{0, descriptions})
 }

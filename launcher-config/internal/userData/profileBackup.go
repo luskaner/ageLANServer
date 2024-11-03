@@ -7,9 +7,9 @@ import (
 
 var profiles []Data
 
-func setProfileData() bool {
+func setProfileData(gameId string) bool {
 	profiles = make([]Data, 0)
-	entries, err := os.ReadDir(Path())
+	entries, err := os.ReadDir(Path(gameId))
 	if err != nil {
 		return false
 	}
@@ -25,17 +25,17 @@ func setProfileData() bool {
 	return true
 }
 
-func runProfileMethod(mainMethod func(data Data) bool, cleanMethod func(data Data) bool, stopOnFailed bool) bool {
-	if !setProfileData() {
+func runProfileMethod(gameId string, mainMethod func(gameId string, data Data) bool, cleanMethod func(gameId string, data Data) bool, stopOnFailed bool) bool {
+	if !setProfileData(gameId) {
 		return false
 	}
 	for i := range profiles {
-		if !mainMethod(profiles[i]) {
+		if !mainMethod(gameId, profiles[i]) {
 			if !stopOnFailed {
 				continue
 			}
 			for j := i - 1; j >= 0; j-- {
-				_ = cleanMethod(profiles[j])
+				_ = cleanMethod(gameId, profiles[j])
 			}
 			return false
 		}
@@ -43,18 +43,18 @@ func runProfileMethod(mainMethod func(data Data) bool, cleanMethod func(data Dat
 	return true
 }
 
-func backupProfile(data Data) bool {
-	return data.Backup()
+func backupProfile(gameId string, data Data) bool {
+	return data.Backup(gameId)
 }
 
-func restoreProfile(data Data) bool {
-	return data.Restore()
+func restoreProfile(gameId string, data Data) bool {
+	return data.Restore(gameId)
 }
 
-func BackupProfiles() bool {
-	return runProfileMethod(backupProfile, restoreProfile, true)
+func BackupProfiles(gameId string) bool {
+	return runProfileMethod(gameId, backupProfile, restoreProfile, true)
 }
 
-func RestoreProfiles(reverseFailed bool) bool {
-	return runProfileMethod(restoreProfile, backupProfile, reverseFailed)
+func RestoreProfiles(gameId string, reverseFailed bool) bool {
+	return runProfileMethod(gameId, restoreProfile, backupProfile, reverseFailed)
 }

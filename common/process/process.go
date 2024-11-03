@@ -3,7 +3,7 @@ package process
 import (
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,8 +11,27 @@ import (
 	"time"
 )
 
-const steamProcess = "AoE2DE_s.exe"
-const microsoftStoreProcess = "AoE2DE.exe"
+func steamProcess(gameId string) string {
+	switch gameId {
+	case common.GameAoE2:
+		return "AoE2DE_s.exe"
+	case common.GameAoE3:
+		return "AoE3DE_s.exe"
+	default:
+		return ""
+	}
+}
+
+func microsoftStoreProcess(gameId string) string {
+	switch gameId {
+	case common.GameAoE2:
+		return "AoE2DE.exe"
+	case common.GameAoE3:
+		return "AoE3DE.exe"
+	default:
+		return ""
+	}
+}
 
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
@@ -79,13 +98,13 @@ func Kill(exe string) (proc *os.Process, err error) {
 	}
 }
 
-func GameProcesses(steam bool, microsoftStore bool) []string {
+func GameProcesses(gameId string, steam bool, microsoftStore bool) []string {
 	processes := mapset.NewSet[string]()
 	if steam {
-		processes.Add(steamProcess)
+		processes.Add(steamProcess(gameId))
 	}
 	if microsoftStore {
-		processes.Add(microsoftStoreProcess)
+		processes.Add(microsoftStoreProcess(gameId))
 	}
 	return processes.ToSlice()
 }

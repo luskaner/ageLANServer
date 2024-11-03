@@ -1,7 +1,7 @@
 package parentCheck
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path/filepath"
 )

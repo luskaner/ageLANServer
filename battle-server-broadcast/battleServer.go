@@ -2,7 +2,7 @@ package battle_server_broadcast
 
 import (
 	"bytes"
-	"github.com/luskaner/aoe2DELanServer/battle-server-broadcast/internal"
+	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
 	"net"
 )
 

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal/watch"
-	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
+	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"os"
 	"os/signal"
 	"runtime"
@@ -37,6 +37,7 @@ func main() {
 	if runtime.GOOS == "windows" {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
 	}
+	gameId := os.Args[7]
 	revertCmdLength, _ := strconv.ParseInt(os.Args[5], 10, 64)
 	revertCmdEnd := revertCmdStart + revertCmdLength
 	var revertCmd []string
@@ -67,7 +68,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	watch.Watch(steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
+	watch.Watch(gameId, steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

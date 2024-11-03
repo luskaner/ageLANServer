@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
 func RunConfig(revertFlags []string) {

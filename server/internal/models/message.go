@@ -1,49 +1,48 @@
 package models
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
-type Message struct {
+type MainMessage struct {
 	advertisementId int32
 	time            int64
 	broadcast       bool
 	content         string
 	typ             uint8
-	sender          *User
-	receivers       []*User
+	sender          *MainUser
+	receivers       []*MainUser
 }
 
-func (message *Message) GetAdvertisement() *Advertisement {
-	adv, _ := GetAdvertisement(message.advertisementId)
-	return adv
-}
-
-func (message *Message) GetTime() int64 {
+func (message *MainMessage) GetTime() int64 {
 	return message.time
 }
 
-func (message *Message) GetBroadcast() bool {
+func (message *MainMessage) GetBroadcast() bool {
 	return message.broadcast
 }
 
-func (message *Message) GetContent() string {
+func (message *MainMessage) GetContent() string {
 	return message.content
 }
 
-func (message *Message) GetType() uint8 {
+func (message *MainMessage) GetType() uint8 {
 	return message.typ
 }
 
-func (message *Message) GetSender() *User {
+func (message *MainMessage) GetSender() *MainUser {
 	return message.sender
 }
 
-func (message *Message) GetReceivers() []*User {
+func (message *MainMessage) GetReceivers() []*MainUser {
 	return message.receivers
 }
 
-func (message *Message) Encode() i.A {
+func (message *MainMessage) GetAdvertisementId() int32 {
+	return message.advertisementId
+}
+
+func (message *MainMessage) Encode() i.A {
 	return i.A{
 		message.sender.GetId(),
 		message.content,

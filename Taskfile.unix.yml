@@ -17,7 +17,8 @@ tasks:
       - go build -o build/server ./server
       - pkexec --keep-cwd setcap 'CAP_NET_BIND_SERVICE=+ep' build/server/server
       - mkdir -p build/launcher/resources
-      - cp -f launcher/resources/config.ini build/launcher/resources/config.ini
+      - cp -f launcher/resources/config.toml build/launcher/resources/config.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.game.toml
       - go build -o build/launcher/bin/agent ./launcher-agent
   prepare-server-genCert:
     cmds:

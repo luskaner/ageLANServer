@@ -1,10 +1,10 @@
 package item
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal/files"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 
 func GetItemBundleItemsJson(w http.ResponseWriter, r *http.Request) {
-	files.ReturnSignedAsset("itemBundleItems.json", &w, r, true)
+	models.G(r).Resources().ReturnSignedAsset("itemBundleItems.json", &w, r, true)
 }

@@ -1,6 +1,6 @@
 # Common
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/common)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/common)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/common)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/common)
 
 This module contains the code used by all internal modules.
 

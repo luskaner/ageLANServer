@@ -7,52 +7,40 @@ CanAddHost = true
 # false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
 # local: trust the certificate in the local store. Requires admin rights.
 # user: trust the certificate in the user store. Requires user consent. Only on Windows.
-CanTrustCertificate = local
+CanTrustCertificate = 'local'
 # Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
 # Either 'auto' or 'false'. This is only necessary in Windows, on the rest of systems it is always 'false'.
-CanBroadcastBattleServer = auto
+CanBroadcastBattleServer = 'auto'
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
 IsolateMetadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared
+# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
+# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
 IsolateProfiles = false
-# Executable to run (including arguments) to run first after the "Setting up..." line.
-# The command must return a 0 exit code to continue. If you need to keep it running spawn a new detached process.
-# Windows: Path names need to use double backslashes or be within single quotes.
-# Note: You may use environment variables.
-SetupCommand =
-# Executable to run (including arguments) to run after SetupCommand, game has exited and everything has been reverted. It may run before if there is an error.
-# Windows: Path names need to use double backslashes or be within single quotes.
-# Note: You may use environment variables.
-RevertCommand =
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
 # 'auto' depend on the Announce setting in the server resources being true
-Start = auto
+Start = 'auto'
 # The process to start the server, if 'auto', it will be try to execute the server binary in this directory order:
-# 1. "./"
-# 2. "./server/"
-# 3. "../"
-# 4. "../server/"
-Executable = auto
+# 1. './'
+# 2. './server/'
+# 3. '../'
+# 4. '../server/'
+Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
+# {Game} will be replaced by the game name. Default, only start the server for the given name.
 # Windows: Path names need to use double backslashes or be within single quotes.
 # Note: You may use environment variables.
-ExecutableArgs =
+ExecutableArgs = ['-e', '{Game}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
 # The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
 # Note: See the server config to set the interface to bind to.
-Host = 0.0.0.0
+Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
-Stop = auto
+Stop = 'auto'
 # Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
-AnnouncePorts = 31978
-
-[Client]
-# The path to the game launcher, if 'auto', the Steam and then the Microsoft Store (Windows-only) one will be launched if found
-# Use a path to the game launcher, 'steam' or 'msstore' (Windows-only) to use the default launcher
-Executable = auto
-# The arguments to pass to the client launcher if it is custom.
-# Windows: Path names need to use double backslashes or be within single quotes.
-# Note: You may use environment variables.
-ExecutableArgs =
+AnnouncePorts = [31978]
+# Announce multicast group adresses to join.
+# If not including the default group, default configured servers will not get discovered via Multicast.
+# Only IPv4 is supported.
+AnnounceMulticastGroups = ['239.31.97.8']

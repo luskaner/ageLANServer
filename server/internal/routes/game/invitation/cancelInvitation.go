@@ -1,11 +1,11 @@
 package invitation
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/invitation/shared"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/wss"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/invitation/shared"
+	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 	"net/http"
 )
 
@@ -21,47 +21,41 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	adv, ok := models.GetAdvertisement(q.AdvertisementId)
+	game := models.G(r)
+	u, _ := game.Users().GetUserById(sess.GetUserId())
+	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var peer *models.Peer
+	var peer *models.MainPeer
 	peer, ok = adv.GetPeer(u)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var invitee *models.User
-	invitee, ok = models.GetUserById(q.UserId)
+	var invitee *models.MainUser
+	invitee, ok = game.Users().GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	invited := peer.IsInvited(invitee)
-	if !invited {
+	if !peer.IsInvited(invitee) {
 		i.JSON(&w, i.A{0})
 		return
 	}
 	peer.Uninvite(invitee)
 	var inviteeSession *models.Session
-	inviteeSession, ok = models.GetSessionByUser(invitee)
+	inviteeSession, ok = models.GetSessionByUserId(invitee.GetId())
 	if ok {
-		go func(userId int32, advertisementId int32, sessId string, userProfileInfo i.A) {
-			_ = wss.SendMessage(
-				sessId,
-				i.A{
-					0,
-					"CancelInvitationMessage",
-					userId,
-					i.A{
-						userProfileInfo,
-						advertisementId,
-					},
-				},
-			)
-		}(q.UserId, q.AdvertisementId, inviteeSession.GetId(), u.GetProfileInfo(false))
-	} // TODO: If the user is offline send it when it comes online?
+		wss.SendOrStoreMessage(
+			inviteeSession,
+			"CancelInvitationMessage",
+			i.A{
+				u.GetProfileInfo(false),
+				q.AdvertisementId,
+			},
+		)
+	}
 	i.JSON(&w, i.A{0})
 }

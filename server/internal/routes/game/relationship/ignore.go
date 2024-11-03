@@ -1,8 +1,8 @@
 package relationship
 
 import (
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
@@ -15,7 +15,7 @@ func Ignore(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	u, ok := models.GetUserById(int32(profileId))
+	u, ok := models.G(r).Users().GetUserById(int32(profileId))
 	if !ok {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return

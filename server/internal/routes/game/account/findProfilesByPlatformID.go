@@ -2,9 +2,9 @@ package account
 
 import (
 	"encoding/json"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 
@@ -25,8 +25,9 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 		platformIdsMap[platformId] = struct{}{}
 	}
 	sess, _ := middleware.Session(r)
-	u := sess.GetUser()
-	profileInfo := models.GetProfileInfo(true, func(currentUser *models.User) bool {
+	users := models.G(r).Users()
+	u, _ := users.GetUserById(sess.GetUserId())
+	profileInfo := users.GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		if u == currentUser {
 			return false
 		}
