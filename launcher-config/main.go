@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher-config/internal/cmd"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd"
 )
 
 const version = "development"

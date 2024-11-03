@@ -3,7 +3,7 @@ package steam
 import (
 	"fmt"
 	"github.com/andygrunwald/vdf"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path"
 )

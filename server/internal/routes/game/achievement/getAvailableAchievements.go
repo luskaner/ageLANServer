@@ -1,7 +1,7 @@
 package achievement
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 

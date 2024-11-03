@@ -1,5 +1,6 @@
 # Launcher Config Admin
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/launcher-config-admin)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/launcher-config-admin)
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher-config-admin)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher-config-admin)
 
 This executable makes and revert configuration changes which require admin privileges and is executed by `config`:
 

@@ -3,7 +3,7 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
 // MicrosoftStoreExecutor is not supported on non-Windows platforms

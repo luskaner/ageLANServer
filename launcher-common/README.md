@@ -1,5 +1,6 @@
 # Launcher Common
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/aoe2DELanServer/launcher-common)](https://goreportcard.com/report/github.com/luskaner/aoe2DELanServer/launcher-common)
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher-common)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher-common)
 
 This module contains the code used by all internal `launcher-*` modules.
 

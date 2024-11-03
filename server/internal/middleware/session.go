@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"golang.org/x/net/context"
 	"net/http"
 	"strings"

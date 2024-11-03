@@ -1,8 +1,8 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/steam"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher-common/steam"
 	"os"
 )
 

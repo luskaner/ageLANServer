@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"

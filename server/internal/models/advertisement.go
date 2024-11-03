@@ -2,9 +2,9 @@ package models
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/advertisement/shared"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 	"github.com/wk8/go-ordered-map/v2"
 	"math"
 	"sync"

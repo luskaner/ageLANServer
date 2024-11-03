@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"sync"
 	"time"
 )

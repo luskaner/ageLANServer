@@ -1,7 +1,7 @@
 package hosts
 
 import (
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"golang.org/x/sys/windows"
 	"os"
 	"path/filepath"

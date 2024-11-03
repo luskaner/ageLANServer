@@ -3,8 +3,8 @@ package login
 import (
 	"encoding/json"
 	"fmt"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"net/http"
 	"strconv"
 )

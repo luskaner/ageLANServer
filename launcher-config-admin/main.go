@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/cmd"
-	"github.com/luskaner/aoe2DELanServer/launcher-config-admin/internal/parentCheck"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/cmd"
+	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/parentCheck"
 	"os"
 )
 

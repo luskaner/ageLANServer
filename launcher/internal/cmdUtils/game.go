@@ -2,12 +2,12 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/game"
+	"github.com/luskaner/ageLANServer/common"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/game"
 )
 
 func (c *Config) KillAgent() {

@@ -1,4 +1,4 @@
-module github.com/luskaner/aoe2DELanServer/server
+module github.com/luskaner/ageLANServer/server
 
 go 1.22.0
 
@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/luskaner/aoe2DELanServer/common v0.0.0-20240918220359-d75d77863d57
+	github.com/luskaner/ageLANServer/common v0.0.0-20240918220359-d75d77863d57
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8

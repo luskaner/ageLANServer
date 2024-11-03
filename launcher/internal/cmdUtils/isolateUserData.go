@@ -2,9 +2,9 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"strings"
 )
 

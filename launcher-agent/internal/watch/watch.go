@@ -1,10 +1,10 @@
 package watch
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
-	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"time"
 )
 

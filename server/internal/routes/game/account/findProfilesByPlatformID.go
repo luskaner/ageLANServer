@@ -2,9 +2,9 @@ package account
 
 import (
 	"encoding/json"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/middleware"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 

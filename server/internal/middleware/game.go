@@ -2,8 +2,8 @@ package middleware
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models/initializer"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/leaderboard/age3"
+	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"net/http"

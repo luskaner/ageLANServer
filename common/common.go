@@ -1,6 +1,6 @@
 package common
 
-const Name = "aoe2DELanServer"
+const Name = "ageLANServer"
 const Domain = "aoe-api.worldsedgelink.com"
 const Cert = "cert.pem"
 const Key = "key.pem"

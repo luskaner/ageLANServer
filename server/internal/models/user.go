@@ -3,8 +3,8 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/spf13/viper"
 	"hash"
 	"hash/fnv"

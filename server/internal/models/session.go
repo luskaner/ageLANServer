@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/luskaner/aoe2DELanServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"sync"
 	"time"
 )

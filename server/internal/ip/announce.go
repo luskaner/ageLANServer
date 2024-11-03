@@ -6,7 +6,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/ipv4"
 	"net"

@@ -2,8 +2,8 @@ package cloudfiles
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
 	"strings"

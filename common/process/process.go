@@ -3,7 +3,7 @@ package process
 import (
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"os/exec"
 	"path/filepath"

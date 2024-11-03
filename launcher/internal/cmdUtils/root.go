@@ -2,12 +2,12 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/common/executor"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	launcherExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
-	"github.com/luskaner/aoe2DELanServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	launcherExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"runtime"
 )
 

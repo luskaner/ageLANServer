@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	commonProcess "github.com/luskaner/aoe2DELanServer/common/process"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal"
-	"github.com/luskaner/aoe2DELanServer/launcher-agent/internal/watch"
-	launcherCommonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
+	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"os"
 	"os/signal"
 	"runtime"

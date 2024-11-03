@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	"github.com/luskaner/aoe2DELanServer/common/pidLock"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
 	"os"
 	"os/signal"
 	"syscall"

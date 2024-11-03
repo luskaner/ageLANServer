@@ -2,8 +2,8 @@ package game
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
-	commonExecutor "github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
 const appNamePrefix = "Microsoft."

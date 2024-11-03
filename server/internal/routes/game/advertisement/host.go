@@ -1,10 +1,10 @@
 package advertisement
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
-	"github.com/luskaner/aoe2DELanServer/server/internal/routes/game/advertisement/shared"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 	"net/http"
 	"regexp"
 )

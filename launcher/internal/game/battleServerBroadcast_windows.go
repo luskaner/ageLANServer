@@ -1,6 +1,6 @@
 package game
 
-import "github.com/luskaner/aoe2DELanServer/battle-server-broadcast"
+import "github.com/luskaner/ageLANServer/battle-server-broadcast"
 
 func RequiresBattleServerBroadcast() bool {
 	mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()

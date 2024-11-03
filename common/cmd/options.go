@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/luskaner/aoe2DELanServer/common"
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/spf13/pflag"
 	"strings"
 )

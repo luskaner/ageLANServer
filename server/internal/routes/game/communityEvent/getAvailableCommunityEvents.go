@@ -1,9 +1,9 @@
 package communityEvent
 
 import (
-	"github.com/luskaner/aoe2DELanServer/common"
-	i "github.com/luskaner/aoe2DELanServer/server/internal"
-	"github.com/luskaner/aoe2DELanServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
 

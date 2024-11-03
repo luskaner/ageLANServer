@@ -3,10 +3,10 @@ package executor
 import (
 	"encoding/base64"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/aoe2DELanServer/common"
-	"github.com/luskaner/aoe2DELanServer/common/executor"
-	launcherCommon "github.com/luskaner/aoe2DELanServer/launcher-common"
-	"github.com/luskaner/aoe2DELanServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
 func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
