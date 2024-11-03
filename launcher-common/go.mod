@@ -2,10 +2,6 @@ module github.com/luskaner/ageLANServer/launcher-common
 
 go 1.22.0
 
-retract v1.2.0-rc.3
-
-retract v1.2.0-rc.4
-
 require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.6.0
