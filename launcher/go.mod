@@ -6,11 +6,12 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0
-	github.com/luskaner/ageLANServer/battle-server-broadcast v1.2.1
-	github.com/luskaner/ageLANServer/common v0.0.0-20240918220359-d75d77863d57
-	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20240918225240-55697d48fe22
+	github.com/luskaner/ageLANServer/battle-server-broadcast v1.2.2
+	github.com/luskaner/ageLANServer/common v0.0.0-20241103192537-0cefe8543e50
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241103195346-1f4d9397c22f
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
+	golang.org/x/net v0.23.0
 	golang.org/x/sys v0.26.0
 	mvdan.cc/sh/v3 v3.10.0
 )
