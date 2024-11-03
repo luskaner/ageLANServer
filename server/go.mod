@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/luskaner/ageLANServer/common v0.0.0-20240918220359-d75d77863d57
+	github.com/luskaner/ageLANServer/common v0.0.0-20241103192537-0cefe8543e50
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
@@ -40,5 +40,5 @@ require (
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	mvdan.cc/sh/v3 v3.9.0 // indirect
+	mvdan.cc/sh/v3 v3.10.0 // indirect
 )

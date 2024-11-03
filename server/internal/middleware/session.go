@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"context"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"golang.org/x/net/context"
 	"net/http"
 	"strings"
 )
