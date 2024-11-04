@@ -5,7 +5,6 @@ go 1.22.0
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/google/uuid v1.6.0
-	github.com/inconshreveable/mousetrap v1.1.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.2.2
 	github.com/luskaner/ageLANServer/common v0.0.0-20241103192537-0cefe8543e50
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241103195346-1f4d9397c22f
@@ -21,6 +20,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/hairyhenderson/go-which v0.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
