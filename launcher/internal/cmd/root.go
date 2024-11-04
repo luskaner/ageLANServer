@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/inconshreveable/mousetrap"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -25,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 )
 
 const autoValue = "auto"
@@ -67,7 +65,6 @@ var (
 				os.Exit(common.ErrPidLock)
 			}
 			isAdmin := executor.IsAdmin()
-			errorMayBeConfig := false
 			var errorCode = common.ErrSuccess
 			defer func() {
 				_ = lock.Unlock()
@@ -175,26 +172,8 @@ var (
 			}()
 
 			defer func() {
-				if errorCode == common.ErrSuccess {
-					fmt.Print("Program finished successfully")
-					if mousetrap.StartedByExplorer() {
-						fmt.Println(", closing in 10 seconds...")
-						time.Sleep(10 * time.Second)
-					} else {
-						fmt.Println()
-					}
-				} else {
+				if errorCode != common.ErrSuccess {
 					config.Revert()
-					fmt.Print("Program finished with errors")
-					if errorMayBeConfig {
-						fmt.Print(", you may try running \"cleanup\" as regular user")
-					}
-					if mousetrap.StartedByExplorer() {
-						fmt.Println(", press the Enter key to exit...")
-						_, _ = fmt.Scanln()
-					} else {
-						fmt.Println()
-					}
 				}
 			}()
 			if cmdUtils.GameRunning(gameId) {
@@ -270,7 +249,6 @@ var (
 				if !server.CheckConnectionFromServer(serverHost, true) {
 					fmt.Println("serverStart is false. " + serverHost + " must be reachable. Review the host is correct, the server is started and you can connect to TCP port 443 (HTTPS).")
 					errorCode = internal.ErrInvalidServerStart
-					errorMayBeConfig = true
 					return
 				}
 			} else {
@@ -281,17 +259,14 @@ var (
 			}
 			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp)
 			if errorCode != common.ErrSuccess {
-				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.AddCert(canTrustCertificate)
 			if errorCode != common.ErrSuccess {
-				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.IsolateUserData(gameId, isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
-				errorMayBeConfig = true
 				return
 			}
 			errorCode = config.LaunchAgentAndGame(gameId, clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
