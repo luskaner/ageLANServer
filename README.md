@@ -299,7 +299,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-- Owning a **legal license** of Age of Empires II Definitive Edition or Age of Empires III Definitive Edition (and all
+- Owning a **legal license** of Age of Empires II: Definitive Edition or Age of Empires III: Definitive Edition (and all
   relevant DLC's).
 - Comply with all the game terms of service.
 - Use this software for personal use.
