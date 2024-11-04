@@ -14,7 +14,7 @@ import (
 	"syscall"
 )
 
-const revertCmdStart = 6
+const revertCmdStart = 7
 
 func main() {
 	lock := &pidLock.Lock{}
@@ -37,8 +37,8 @@ func main() {
 	if runtime.GOOS == "windows" {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
 	}
-	gameId := os.Args[7]
-	revertCmdLength, _ := strconv.ParseInt(os.Args[5], 10, 64)
+	gameId := os.Args[5]
+	revertCmdLength, _ := strconv.ParseInt(os.Args[6], 10, 64)
 	revertCmdEnd := revertCmdStart + revertCmdLength
 	var revertCmd []string
 	if revertCmdLength > 0 {

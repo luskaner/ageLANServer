@@ -10,9 +10,21 @@ func RunAgent(game string, steamProcess bool, microsoftStoreProcess bool, server
 	if serverExe == "" {
 		serverExe = "-"
 	}
-	args := []string{strconv.FormatBool(steamProcess), strconv.FormatBool(microsoftStoreProcess), serverExe, strconv.FormatBool(broadCastBattleServer), strconv.FormatUint(uint64(len(revertCommand)), 10)}
+	args := []string{
+		strconv.FormatBool(steamProcess),
+		strconv.FormatBool(microsoftStoreProcess),
+		serverExe,
+		strconv.FormatBool(broadCastBattleServer),
+		game,
+		strconv.FormatUint(uint64(len(revertCommand)), 10),
+	}
 	args = append(args, revertCommand...)
-	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
+	if unmapCDN || unmapIPs || removeUserCert || removeLocalCert || restoreMetadata || restoreProfiles {
+		args = append(
+			args,
+			RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...,
+		)
+	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherAgent), Pid: true, Args: args}.Exec()
 	return
 }
