@@ -59,7 +59,7 @@ itself. The configuration file is `cloudfilesIndex.json` inside the game subdire
 corresponding
 files reside in the [`cloud`](resources/responses/cloud) directory.
 
-### AoE III only
+### Age of Empires III: Definitive Edition only
 
 #### Chat Channels
 

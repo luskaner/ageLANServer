@@ -34,7 +34,7 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 - Lobby chatting.
 - Crossplay Steam & Xbox.
 
-### AoE III
+### Age of Empires III: Definitive Edition
 
 <details>
 <summary>List of features</summary>
@@ -51,7 +51,7 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 - Joining a game lobby from a link only works if the game is already running.
 - Steam Workshop integration only works if using the official launcher.
-- Lobbies can only be created in [LAN mode](...) which has its own limitations:
+- Lobbies can only be created in *LAN mode* which has its own limitations:
     - No Quick play.
     - No Ranked.
     - No Spectate.
@@ -59,7 +59,7 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 </details>
 
-#### AoE III
+#### Age of Empires III: Definitive Edition
 
 <details>
 <summary>List of limitations</summary>
@@ -117,8 +117,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows (no S edition/mode):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play (
-  plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
@@ -146,32 +145,32 @@ supported operating systems.
 
 * Full:
     * Windows:
-        * **10 on x86-64**: ageLANServer_full_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ageLANServer_full_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ..._full_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ..._full_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: ageLANServer_full_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ageLANServer_full_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ..._full_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ..._full_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 on x86-64**: ageLANServer_launcher_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ageLANServer_launcher_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ..._launcher_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ..._launcher_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: ageLANServer_launcher_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ageLANServer_launcher_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ..._launcher_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ..._launcher_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10, Server 2025 or IoT on ARM64**: ageLANServer_server_*A.B.C*_win_arm64.zip
-        * **10 IoT on ARM32**: ageLANServer_server_*A.B.C*_win_arm32.zip
-        * **10, Server 2016 or IoT on x86-64**: ageLANServer_server_*A.B.C*_win_x86-64.zip
-        * **10 or 10 IoT on x86-32**: ageLANServer_server_*A.B.C*_win_x86-32.zip
+        * **10, Server 2025 or IoT on ARM64**: ..._server_*A.B.C*_win_arm64.zip
+        * **10 IoT on ARM32**: ..._server_*A.B.C*_win_arm32.zip
+        * **10, Server 2016 or IoT on x86-64**: ..._server_*A.B.C*_win_x86-64.zip
+        * **10 or 10 IoT on x86-32**: ..._server_*A.B.C*_win_x86-32.zip
     * Linux:
-        * Kernel 3.1 on **ARM64**: ageLANServer_server_*A.B.C*_linux_arm64.tar.xz
+        * Kernel 3.1 on **ARM64**: ..._server_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 on **ARM32**:
-            * ARMv5 (armel): ageLANServer_server_*A.B.C*_linux_arm-5.tar.gz
-            * ARMv6 (sometimes called armhf): ageLANServer_server_*A.B.C*_linux_arm-6.tar.gz
-        * Kernel 2.6.23 on **x86-64**: ageLANServer_server_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 on **x86-32**: ageLANServer_server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15): ageLANServer_server_*A.B.C*_mac.tar.gz
+            * ARMv5 (armel): ..._server_*A.B.C*_linux_arm-5.tar.gz
+            * ARMv6 (sometimes called armhf): ..._server_*A.B.C*_linux_arm-6.tar.gz
+        * Kernel 2.6.23 on **x86-64**: ..._server_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 on **x86-32**: ..._server_*A.B.C*_linux_x86-32.tar.gz
+    * macOS - Catalina (v10.15): ..._server_*A.B.C*_mac.tar.gz
 
 </details>
 
@@ -299,7 +298,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-- Owning a **legal license** of Age of Empires II Definitive Edition or Age of Empires III Definitive Edition (and all
+- Owning a **legal license** of Age of Empires II: Definitive Edition or Age of Empires III: Definitive Edition (and all
   relevant DLC's).
 - Comply with all the game terms of service.
 - Use this software for personal use.
