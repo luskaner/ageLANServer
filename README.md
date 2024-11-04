@@ -52,10 +52,18 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 - Joining a game lobby from a link only works if the game is already running.
 - Steam Workshop integration only works if using the official launcher.
 - Lobbies can only be created in *LAN mode* which has its own limitations:
-    - No Quick play.
     - No Ranked.
     - No Spectate.
 - Xbox and Steam friend integration.
+
+</details>
+
+#### Age of Empires II: Definitive Edition
+
+<details>
+<summary>List of limitations</summary>
+
+- No Quick play.
 
 </details>
 
