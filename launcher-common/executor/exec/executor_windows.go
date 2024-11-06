@@ -1,16 +1,24 @@
 package exec
 
 import (
+	"fmt"
 	"golang.org/x/sys/windows"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
+func fixArgs(arg ...string) []string {
+	for i := range arg {
+		arg[i] = fmt.Sprintf(`"%s"`, strings.ReplaceAll(arg[i], `"`, `\"`))
+	}
+	return arg
+}
+
 func shellExecute(verb string, file string, executableWorkingPath bool, showWindow int32, arg ...string) error {
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
 	exe, _ := windows.UTF16PtrFromString(file)
-	args, _ := windows.UTF16PtrFromString(strings.Join(arg, " "))
+	args, _ := windows.UTF16PtrFromString(strings.Join(fixArgs(arg...), " "))
 	var workingDirPtr *uint16
 	if executableWorkingPath {
 		workingDirPtr, _ = windows.UTF16PtrFromString(filepath.Dir(file))
@@ -18,8 +26,7 @@ func shellExecute(verb string, file string, executableWorkingPath bool, showWind
 		workingDirPtr = nil
 	}
 
-	err := windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, showWindow)
-	return err
+	return windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, showWindow)
 }
 
 func (options Options) exec() (result *Result) {

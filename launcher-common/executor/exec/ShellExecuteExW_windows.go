@@ -36,7 +36,7 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	exitCode = common.ErrSuccess
 	verbPtr, _ := windows.UTF16PtrFromString(verb)
 	exe, _ := windows.UTF16PtrFromString(executable)
-	args, _ := windows.UTF16PtrFromString(strings.Join(arg, " "))
+	args, _ := windows.UTF16PtrFromString(strings.Join(fixArgs(arg...), " "))
 
 	info := &SHELLEXECUTEINFO{
 		cbSize:       uint32(unsafe.Sizeof(SHELLEXECUTEINFO{})),
