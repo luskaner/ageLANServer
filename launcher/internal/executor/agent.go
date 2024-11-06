@@ -20,6 +20,6 @@ func RunAgent(game string, steamProcess bool, microsoftStoreProcess bool, server
 	}
 	args = append(args, revertCommand...)
 	args = append(args, revertFlags...)
-	result = exec.Options{ShowWindow: true, File: common.GetExeFileName(false, common.LauncherAgent), Pid: true, Args: args}.Exec()
+	result = exec.Options{File: common.GetExeFileName(false, common.LauncherAgent), Pid: true, Args: args}.Exec()
 	return
 }
