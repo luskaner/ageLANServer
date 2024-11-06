@@ -39,14 +39,19 @@ func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []str
 		canBroadcastBattleServer = "true"
 	}
 	revertCommand := c.RevertCommand()
-	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || c.RequiresConfigRevert() {
+	requiresConfigRevert := c.RequiresConfigRevert()
+	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || requiresConfigRevert {
 		fmt.Print("Starting agent")
 		if canBroadcastBattleServer == "true" {
 			fmt.Print(", authorize 'agent' in firewall if needed")
 		}
 		fmt.Println("...")
 		steamProcess, microsoftStoreProcess := executer.GameProcesses()
-		result := executor.RunAgent(gameId, steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
+		var revertFlags []string
+		if requiresConfigRevert {
+			revertFlags = executor.RevertFlags(gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
+		}
+		result := executor.RunAgent(gameId, steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart
