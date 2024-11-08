@@ -60,10 +60,10 @@ func calculateBroadcastIp(ip net.IP, mask net.IPMask) net.IP {
 	return broadcast
 }
 
-func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet) (err error) {
+func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet, port int) (err error) {
 	priorityUdpAddress := &net.UDPAddr{
 		IP:   mostPriority.IP,
-		Port: 9999,
+		Port: port,
 	}
 
 	var conn *net.UDPConn

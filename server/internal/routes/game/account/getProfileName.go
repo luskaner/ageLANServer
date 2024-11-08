@@ -3,7 +3,6 @@ package account
 import (
 	"encoding/json"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
@@ -24,13 +23,7 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 	for _, platformId := range profileIds {
 		profileIdsMap[platformId] = struct{}{}
 	}
-	sess, _ := middleware.Session(r)
-	users := models.G(r).Users()
-	u, _ := users.GetUserById(sess.GetUserId())
-	profileInfo := users.GetProfileInfo(false, func(currentUser *models.MainUser) bool {
-		if u == currentUser {
-			return false
-		}
+	profileInfo := models.G(r).Users().GetProfileInfo(false, func(currentUser *models.MainUser) bool {
 		_, ok := profileIdsMap[currentUser.GetId()]
 		return ok
 	})
