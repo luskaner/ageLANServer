@@ -42,7 +42,13 @@ func Watch(gameId string, steamProcess bool, microsoftStoreProcess bool, serverE
 		return
 	}
 	if broadcastBattleServer {
-		rebroadcastBattleServer(exitCode)
+		var port int
+		if gameId == common.GameAoE1 {
+			port = 8888
+		} else {
+			port = 9999
+		}
+		rebroadcastBattleServer(exitCode, port)
 	}
 	var PID uint32
 	for _, p := range processes {

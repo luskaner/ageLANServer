@@ -26,12 +26,12 @@ func waitForProcess(PID uint32) bool {
 	return true
 }
 
-func rebroadcastBattleServer(exitCode *int) {
+func rebroadcastBattleServer(exitCode *int, port int) {
 	mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()
 	if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
 		if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
 			go func() {
-				_ = battle_server_broadcast.CloneAnnouncements(mostPriority, restInterfaces)
+				_ = battle_server_broadcast.CloneAnnouncements(mostPriority, restInterfaces, port)
 			}()
 		} else {
 			*exitCode = internal.ErrBattleServerTimeOutStart

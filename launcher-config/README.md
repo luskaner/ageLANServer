@@ -4,7 +4,7 @@
 
 This executable makes and revert configuration changes and is executed by `launcher` or manually:
 
-- Isolated metadata directory.
+- Isolated metadata directory (except AoE I).
 - Isolated profiles directory.
 - Hosts file (via `config-admin`).
 - Install of a self-signed certificate for the current user (only on Windows) or local (in this case via

@@ -15,6 +15,8 @@ const finalPathPrefix = "Games"
 func finalPath(gameId string) string {
 	var suffix string
 	switch gameId {
+	case common.GameAoE1:
+		suffix = filepath.Join(`Age of Empires DE`, `Users`)
 	case common.GameAoE2:
 		suffix = `Age of Empires 2 DE`
 	case common.GameAoE3:

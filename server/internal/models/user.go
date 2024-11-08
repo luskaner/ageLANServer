@@ -240,7 +240,7 @@ func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
 		u.GetStatId(),
 		u.GetProfileUintFlag1(),
 		1,
-		0,
+		u.GetProfileUintFlag2(),
 		nil,
 		strconv.FormatUint(u.GetPlatformUserID(), 10),
 		u.GetPlatformId(),
@@ -270,6 +270,14 @@ func (u *MainUser) GetProfileMetadata() string {
 
 func (u *MainUser) GetProfileUintFlag1() uint8 {
 	return u.profileUintFlag1
+}
+
+func (u *MainUser) GetProfileUintFlag2() uint8 {
+	var value uint8
+	if u.isXbox {
+		value = 3
+	}
+	return value
 }
 
 func (u *MainUser) GetAdvertisement() *MainAdvertisement {

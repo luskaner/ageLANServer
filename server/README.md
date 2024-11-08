@@ -70,7 +70,14 @@ The chat channels are defined in the [`chatChannels.json`](resources/config/age3
 The server also serves some static responses for the game to work. The files are located in
 the [`responses`](resources/responses) base directory.
 
-#### AoE II
+#### Age of Empires: Definitive Edition
+
+- [`Item Definitions`](resources/responses/age1/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
+  other items.
+-
+
+#### Age of Empires II: Definitive Edition
 
 - [`Achievements`](resources/responses/age2/achievements.json): List of achievements.
 - [`Leaderboards`](resources/responses/age2/leaderboards.json): List of leaderboards.
@@ -84,7 +91,7 @@ the [`responses`](resources/responses) base directory.
   other items.
 - [`Item Bundle Items`](resources/responses/age2/itemBundleItems.json): Grouping of items into bundles.
 
-#### AoE III
+#### Age of Empires III: Definitive Edition
 
 - [`Achievements`](resources/responses/age3/achievements.json): List of achievements.
 - [`Leaderboards`](resources/responses/age3/leaderboards.json): List of leaderboards.

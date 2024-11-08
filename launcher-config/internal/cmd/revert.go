@@ -94,6 +94,9 @@ var revertCmd = &cobra.Command{
 			RestoreProfiles = true
 			reverseFailed = false
 		}
+		if gameId == common.GameAoE1 {
+			RestoreMetadata = false
+		}
 		if (restoredMetadata || restoredProfiles) && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
@@ -260,7 +263,7 @@ func InitRevert() {
 		"metadata",
 		"m",
 		false,
-		"Restore metadata",
+		"Restore metadata. Not compatible with AoE:DE",
 	)
 	revertCmd.Flags().BoolVarP(
 		&RestoreProfiles,

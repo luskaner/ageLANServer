@@ -8,28 +8,39 @@ import (
 	"net/http"
 )
 
-func Update(w http.ResponseWriter, r *http.Request) {
-	var q shared.AdvertisementUpdateRequest
-	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, i.A{}})
-		return
+func updateReturnError(gameId string, w *http.ResponseWriter) {
+	response := i.A{2}
+	if gameId != common.GameAoE1 {
+		response = append(response, i.A{})
 	}
+	i.JSON(w, response)
+}
+
+func Update(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
+
+	var q shared.AdvertisementUpdateRequest
+	if err := i.Bind(r, &q); err != nil {
+		updateReturnError(gameTitle, &w)
+		return
+	}
 
 	advertisements := models.G(r).Advertisements()
 	adv, ok := advertisements.GetAdvertisement(q.Id)
 	if !ok {
-		i.JSON(&w, i.A{2, i.A{}})
+		updateReturnError(gameTitle, &w)
 		return
 	}
 	if gameTitle == common.GameAoE3 {
 		q.PlatformSessionId = adv.GetPlatformSessionId()
+	}
+	if gameTitle != common.GameAoE2 {
 		q.Joinable = true
 	}
 	advertisements.Update(adv, &q)
 
-	if gameTitle == common.GameAoE3 {
+	if gameTitle != common.GameAoE2 {
 		i.JSON(&w,
 			i.A{
 				0,

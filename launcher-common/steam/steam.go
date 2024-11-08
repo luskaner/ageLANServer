@@ -18,6 +18,8 @@ func NewGame(id string) Game {
 
 func AppId(id string) string {
 	switch id {
+	case common.GameAoE1:
+		return "1017900"
 	case common.GameAoE2:
 		return "813780"
 	case common.GameAoE3:

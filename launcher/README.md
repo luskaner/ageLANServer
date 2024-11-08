@@ -27,7 +27,7 @@ require admin rights elevation.**
 
 ## Client (via [`bin\config`](../launcher-config/README.md))
 
-- Isolated metadata directory.
+- Isolated metadata directory (except AoE I).
 - Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.

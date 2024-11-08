@@ -100,7 +100,10 @@ func (r *MainResources) initializeResponses(gameId string) {
 }
 
 func (r *MainResources) initializeCloud(gameId string) {
-	r.CloudFiles = *BuildCloudfilesIndex(filepath.Join(configFolder, gameId), filepath.Join(CloudFolder, gameId))
+	cloudfiles := BuildCloudfilesIndex(filepath.Join(configFolder, gameId), filepath.Join(CloudFolder, gameId))
+	if cloudfiles != nil {
+		r.CloudFiles = *cloudfiles
+	}
 }
 
 func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool) {
