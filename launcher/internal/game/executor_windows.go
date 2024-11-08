@@ -11,6 +11,8 @@ const appPublisherId = "8wekyb3d8bbwe"
 
 func appNameSuffix(id string) string {
 	switch id {
+	case common.GameAoE1:
+		return "Darwin"
 	case common.GameAoE2:
 		return "MSPhoenix"
 	case common.GameAoE3:

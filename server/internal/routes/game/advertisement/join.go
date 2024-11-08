@@ -14,10 +14,14 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
+func joinReturnError(w http.ResponseWriter) {
+	i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+}
+
 func Join(w http.ResponseWriter, r *http.Request) {
 	var q JoinRequest
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+		joinReturnError(w)
 		return
 	}
 	sess, _ := middleware.Session(r)
@@ -25,7 +29,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	u, _ := game.Users().GetUserById(sess.GetUserId())
 	advertisements := game.Advertisements()
 	if u.GetAdvertisement() != nil {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+		joinReturnError(w)
 		return
 	}
 	advs := advertisements.FindAdvertisements(func(adv *models.MainAdvertisement) bool {
@@ -41,7 +45,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			adv.GetPasswordValue() == q.Password
 	})
 	if len(advs) != 1 {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+		joinReturnError(w)
 		return
 	}
 	matchingAdv := advs[0]

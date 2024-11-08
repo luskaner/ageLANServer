@@ -472,8 +472,10 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 		1,
 		startTime,
 		adv.relayRegion,
-		nil,
 	)
+	if gameId != common.GameAoE1 {
+		response = append(response, nil)
+	}
 	return response
 }
 

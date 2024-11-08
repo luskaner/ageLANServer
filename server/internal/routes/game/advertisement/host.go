@@ -11,24 +11,40 @@ import (
 
 var re *regexp.Regexp = nil
 
-func returnError(w *http.ResponseWriter) {
-	i.JSON(w, i.A{
+func returnError(gameId string, w *http.ResponseWriter) {
+	response := i.A{
 		2,
 		0,
+		"authtoken",
 		"",
-		"",
 		0,
 		0,
-		0,
+	}
+	if gameId != common.GameAoE1 {
+		response = append(response, 0)
+	}
+
+	response = append(
+		response,
 		"",
 		i.A{},
 		0,
-		0,
-		nil,
-		nil,
-		"",
-		"",
-	})
+	)
+
+	if gameId != common.GameAoE2 {
+		response = append(response, "0")
+	}
+	if gameId == common.GameAoE2 {
+		response = append(
+			response,
+			0,
+			nil,
+			nil,
+			"0",
+			"",
+		)
+	}
+	i.JSON(w, response)
 }
 
 func Host(w http.ResponseWriter, r *http.Request) {
@@ -37,24 +53,25 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		re, _ = regexp.Compile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
 	}
 
+	game := models.G(r)
+	gameTitle := game.Title()
+
 	// Only LAN servers are allowed and need the GUID to store it
 	if !re.MatchString(r.PostFormValue("relayRegion")) {
-		returnError(&w)
+		returnError(gameTitle, &w)
 		return
 	}
 
-	game := models.G(r)
-	gameTitle := game.Title()
 	advertisements := game.Advertisements()
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
-		if gameTitle == common.GameAoE3 {
+		if gameTitle != common.GameAoE2 {
 			adv.Joinable = true
 		}
 		u, ok := game.Users().GetUserById(adv.HostId)
 		if !ok {
-			returnError(&w)
+			returnError(gameTitle, &w)
 			return
 		}
 		// Leave the previous match if the user is already in one
@@ -64,7 +81,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		}
 		storedAdv := advertisements.Store(&adv)
 		if storedAdv == nil {
-			returnError(&w)
+			returnError(gameTitle, &w)
 			return
 		}
 		advertisements.NewPeer(storedAdv, u, adv.Race, adv.Team)
@@ -75,12 +92,19 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			"",
 			0,
 			0,
-			0,
+		}
+		if gameTitle != common.GameAoE1 {
+			response = append(response, 0)
+		}
+
+		response = append(
+			response,
 			storedAdv.GetRelayRegion(),
 			storedAdv.EncodePeers(),
 			0,
-		}
-		if gameTitle == common.GameAoE3 {
+		)
+
+		if gameTitle != common.GameAoE2 {
 			response = append(response, "0")
 		}
 		if gameTitle == common.GameAoE2 {
@@ -95,6 +119,6 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		}
 		i.JSON(&w, response)
 	} else {
-		returnError(&w)
+		returnError(gameTitle, &w)
 	}
 }

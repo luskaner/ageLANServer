@@ -39,7 +39,7 @@ var (
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service acting as " + common.Domain + " for LAN features in AoE 2:DE.",
+		Short: "server is a service acting as " + common.Domain + " for LAN features in AoE: DE, AoE 2:DE and AoE 3:DE.",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {

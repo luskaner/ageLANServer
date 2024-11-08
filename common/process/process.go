@@ -13,6 +13,8 @@ import (
 
 func steamProcess(gameId string) string {
 	switch gameId {
+	case common.GameAoE1:
+		return "AoEDE_s.exe"
 	case common.GameAoE2:
 		return "AoE2DE_s.exe"
 	case common.GameAoE3:
@@ -24,6 +26,8 @@ func steamProcess(gameId string) string {
 
 func microsoftStoreProcess(gameId string) string {
 	switch gameId {
+	case common.GameAoE1:
+		return "AoEDE.exe"
 	case common.GameAoE2:
 		return "AoE2DE.exe"
 	case common.GameAoE3:
