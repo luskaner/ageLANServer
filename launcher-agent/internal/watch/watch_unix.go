@@ -18,4 +18,4 @@ func waitForProcess(pid uint32) bool {
 	}
 }
 
-func rebroadcastBattleServer(_ *int) {}
+func rebroadcastBattleServer(_ *int, _ int) {}
