@@ -187,6 +187,12 @@ func (adv *MainAdvertisement) GetPlatformSessionId() uint64 {
 	return adv.platformSessionId
 }
 
+func (adv *MainAdvertisement) GetObserversDelay() uint32 {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
+	return adv.observers.delay
+}
+
 func (adv *MainAdvertisement) GetPeers() *orderedmap.OrderedMap[*MainUser, *MainPeer] {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
@@ -467,7 +473,7 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 		0,
 		0,
 		0,
-		0,
+		adv.GetObserversDelay(),
 		1,
 		1,
 		startTime,
