@@ -32,10 +32,8 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		updateReturnError(gameTitle, &w)
 		return
 	}
-	if gameTitle == common.GameAoE3 {
-		q.PlatformSessionId = adv.GetPlatformSessionId()
-	}
 	if gameTitle != common.GameAoE2 {
+		q.PlatformSessionId = adv.GetPlatformSessionId()
 		q.Joinable = true
 	}
 	advertisements.Update(adv, &q)
