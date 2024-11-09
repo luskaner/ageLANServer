@@ -43,14 +43,16 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
 			peer := el.Value
 			var sess *models.Session
-			sess, ok = models.GetSessionByUserId(peer.GetUser().GetId())
+			userId := peer.GetUser().GetId()
+			sess, ok = models.GetSessionByUserId(userId)
 			if !ok {
 				continue
 			}
-			userIds[j] = i.A{peer.GetUser().GetId(), i.A{}}
-			userIdStr[j] = i.A{strconv.Itoa(int(peer.GetUser().GetId())), i.A{}}
-			races[j] = i.A{peer.GetUser().GetId(), strconv.Itoa(int(peer.GetRace()))}
-			challengeProgress[j] = i.A{strconv.Itoa(int(peer.GetUser().GetId())), shared.GetChallengeProgressData()}
+			userIdSingleStr := strconv.Itoa(int(userId))
+			userIds[j] = i.A{userId, i.A{}}
+			userIdStr[j] = i.A{userIdSingleStr, i.A{}}
+			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peer.GetRace()))}
+			challengeProgress[j] = i.A{userIdSingleStr, shared.GetChallengeProgressData()}
 			sessions[j] = sess
 			j++
 		}
