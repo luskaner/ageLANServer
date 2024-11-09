@@ -28,10 +28,12 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	u, _ := game.Users().GetUserById(sess.GetUserId())
 	advertisements := game.Advertisements()
-	if u.GetAdvertisement() != nil {
-		joinReturnError(w)
-		return
+	// Leave the previous match if the user is already in one
+	// Necessary for AoE1 but might as well do it for all
+	if existingAdv := u.GetAdvertisement(); existingAdv != nil {
+		advertisements.RemovePeer(existingAdv, u)
 	}
+
 	advs := advertisements.FindAdvertisements(func(adv *models.MainAdvertisement) bool {
 		return adv.GetId() == q.Id &&
 			adv.GetJoinable() &&
@@ -56,18 +58,20 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		q.Team,
 	)
 	var relayRegion string
-	if game.Title() == common.GameAoE2 {
+	gameTitle := game.Title()
+	if gameTitle == common.GameAoE2 {
 		relayRegion = matchingAdv.GetRelayRegion()
 	}
-	i.JSON(&w,
-		i.A{
-			0,
-			matchingAdv.GetIp(),
-			relayRegion,
-			0,
-			0,
-			0,
-			i.A{peer.Encode()},
-		},
-	)
+	response := i.A{
+		0,
+		matchingAdv.GetIp(),
+		relayRegion,
+		0,
+		0,
+	}
+	if gameTitle != common.GameAoE1 {
+		response = append(response, 0)
+	}
+	response = append(response, i.A{peer.Encode()})
+	i.JSON(&w, response)
 }
