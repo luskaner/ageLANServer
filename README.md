@@ -23,15 +23,10 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 ## Features
 
-- Co-Op Campaigns.
 - Scenarios.
 - Map transferring in-lobby.
-- Rematch.
 - Restore game.
 - Data mods.
-- Invite player to lobby.
-- Share lobby link.
-- Player Search.
 - Lobby chatting.
 - Crossplay Steam & Xbox.
 
@@ -40,7 +35,11 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 <details>
 <summary>List of features</summary>
 
-...
+- Co-Op Campaigns.
+- Rematch.
+- Invite player to lobby.
+- Share lobby link.
+- Player Search.
 
 </details>
 
@@ -101,6 +100,8 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
   error.
 - Lobby ban player: will appear like it works but doesn't.
 - Report/Block player: will appear like it works but doesn't.
+
+*Note: Most of these do not apply to Age of Empires: Definitive Edition.*
 
 </details>
 
