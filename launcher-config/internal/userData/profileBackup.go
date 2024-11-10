@@ -1,8 +1,10 @@
 package userData
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var profiles []Data
@@ -13,11 +15,18 @@ func setProfileData(gameId string) bool {
 	if err != nil {
 		return false
 	}
-
+	var valid bool
 	for _, entry := range entries {
 		if entry.IsDir() {
-			_, err = strconv.ParseUint(entry.Name(), 10, 64)
-			if err == nil {
+			if strings.HasSuffix(entry.Name(), ".bak") || strings.HasSuffix(entry.Name(), ".lan") {
+				valid = false
+			} else if gameId == common.GameAoE1 {
+				valid = true
+			} else {
+				_, err = strconv.ParseUint(entry.Name(), 10, 64)
+				valid = err == nil
+			}
+			if valid {
 				profiles = append(profiles, Data{entry.Name()})
 			}
 		}
