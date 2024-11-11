@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/luskaner/ageLANServer/common v0.0.0-20241103192537-0cefe8543e50
+	github.com/luskaner/ageLANServer/common v0.0.0-20241111160911-2abef906e211
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
