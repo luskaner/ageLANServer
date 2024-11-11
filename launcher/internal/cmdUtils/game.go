@@ -24,8 +24,8 @@ func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []str
 	switch executer.(type) {
 	case game.SteamExecutor:
 		fmt.Println("Game found on Steam.")
-	case game.MicrosoftStoreExecutor:
-		fmt.Println("Game found on Microsoft Store.")
+	case game.XboxExecutor:
+		fmt.Println("Game found on Xbox.")
 	case game.CustomExecutor:
 		customExecutor = executer.(game.CustomExecutor)
 		fmt.Println("Game found on custom path.")
@@ -46,12 +46,12 @@ func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []str
 			fmt.Print(", authorize 'agent' in firewall if needed")
 		}
 		fmt.Println("...")
-		steamProcess, microsoftStoreProcess := executer.GameProcesses()
+		steamProcess, xboxProcess := executer.GameProcesses()
 		var revertFlags []string
 		if requiresConfigRevert {
 			revertFlags = executor.RevertFlags(gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		}
-		result := executor.RunAgent(gameId, steamProcess, microsoftStoreProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
+		result := executor.RunAgent(gameId, steamProcess, xboxProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart

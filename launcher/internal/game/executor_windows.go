@@ -27,7 +27,7 @@ func appName(id string) string {
 	return appNamePrefix + appNameSuffix(id)
 }
 
-func isInstalledOnMicrosoftStore(id string) bool {
+func isInstalledOnXbox(id string) bool {
 	// Does not seem there is another way without cgo?
 	return commonExecutor.Options{
 		File:        "powershell",
@@ -41,13 +41,13 @@ func isInstalledOnMicrosoftStore(id string) bool {
 	}.Exec().Success()
 }
 
-func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true
-	microsoftStoreProcess = true
+	xboxProcess = true
 	return
 }
 
-func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.Result) {
+func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	result = commonExecutor.Options{
 		File:        fmt.Sprintf(`shell:appsfolder\%s_%s!App`, appName(exec.gameId), appPublisherId),
 		Shell:       true,
@@ -56,8 +56,8 @@ func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.R
 	return
 }
 
-func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
-	microsoftStoreProcess = true
+func (exec XboxExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
+	xboxProcess = true
 	return
 }
 
