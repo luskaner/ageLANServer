@@ -7,6 +7,7 @@ is in maintenance or are eventually shutdown.
 
 Currently supported games:
 
+* **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
 
@@ -22,17 +23,25 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 ## Features
 
-- Co-Op Campaigns.
 - Scenarios.
 - Map transferring in-lobby.
-- Rematch.
 - Restore game.
 - Data mods.
+- Lobby chatting.
+- Crossplay Steam & Xbox.
+
+### Age of Empires II: Definitive Edition and Age of Empires III: Definitive Edition
+
+<details>
+<summary>List of features</summary>
+
+- Co-Op Campaigns.
+- Rematch.
 - Invite player to lobby.
 - Share lobby link.
 - Player Search.
-- Lobby chatting.
-- Crossplay Steam & Xbox.
+
+</details>
 
 ### Age of Empires III: Definitive Edition
 
@@ -92,6 +101,8 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 - Lobby ban player: will appear like it works but doesn't.
 - Report/Block player: will appear like it works but doesn't.
 
+*Note: Most of these do not apply to Age of Empires: Definitive Edition.*
+
 </details>
 
 ## Minimum system requirements
@@ -125,23 +136,30 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows (no S edition/mode):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play (plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play (
+  plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
 
 ### Client
 
-- Game:
-    - Age of Empires II Definitive Edition
-      on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
-      or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
-      Windows*).
-    - Age of Empires III Definitive Edition
-      on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
-      or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
-      Windows*).
-- Up-to-date (*or at least from ~late 2023*) version of the game.
+- Age of Empires: Definitive Edition
+  on [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition)
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on
+  Windows*). Requires version *100.2.31845.0* or later.
+- Age of Empires II: Definitive Edition
+  on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
+  Windows*). Requires a late 2023 version of the game (*use at least an early 2024 version*).
+- Age of Empires III: Definitive Edition
+  on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
+  Windows*). Requires a late 2023 version of the game (*use at least an early 2024 version*).
+
+*Note: An up-to-date version is highly recommended as there are known issues with older versions.*
+*Note 2: You could [compile](DEVELOPMENT.md) the programs with the domain changed to `aoe-api.reliclink.com`
+in [here](common/common.go#L4) to support older versions but then newer versions would not work.*
 
 ## Binaries
 
@@ -231,8 +249,9 @@ play.
     <summary>Features</summary>
 
 - Automatically start/stop the server or connect to an existing one automatically.
-- (Optional) Use an isolated metadata and profile directories to avoid potential issues with the official game.
-- (Optional) Modify the hosts file to
+- (Optional) Use an isolated metadata (except AoE I) and profile directories to avoid potential issues with the official
+  game.
+- (Optional) Modify the hosts file to:
     - Redirect the game's API requests to the LAN server.
     - Redirect the game CDN so it does not detect the official game status.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
@@ -248,22 +267,23 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 1. **Download** the proper *full* asset from the latest
    stable release from https://github.com/luskaner/ageLANServer/releases.
 2. **Uncompress** it somewhere.
-3. If not using the Steam or Xbox launcher, **edit the `launcher/resources/config.aoe2.toml`
-   or `launcher/resources/config.aoe3.toml`
-   file** with a text editor (like Notepad)
+3. If not using the Steam or Xbox launcher, **edit the `
+   launcher/resources/config.<game>.toml` file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-4. **Execute `launcher/launcher-aoe2` or `launcher/launcher-aoe3`**: you will be asked for admin elevation and
+4. **Execute `launcher/launcher-<game>`: you will be asked for
+   admin elevation and
    confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
 5. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
    launch
    it will host the "server" and the rest will auto-discover and connect to it.
-6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II) or
-   select **LAN** before creating the Lobby (AoE III). In AoE II, setting it to
+6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
+   select **LAN** before creating the Lobby (AoE III) or select the "LAN" menu option (AoE I). In AoE I/II, setting it
+   to
    public
    visibility is recommended.
 7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
@@ -288,13 +308,13 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 1. **Download** the proper *launcher* asset from latest stable release
    from https://github.com/luskaner/ageLANServer/releases.
-3. If needed **edit the `launcher/resources/config.aoe2.toml` or `launcher/resources/config.aoe3.toml` file**. You will
+3. If needed **edit the `launcher/resources/config.<game>.toml` file**. You will
    need to edit the
    `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use
    a custom launcher for 100% offline play.
-4. **Run** the `launcher-aoe2` or `launcher-aoe3` Shell script.
+4. **Run** the `launcher-...`, Shell script.
 
-*Note: If you have any issues run the `cleanup-aoe2` or `cleanup-aoe3` Shell script.*
+*Note: If you have any issues run the `cleanup-<game>` Shell script.*
 
 </details>
 
@@ -306,14 +326,9 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
 
 You and all the clients connecting to your server are only authorized to use this software if:
 
-- Owning a **legal license** of Age of Empires II: Definitive Edition or Age of Empires III: Definitive Edition (and all
-  relevant DLC's).
+- Owning a **legal license** of corresponding game (and all relevant DLC's).
 - Comply with all the game terms of service.
 - Use this software for personal use.
 - Use this software in a LAN environment.
 
-Disclaimer: This software is not affiliated with Xbox Game Studios, Microsoft Corporation, Forgotten Empires,
-World's Edge, Tantalus Media, Wicked Witch, CaptureAge or any other entity that is involved in the development of
-Age of Empires II Definitive
-Edition or
-Age of Empires III Definitive Edition.
+Disclaimer: This software is not affiliated or endorsed by any publisher or developer of the games.

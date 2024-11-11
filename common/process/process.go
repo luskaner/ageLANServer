@@ -13,6 +13,8 @@ import (
 
 func steamProcess(gameId string) string {
 	switch gameId {
+	case common.GameAoE1:
+		return "AoEDE_s.exe"
 	case common.GameAoE2:
 		return "AoE2DE_s.exe"
 	case common.GameAoE3:
@@ -22,8 +24,10 @@ func steamProcess(gameId string) string {
 	}
 }
 
-func microsoftStoreProcess(gameId string) string {
+func xboxProcess(gameId string) string {
 	switch gameId {
+	case common.GameAoE1:
+		return "AoEDE.exe"
 	case common.GameAoE2:
 		return "AoE2DE.exe"
 	case common.GameAoE3:
@@ -98,13 +102,13 @@ func Kill(exe string) (proc *os.Process, err error) {
 	}
 }
 
-func GameProcesses(gameId string, steam bool, microsoftStore bool) []string {
+func GameProcesses(gameId string, steam bool, xbox bool) []string {
 	processes := mapset.NewSet[string]()
 	if steam {
 		processes.Add(steamProcess(gameId))
 	}
-	if microsoftStore {
-		processes.Add(microsoftStoreProcess(gameId))
+	if xbox {
+		processes.Add(xboxProcess(gameId))
 	}
 	return processes.ToSlice()
 }

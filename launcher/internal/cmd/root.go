@@ -55,7 +55,7 @@ var (
 	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE 2 and AoE 3 (both DE) to connect to the local LAN server",
+		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN server",
 		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
@@ -141,7 +141,10 @@ var (
 			}
 			config.SetRevertCommand(revertCommand)
 			canAddHost := viper.GetBool("Config.CanAddHost")
-			isolateMetadata := viper.GetBool("Config.IsolateMetadata")
+			var isolateMetadata bool
+			if gameId != common.GameAoE1 {
+				isolateMetadata = viper.GetBool("Config.IsolateMetadata")
+			}
 			isolateProfiles := viper.GetBool("Config.IsolateProfiles")
 			serverExecutable := viper.GetString("Server.Executable")
 			clientExecutable := viper.GetString("Client.Executable")
@@ -294,7 +297,7 @@ func Execute() error {
 		pathNamesInfo += " Path names need to use double backslashes or be within single quotes."
 	}
 	cmd.GameCommand(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared.")
+	rootCmd.PersistentFlags().BoolP("isolateMetadata", "m", true, "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE")
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
@@ -308,7 +311,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
 	if runtime.GOOS == "windows" {
-		clientExeTip += ` and then the Microsoft Store one if found`
+		clientExeTip += ` and then the Xbox one if found`
 	}
 	clientExeTip += `. Use a path to the game launcher`
 	if runtime.GOOS == "windows" {

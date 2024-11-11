@@ -21,7 +21,7 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(gameId string, steamProcess bool, microsoftStoreProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, revertCmd []string, exitCode *int) {
+func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool, revertArgs []string, revertCmd []string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if len(revertCmd) > 0 {
 		defer func() {
@@ -33,7 +33,7 @@ func Watch(gameId string, steamProcess bool, microsoftStoreProcess bool, serverE
 			internal.RunConfig(revertArgs)
 		}()
 	}
-	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, microsoftStoreProcess))
+	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
 		if serverExe != "-" {
@@ -42,7 +42,13 @@ func Watch(gameId string, steamProcess bool, microsoftStoreProcess bool, serverE
 		return
 	}
 	if broadcastBattleServer {
-		rebroadcastBattleServer(exitCode)
+		var port int
+		if gameId == common.GameAoE1 {
+			port = 8888
+		} else {
+			port = 9999
+		}
+		rebroadcastBattleServer(exitCode, port)
 	}
 	var PID uint32
 	for _, p := range processes {

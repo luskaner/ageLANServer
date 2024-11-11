@@ -6,19 +6,19 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
-// MicrosoftStoreExecutor is not supported on non-Windows platforms
-func isInstalledOnMicrosoftStore(_ string) bool {
+// XboxExecutor is not supported on non-Windows platforms
+func isInstalledOnXbox(_ string) bool {
 	return false
 }
-func (exec MicrosoftStoreExecutor) Execute(_ []string) (result *commonExecutor.Result) {
+func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	// Should not be called
 	return
 }
-func (exec MicrosoftStoreExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+func (exec XboxExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	return
 }
 
-func (exec CustomExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true
 	return
 }

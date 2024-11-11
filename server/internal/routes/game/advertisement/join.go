@@ -14,20 +14,38 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
+func joinReturnError(gameTitle string, w http.ResponseWriter) {
+	response := i.A{2,
+		"",
+		"",
+		0,
+		0,
+	}
+	if gameTitle != common.GameAoE1 {
+		response = append(response, 0)
+	}
+	response = append(response, i.A{0})
+	i.JSON(&w, response)
+}
+
 func Join(w http.ResponseWriter, r *http.Request) {
+	game := models.G(r)
+	gameTitle := game.Title()
 	var q JoinRequest
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+		joinReturnError(gameTitle, w)
 		return
 	}
 	sess, _ := middleware.Session(r)
-	game := models.G(r)
+
 	u, _ := game.Users().GetUserById(sess.GetUserId())
 	advertisements := game.Advertisements()
-	if u.GetAdvertisement() != nil {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
-		return
+	// Leave the previous match if the user is already in one
+	// Necessary for AoE1 but might as well do it for all
+	if existingAdv := u.GetAdvertisement(); existingAdv != nil {
+		advertisements.RemovePeer(existingAdv, u)
 	}
+
 	advs := advertisements.FindAdvertisements(func(adv *models.MainAdvertisement) bool {
 		return adv.GetId() == q.Id &&
 			adv.GetJoinable() &&
@@ -41,7 +59,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			adv.GetPasswordValue() == q.Password
 	})
 	if len(advs) != 1 {
-		i.JSON(&w, i.A{2, "", "", 0, 0, 0, i.A{}})
+		joinReturnError(gameTitle, w)
 		return
 	}
 	matchingAdv := advs[0]
@@ -52,18 +70,19 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		q.Team,
 	)
 	var relayRegion string
-	if game.Title() == common.GameAoE2 {
+	if gameTitle == common.GameAoE2 {
 		relayRegion = matchingAdv.GetRelayRegion()
 	}
-	i.JSON(&w,
-		i.A{
-			0,
-			matchingAdv.GetIp(),
-			relayRegion,
-			0,
-			0,
-			0,
-			i.A{peer.Encode()},
-		},
-	)
+	response := i.A{
+		0,
+		matchingAdv.GetIp(),
+		relayRegion,
+		0,
+		0,
+	}
+	if gameTitle != common.GameAoE1 {
+		response = append(response, 0)
+	}
+	response = append(response, i.A{peer.Encode()})
+	i.JSON(&w, response)
 }
