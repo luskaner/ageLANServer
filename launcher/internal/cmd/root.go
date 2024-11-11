@@ -311,7 +311,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
 	if runtime.GOOS == "windows" {
-		clientExeTip += ` and then the Microsoft Store one if found`
+		clientExeTip += ` and then the Xbox one if found`
 	}
 	clientExeTip += `. Use a path to the game launcher`
 	if runtime.GOOS == "windows" {

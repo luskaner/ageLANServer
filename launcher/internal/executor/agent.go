@@ -6,13 +6,13 @@ import (
 	"strconv"
 )
 
-func RunAgent(game string, steamProcess bool, microsoftStoreProcess bool, serverExe string, broadCastBattleServer bool, revertCommand []string, revertFlags []string) (result *exec.Result) {
+func RunAgent(game string, steamProcess bool, xboxProcess bool, serverExe string, broadCastBattleServer bool, revertCommand []string, revertFlags []string) (result *exec.Result) {
 	if serverExe == "" {
 		serverExe = "-"
 	}
 	args := []string{
 		strconv.FormatBool(steamProcess),
-		strconv.FormatBool(microsoftStoreProcess),
+		strconv.FormatBool(xboxProcess),
 		serverExe,
 		strconv.FormatBool(broadCastBattleServer),
 		game,
