@@ -57,7 +57,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
-	if title != common.GameAoE3 {
+	if title == common.GameAoE2 {
 		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo())
 	}
 	var unknownProfileInfoList i.A
@@ -84,6 +84,16 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		unknownProfileInfoList = i.A{
 			i.A{291, u.GetId(), 16, "", t2},
 		}
+	default:
+		unknownProfileInfoList = i.A{}
+	}
+	server := i.A{""}
+	if title != common.GameAoE1 {
+		server = append(server, nil)
+	}
+	server = append(server, "127.0.0.1", 27012, 27112)
+	if title != common.GameAoE1 {
+		server = append(server, 27212)
 	}
 	response := i.A{
 		0,
@@ -105,23 +115,31 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		0,
 		nil,
+	}
+	if title == common.GameAoE1 {
+		response = append(response, i.A{})
+	}
+	allProfileInfo := i.A{
+		0,
+		profileInfo,
+		relationship.Relationships(title, users, u),
+		extraProfileInfoList,
+		unknownProfileInfoList,
+		nil,
+		i.A{},
+		nil,
+		1,
+	}
+	if title != common.GameAoE1 {
+		allProfileInfo = append(allProfileInfo, i.A{})
+	}
+	response = append(response,
 		game.Resources().LoginData,
-		i.A{
-			0,
-			profileInfo,
-			relationship.Relationships(title, users, u),
-			extraProfileInfoList,
-			unknownProfileInfoList,
-			nil,
-			i.A{},
-			nil,
-			1,
-			i.A{},
-		},
+		allProfileInfo,
 		i.A{},
 		0,
-		i.A{i.A{"", nil, "127.0.0.1", 27012, 27112, 27212}},
-	}
+		i.A{server},
+	)
 	expiration := time.Now().Add(time.Hour).UTC().Format(time.RFC1123)
 	w.Header().Set("Set-Cookie", fmt.Sprintf("reliclink=%d; Expires=%s; Max-Age=3600", u.GetReliclink(), expiration))
 	w.Header().Set("Request-Context", "appId=cid-v1:d21b644d-4116-48ea-a602-d6167fb46535")

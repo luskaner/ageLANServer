@@ -45,7 +45,7 @@ func (m *CloudFiles) ReadFile(name string) ([]byte, error) {
 func BuildCloudfilesIndex(configFolder string, baseFolder string) *CloudFiles {
 	data, err := os.ReadFile(filepath.Join(configFolder, "cloudfilesIndex.json"))
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	index := CloudFiles{baseFolder: baseFolder, Credentials: &Credentials{}}
 	err = json.Unmarshal(data, &index.Value)

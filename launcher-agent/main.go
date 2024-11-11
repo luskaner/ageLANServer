@@ -28,9 +28,9 @@ func main() {
 	} else {
 		steamProcess = true
 	}
-	var microsoftStoreProcess bool
+	var xboxProcess bool
 	if runtime.GOOS == "windows" {
-		microsoftStoreProcess, _ = strconv.ParseBool(os.Args[2])
+		xboxProcess, _ = strconv.ParseBool(os.Args[2])
 	}
 	serverExe := os.Args[3]
 	var broadcastBattleServer bool
@@ -68,7 +68,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
-	watch.Watch(gameId, steamProcess, microsoftStoreProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
+	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

@@ -143,8 +143,8 @@ func anyProcessExists(names []string) bool {
 }
 
 func GameRunning(gameId string) bool {
-	microsoftStore := runtime.GOOS == "windows"
-	if anyProcessExists(commonProcess.GameProcesses(gameId, true, microsoftStore)) {
+	xbox := runtime.GOOS == "windows"
+	if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
 		fmt.Println("Game is already running, exiting...")
 		return true
 	}

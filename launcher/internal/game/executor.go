@@ -8,7 +8,7 @@ import (
 
 type Executor interface {
 	Execute(args []string) (result *commonExecutor.Result)
-	GameProcesses() (steamProcess bool, microsoftStoreProcess bool)
+	GameProcesses() (steamProcess bool, xboxProcess bool)
 }
 
 type baseExecutor struct {
@@ -18,7 +18,7 @@ type baseExecutor struct {
 type SteamExecutor struct {
 	baseExecutor
 }
-type MicrosoftStoreExecutor struct {
+type XboxExecutor struct {
 	baseExecutor
 }
 type CustomExecutor struct {
@@ -29,7 +29,7 @@ func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	return startUri(steam.NewGame(exec.gameId).OpenUri())
 }
 
-func (exec SteamExecutor) GameProcesses() (steamProcess bool, microsoftStoreProcess bool) {
+func (exec SteamExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true
 	return
 }
@@ -61,10 +61,10 @@ func steamExecutor(gameId string) (ok bool, executor Executor) {
 	return
 }
 
-func microsoftStoreExecutor(gameId string) (ok bool, executor Executor) {
-	if isInstalledOnMicrosoftStore(gameId) {
+func xboxExecutor(gameId string) (ok bool, executor Executor) {
+	if isInstalledOnXbox(gameId) {
 		ok = true
-		executor = MicrosoftStoreExecutor{baseExecutor{gameId: gameId}}
+		executor = XboxExecutor{baseExecutor{gameId: gameId}}
 	}
 	return
 }
@@ -77,7 +77,7 @@ func MakeExecutor(gameId string, executable string) Executor {
 				return executor
 			}
 		case "msstore":
-			if ok, executor := microsoftStoreExecutor(gameId); ok {
+			if ok, executor := xboxExecutor(gameId); ok {
 				return executor
 			}
 		default:
@@ -90,7 +90,7 @@ func MakeExecutor(gameId string, executable string) Executor {
 	if ok, executor := steamExecutor(gameId); ok {
 		return executor
 	}
-	if ok, executor := microsoftStoreExecutor(gameId); ok {
+	if ok, executor := xboxExecutor(gameId); ok {
 		return executor
 	}
 	return nil

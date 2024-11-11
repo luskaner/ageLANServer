@@ -92,6 +92,9 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
+		if gameId == common.GameAoE1 {
+			BackupMetadata = false
+		}
 		if (BackupMetadata || BackupProfiles) && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
@@ -269,7 +272,7 @@ func InitSetUp() {
 		"metadata",
 		"m",
 		false,
-		"Backup metadata",
+		"Backup metadata. Not compatible with AoE:DE",
 	)
 	setUpCmd.Flags().BoolVarP(
 		&BackupProfiles,
