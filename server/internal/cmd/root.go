@@ -35,9 +35,10 @@ import (
 var configPaths = []string{path.Join("resources", "config"), "."}
 
 var (
-	Version string
-	cfgFile string
-	rootCmd = &cobra.Command{
+	Version              string
+	cfgFile              string
+	battleServersCfgFile string
+	rootCmd              = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "server is a service acting as " + common.Domain + " for LAN features in AoE: DE, AoE 2:DE and AoE 3:DE.",
 		Run: func(_ *cobra.Command, _ []string) {
@@ -178,6 +179,7 @@ func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().StringVar(&battleServersCfgFile, "battleServersConfig", "", fmt.Sprintf(`Battle Servers config file (default config.battleservers.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce server in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts")
 	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
@@ -218,17 +220,25 @@ func Execute() error {
 }
 
 func initConfig() {
+	for _, configPath := range configPaths {
+		viper.AddConfigPath(configPath)
+	}
+	viper.SetConfigType("toml")
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		for _, configPath := range configPaths {
-			viper.AddConfigPath(configPath)
-		}
-		viper.SetConfigType("toml")
 		viper.SetConfigName("config")
 	}
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := viper.MergeInConfig(); err == nil {
+		fmt.Println("Using main config file:", viper.ConfigFileUsed())
 	}
+	if battleServersCfgFile != "" {
+		viper.SetConfigFile(battleServersCfgFile)
+	} else {
+		viper.SetConfigName("config.battleservers")
+	}
+	if err := viper.MergeInConfig(); err == nil {
+		fmt.Println("Using game config file:", viper.ConfigFileUsed())
+	}
+	viper.AutomaticEnv()
 }

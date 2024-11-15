@@ -6,6 +6,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
+	"net"
 	"net/http"
 )
 
@@ -69,20 +70,28 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		q.Race,
 		q.Team,
 	)
-	var relayRegion string
-	if gameTitle == common.GameAoE2 {
-		relayRegion = matchingAdv.GetRelayRegion()
+
+	var battleServer *models.MainBattleServer
+	var clientIP *net.IP
+	var ok bool
+	if battleServer, ok = game.BattleServers().Get(matchingAdv.GetRelayRegion()); !ok {
+		var serverIP string
+		if gameTitle == common.GameAoE2 {
+			serverIP = ""
+		} else {
+			serverIP = matchingAdv.GetRelayRegion()
+		}
+		battleServer = models.FakeBattleServer(serverIP, gameTitle != common.GameAoE1)
+	} else {
+		ipStr, _, _ := net.SplitHostPort(r.RemoteAddr)
+		IP := net.ParseIP(ipStr)
+		clientIP = &IP
 	}
-	response := i.A{
-		0,
-		matchingAdv.GetIp(),
-		relayRegion,
-		0,
-		0,
+	response := i.A{0, matchingAdv.GetIp()}
+	if !ok {
+		response = append(response, "")
 	}
-	if gameTitle != common.GameAoE1 {
-		response = append(response, 0)
-	}
+	response = append(response, battleServer.Encode(false, false, clientIP)...)
 	response = append(response, i.A{peer.Encode()})
 	i.JSON(&w, response)
 }

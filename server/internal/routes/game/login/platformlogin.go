@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"net"
 	"net/http"
 	"time"
 )
@@ -87,14 +88,6 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	default:
 		unknownProfileInfoList = i.A{}
 	}
-	server := i.A{""}
-	if title != common.GameAoE1 {
-		server = append(server, nil)
-	}
-	server = append(server, "127.0.0.1", 27012, 27112)
-	if title != common.GameAoE1 {
-		server = append(server, 27212)
-	}
 	response := i.A{
 		0,
 		sessionId,
@@ -133,12 +126,14 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if title != common.GameAoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
+	ipStr, _, _ := net.SplitHostPort(r.RemoteAddr)
+	ip := net.ParseIP(ipStr)
 	response = append(response,
 		game.Resources().LoginData,
 		allProfileInfo,
 		i.A{},
 		0,
-		i.A{server},
+		game.BattleServers().Encode(ip),
 	)
 	expiration := time.Now().Add(time.Hour).UTC().Format(time.RFC1123)
 	w.Header().Set("Set-Cookie", fmt.Sprintf("reliclink=%d; Expires=%s; Max-Age=3600", u.GetReliclink(), expiration))

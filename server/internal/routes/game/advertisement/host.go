@@ -1,10 +1,12 @@
 package advertisement
 
 import (
+	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
+	"net"
 	"net/http"
 	"regexp"
 )
@@ -56,16 +58,27 @@ func Host(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
 
-	// Only LAN servers are allowed and need the GUID to store it
-	if !re.MatchString(r.PostFormValue("relayRegion")) {
-		returnError(gameTitle, &w)
-		return
+	battleServer, battleServerExists := game.BattleServers().Get(r.PostFormValue("relayRegion"))
+
+	if !battleServerExists {
+		if !re.MatchString(r.PostFormValue("relayRegion")) {
+			returnError(gameTitle, &w)
+			return
+		} else {
+			battleServer = models.FakeBattleServer("", gameTitle != common.GameAoE1)
+		}
 	}
 
 	advertisements := game.Advertisements()
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
+		fmt.Println(adv.MatchType)
+		// Disallow Quickmatch on AoE1
+		if battleServerExists && gameTitle == common.GameAoE1 && adv.Description == "SESSION_MATCH_KEY" {
+			returnError(gameTitle, &w)
+			return
+		}
 		if gameTitle != common.GameAoE2 {
 			adv.Joinable = true
 		}
@@ -79,7 +92,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		if existingAdv := u.GetAdvertisement(); existingAdv != nil {
 			advertisements.RemovePeer(existingAdv, u)
 		}
-		storedAdv := advertisements.Store(&adv)
+		storedAdv := advertisements.Store(&adv, battleServerExists && gameTitle == common.GameAoE1)
 		if storedAdv == nil {
 			returnError(gameTitle, &w)
 			return
@@ -89,13 +102,21 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			0,
 			storedAdv.GetId(),
 			"authtoken",
-			"",
-			0,
-			0,
 		}
-		if gameTitle != common.GameAoE1 {
-			response = append(response, 0)
+
+		var clientIp *net.IP
+		if battleServerExists {
+			ipStr, _, _ := net.SplitHostPort(r.RemoteAddr)
+			ip := net.ParseIP(ipStr)
+			clientIp = &ip
+		} else {
+			response = append(response, "")
 		}
+
+		response = append(
+			response,
+			battleServer.Encode(false, false, clientIp)...,
+		)
 
 		response = append(
 			response,
@@ -104,18 +125,17 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			0,
 		)
 
-		if gameTitle != common.GameAoE2 {
-			response = append(response, "0")
-		}
 		if gameTitle == common.GameAoE2 {
 			response = append(
 				response,
 				0,
 				nil,
 				nil,
-				"0",
+				storedAdv.GetMetadata(),
 				storedAdv.GetDescription(),
 			)
+		} else {
+			response = append(response, storedAdv.GetMetadata())
 		}
 		i.JSON(&w, response)
 	} else {

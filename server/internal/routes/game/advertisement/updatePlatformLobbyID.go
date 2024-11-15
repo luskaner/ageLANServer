@@ -29,20 +29,17 @@ func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
 
 	sess, _ := middleware.Session(r)
 	u, _ := game.Users().GetUserById(sess.GetUserId())
-	var peer *models.MainPeer
-	if peer, ok = adv.GetPeer(u); !ok {
+	if _, ok = adv.GetPeer(u); !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
 
 	adv.UpdatePlatformSessionId(req.PlatformSessionId)
-	message := i.A{req.MatchID, "0", req.PlatformSessionId}
+	message := i.A{req.MatchID, adv.GetMetadata(), req.PlatformSessionId}
 
 	for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
-		if el.Value == peer {
-			continue
-		}
-		if currentSess, ok := models.GetSessionByUserId(el.Value.GetUser().GetId()); ok {
+		var currentSess *models.Session
+		if currentSess, ok = models.GetSessionByUserId(el.Value.GetUser().GetId()); ok {
 			wss.SendOrStoreMessage(
 				currentSess,
 				"PlatformSessionUpdateMessage",

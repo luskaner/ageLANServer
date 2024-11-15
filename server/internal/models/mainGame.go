@@ -1,10 +1,13 @@
 package models
 
 import (
+	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/spf13/viper"
 )
 
 type MainGame struct {
+	battleServers  *MainBattleServers
 	resources      *MainResources
 	users          *MainUsers
 	advertisements *MainAdvertisements
@@ -12,19 +15,27 @@ type MainGame struct {
 	title          string
 }
 
-func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string]) Game {
+func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServersEncodeOobPort bool) Game {
 	game := &MainGame{
+		battleServers:  &MainBattleServers{},
 		resources:      &MainResources{},
 		users:          &MainUsers{},
 		advertisements: &MainAdvertisements{},
 		chatChannels:   &MainChatChannels{},
 		title:          gameId,
 	}
+	game.battleServers.Initialize(
+		viper.GetStringMap(fmt.Sprintf("BattleServers.%s", gameId)), battleServersEncodeOobPort,
+	)
 	game.resources.Initialize(gameId, rssKeyedFilenames)
 	game.users.Initialize()
 	game.advertisements.Initialize(game.users)
 	game.chatChannels.Initialize(game.resources.ChatChannels)
 	return game
+}
+
+func (g *MainGame) BattleServers() *MainBattleServers {
+	return g.battleServers
 }
 
 func (g *MainGame) Resources() *MainResources {

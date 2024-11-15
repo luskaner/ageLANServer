@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
@@ -54,6 +55,7 @@ type MainAdvertisement struct {
 	options           string
 	slotInfo          string
 	platformSessionId uint64
+	metadata          string
 	state             int8
 	startTime         int64
 	chat              []*MainMessage
@@ -193,6 +195,12 @@ func (adv *MainAdvertisement) GetObserversDelay() uint32 {
 	return adv.observers.delay
 }
 
+func (adv *MainAdvertisement) GetMetadata() string {
+	adv.lock.RLock()
+	defer adv.lock.RUnlock()
+	return adv.metadata
+}
+
 func (adv *MainAdvertisement) GetPeers() *orderedmap.OrderedMap[*MainUser, *MainPeer] {
 	adv.lock.RLock()
 	defer adv.lock.RUnlock()
@@ -212,7 +220,7 @@ func (adv *MainAdvertisement) GetPeer(user *MainUser) (*MainPeer, bool) {
 	return u, true
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) *MainAdvertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool) *MainAdvertisement {
 	if advFrom.Id != -1 {
 		return nil
 	}
@@ -232,6 +240,14 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 			i.RngLock.Lock()
 			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(254)+1)
 			i.RngLock.Unlock()
+			if generateMetadata {
+				adv.metadata = fmt.Sprintf(
+					`{"templateName":"GameSession","name":"%s","scid":"00000000-0000-0000-0000-000068a451d4"}`,
+					uuid.New().String(),
+				)
+			} else {
+				adv.metadata = "0"
+			}
 			adv.relayRegion = advFrom.RelayRegion
 			adv.party = advFrom.Party
 			adv.race = advFrom.Race
@@ -441,13 +457,14 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 	response := i.A{
 		adv.id,
 		adv.platformSessionId,
-		"0",
+		adv.GetMetadata(),
 	}
 	if gameId == common.GameAoE2 {
 		response = append(
 			response,
 			"",
 			"",
+			// TODO: Does it need to repeat metadata?
 			"0",
 		)
 	}
