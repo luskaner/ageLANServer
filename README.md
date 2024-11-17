@@ -5,7 +5,7 @@ connection **to the game server**  ensuring the game LAN functionality is still 
 server
 is in maintenance or are eventually shutdown.
 
-Currently supported games:
+Supported games:
 
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
