@@ -14,6 +14,8 @@ Games = ['age1', 'age2', 'age3']
 
 [Announcement]
 
+# Whether to announce the server. When disabled, the launcher will not automatically detect it.
+Enabled = true
 # Whether to announce the server using Multicast. More efficient but less compatible than Broadcast.
 Multicast = true
 # Whether to announce the server using Broadcast.
