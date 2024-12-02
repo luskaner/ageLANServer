@@ -23,10 +23,9 @@ IsolateProfiles = false
 # 'auto' depend on the Announce setting in the server resources being true
 Start = 'auto'
 # The process to start the server, if 'auto', it will be try to execute the server binary in this directory order:
-# 1. './'
-# 2. './server/'
-# 3. '../'
-# 4. '../server/'
+# 1. './server/'
+# 2. '../'
+# 3. '../server/'
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
