@@ -3,7 +3,7 @@ module github.com/luskaner/ageLANServer/launcher
 go 1.22.0
 
 require (
-	github.com/deckarep/golang-set/v2 v2.6.0
+	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20241111160911-2abef906e211
