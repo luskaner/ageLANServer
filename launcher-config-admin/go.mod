@@ -3,7 +3,7 @@ module github.com/luskaner/ageLANServer/launcher-config-admin
 go 1.22.0
 
 require (
-	github.com/deckarep/golang-set/v2 v2.6.0
+	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20241111160911-2abef906e211
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241111163256-bdcc7ac24582
 	github.com/spf13/cobra v1.8.1
