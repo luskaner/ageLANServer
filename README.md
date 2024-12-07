@@ -1,5 +1,7 @@
 # Age LAN Server
 
+ℹ️ **Repository is now on maintenance due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
+
 Age LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
 connection **to the game server**  ensuring the game LAN functionality is still available even if the official
 server
