@@ -138,8 +138,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows (no S edition/mode):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play (
-  plus [Proton Experimental](https://github.com/ValveSoftware/Proton/wiki/Requirements)).
+- Linux: *recent* distribution with Steam on x86-64 using Steam Play.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
