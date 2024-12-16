@@ -103,7 +103,7 @@ func Kill(exe string) (proc *os.Process, err error) {
 }
 
 func GameProcesses(gameId string, steam bool, xbox bool) []string {
-	processes := mapset.NewSet[string]()
+	processes := mapset.NewThreadUnsafeSet[string]()
 	if steam {
 		processes.Add(steamProcess(gameId))
 	}

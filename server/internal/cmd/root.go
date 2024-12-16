@@ -47,7 +47,7 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			gameSet := mapset.NewSet[string](viper.GetStringSlice("Games")...)
+			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
 			if gameSet.IsEmpty() {
 				fmt.Println("No games specified")
 				_ = lock.Unlock()

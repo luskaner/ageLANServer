@@ -69,7 +69,7 @@ func requiresMapCDN() bool {
 
 func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (errorCode int) {
 	var mapCDN bool
-	ips := mapset.NewSet[string]()
+	ips := mapset.NewThreadUnsafeSet[string]()
 	if requiresMapCDN() {
 		if !canMap {
 			fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")

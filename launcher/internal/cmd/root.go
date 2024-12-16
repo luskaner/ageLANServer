@@ -50,9 +50,9 @@ var (
 	Version                        string
 	cfgFile                        string
 	gameCfgFile                    string
-	autoTrueFalseValues            = mapset.NewSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues      = mapset.NewSet[string](falseValue, "user", "local")
-	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
+	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
+	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
+	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN server",

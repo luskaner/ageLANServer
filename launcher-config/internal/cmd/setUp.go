@@ -154,7 +154,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		hostMappings := mapset.NewSet[string]()
+		hostMappings := mapset.NewThreadUnsafeSet[string]()
 		if len(cmd.MapIPs) > 0 {
 			for _, ip := range cmd.MapIPs {
 				hostMappings.Add(ip.String())
