@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/launcher-config-admin-agent
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/luskaner/ageLANServer/common v0.0.0-20241111160911-2abef906e211

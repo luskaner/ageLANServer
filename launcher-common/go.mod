@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/launcher-common
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/andygrunwald/vdf v1.1.0

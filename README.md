@@ -15,7 +15,8 @@ Supported games:
 connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-ℹ️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
+ℹ️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals.
+Expect only updates to fix bugs and for dependencies/compiler.**
 
 ℹ️ My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information
 to download a Steam Emulator and play 100% offline.
@@ -117,7 +118,7 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 - Windows Server 2016.
 - Windows IoT.
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
-- macOS: Catalina (v10.15).
+- macOS: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -129,7 +130,7 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.23.
 
 </details>
 
