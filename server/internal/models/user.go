@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"hash"
 	"hash/fnv"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"strconv"
 	"sync"
@@ -51,14 +51,14 @@ func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId 
 	seed := binary.BigEndian.Uint64(hsh)
 	users.hasher.Reset()
 	users.hasherLock.Unlock()
-	rng := rand.New(rand.NewSource(int64(seed)))
+	rng := rand.New(rand.NewPCG(seed, seed))
 	return &MainUser{
-		id:                rng.Int31(),
-		statId:            rng.Int31(),
-		profileId:         rng.Int31(),
+		id:                rng.Int32(),
+		statId:            rng.Int32(),
+		profileId:         rng.Int32(),
 		profileMetadata:   profileMetadata,
 		profileUintFlag1:  profileUIntFlag1,
-		reliclink:         rng.Int31(),
+		reliclink:         rng.Int32(),
 		alias:             alias,
 		platformUserId:    platformUserId,
 		isXbox:            isXbox,
@@ -69,24 +69,24 @@ func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId 
 }
 
 func generatePlatformUserIdSteam(rng *rand.Rand) uint64 {
-	Z := rng.Int63n(1 << 31)
+	Z := rng.Int64N(1 << 31)
 	Y := Z % 2
 	id := Z*2 + Y + 76561197960265728
 	return uint64(id)
 }
 
 func generateFullPlatformUserIdXbox(platformUserId int64) string {
-	rng := rand.New(rand.NewSource(platformUserId))
+	rng := rand.New(rand.NewPCG(uint64(platformUserId), uint64(platformUserId)))
 	const chars = "0123456789ABCDEF"
 	id := make([]byte, 40)
 	for j := range id {
-		id[j] = chars[rng.Intn(len(chars))]
+		id[j] = chars[rng.IntN(len(chars))]
 	}
 	return string(id)
 }
 
 func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
-	return uint64(rng.Int63n(9e15) + 1e15)
+	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
 func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox bool, platformUserId uint64, alias string) *MainUser {
@@ -97,7 +97,8 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox
 			if ip != nil {
 				ipV4 := ip.To4()
 				if ipV4 != nil {
-					rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint32(ipV4))))
+					seed := uint64(binary.BigEndian.Uint32(ipV4))
+					rng := rand.New(rand.NewPCG(seed, seed))
 					if isXbox {
 						platformUserId = generatePlatformUserIdXbox(rng)
 					} else {
@@ -228,7 +229,7 @@ func (u *MainUser) GetExtraProfileInfo() i.A {
 
 func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
 	i.RngLock.Lock()
-	randomTimeDiff := i.Rng.Int63n(300-50+1) + 50
+	randomTimeDiff := i.Rng.Int64N(300-50+1) + 50
 	i.RngLock.Unlock()
 	profileInfo := i.A{
 		time.Now().UTC().Unix() - randomTimeDiff,

@@ -30,7 +30,7 @@ func generateSessionId() string {
 	for {
 		for i := range sessionId {
 			internal.RngLock.Lock()
-			sessionId[i] = sessionLetters[internal.Rng.Intn(len(sessionLetters))]
+			sessionId[i] = sessionLetters[internal.Rng.IntN(len(sessionLetters))]
 			internal.RngLock.Unlock()
 		}
 		sessionIdStr := string(sessionId)

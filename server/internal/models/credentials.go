@@ -32,7 +32,9 @@ func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
 	for {
 		i.RngLock.Lock()
-		i.Rng.Read(b)
+		for j := 0; j < 32; j++ {
+			b[j] = byte(i.Rng.UintN(256))
+		}
 		i.RngLock.Unlock()
 		creds.hashLock.Lock()
 		hash := sha256.Sum256(b)

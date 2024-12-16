@@ -6,7 +6,6 @@ import (
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 	"github.com/wk8/go-ordered-map/v2"
-	"math"
 	"sync"
 	"time"
 )
@@ -219,7 +218,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 	var id int32
 	for {
 		i.RngLock.Lock()
-		id = i.Rng.Int31n(math.MaxInt32)
+		id = i.Rng.Int32()
 		i.RngLock.Unlock()
 		_, exists := advs.store.Load(id)
 		if !exists {
@@ -230,7 +229,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 			}
 			adv.id = id
 			i.RngLock.Lock()
-			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(254)+1)
+			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.IntN(254)+1)
 			i.RngLock.Unlock()
 			adv.relayRegion = advFrom.RelayRegion
 			adv.party = advFrom.Party
