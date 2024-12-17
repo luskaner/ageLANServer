@@ -3,10 +3,10 @@ package models
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"github.com/wk8/go-ordered-map/v2"
 	"sync"
 	"time"
 )
@@ -237,7 +237,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 			adv.race = advFrom.Race
 			adv.team = advFrom.Team
 			adv.statGroup = advFrom.StatGroup
-			adv.peers = orderedmap.New[*MainUser, *MainPeer]()
+			adv.peers = orderedmap.NewOrderedMap[*MainUser, *MainPeer]()
 			adv.chat = make([]*MainMessage, 0)
 			advs.update(adv, &shared.AdvertisementUpdateRequest{
 				Id:                adv.id,
@@ -374,8 +374,8 @@ func (advs *MainAdvertisements) Delete(adv *MainAdvertisement) {
 	defer adv.lock.Unlock()
 	advs.store.Delete(adv.id)
 	adv.host.SetAdvertisement(nil)
-	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
-		el.Value.GetUser().SetAdvertisement(nil)
+	for el := range adv.peers.Values() {
+		el.GetUser().SetAdvertisement(nil)
 	}
 }
 
@@ -400,9 +400,8 @@ func (adv *MainAdvertisement) UpdatePlatformSessionId(sessionId uint64) {
 func (adv *MainAdvertisement) EncodePeers() i.A {
 	var peers = make(i.A, adv.peers.Len())
 	j := 0
-	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
-		p := el.Value
-		userId := el.Key.GetId()
+	for key, p := range adv.peers.AllFromFront() {
+		userId := key.GetId()
 		adv.peerLock.RLock(userId)
 		peers[j] = p.Encode()
 		adv.peerLock.RUnlock(userId)

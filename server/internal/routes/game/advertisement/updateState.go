@@ -40,8 +40,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		sessions := make([]*models.Session, peersLen)
 		advEncoded := adv.Encode(gameTitle)
 		j := 0
-		for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
-			peer := el.Value
+		for peer := range adv.GetPeers().Values() {
 			var sess *models.Session
 			userId := peer.GetUser().GetId()
 			sess, ok = models.GetSessionByUserId(userId)
