@@ -35,14 +35,14 @@ var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
 func parseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmd := strings.Join(viper.GetStringSlice(name), " ")
+	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
 	for key, value := range values {
-		cmd = strings.ReplaceAll(cmd, fmt.Sprintf(`{%s}`, key), value)
+		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
 	}
 	if runtime.GOOS == "windows" {
-		cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
+		cmdArgs = reWinToLinVar.ReplaceAllString(cmdArgs, `$$$1`)
 	}
-	args, err = shell.Fields(cmd, nil)
+	args, err = shell.Fields(cmdArgs, nil)
 	return
 }
 

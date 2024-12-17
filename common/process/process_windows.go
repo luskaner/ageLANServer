@@ -3,6 +3,7 @@ package process
 import (
 	"golang.org/x/sys/windows"
 	"os"
+	"slices"
 	"unsafe"
 )
 
@@ -11,12 +12,7 @@ func ProcessesPID(names []string) map[string]uint32 {
 		return windows.UTF16ToString(entry.ExeFile[:])
 	}
 	entries := processesEntry(func(entry *windows.ProcessEntry32) bool {
-		for _, n := range names {
-			if name(entry) == n {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(names, name(entry))
 	}, false)
 	processes := make(map[string]uint32)
 	for _, entry := range entries {
