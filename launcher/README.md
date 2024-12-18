@@ -8,7 +8,7 @@ system and reverting that configuration upon exit.
 ## Minimum system Requirements
 
 - Windows (no S edition/mode):
-    - 10 on x86-64 (recommended).
+    - 10 (1803) on x86-64 (recommended).
     - 11 on ARM.
 - Linux: *recent* distribution with Steam on x86-64 using Steam Play.
 
