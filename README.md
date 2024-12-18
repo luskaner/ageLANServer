@@ -116,7 +116,7 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 - Windows 10 (no S edition/mode).
 - Windows Server 2016.
-- Windows IoT.
+- Windows IoT (*except Arm32*).
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
 
@@ -188,7 +188,6 @@ supported operating systems.
 * Server:
     * Windows:
         * **10, Server 2025 or IoT on ARM64**: ..._server_*A.B.C*_win_arm64.zip
-        * **10 IoT on ARM32**: ..._server_*A.B.C*_win_arm32.zip
         * **10, Server 2016 or IoT on x86-64**: ..._server_*A.B.C*_win_x86-64.zip
         * **10 or 10 IoT on x86-32**: ..._server_*A.B.C*_win_x86-32.zip
     * Linux:
