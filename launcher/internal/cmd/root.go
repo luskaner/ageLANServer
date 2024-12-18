@@ -70,6 +70,11 @@ var (
 				_ = lock.Unlock()
 				os.Exit(errorCode)
 			}()
+			if err := cmdUtils.CheckVersion(); err != nil {
+				fmt.Println(err)
+				errorCode = internal.ErrUnsupportedOS
+				return
+			}
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
 			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")

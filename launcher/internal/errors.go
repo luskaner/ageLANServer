@@ -39,4 +39,5 @@ const (
 	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
+	ErrUnsupportedOS
 )
