@@ -136,7 +136,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 ### Launcher
 
 - Windows (no S edition/mode):
-    - 10 (1803) on x86-64 (recommended).
+    - 10 (1803 - Redstone 5) on x86-64 (recommended).
     - 11 on ARM.
 - Linux: *recent* distribution with Steam on x86-64 using Steam Play.
 
