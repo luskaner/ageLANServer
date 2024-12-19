@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 )
 
 require (
