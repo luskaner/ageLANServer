@@ -71,7 +71,7 @@ func ResolveAddrs(listenIP net.IP, multicastIP net.IP, targetPort int, broadcast
 }
 
 func ResolveHosts(hosts []string) []net.IP {
-	ipsSet := mapset.NewSet[string]()
+	ipsSet := mapset.NewThreadUnsafeSet[string]()
 	for _, host := range hosts {
 		ip := net.ParseIP(host)
 		if ip == nil {

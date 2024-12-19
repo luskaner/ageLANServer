@@ -93,7 +93,7 @@ func ConnectAgentIfNeeded() (err error) {
 		return
 	}
 	var conn net.Conn
-	conn, err = net.Dial("unix", launcherCommon.ConfigAdminIpcName())
+	conn, err = DialIPC()
 	if err != nil {
 		return
 	}

@@ -1,11 +1,12 @@
 package internal
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"sync"
 	"time"
 )
 
-var src = rand.NewSource(time.Now().UnixNano())
+var seed = uint64(time.Now().UnixNano())
+var src = rand.NewPCG(seed, seed)
 var Rng = rand.New(src)
 var RngLock = sync.Mutex{}

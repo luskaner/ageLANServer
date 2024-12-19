@@ -38,11 +38,11 @@ func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
 	adv.UpdatePlatformSessionId(req.PlatformSessionId)
 	message := i.A{req.MatchID, "0", req.PlatformSessionId}
 
-	for el := adv.GetPeers().Oldest(); el != nil; el = el.Next() {
-		if el.Value == peer {
+	for el := range adv.GetPeers().Values() {
+		if el == peer {
 			continue
 		}
-		if currentSess, ok := models.GetSessionByUserId(el.Value.GetUser().GetId()); ok {
+		if currentSess, ok := models.GetSessionByUserId(el.GetUser().GetId()); ok {
 			wss.SendOrStoreMessage(
 				currentSess,
 				"PlatformSessionUpdateMessage",

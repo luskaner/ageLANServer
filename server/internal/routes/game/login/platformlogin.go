@@ -26,8 +26,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.RngLock.Lock()
-	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
-	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
+	t2 := t - i.Rng.Int64N(3600*2-3600+1) + 3600
+	t3 := t - i.Rng.Int64N(3600*2-3600+1) + 3600
 	i.RngLock.Unlock()
 	game := models.G(r)
 	title := game.Title()
