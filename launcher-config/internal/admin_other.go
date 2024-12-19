@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/process"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"net"
 	"time"
 )
 
@@ -25,4 +27,8 @@ func postAgentStart(file string) {
 			time.Sleep(time.Second)
 		}
 	}
+}
+
+func DialIPC() (net.Conn, error) {
+	return net.Dial("unix", launcherCommon.ConfigAdminIpcPath())
 }
