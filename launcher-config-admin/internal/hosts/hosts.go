@@ -59,7 +59,7 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 	if f == nil {
 		return
 	}
-	existingHosts = mapset.NewSet[string]()
+	existingHosts = mapset.NewThreadUnsafeSet[string]()
 	var line string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {

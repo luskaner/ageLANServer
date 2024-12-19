@@ -35,14 +35,14 @@ var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
 func parseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmd := strings.Join(viper.GetStringSlice(name), " ")
+	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
 	for key, value := range values {
-		cmd = strings.ReplaceAll(cmd, fmt.Sprintf(`{%s}`, key), value)
+		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
 	}
 	if runtime.GOOS == "windows" {
-		cmd = reWinToLinVar.ReplaceAllString(cmd, `$$$1`)
+		cmdArgs = reWinToLinVar.ReplaceAllString(cmdArgs, `$$$1`)
 	}
-	args, err = shell.Fields(cmd, nil)
+	args, err = shell.Fields(cmdArgs, nil)
 	return
 }
 
@@ -50,9 +50,9 @@ var (
 	Version                        string
 	cfgFile                        string
 	gameCfgFile                    string
-	autoTrueFalseValues            = mapset.NewSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues      = mapset.NewSet[string](falseValue, "user", "local")
-	canBroadcastBattleServerValues = mapset.NewSet[string](autoValue, falseValue)
+	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
+	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
+	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN server",

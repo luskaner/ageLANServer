@@ -206,7 +206,7 @@ func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*comm
 					m = &common.AnnounceMessage{
 						Version: version,
 						Data:    data,
-						Ips:     mapset.NewSet[string](),
+						Ips:     mapset.NewThreadUnsafeSet[string](),
 					}
 					servers[id] = m
 				}
