@@ -77,11 +77,10 @@ func (r *MainResources) initializeResponses(gameId string) {
 			continue
 		}
 		if r.keyedFilenames.ContainsOne(name) {
-			var result = orderedmap.NewOrderedMap[string, any]()
-			err = json.Unmarshal(data, result)
-			if err == nil {
-				rawSignature, _ := result.Get("dataSignature")
-				serverSignature := rawSignature.(string)
+			re := regexp.MustCompile(`"dataSignature"\s*:\s*"(.*?)"`)
+			matches := re.FindStringSubmatch(string(data))
+			if len(matches) == 1 {
+				serverSignature := matches[1]
 				r.KeyedFiles[name] = data
 				r.nameToSignature[name] = serverSignature
 			}
