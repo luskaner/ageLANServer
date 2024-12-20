@@ -13,6 +13,7 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"golang.org/x/net/ipv4"
 	"net"
+	"net/http"
 	"net/netip"
 	"os"
 	"path"
@@ -81,7 +82,15 @@ func GetExecutablePath(executable string) string {
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
-	return HttpGet(fmt.Sprintf("https://%s/test", host), insecureSkipVerify) == common.ErrSuccess
+	tr := &http.Transport{
+		TLSClientConfig: TlsConfig(insecureSkipVerify),
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Head(fmt.Sprintf("https://%s/test", host))
+	if err != nil {
+		return false
+	}
+	return resp.StatusCode == http.StatusOK
 }
 
 func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn {
