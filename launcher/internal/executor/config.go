@@ -7,9 +7,11 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
 func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
+	reloadSystemCertificates := false
 	args := make([]string, 0)
 	args = append(args, "setup")
 	if game != "" {
@@ -29,10 +31,12 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		}
 	}
 	if addLocalCertData != nil {
+		reloadSystemCertificates = true
 		args = append(args, "-l")
 		args = append(args, base64.StdEncoding.EncodeToString(addLocalCertData))
 	}
 	if addUserCertData != nil {
+		reloadSystemCertificates = true
 		args = append(args, "-u")
 		args = append(args, base64.StdEncoding.EncodeToString(addUserCertData))
 	}
@@ -46,6 +50,9 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "-c")
 	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	if reloadSystemCertificates {
+		certStore.ReloadSystemCertificates()
+	}
 	return
 }
 
@@ -53,6 +60,9 @@ func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert 
 	args := []string{launcherCommon.ConfigRevertCmd}
 	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	if removeUserCert || removeLocalCert {
+		certStore.ReloadSystemCertificates()
+	}
 	return
 }
 
