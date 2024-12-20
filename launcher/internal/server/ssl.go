@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
@@ -11,17 +10,34 @@ import (
 	"path/filepath"
 )
 
+func TlsConfig(insecureSkipVerify bool) *tls.Config {
+	return &tls.Config{
+		InsecureSkipVerify: insecureSkipVerify,
+	}
+}
+
+func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), TlsConfig(insecureSkipVerify))
+	if err != nil {
+		return nil
+	}
+	return conn
+}
+
 func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
-	// 22 exit code means the host could be accessed and ssl certificate was tested (if specified)
-	return HttpGet(fmt.Sprintf("https://%s", host), insecureSkipVerify) == 22
+	conn := connectToServer(host, insecureSkipVerify)
+	if conn == nil {
+		return false
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+	return conn != nil
 }
 
 func ReadCertificateFromServer(host string) *x509.Certificate {
-	conf := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), conf)
-	if err != nil {
+	conn := connectToServer(host, true)
+	if conn == nil {
 		return nil
 	}
 	defer func() {
