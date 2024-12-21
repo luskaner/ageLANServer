@@ -170,13 +170,13 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 	if executable != serverExecutablePath {
 		fmt.Println("Found server executable path:", serverExecutablePath)
 	}
-	if !common.HasCertificatePair(serverExecutablePath) {
+
+	if exists, certificateFolder, cert := common.CertificatePair(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) {
 		if !canTrustCertificate {
-			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing. Generate your own certificates manually.")
-			errorCode = internal.ErrServerCertMissing
+			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			errorCode = internal.ErrServerCertMissingExpired
 			return
 		}
-		certificateFolder := common.CertificatePairFolder(serverExecutablePath)
 		if certificateFolder == "" {
 			fmt.Println("Cannot find certificate folder of the server. Make sure the folder structure of the server is correct.")
 			errorCode = internal.ErrServerCertDirectory
