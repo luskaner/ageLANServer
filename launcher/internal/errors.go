@@ -18,7 +18,7 @@ const (
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
-	ErrServerCertMissing
+	ErrServerCertMissingExpired
 	ErrServerCertDirectory
 	ErrServerCertCreate
 	ErrServerStart

@@ -6,8 +6,7 @@ builds:
     main: ./server
     binary: server
     goos: [ windows ]
-    goarch: [ "386", arm ]
-    goarm: [ "7" ]
+    goarch: [ "386" ]
   - id: server_32_linux
     main: ./server
     binary: server
@@ -63,9 +62,8 @@ builds:
     main: ./server-genCert
     binary: bin/genCert
     goos: [ windows ]
-    goarch: [ "386", arm ]
+    goarch: [ "386" ]
     goamd64: [ "v1" ]
-    goarm: [ "7" ]
   - id: server-genCert_32_linux
     main: ./server-genCert
     binary: bin/genCert
@@ -474,7 +472,6 @@ archives:
       {{- .RawVersion }}_win
       {{- if eq .Arch "386" }}_x86-32
       {{- else if eq .Arch "amd64" }}_x86-64
-      {{- else if eq .Arch "arm" }}_arm32
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
     files:

@@ -40,7 +40,7 @@ func GameMiddleware(next http.Handler) http.Handler {
 					gameId = session.GetGameId()
 				}
 			}
-			gameSet := mapset.NewSet[string](viper.GetStringSlice("Games")...)
+			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
 			if !gameSet.ContainsOne(gameId) {
 				http.Error(w, "Unavailable game type", http.StatusBadRequest)
 				return

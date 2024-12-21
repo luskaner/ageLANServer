@@ -7,7 +7,6 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"net"
-	"os"
 )
 
 var mappedCdn = false
@@ -121,29 +120,15 @@ func handleRevert(decoder *gob.Decoder) int {
 }
 
 func RunIpcServer() (errorCode int) {
-	ipcPath := launcherCommon.ConfigAdminIpcName()
-
-	if err := os.Remove(ipcPath); err != nil && !os.IsNotExist(err) {
-		errorCode = ErrListen
-		return
-	}
-
-	defer func() {
-		_ = os.Remove(ipcPath)
-	}()
-
-	l, err := net.Listen("unix", ipcPath)
+	l, err := SetupIpcServer()
 	if err != nil {
 		errorCode = ErrListen
 		return
 	}
 	defer func(l net.Listener) {
 		_ = l.Close()
+		RevertIpcServer()
 	}(l)
-
-	if err = os.Chmod(ipcPath, 0666); err != nil {
-		return
-	}
 
 	var conn net.Conn
 	for {

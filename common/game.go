@@ -8,4 +8,4 @@ const (
 	GameAoE3 = "age3"
 )
 
-var SupportedGames = mapset.NewSet[string](GameAoE1, GameAoE2, GameAoE3)
+var SupportedGames = mapset.NewThreadUnsafeSet[string](GameAoE1, GameAoE2, GameAoE3)
