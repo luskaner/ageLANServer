@@ -5,6 +5,7 @@ import (
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
+	"slices"
 )
 
 func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
@@ -18,12 +19,7 @@ func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	title := game.Title()
 	advs := models.G(r).Advertisements().FindAdvertisementsEncoded(title, func(adv *models.MainAdvertisement) bool {
-		for _, advId := range advsIds {
-			if adv.GetId() == advId {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(advsIds, adv.GetId())
 	})
 	if advs == nil {
 		i.JSON(&w,

@@ -3,11 +3,13 @@ package server
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func TlsConfig(insecureSkipVerify bool) *tls.Config {
@@ -56,6 +58,29 @@ func GenerateCertificatePair(certificateFolder string) (result *exec.Result) {
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}
-	result = exec.Options{File: exePath, Wait: true, ExitCode: true}.Exec()
+	result = exec.Options{File: exePath, Wait: true, Args: []string{"-r"}, ExitCode: true}.Exec()
 	return
+}
+
+func CertificateSoonExpired(cert string) bool {
+	if cert == "" {
+		return true
+	}
+
+	certPEM, err := os.ReadFile(cert)
+	if err != nil {
+		return true
+	}
+
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return true
+	}
+
+	crt, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return true
+	}
+
+	return time.Now().Add(24 * time.Hour).After(crt.NotAfter)
 }

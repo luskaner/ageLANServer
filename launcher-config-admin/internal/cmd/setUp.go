@@ -64,13 +64,13 @@ var setUpCmd = &cobra.Command{
 			fmt.Println("Adding IP mappings")
 			mappings := make(map[string]mapset.Set[string])
 			if len(cmd.MapIPs) > 0 {
-				mappings[common.Domain] = mapset.NewSet[string]()
+				mappings[common.Domain] = mapset.NewThreadUnsafeSet[string]()
 				for _, ip := range cmd.MapIPs {
 					mappings[common.Domain].Add(ip.String())
 				}
 			}
 			if cmd.MapCDN {
-				mappings[launcherCommon.CDNDomain] = mapset.NewSet[string]()
+				mappings[launcherCommon.CDNDomain] = mapset.NewThreadUnsafeSet[string]()
 				mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
 			}
 			if ok, _ := hosts.AddHosts(mappings); ok {
