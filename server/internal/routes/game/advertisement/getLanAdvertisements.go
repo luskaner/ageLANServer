@@ -26,7 +26,7 @@ func GetLanAdvertisements(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	lanServerGuids := strings.Split(strings.Trim(q.RelayRegions, `[]"`), ",")
+	lanServerGuids := strings.Split(strings.ReplaceAll(strings.Trim(q.RelayRegions, `[]`), `"`, ``), ",")
 	sess, _ := middleware.Session(r)
 	lanServerGuidsMap := make(map[string]struct{}, len(lanServerGuids))
 	for _, guid := range lanServerGuids {
