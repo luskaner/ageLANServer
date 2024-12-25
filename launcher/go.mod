@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20241204232812-4e96c2e19aea
-	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241111163256-bdcc7ac24582
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241225211103-3a8661980cd5
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/net v0.33.0
