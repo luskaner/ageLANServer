@@ -1,6 +1,7 @@
 package models
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"sync"
 )
@@ -10,7 +11,7 @@ type MainPeer struct {
 	user          *MainUser
 	race          int32
 	team          int32
-	invites       *i.SafeSet[*MainUser]
+	invites       mapset.Set[*MainUser]
 	lock          *sync.RWMutex
 }
 
@@ -53,11 +54,11 @@ func (peer *MainPeer) Invite(user *MainUser) {
 }
 
 func (peer *MainPeer) Uninvite(user *MainUser) {
-	peer.invites.Delete(user)
+	peer.invites.Remove(user)
 }
 
 func (peer *MainPeer) IsInvited(user *MainUser) bool {
-	return peer.invites.Has(user)
+	return peer.invites.ContainsOne(user)
 }
 
 func (peer *MainPeer) Update(race int32, team int32) {

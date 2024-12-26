@@ -58,7 +58,7 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		if cmd.UnmapCDN || cmd.UnmapIPs {
-			hsts := mapset.NewSet[string]()
+			hsts := mapset.NewThreadUnsafeSet[string]()
 			if cmd.UnmapIPs {
 				hsts.Add(common.Domain)
 			}
