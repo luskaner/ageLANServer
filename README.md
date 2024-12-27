@@ -15,7 +15,7 @@ Supported games:
 connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-ℹ️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
+⚠️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
 
 ℹ️ My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information
 to download a Steam Emulator and play 100% offline.
@@ -152,15 +152,13 @@ require admin rights elevation.**
 - Age of Empires II: Definitive Edition
   on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
-  Windows*). Requires a late 2023 version of the game (*use at least an early 2024 version*).
+  Windows*). Requires a late 2023 version of the game.
 - Age of Empires III: Definitive Edition
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
-  Windows*). Requires a late 2023 version of the game (*use at least an early 2024 version*).
+  Windows*). Requires a late 2023 version of the game.
 
 *Note: An up-to-date version is highly recommended as there are known issues with older versions.*
-*Note 2: You could [compile](DEVELOPMENT.md) the programs with the domain changed to `aoe-api.reliclink.com`
-in [here](common/common.go#L4) to support older versions but then newer versions would not work.*
 
 ## Binaries
 
@@ -172,32 +170,32 @@ supported operating systems.
 
 * Full:
     * Windows:
-        * **10 on x86-64**: ..._full_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ..._full_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ...\_full\_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ...\_full\_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: ..._full_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ..._full_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 on x86-64**: ..._launcher_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ..._launcher_*A.B.C*_win_arm64.tar.xz
+        * **10 on x86-64**: ...\_launcher\_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ...\_launcher\_*A.B.C*_win_arm64.tar.xz
     * Linux:
-        * **x86-64**: ..._launcher_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ..._launcher_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10, Server 2025 or IoT on ARM64**: ..._server_*A.B.C*_win_arm64.zip
-        * **10 IoT on ARM32**: ..._server_*A.B.C*_win_arm32.zip
-        * **10, Server 2016 or IoT on x86-64**: ..._server_*A.B.C*_win_x86-64.zip
-        * **10 or 10 IoT on x86-32**: ..._server_*A.B.C*_win_x86-32.zip
+        * **10, Server 2025 or IoT on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
+        * **10 IoT on ARM32**: ...\_server\_*A.B.C*_win_arm32.zip
+        * **10, Server 2016 or IoT on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
+        * **10 or 10 IoT on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
     * Linux:
-        * Kernel 3.1 on **ARM64**: ..._server_*A.B.C*_linux_arm64.tar.xz
+        * Kernel 3.1 on **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 on **ARM32**:
-            * ARMv5 (armel): ..._server_*A.B.C*_linux_arm-5.tar.gz
-            * ARMv6 (sometimes called armhf): ..._server_*A.B.C*_linux_arm-6.tar.gz
-        * Kernel 2.6.23 on **x86-64**: ..._server_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 on **x86-32**: ..._server_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15): ..._server_*A.B.C*_mac.tar.gz
+            * ARMv5 (armel): ...\_server\_*A.B.C*_linux_arm-5.tar.gz
+            * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz
+        * Kernel 2.6.23 on **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
+        * Kernel 2.6.23 on **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
+    * macOS - Catalina (v10.15): ...\_server\_*A.B.C*_mac.tar.gz
 
 </details>
 
