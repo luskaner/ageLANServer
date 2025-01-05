@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.7.0
-	github.com/elliotchance/orderedmap/v3 v3.0.0
+	github.com/elliotchance/orderedmap/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
@@ -12,7 +12,7 @@ require (
 	github.com/luskaner/ageLANServer/common v0.0.0-20241204232812-4e96c2e19aea
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 )
 
 require (
