@@ -222,6 +222,7 @@ Exceptions on tag/commit signature:
 * Commits:
     * *631cfa1* through *9eb66cf* (*both included*): rebase and merge PR issue.
     * *55697d4*: rebase of dependabot.
+    * *feb28de*: partially verified due to dependabot.
 
 </details>
 
@@ -272,7 +273,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    the `Client.Executable` section to point to the game launcher path.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-4. **Execute `launcher/launcher-<game>`: you will be asked for
+4. **Execute `launcher/launcher-<game>`**: you will be asked for
    admin elevation and
    confirmation of other dialogs as
    needed, you
