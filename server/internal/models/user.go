@@ -92,7 +92,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, isXbox bool, platformUserId uint64, alias string) *MainUser {
 	if viper.GetBool("GeneratePlatformUserId") {
 		ipStr, _, err := net.SplitHostPort(remoteAddr)
-		if err != nil {
+		if err == nil {
 			ip := net.ParseIP(ipStr)
 			if ip != nil {
 				ipV4 := ip.To4()
