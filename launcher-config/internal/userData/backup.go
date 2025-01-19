@@ -1,9 +1,12 @@
 package userData
 
 import (
+	"errors"
 	"github.com/luskaner/ageLANServer/common"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 type Data struct {
@@ -34,34 +37,53 @@ func (d Data) originalPath(gameId string) string {
 }
 
 func (d Data) absolutePath(gameId string) string {
-	return filepath.Join(Path(gameId), d.Path)
+	return filepath.Join(path(gameId), d.Path)
 }
 
-func Path(gameId string) string {
+func path(gameId string) string {
 	return filepath.Join(basePath(gameId), finalPath(gameId))
 }
 
-func (d Data) switchPaths(gameId, backupPath string, currentPath string) bool {
+func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok bool) {
+	if _, err := os.Stat(backupPath); err == nil {
+		return
+	}
+
 	absolutePath := d.absolutePath(gameId)
 	var mode os.FileMode
 
-	if _, err := os.Stat(absolutePath); err != nil {
-		parent := absolutePath
-		for {
-			parent = filepath.Dir(parent)
-			if _, err = os.Stat(parent); !os.IsNotExist(err) {
-				break
-			}
-		}
+	if _, err := os.Stat(absolutePath); errors.Is(err, fs.ErrNotExist) {
+		oldParent := absolutePath
+		newParent := filepath.Dir(oldParent)
 		var info os.FileInfo
-		if info, err = os.Stat(parent); err == nil {
-			mode = info.Mode()
-			if err = os.MkdirAll(absolutePath, mode); err != nil {
-				return false
+		for {
+			if runtime.GOOS == "linux" {
+				if oldParent == newParent {
+					return
+				}
+			} else if newParent == "." {
+				return
 			}
-		} else {
-			return false
+			info, err = os.Stat(newParent)
+			if err == nil {
+				mode = info.Mode()
+				if err = os.MkdirAll(absolutePath, mode); err != nil {
+					return
+				}
+				break
+			} else if errors.Is(err, fs.ErrNotExist) {
+				oldParent = newParent
+				newParent = filepath.Dir(newParent)
+			} else {
+				return
+			}
 		}
+	} else if err != nil {
+		return
+	}
+
+	if err := os.Rename(absolutePath, backupPath); err != nil {
+		return
 	}
 
 	var revertMethods []func() bool
@@ -73,37 +95,28 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) bool {
 		}
 	}()
 
-	if _, err := os.Stat(backupPath); err == nil {
-		return false
-	}
+	revertMethods = append(revertMethods, func() bool {
+		return os.Rename(backupPath, absolutePath) == nil
+	})
 
-	if err := os.Rename(absolutePath, backupPath); err != nil {
-		return false
-	} else {
-		revertMethods = append(revertMethods, func() bool {
-			return os.Rename(backupPath, absolutePath) == nil
-		})
-	}
-
-	if _, err := os.Stat(currentPath); err != nil {
+	if _, err := os.Stat(currentPath); errors.Is(err, fs.ErrNotExist) {
 		if mode == 0 {
 			var absInfo os.FileInfo
 			if absInfo, err = os.Stat(backupPath); err == nil {
 				mode = absInfo.Mode()
 			} else {
-				return false
+				return
 			}
 		}
 		if err = os.Mkdir(currentPath, mode); err != nil {
-			return false
+			return
 		}
+	} else if err != nil {
+		return
 	}
 
 	if err := os.Rename(currentPath, absolutePath); err != nil {
-		revertMethods = append(revertMethods, func() bool {
-			return os.Rename(absolutePath, currentPath) == nil
-		})
-		return false
+		return
 	}
 
 	revertMethods = nil

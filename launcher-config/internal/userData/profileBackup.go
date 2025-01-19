@@ -11,7 +11,7 @@ var profiles []Data
 
 func setProfileData(gameId string) bool {
 	profiles = make([]Data, 0)
-	entries, err := os.ReadDir(Path(gameId))
+	entries, err := os.ReadDir(path(gameId))
 	if err != nil {
 		return false
 	}
