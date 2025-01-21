@@ -23,4 +23,5 @@ const (
 	ErrStartAgentVerify
 	ErrAdminSetup
 	ErrAdminSetupRevert
+	ErrRevertStopAgent
 )
