@@ -17,9 +17,9 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	fmt.Println("Looking for the game...")
-	executer := game.MakeExecutor(gameId, executable)
+	executer := game.MakeExecutor(c.gameId, executable)
 	var customExecutor game.CustomExecutor
 	switch executer.(type) {
 	case game.SteamExecutor:
@@ -49,9 +49,9 @@ func (c *Config) LaunchAgentAndGame(gameId string, executable string, args []str
 		steamProcess, xboxProcess := executer.GameProcesses()
 		var revertFlags []string
 		if requiresConfigRevert {
-			revertFlags = executor.RevertFlags(gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
+			revertFlags = executor.RevertFlags(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN)
 		}
-		result := executor.RunAgent(gameId, steamProcess, xboxProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
+		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
 		if !result.Success() {
 			fmt.Println("Failed to start agent.")
 			errorCode = internal.ErrAgentStart

@@ -31,14 +31,19 @@ func (creds *Credentials) Delete(signature string) {
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
 	for {
-		i.RngLock.Lock()
-		for j := 0; j < 32; j++ {
-			b[j] = byte(i.Rng.UintN(256))
-		}
-		i.RngLock.Unlock()
-		creds.hashLock.Lock()
-		hash := sha256.Sum256(b)
-		creds.hashLock.Unlock()
+	  func() {
+			i.RngLock.Lock()
+			defer i.RngLock.Unlock()
+			for j := 0; j < 32; j++ {
+			  b[j] = byte(i.Rng.UintN(256))
+		  }
+		}()
+		var hash [32]byte
+		func() {
+			creds.hashLock.Lock()
+			defer creds.hashLock.Unlock()
+			hash = sha256.Sum256(b)
+		}()
 		sig := base64.StdEncoding.EncodeToString(hash[:])
 		if _, exists := creds.GetCredentials(sig); !exists {
 			return sig

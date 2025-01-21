@@ -109,6 +109,7 @@ var (
 				errorCode = launcherCommon.ErrInvalidGame
 				return
 			}
+			config.SetGameId(gameId)
 			serverValues := map[string]string{
 				"Game": gameId,
 			}
@@ -163,6 +164,12 @@ var (
 				return
 			}
 
+			if cmdUtils.GameRunning(gameId) {
+				errorCode = internal.ErrGameAlreadyRunning
+				return
+			}
+
+			config.SetGameId(gameId)
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 			go func() {
@@ -179,10 +186,6 @@ var (
 					config.Revert()
 				}
 			}()
-			if cmdUtils.GameRunning(gameId) {
-				errorCode = internal.ErrGameAlreadyRunning
-				return
-			}
 			// Setup
 			fmt.Printf("Setting up %s...\n", gameId)
 			if len(setupCommand) > 0 {
@@ -268,11 +271,11 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.IsolateUserData(gameId, isolateMetadata, isolateProfiles)
+			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(gameId, clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )

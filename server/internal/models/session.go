@@ -29,9 +29,11 @@ func generateSessionId() string {
 	sessionId := make([]rune, 30)
 	for {
 		for i := range sessionId {
-			internal.RngLock.Lock()
-			sessionId[i] = sessionLetters[internal.Rng.IntN(len(sessionLetters))]
-			internal.RngLock.Unlock()
+			func() {
+				internal.RngLock.Lock()
+				defer internal.RngLock.Unlock()
+				sessionId[i] = sessionLetters[internal.Rng.IntN(len(sessionLetters))]
+			}()
 		}
 		sessionIdStr := string(sessionId)
 		if _, exists := GetSessionById(sessionIdStr); !exists {
@@ -54,17 +56,24 @@ func (sess *Session) GetGameId() string {
 
 func (sess *Session) AddMessage(message internal.A) {
 	for {
-		sess.messagesLock.RLock()
-		if sess.messagesIndex == uint8(len(sess.messages)) {
-			sess.messagesLock.RUnlock()
+		var wait bool
+		func() {
+			sess.messagesLock.RLock()
+			defer sess.messagesLock.RUnlock()
+			if sess.messagesIndex == uint8(len(sess.messages)) {
+				wait = true
+			}
+		}()
+		if wait {
 			time.Sleep(time.Millisecond * 100)
 			continue
 		}
-		sess.messagesLock.RUnlock()
-		sess.messagesLock.Lock()
-		sess.messages[sess.messagesIndex] = message
-		sess.messagesIndex++
-		sess.messagesLock.Unlock()
+		func() {
+			sess.messagesLock.Lock()
+			defer sess.messagesLock.Unlock()
+			sess.messages[sess.messagesIndex] = message
+			sess.messagesIndex++
+		}()
 		break
 	}
 }
@@ -87,14 +96,18 @@ func (sess *Session) WaitForMessages(ackNum uint) (uint, []internal.A) {
 			return returnFn()
 		default:
 			var i uint8
-			sess.messagesLock.RLock()
-			for i = 0; i < sess.messagesIndex; i++ {
-				results = append(results, sess.messages[i])
-			}
-			sess.messagesLock.RUnlock()
-			sess.messagesLock.Lock()
-			sess.messagesIndex = 0
-			sess.messagesLock.Unlock()
+			func() {
+				sess.messagesLock.RLock()
+				defer sess.messagesLock.RUnlock()
+				for i = 0; i < sess.messagesIndex; i++ {
+					results = append(results, sess.messages[i])
+				}
+			}()
+			func() {
+				sess.messagesLock.Lock()
+				defer sess.messagesLock.Unlock()
+				sess.messagesIndex = 0
+			}()
 			if len(results) > 0 {
 				return returnFn()
 			}
