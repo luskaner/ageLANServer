@@ -45,12 +45,15 @@ func (users *MainUsers) Initialize() {
 }
 
 func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) *MainUser {
-	users.hasherLock.Lock()
-	_, _ = users.hasher.Write([]byte(identifier))
-	hsh := users.hasher.Sum(nil)
-	seed := binary.BigEndian.Uint64(hsh)
-	users.hasher.Reset()
-	users.hasherLock.Unlock()
+	var seed uint64
+	func() {
+		users.hasherLock.Lock()
+		defer users.hasherLock.Unlock()
+		_, _ = users.hasher.Write([]byte(identifier))
+		hsh := users.hasher.Sum(nil)
+		seed = binary.BigEndian.Uint64(hsh)
+		users.hasher.Reset()
+	}()
 	rng := rand.New(rand.NewSource(int64(seed)))
 	return &MainUser{
 		id:                rng.Int31(),
@@ -176,18 +179,18 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 }
 
 func (users *MainUsers) GetUserByStatId(id int32) (*MainUser, bool) {
-	for u := range users.store.Iter() {
-		if u.Value.statId == id {
-			return u.Value, true
+	for _, u := range users.store.IterValues() {
+		if u.statId == id {
+			return u, true
 		}
 	}
 	return nil, false
 }
 
 func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
-	for u := range users.store.Iter() {
-		if u.Value.id == id {
-			return u.Value, true
+	for _, u := range users.store.IterValues() {
+		if u.id == id {
+			return u, true
 		}
 	}
 	return nil, false
@@ -196,8 +199,8 @@ func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
 func (users *MainUsers) GetUserIds() []int32 {
 	userIds := make([]int32, users.store.Len())
 	j := 0
-	for u := range users.store.Iter() {
-		userIds[j] = u.Value.GetId()
+	for _, u := range users.store.IterValues() {
+		userIds[j] = u.GetId()
 		j++
 	}
 	return userIds
@@ -227,9 +230,12 @@ func (u *MainUser) GetExtraProfileInfo() i.A {
 }
 
 func (u *MainUser) GetProfileInfo(includePresence bool) i.A {
-	i.RngLock.Lock()
-	randomTimeDiff := i.Rng.Int63n(300-50+1) + 50
-	i.RngLock.Unlock()
+	var randomTimeDiff int64
+	func() {
+		i.RngLock.Lock()
+		defer i.RngLock.Unlock()
+		randomTimeDiff = i.Rng.Int63n(300-50+1) + 50
+	}()
 	profileInfo := i.A{
 		time.Now().UTC().Unix() - randomTimeDiff,
 		u.GetId(),
@@ -319,8 +325,8 @@ func (u *MainUser) SetAdvertisement(adv *MainAdvertisement) {
 func (users *MainUsers) getUsers() []*MainUser {
 	us := make([]*MainUser, users.store.Len())
 	j := 0
-	for u := range users.store.Iter() {
-		us[j] = u.Value
+	for _, u := range users.store.IterValues() {
+		us[j] = u
 		j++
 	}
 	return us

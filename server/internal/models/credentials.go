@@ -31,12 +31,17 @@ func (creds *Credentials) Delete(signature string) {
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
 	for {
-		i.RngLock.Lock()
-		i.Rng.Read(b)
-		i.RngLock.Unlock()
-		creds.hashLock.Lock()
-		hash := sha256.Sum256(b)
-		creds.hashLock.Unlock()
+		func() {
+			i.RngLock.Lock()
+			defer i.RngLock.Unlock()
+			i.Rng.Read(b)
+		}()
+		var hash [32]byte
+		func() {
+			creds.hashLock.Lock()
+			defer creds.hashLock.Unlock()
+			hash = sha256.Sum256(b)
+		}()
 		sig := base64.StdEncoding.EncodeToString(hash[:])
 		if _, exists := creds.GetCredentials(sig); !exists {
 			return sig
@@ -83,9 +88,10 @@ func (cred *Credential) GetKey() string {
 
 func (creds *Credentials) removeCredentialsExpired() {
 	signaturesToRemove := mapset.NewSet[string]()
-	for cred := range creds.store.Iter() {
-		if cred.Value.Expired() {
-			signaturesToRemove.Add(cred.Key)
+	for _, credKey := range creds.store.IterKeys() {
+		credValue, ok := creds.store.Load(credKey)
+		if ok && credValue.Expired() {
+			signaturesToRemove.Add(credKey)
 		}
 	}
 	for sig := range signaturesToRemove.Iter() {

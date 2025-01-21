@@ -218,9 +218,11 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 	}
 	var id int32
 	for {
-		i.RngLock.Lock()
-		id = i.Rng.Int31n(math.MaxInt32)
-		i.RngLock.Unlock()
+		func() {
+			i.RngLock.Lock()
+			defer i.RngLock.Unlock()
+			id = i.Rng.Int31n(math.MaxInt32)
+		}()
 		_, exists := advs.store.Load(id)
 		if !exists {
 			adv := &MainAdvertisement{
@@ -229,9 +231,11 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 				peerLock: i.NewKeyRWMutex(),
 			}
 			adv.id = id
-			i.RngLock.Lock()
-			adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(254)+1)
-			i.RngLock.Unlock()
+			func() {
+				i.RngLock.Lock()
+				defer i.RngLock.Unlock()
+				adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.Intn(254)+1)
+			}()
 			adv.relayRegion = advFrom.RelayRegion
 			adv.party = advFrom.Party
 			adv.race = advFrom.Race
@@ -293,36 +297,38 @@ func (advs *MainAdvertisements) Update(adv *MainAdvertisement, advFrom *shared.A
 }
 
 func (advs *MainAdvertisements) update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
-	adv.lock.Lock()
-	if adv.host != nil {
-		adv.host.SetAdvertisement(nil)
-		adv.host = nil
-	}
-	adv.host, _ = advs.users.GetUserById(advFrom.HostId)
-	adv.host.SetAdvertisement(adv)
-	adv.automatchPollId = advFrom.AutomatchPollId
-	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
-	adv.mapName = advFrom.MapName
-	adv.description = advFrom.Description
-	adv.dataChecksum = advFrom.DataChecksum
-	adv.modDll.checksum = advFrom.ModDllChecksum
-	adv.modDll.file = advFrom.ModDllFile
-	adv.modName = advFrom.ModName
-	adv.modVersion = advFrom.ModVersion
-	adv.observers.delay = advFrom.ObserverDelay
-	adv.observers.enabled = advFrom.Observable
-	adv.observers.password = advFrom.ObserverPassword
-	adv.password.enabled = advFrom.Passworded
-	adv.password.value = advFrom.Password
-	adv.visible = advFrom.Visible
-	adv.versionFlags = advFrom.VersionFlags
-	adv.joinable = advFrom.Joinable
-	adv.matchType = advFrom.MatchType
-	adv.maxPlayers = advFrom.MaxPlayers
-	adv.options = advFrom.Options
-	adv.slotInfo = advFrom.SlotInfo
-	adv.platformSessionId = advFrom.PlatformSessionId
-	adv.lock.Unlock()
+	func() {
+		adv.lock.Lock()
+		defer adv.lock.Unlock()
+		if adv.host != nil {
+			adv.host.SetAdvertisement(nil)
+			adv.host = nil
+		}
+		adv.host, _ = advs.users.GetUserById(advFrom.HostId)
+		adv.host.SetAdvertisement(adv)
+		adv.automatchPollId = advFrom.AutomatchPollId
+		adv.appBinaryChecksum = advFrom.AppBinaryChecksum
+		adv.mapName = advFrom.MapName
+		adv.description = advFrom.Description
+		adv.dataChecksum = advFrom.DataChecksum
+		adv.modDll.checksum = advFrom.ModDllChecksum
+		adv.modDll.file = advFrom.ModDllFile
+		adv.modName = advFrom.ModName
+		adv.modVersion = advFrom.ModVersion
+		adv.observers.delay = advFrom.ObserverDelay
+		adv.observers.enabled = advFrom.Observable
+		adv.observers.password = advFrom.ObserverPassword
+		adv.password.enabled = advFrom.Passworded
+		adv.password.value = advFrom.Password
+		adv.visible = advFrom.Visible
+		adv.versionFlags = advFrom.VersionFlags
+		adv.joinable = advFrom.Joinable
+		adv.matchType = advFrom.MatchType
+		adv.maxPlayers = advFrom.MaxPlayers
+		adv.options = advFrom.Options
+		adv.slotInfo = advFrom.SlotInfo
+		adv.platformSessionId = advFrom.PlatformSessionId
+	}()
 	adv.UpdateState(advFrom.State)
 }
 
@@ -352,10 +358,12 @@ func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, rac
 }
 
 func (advs *MainAdvertisements) RemovePeer(adv *MainAdvertisement, user *MainUser) {
-	adv.peerLock.Lock(user.GetId())
-	adv.peers.Delete(user)
-	user.SetAdvertisement(nil)
-	adv.peerLock.Unlock(user.GetId())
+	func() {
+		adv.peerLock.Lock(user.GetId())
+		defer adv.peerLock.Unlock(user.GetId())
+		adv.peers.Delete(user)
+		user.SetAdvertisement(nil)
+	}()
 	if adv.host == user {
 		advs.Delete(adv)
 	}
@@ -403,9 +411,11 @@ func (adv *MainAdvertisement) EncodePeers() i.A {
 	for el := adv.peers.Oldest(); el != nil; el = el.Next() {
 		p := el.Value
 		userId := el.Key.GetId()
-		adv.peerLock.RLock(userId)
-		peers[j] = p.Encode()
-		adv.peerLock.RUnlock(userId)
+		func() {
+			adv.peerLock.RLock(userId)
+			defer adv.peerLock.RUnlock(userId)
+			peers[j] = p.Encode()
+		}()
 		j++
 	}
 	return peers
@@ -487,12 +497,14 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 
 func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdvertisement) bool) []*MainAdvertisement {
 	var res []*MainAdvertisement
-	for adv := range advs.store.Iter() {
-		adv.Value.lock.RLock()
-		if matches(adv.Value) {
-			res = append(res, adv.Value)
-		}
-		adv.Value.lock.RUnlock()
+	for _, adv := range advs.store.IterValues() {
+		func() {
+			adv.lock.RLock()
+			defer adv.lock.RUnlock()
+			if matches(adv) {
+				res = append(res, adv)
+			}
+		}()
 	}
 	return res
 }
@@ -501,9 +513,11 @@ func (advs *MainAdvertisements) FindAdvertisementsEncoded(gameId string, matches
 	var res []i.A
 	advsOriginal := advs.FindAdvertisements(matches)
 	for _, adv := range advsOriginal {
-		adv.lock.RLock()
-		res = append(res, adv.Encode(gameId))
-		adv.lock.RUnlock()
+		func() {
+			adv.lock.RLock()
+			defer adv.lock.RUnlock()
+			res = append(res, adv.Encode(gameId))
+		}()
 	}
 	return res
 }
