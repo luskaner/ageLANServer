@@ -25,10 +25,14 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
-	i.RngLock.Lock()
-	t2 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
-	t3 := t - i.Rng.Int63n(3600*2-3600+1) + 3600
-	i.RngLock.Unlock()
+	var t2 int64
+	var t3 int64
+	func() {
+		i.RngLock.Lock()
+		defer i.RngLock.Unlock()
+		t2 = t - i.Rng.Int63n(3600*2-3600+1) + 3600
+		t3 = t - i.Rng.Int63n(3600*2-3600+1) + 3600
+	}()
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
