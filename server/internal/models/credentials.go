@@ -31,12 +31,12 @@ func (creds *Credentials) Delete(signature string) {
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
 	for {
-	  func() {
+		func() {
 			i.RngLock.Lock()
 			defer i.RngLock.Unlock()
 			for j := 0; j < 32; j++ {
-			  b[j] = byte(i.Rng.UintN(256))
-		  }
+				b[j] = byte(i.Rng.UintN(256))
+			}
 		}()
 		var hash [32]byte
 		func() {
@@ -90,9 +90,10 @@ func (cred *Credential) GetKey() string {
 
 func (creds *Credentials) removeCredentialsExpired() {
 	signaturesToRemove := mapset.NewThreadUnsafeSet[string]()
-	for cred := range creds.store.Iter() {
-		if cred.Value.Expired() {
-			signaturesToRemove.Add(cred.Key)
+	for _, credKey := range creds.store.IterKeys() {
+		credValue, ok := creds.store.Load(credKey)
+		if ok && credValue.Expired() {
+			signaturesToRemove.Add(credKey)
 		}
 	}
 	for sig := range signaturesToRemove.Iter() {
