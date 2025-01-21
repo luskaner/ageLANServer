@@ -61,11 +61,11 @@ func (sess *Session) AddMessage(message internal.A) {
 			sess.messagesLock.RLock()
 			defer sess.messagesLock.RUnlock()
 			if sess.messagesIndex == uint8(len(sess.messages)) {
-				time.Sleep(time.Millisecond * 100)
 				wait = true
 			}
 		}()
 		if wait {
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
 		func() {
