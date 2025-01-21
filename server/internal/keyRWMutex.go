@@ -14,15 +14,19 @@ func NewKeyRWMutex() *KeyRWMutex {
 }
 
 func (kl *KeyRWMutex) Lock(key interface{}) {
-	ok, lock := kl.lock(key)
+	ok, lock := kl.rlock(key)
 	if !ok {
 		lock = &sync.RWMutex{}
-		kl.mutexes[key] = lock
+		func() {
+			kl.mu.Lock()
+			defer kl.mu.Unlock()
+			kl.mutexes[key] = lock
+		}()
 	}
 	lock.Lock()
 }
 
-func (kl *KeyRWMutex) lock(key interface{}) (ok bool, lock *sync.RWMutex) {
+func (kl *KeyRWMutex) rlock(key interface{}) (ok bool, lock *sync.RWMutex) {
 	kl.mu.RLock()
 	defer kl.mu.RUnlock()
 	lock, ok = kl.mutexes[key]
@@ -30,7 +34,7 @@ func (kl *KeyRWMutex) lock(key interface{}) (ok bool, lock *sync.RWMutex) {
 }
 
 func (kl *KeyRWMutex) RLock(key interface{}) {
-	ok, lock := kl.lock(key)
+	ok, lock := kl.rlock(key)
 
 	if ok {
 		lock.RLock()
@@ -38,7 +42,7 @@ func (kl *KeyRWMutex) RLock(key interface{}) {
 }
 
 func (kl *KeyRWMutex) Unlock(key interface{}) {
-	ok, lock := kl.lock(key)
+	ok, lock := kl.rlock(key)
 
 	if ok {
 		lock.Unlock()
@@ -46,7 +50,7 @@ func (kl *KeyRWMutex) Unlock(key interface{}) {
 }
 
 func (kl *KeyRWMutex) RUnlock(key interface{}) {
-	ok, lock := kl.lock(key)
+	ok, lock := kl.rlock(key)
 
 	if ok {
 		lock.RUnlock()
