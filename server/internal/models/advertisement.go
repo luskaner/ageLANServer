@@ -221,7 +221,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 		func() {
 			i.RngLock.Lock()
 			defer i.RngLock.Unlock()
-			id = i.Rng.Int32(math.MaxInt32)
+			id = i.Rng.Int32()
 		}()
 		_, exists := advs.store.Load(id)
 		if !exists {
