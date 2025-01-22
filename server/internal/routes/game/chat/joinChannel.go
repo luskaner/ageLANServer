@@ -44,7 +44,7 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(r.RemoteAddr, string(jsonData))
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false)}}
-	for _, userId := range users.GetUserIds() {
+	for userId := range users.GetUserIds() {
 		var existingUserSession *models.Session
 		existingUserSession, ok = models.GetSessionByUserId(userId)
 		if ok {

@@ -90,9 +90,8 @@ func (cred *Credential) GetKey() string {
 
 func (creds *Credentials) removeCredentialsExpired() {
 	signaturesToRemove := mapset.NewThreadUnsafeSet[string]()
-	for _, credKey := range creds.store.IterKeys() {
-		credValue, ok := creds.store.Load(credKey)
-		if ok && credValue.Expired() {
+	for credKey, credValue := range creds.store.Iter() {
+		if credValue.Expired() {
 			signaturesToRemove.Add(credKey)
 		}
 	}

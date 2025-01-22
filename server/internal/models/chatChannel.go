@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/elliotchance/orderedmap/v3"
 	"github.com/luskaner/ageLANServer/server/internal"
+	"iter"
 	"strconv"
 	"sync"
 )
@@ -56,20 +57,17 @@ func (channel *MainChatChannel) EncodeUsers() internal.A {
 	return channel.encodeUsers()
 }
 
-func (channel *MainChatChannel) getUsers() []*MainUser {
-	i := 0
-	users := make([]*MainUser, channel.users.Len())
-	for el := range channel.users.Values() {
-		users[i] = el
-		i++
-	}
-	return users
-}
+func (channel *MainChatChannel) GetUsers() iter.Seq[*MainUser] {
+	return func(yield func(user *MainUser) bool) {
+		channel.usersLock.RLock()
+		defer channel.usersLock.RUnlock()
 
-func (channel *MainChatChannel) GetUsers() []*MainUser {
-	channel.usersLock.RLock()
-	defer channel.usersLock.RUnlock()
-	return channel.getUsers()
+		for v := range channel.users.Values() {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 func (channel *MainChatChannel) AddUser(user *MainUser) internal.A {

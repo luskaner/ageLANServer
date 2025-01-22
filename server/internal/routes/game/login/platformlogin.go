@@ -46,7 +46,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	relationship.ChangePresence(users, u, 1)
 	profileInfo := u.GetProfileInfo(false)
 	if title == common.GameAoE3 {
-		for _, user := range users.GetUserIds() {
+		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := models.GetSessionByUserId(user)
 				if currentOk {

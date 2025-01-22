@@ -27,7 +27,7 @@ type MainUser struct {
 	isXbox            bool
 	presence          int8
 	presenceLock      *sync.RWMutex
-	chatChannels      map[int32]*MainChatChannel
+	chatChannels      *i.SafeMap[int32, *MainChatChannel]
 	advertisement     *MainAdvertisement
 	advertisementLock *sync.RWMutex
 }
@@ -66,7 +66,7 @@ func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId 
 		platformUserId:    platformUserId,
 		isXbox:            isXbox,
 		presenceLock:      &sync.RWMutex{},
-		chatChannels:      map[int32]*MainChatChannel{},
+		chatChannels:      i.NewSafeMap[int32, *MainChatChannel](),
 		advertisementLock: &sync.RWMutex{},
 	}
 }
@@ -180,7 +180,7 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 }
 
 func (users *MainUsers) GetUserByStatId(id int32) (*MainUser, bool) {
-	for _, u := range users.store.IterValues() {
+	for _, u := range users.store.Iter() {
 		if u.statId == id {
 			return u, true
 		}
@@ -189,7 +189,7 @@ func (users *MainUsers) GetUserByStatId(id int32) (*MainUser, bool) {
 }
 
 func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
-	for _, u := range users.store.IterValues() {
+	for _, u := range users.store.Iter() {
 		if u.id == id {
 			return u, true
 		}
@@ -197,14 +197,14 @@ func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
 	return nil, false
 }
 
-func (users *MainUsers) GetUserIds() []int32 {
-	userIds := make([]int32, users.store.Len())
-	j := 0
-	for _, u := range users.store.IterValues() {
-		userIds[j] = u.GetId()
-		j++
+func (users *MainUsers) GetUserIds() func(func(int32) bool) {
+	return func(yield func(int32) bool) {
+		for _, u := range users.store.Iter() {
+			if !yield(u.GetId()) {
+				return
+			}
+		}
 	}
-	return userIds
 }
 
 func (u *MainUser) GetExtraProfileInfo() i.A {
@@ -294,27 +294,22 @@ func (u *MainUser) GetAdvertisement() *MainAdvertisement {
 }
 
 func (u *MainUser) JoinChatChannel(channel *MainChatChannel) i.A {
-	u.chatChannels[channel.GetId()] = channel
+	u.chatChannels.Store(channel.GetId(), channel)
 	return channel.AddUser(u)
 }
 
 func (u *MainUser) LeaveChatChannel(channel *MainChatChannel) {
-	delete(u.chatChannels, channel.GetId())
+	u.chatChannels.Delete(channel.GetId())
 	channel.RemoveUser(u)
 }
 
-func (u *MainUser) GetChannels() []*MainChatChannel {
-	channels := make([]*MainChatChannel, len(u.chatChannels))
-	j := 0
-	for _, channel := range u.chatChannels {
-		channels[j] = channel
-		j++
-	}
-	return channels
+func (u *MainUser) GetChannels() func(func(int32, *MainChatChannel) bool) {
+	return u.chatChannels.Iter()
 }
 
 func (u *MainUser) SendChatChannelMessage(channel *MainChatChannel, text string) {
-	u.chatChannels[channel.GetId()].AddMessage(u, text)
+	storedChannel, _ := u.chatChannels.Load(channel.GetId())
+	storedChannel.AddMessage(u, text)
 }
 
 func (u *MainUser) SetAdvertisement(adv *MainAdvertisement) {
@@ -323,20 +318,9 @@ func (u *MainUser) SetAdvertisement(adv *MainAdvertisement) {
 	u.advertisement = adv
 }
 
-func (users *MainUsers) getUsers() []*MainUser {
-	us := make([]*MainUser, users.store.Len())
-	j := 0
-	for _, u := range users.store.IterValues() {
-		us[j] = u
-		j++
-	}
-	return us
-}
-
 func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool) []i.A {
-	us := users.getUsers()
 	var presenceData = make([]i.A, 0)
-	for _, u := range us {
+	for _, u := range users.store.Iter() {
 		if matches(u) {
 			presenceData = append(presenceData, u.GetProfileInfo(includePresence))
 		}

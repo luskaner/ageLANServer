@@ -13,7 +13,6 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrAnnouncementPort
 	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
@@ -39,5 +38,4 @@ const (
 	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
-	ErrUnsupportedOS
 )

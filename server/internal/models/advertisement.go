@@ -496,7 +496,7 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 
 func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdvertisement) bool) []*MainAdvertisement {
 	var res []*MainAdvertisement
-	for _, adv := range advs.store.IterValues() {
+	for _, adv := range advs.store.Iter() {
 		func() {
 			adv.lock.RLock()
 			defer adv.lock.RUnlock()
