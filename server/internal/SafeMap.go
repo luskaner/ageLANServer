@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"iter"
 	"sync"
 )
 
@@ -40,28 +41,15 @@ func (sm *SafeMap[K, V]) Len() int {
 	return len(sm.data)
 }
 
-func (sm *SafeMap[K, V]) IterValues() []V {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
+func (sm *SafeMap[K, V]) Iter() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		sm.mu.RLock()
+		defer sm.mu.RUnlock()
 
-	result := make([]V, 0, len(sm.data))
-
-	for _, v := range sm.data {
-		result = append(result, v)
+		for k, v := range sm.data {
+			if !yield(k, v) {
+				return
+			}
+		}
 	}
-
-	return result
-}
-
-func (sm *SafeMap[K, V]) IterKeys() []K {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-
-	result := make([]K, 0, len(sm.data))
-
-	for k := range sm.data {
-		result = append(result, k)
-	}
-
-	return result
 }

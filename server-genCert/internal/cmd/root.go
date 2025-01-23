@@ -25,9 +25,11 @@ var (
 				fmt.Println("Failed to determine certificate pair folder")
 				os.Exit(internal.ErrCertDirectory)
 			}
-			if !replace && common.HasCertificatePair(serverExe) {
-				fmt.Println("Already have certificate pair and force is false, set force to true or delete it manually.")
-				os.Exit(internal.ErrCertCreateExisting)
+			if !replace {
+				if exists, _, _ := common.CertificatePair(serverExe); exists {
+					fmt.Println("Already have certificate pair and force is false, set force to true or delete it manually.")
+					os.Exit(internal.ErrCertCreateExisting)
+				}
 			}
 			if !internal.GenerateCertificatePair(serverFolder) {
 				fmt.Println("Could not generate certificate pair.")

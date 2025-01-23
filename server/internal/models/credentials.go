@@ -34,7 +34,9 @@ func (creds *Credentials) generateSignature() string {
 		func() {
 			i.RngLock.Lock()
 			defer i.RngLock.Unlock()
-			i.Rng.Read(b)
+			for j := 0; j < 32; j++ {
+				b[j] = byte(i.Rng.UintN(256))
+			}
 		}()
 		var hash [32]byte
 		func() {
@@ -87,10 +89,9 @@ func (cred *Credential) GetKey() string {
 }
 
 func (creds *Credentials) removeCredentialsExpired() {
-	signaturesToRemove := mapset.NewSet[string]()
-	for _, credKey := range creds.store.IterKeys() {
-		credValue, ok := creds.store.Load(credKey)
-		if ok && credValue.Expired() {
+	signaturesToRemove := mapset.NewThreadUnsafeSet[string]()
+	for credKey, credValue := range creds.store.Iter() {
+		if credValue.Expired() {
 			signaturesToRemove.Add(credKey)
 		}
 	}

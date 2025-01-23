@@ -30,8 +30,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	func() {
 		i.RngLock.Lock()
 		defer i.RngLock.Unlock()
-		t2 = t - i.Rng.Int63n(3600*2-3600+1) + 3600
-		t3 = t - i.Rng.Int63n(3600*2-3600+1) + 3600
+		t2 = t - i.Rng.Int64N(3600*2-3600+1) + 3600
+		t3 = t - i.Rng.Int64N(3600*2-3600+1) + 3600
 	}()
 	game := models.G(r)
 	title := game.Title()
@@ -46,7 +46,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	relationship.ChangePresence(users, u, 1)
 	profileInfo := u.GetProfileInfo(false)
 	if title == common.GameAoE3 {
-		for _, user := range users.GetUserIds() {
+		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := models.GetSessionByUserId(user)
 				if currentOk {

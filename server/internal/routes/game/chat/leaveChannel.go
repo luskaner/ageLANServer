@@ -11,7 +11,7 @@ import (
 
 func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32) {
 	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false)}
-	for _, userId := range users.GetUserIds() {
+	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {
 			continue
 		}

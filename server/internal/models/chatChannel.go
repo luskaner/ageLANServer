@@ -1,8 +1,9 @@
 package models
 
 import (
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/luskaner/ageLANServer/server/internal"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"iter"
 	"strconv"
 	"sync"
 )
@@ -43,8 +44,8 @@ func (channel *MainChatChannel) Encode() internal.A {
 func (channel *MainChatChannel) encodeUsers() internal.A {
 	i := 0
 	c := make(internal.A, channel.users.Len())
-	for el := channel.users.Oldest(); el != nil; el = el.Next() {
-		c[i] = internal.A{0, el.Value.GetProfileInfo(false)}
+	for el := range channel.users.Values() {
+		c[i] = internal.A{0, el.GetProfileInfo(false)}
 		i++
 	}
 	return c
@@ -56,20 +57,17 @@ func (channel *MainChatChannel) EncodeUsers() internal.A {
 	return channel.encodeUsers()
 }
 
-func (channel *MainChatChannel) getUsers() []*MainUser {
-	i := 0
-	users := make([]*MainUser, channel.users.Len())
-	for el := channel.users.Oldest(); el != nil; el = el.Next() {
-		users[i] = el.Value
-		i++
-	}
-	return users
-}
+func (channel *MainChatChannel) GetUsers() iter.Seq[*MainUser] {
+	return func(yield func(user *MainUser) bool) {
+		channel.usersLock.RLock()
+		defer channel.usersLock.RUnlock()
 
-func (channel *MainChatChannel) GetUsers() []*MainUser {
-	channel.usersLock.RLock()
-	defer channel.usersLock.RUnlock()
-	return channel.getUsers()
+		for v := range channel.users.Values() {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 func (channel *MainChatChannel) AddUser(user *MainUser) internal.A {
@@ -89,7 +87,7 @@ func (channel *MainChatChannel) RemoveUser(user *MainUser) {
 func (channel *MainChatChannel) HasUser(user *MainUser) bool {
 	channel.usersLock.RLock()
 	defer channel.usersLock.RUnlock()
-	_, ok := channel.users.Load(user.GetId())
+	_, ok := channel.users.Get(user.GetId())
 	return ok
 }
 
@@ -104,13 +102,13 @@ type MainChatChannels struct {
 }
 
 func (channels *MainChatChannels) Initialize(chatChannels map[string]MainChatChannel) {
-	channels.index = orderedmap.New[int32, *MainChatChannel]()
+	channels.index = orderedmap.NewOrderedMap[int32, *MainChatChannel]()
 	for id, channel := range chatChannels {
 		idInt, err := strconv.ParseInt(id, 10, 32)
 		if err != nil {
 			panic(err)
 		}
-		channel.users = orderedmap.New[int32, *MainUser]()
+		channel.users = orderedmap.NewOrderedMap[int32, *MainUser]()
 		channel.usersLock = &sync.RWMutex{}
 		channel.messagesLock = &sync.RWMutex{}
 		channel.Id = int32(idInt)
@@ -121,8 +119,8 @@ func (channels *MainChatChannels) Initialize(chatChannels map[string]MainChatCha
 func (channels *MainChatChannels) Encode() internal.A {
 	c := make(internal.A, channels.index.Len())
 	i := 0
-	for el := channels.index.Oldest(); el != nil; el = el.Next() {
-		c[i] = el.Value.Encode()
+	for el := range channels.index.Values() {
+		c[i] = el.Encode()
 		i++
 	}
 	return c
