@@ -188,8 +188,8 @@ supported operating systems.
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10, Server 2025 or IoT on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
-        * **10, Server 2016 or IoT on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
+        * **10, Server (IoT) 2025 or IoT on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
+        * **10, (Storage) Server 2016, Server IoT 2019 or IoT on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
         * **10 or 10 IoT on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
     * Linux:
         * Kernel 3.1 on **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
