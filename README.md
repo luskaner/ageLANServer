@@ -116,10 +116,9 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 - Windows:
     - 10 (no S edition/mode).
-    - Server 2016.
+    - (Storage) Server 2016.
     - IoT (no Arm32).
     - Server IoT 2019.
-    - Storage Server 2016.
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
 
