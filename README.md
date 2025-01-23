@@ -15,7 +15,8 @@ Supported games:
 connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-⚠️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
+⚠️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals.
+Expect only updates to fix bugs and for dependencies/compiler.**
 
 ℹ️ My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information
 to download a Steam Emulator and play 100% offline.
@@ -113,9 +114,12 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 #### Stable
 
-- Windows 10 (no S edition/mode).
-- Windows Server 2016.
-- Windows IoT (*except Arm32*).
+- Windows:
+    - 10 (no S edition/mode).
+    - Server 2016.
+    - IoT (no Arm32).
+    - Server IoT 2019.
+    - Storage Server 2016.
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
 
