@@ -19,9 +19,9 @@ import (
 	"syscall"
 )
 
-func addUserCert(removedUserCert *x509.Certificate) bool {
+func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 	fmt.Println("Adding previously removed user certificate")
-	if err := wrapper.AddUserCert(removedUserCert); err == nil {
+	if err := wrapper.AddUserCerts(removedUserCerts); err == nil {
 		fmt.Println("Successfully added user certificate")
 		return true
 	} else {
@@ -52,9 +52,9 @@ func backupProfiles() bool {
 	}
 }
 
-func undoRevert(removedUserCert *x509.Certificate, restoredMetadata bool, restoredProfiles bool) {
-	if removedUserCert != nil {
-		addUserCert(removedUserCert)
+func undoRevert(removedUserCerts []*x509.Certificate, restoredMetadata bool, restoredProfiles bool) {
+	if removedUserCerts != nil {
+		addUserCerts(removedUserCerts)
 	}
 	if restoredMetadata {
 		backupMetadata()
@@ -69,7 +69,7 @@ var revertCmd = &cobra.Command{
 	Short: "Reverts configuration",
 	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata\n* User profiles",
 	Run: func(_ *cobra.Command, _ []string) {
-		var removedUserCert *x509.Certificate
+		var removedUserCerts []*x509.Certificate
 		var restoredMetadata bool
 		var restoredProfiles bool
 		var errorCode int
@@ -78,7 +78,7 @@ var revertCmd = &cobra.Command{
 		go func() {
 			_, ok := <-sigs
 			if ok {
-				undoRevert(removedUserCert, restoredMetadata, restoredProfiles)
+				undoRevert(removedUserCerts, restoredMetadata, restoredProfiles)
 				os.Exit(common.ErrSignal)
 			}
 		}()
@@ -104,11 +104,11 @@ var revertCmd = &cobra.Command{
 		}
 		fmt.Printf("Reverting configuration for %s...\n", gameId)
 		if RemoveUserCert {
-			fmt.Println("Removing user certificate, authorize it if needed...")
-			if removedUserCert, _ := wrapper.RemoveUserCert(); removedUserCert != nil {
-				fmt.Println("Successfully removed user certificate")
+			fmt.Println("Removing user certificates, authorize it if needed...")
+			if removedUserCerts, _ := wrapper.RemoveUserCerts(); removedUserCerts != nil {
+				fmt.Println("Successfully removed user certificates")
 			} else {
-				fmt.Println("Failed to remove user certificate")
+				fmt.Println("Failed to remove user certificates")
 				if !cmd.RemoveAll {
 					os.Exit(internal.ErrUserCertRemove)
 				}
@@ -122,8 +122,8 @@ var revertCmd = &cobra.Command{
 			} else {
 				errorCode = internal.ErrMetadataRestore
 				if !cmd.RemoveAll {
-					if removedUserCert != nil {
-						if !addUserCert(removedUserCert) {
+					if removedUserCerts != nil {
+						if !addUserCerts(removedUserCerts) {
 							errorCode = internal.ErrMetadataRestoreRevert
 						}
 					}
@@ -142,8 +142,8 @@ var revertCmd = &cobra.Command{
 			} else {
 				errorCode := internal.ErrProfilesRestore
 				if !cmd.RemoveAll {
-					if removedUserCert != nil {
-						if !addUserCert(removedUserCert) {
+					if removedUserCerts != nil {
+						if !addUserCerts(removedUserCerts) {
 							errorCode = internal.ErrProfilesRestoreRevert
 						}
 					}
@@ -163,21 +163,21 @@ var revertCmd = &cobra.Command{
 		if cmd.RemoveLocalCert || cmd.UnmapIPs || cmd.UnmapCDN {
 			agentConnected = internal.ConnectAgentIfNeeded() == nil
 			if agentConnected {
-				fmt.Println("Communicating with config-admin-agent to remove local cert and/or host mappings...")
+				fmt.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
 			} else {
-				if isAdmin {
-					fmt.Println("Running config-admin to remove local cert and/or host mappings...")
-				} else {
-					fmt.Println("Running config-admin to remove local cert and/or host mappings, authorize it if needed...")
+				fmt.Print("Running 'config-admin' to remove local cert and/or host mappings")
+				if !isAdmin {
+					fmt.Print(", authorize it if needed")
 				}
+				fmt.Println("...")
 			}
 			var err error
 			err, errorCode = internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
 			if err == nil && errorCode == common.ErrSuccess {
 				if agentConnected {
-					fmt.Println("Successfully communicated with config-admin-agent")
+					fmt.Println("Successfully communicated with 'config-admin-agent'")
 				} else {
-					fmt.Println("Successfully ran config-admin")
+					fmt.Println("Successfully ran 'config-admin'")
 				}
 			} else {
 				if err != nil {
@@ -190,8 +190,8 @@ var revertCmd = &cobra.Command{
 				}
 				errorCode = internal.ErrAdminRevert
 				if !cmd.RemoveAll {
-					if removedUserCert != nil {
-						if !addUserCert(removedUserCert) {
+					if removedUserCerts != nil {
+						if !addUserCerts(removedUserCerts) {
 							errorCode = internal.ErrAdminRevertRevert
 						}
 					}
@@ -207,26 +207,30 @@ var revertCmd = &cobra.Command{
 					}
 				}
 				if agentConnected {
-					fmt.Println("Failed to communicate with config-admin-agent")
+					fmt.Println("Failed to communicate with 'config-admin-agent'")
 				} else {
-					fmt.Println("Failed to run config-admin")
+					fmt.Println("Failed to run 'config-admin'")
 				}
 			}
+		}
+		// Ignore previous error if we don't failfast
+		if cmd.RemoveAll {
+			errorCode = common.ErrSuccess
 		}
 		if stopAgent {
 			failedStopAgent := true
 			if agentConnected {
-				fmt.Println("Trying to stop config-admin-agent.")
+				fmt.Println("Trying to stop 'config-admin-agent'.")
 				err := internal.StopAgentIfNeeded()
 				if err == nil {
 					if internal.ConnectAgentIfNeededWithRetries(false) {
-						fmt.Println("Stopped config-admin-agent")
+						fmt.Println("Stopped 'config-admin-agent'")
 						failedStopAgent = false
 					} else {
-						fmt.Println("Failed to stop config-admin-agent")
+						fmt.Println("Failed to stop 'config-admin-agent'")
 					}
 				} else {
-					fmt.Println("Failed to trying stopping config-admin-agent")
+					fmt.Println("Failed to trying stopping 'config-admin-agent'")
 					fmt.Println(err)
 				}
 			}
@@ -236,13 +240,13 @@ var revertCmd = &cobra.Command{
 					if isAdmin {
 						_, err := commonProcess.Kill(exeFileName)
 						if err == nil {
-							fmt.Println("Successfully killed config-admin-agent.")
+							fmt.Println("Successfully killed 'config-admin-agent'.")
 							failedStopAgent = false
 						} else {
-							fmt.Println("Failed to kill config-admin-agent")
+							fmt.Println("Failed to kill 'config-admin-agent'")
 						}
 					} else {
-						fmt.Println("Re-run as administrator to kill config-admin-agent")
+						fmt.Println("Re-run as administrator to kill 'config-admin-agent'")
 					}
 				}
 			}
@@ -293,7 +297,7 @@ func InitRevert() {
 		"stopAgent",
 		"g",
 		false,
-		"Stop the config-admin-agent if it is running after all operations",
+		"Stop the 'config-admin-agent' if it is running after all operations",
 	)
 	err := revertCmd.Flags().MarkHidden("stopAgent")
 	if err != nil {
