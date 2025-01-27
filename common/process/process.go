@@ -19,6 +19,10 @@ func steamProcess(gameId string) string {
 		return "AoE2DE_s.exe"
 	case common.GameAoE3:
 		return "AoE3DE_s.exe"
+	case common.GameAoE4:
+		return "RelicCardinal.exe"
+	case common.GameAoM:
+		return "AoMRT_s.exe"
 	default:
 		return ""
 	}
@@ -32,6 +36,10 @@ func xboxProcess(gameId string) string {
 		return "AoE2DE.exe"
 	case common.GameAoE3:
 		return "AoE3DE.exe"
+	case common.GameAoE4:
+		return "RelicCardinal_ws.exe"
+	case common.GameAoM:
+		return "AoMRT.exe"
 	default:
 		return ""
 	}
@@ -69,12 +77,7 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	return
 }
 
-func Kill(exe string) (proc *os.Process, err error) {
-	var pidPath string
-	pidPath, proc, err = Process(exe)
-	if err != nil {
-		return
-	}
+func KillProc(pidPath string, proc *os.Process) (err error) {
 	err = proc.Kill()
 	if err != nil {
 		return
@@ -100,6 +103,16 @@ func Kill(exe string) (proc *os.Process, err error) {
 		err = os.Remove(pidPath)
 		return
 	}
+}
+
+func Kill(exe string) (proc *os.Process, err error) {
+	var pidPath string
+	pidPath, proc, err = Process(exe)
+	if err != nil {
+		return
+	}
+	err = KillProc(pidPath, proc)
+	return
 }
 
 func GameProcesses(gameId string, steam bool, xbox bool) []string {

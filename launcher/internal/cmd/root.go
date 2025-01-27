@@ -5,11 +5,13 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executor"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/pidLock"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -55,16 +57,16 @@ var (
 	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN server",
-		Long:  "launcher discovers or starts a local LAN server, optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
+		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN 'server'",
+		Long:  "launcher discovers or starts a local LAN 'server', optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
-				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+				fmt.Println("Failed to lock pid file. Kill process 'launcher' if it is running in your task manager.")
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			isAdmin := executor.IsAdmin()
+			isAdmin := commonExecutor.IsAdmin()
 			var errorCode = common.ErrSuccess
 			defer func() {
 				_ = lock.Unlock()
@@ -115,14 +117,14 @@ var (
 			}
 			serverArgs, err := parseCommandArgs("Server.ExecutableArgs", serverValues)
 			if err != nil {
-				fmt.Println("Failed to parse server executable arguments")
+				fmt.Println("Failed to parse 'server' executable arguments")
 				errorCode = internal.ErrInvalidServerArgs
 				return
 			}
 			var clientArgs []string
 			clientArgs, err = parseCommandArgs("Client.ExecutableArgs", nil)
 			if err != nil {
-				fmt.Println("Failed to parse server executable arguments")
+				fmt.Println("Failed to parse 'server' executable arguments")
 				errorCode = internal.ErrInvalidClientArgs
 				return
 			}
@@ -154,7 +156,7 @@ var (
 			if isAdmin {
 				fmt.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
 				if runtime.GOOS != "windows" {
-					fmt.Println("It can also cause issues and restrict the functionality.")
+					fmt.Println(" It can also cause issues and restrict the functionality.")
 				}
 			}
 
@@ -164,7 +166,7 @@ var (
 				return
 			}
 
-			if cmdUtils.GameRunning(gameId) {
+			if cmdUtils.GameRunning() {
 				errorCode = internal.ErrGameAlreadyRunning
 				return
 			}
@@ -181,13 +183,51 @@ var (
 				}
 			}()
 
+			/*
+				Ensure:
+				* No running config-admin-agent nor agent processes
+				* No backed up profiles or metadata
+				* No trusted certificates
+				* No mapped hosts
+			*/
+			fmt.Printf("Game %s.\n", gameId)
+			fmt.Println("Cleaning up...")
+			agent := common.GetExeFileName(false, common.LauncherAgent)
+			var proc *os.Process
+			var pidPath string
+			pidPath, proc, err = commonProcess.Process(agent)
+			if err == nil && proc != nil && pidPath != "" {
+				fmt.Println("Killing 'agent'...")
+				err = commonProcess.KillProc(pidPath, proc)
+				if err != nil {
+					fmt.Println("Failed to kill it: ", err, "Try using the task manager.")
+					return
+				}
+			}
+			fmt.Printf(`Reverting all configuration and stopping its agent`)
+			if !isAdmin {
+				fmt.Printf(`, authorize 'config-admin' if needed`)
+			}
+			fmt.Println(`...`)
+			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, false); !revertResult.Success() {
+				if _, _, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil {
+					fmt.Println("Failed to kill 'config-admin-agent' process: ", err, "Kill it using the task manager with admin rights.")
+				} else {
+					fmt.Println("Failed to cleanup configuration, try to remove certificates and/or host mappings manually.")
+				}
+				return
+			}
+			pidPath, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
+			if err == nil && proc != nil && pidPath != "" {
+				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
+			}
 			defer func() {
 				if errorCode != common.ErrSuccess {
 					config.Revert()
 				}
 			}()
 			// Setup
-			fmt.Printf("Setting up %s...\n", gameId)
+			fmt.Println("Setting up...")
 			if len(setupCommand) > 0 {
 				fmt.Printf("Running setup command '%s' and waiting for it to exit...\n", viper.GetString("Config.SetupCommand"))
 				result := config.RunSetupCommand(setupCommand)
@@ -212,15 +252,15 @@ var (
 				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
 				multicastIPs := make([]net.IP, len(multicastIPsStr))
 				for i, str := range multicastIPsStr {
-					if IP := net.ParseIP(str); err == nil && IP.To4() != nil && IP.IsMulticast() {
+					if IP := net.ParseIP(str); IP.To4() != nil && IP.IsMulticast() {
 						multicastIPs[i] = IP
 					} else {
-						fmt.Printf(`Invalid multicast group "%s"\n`, str)
+						fmt.Printf("Invalid multicast group \"%s\"\n", str)
 						errorCode = internal.ErrAnnouncementMulticastGroup
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for server announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(portsStr, ", "), common.AnnounceVersionLatest)
+				fmt.Printf("Waiting 15 seconds for 'server' announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(portsStr, ", "), common.AnnounceVersionLatest)
 				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(gameId, multicastIPs, announcePorts)
 				if errorCode != common.ErrSuccess {
 					return
@@ -253,7 +293,7 @@ var (
 					return
 				}
 				if !server.CheckConnectionFromServer(serverHost, true) {
-					fmt.Println("serverStart is false. " + serverHost + " must be reachable. Review the host is correct, the server is started and you can connect to TCP port 443 (HTTPS).")
+					fmt.Println("serverStart is false. " + serverHost + " must be reachable. Review the host is correct, the 'server' is started and you can connect to TCP port 443 (HTTPS).")
 					errorCode = internal.ErrInvalidServerStart
 					return
 				}
@@ -285,8 +325,8 @@ func Execute() error {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
-	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
+	rootCmd.PersistentFlags().BoolP("canAddHost", "t", true, "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Will require admin privileges.")
+	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS == "windows" {
 		canTrustCertificateStr += `, "user"`
 	}
@@ -304,14 +344,14 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
-	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
-	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
-	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured servers will not get discovered.`)
-	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured servers will not get discovered via Multicast.`)
-	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
+	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
+	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the 'server' if started, "auto" will stop the 'server' if one was started, "false" (will not stop the 'server' regardless if one was started), "true" (will not stop the 'server' even if it was started).`)
+	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
+	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
+	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
-	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
-	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
+	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
+	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
 	if runtime.GOOS == "windows" {
 		clientExeTip += ` and then the Xbox one if found`
