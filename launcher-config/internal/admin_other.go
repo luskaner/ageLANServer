@@ -13,7 +13,7 @@ import (
 
 func preAgentStart() {
 	if !executor.IsAdmin() {
-		fmt.Println("Waiting up to 30s for agent to start...")
+		fmt.Println("Waiting up to 30s for 'agent' to start...")
 	}
 }
 

@@ -43,7 +43,7 @@ var (
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
-				fmt.Println("Failed to lock pid file. You may try checking if the process in PID file exists (and killing it).")
+				fmt.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
@@ -64,7 +64,7 @@ var (
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
-					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the server", os.Args[0]))
+					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
 				}
 			}
 			hosts := viper.GetStringSlice("Hosts")
@@ -146,7 +146,7 @@ var (
 					}
 					err := server.ListenAndServeTLS(certFile, keyFile)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						fmt.Println("Failed to start server")
+						fmt.Println("Failed to start 'server'")
 						fmt.Println(err)
 						os.Exit(internal.ErrStartServer)
 					}
@@ -156,17 +156,17 @@ var (
 
 			<-stop
 
-			fmt.Println("Servers are shutting down...")
+			fmt.Println("'Servers' are shutting down...")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
 			for _, server := range servers {
 				if err := server.Shutdown(ctx); err != nil {
-					fmt.Printf("Server %s forced to shutdown: %v\n", server.Addr, err)
+					fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
 				}
 
-				fmt.Println("Server", server.Addr, "stopped")
+				fmt.Println("'Server'", server.Addr, "stopped")
 			}
 
 			_ = lock.Unlock()
@@ -178,13 +178,13 @@ func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce server in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
-	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts")
-	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the server using Multicast.")
-	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the server using Broadcast.")
-	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the server using Multicast or Broadcast.")
+	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
+	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
+	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the 'server' using Multicast.")
+	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
+	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
 	cmd.GamesCommand(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the server will bind to. Can be set multiple times.")
+	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the 'server' will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.PersistentFlags().Lookup("announce")); err != nil {

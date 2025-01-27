@@ -9,7 +9,7 @@ import (
 var RootCmd = &cobra.Command{
 	Use:   filepath.Base(os.Args[0]),
 	Short: "config execute config-only tasks",
-	Long:  "config execute config-only tasks as required by launcher directly or indirectly via the agent",
+	Long:  "config execute config-only tasks as required by 'launcher' directly or indirectly via the 'agent'",
 }
 
 var Version string

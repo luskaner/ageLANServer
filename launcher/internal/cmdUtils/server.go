@@ -67,7 +67,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 	errorCode = common.ErrSuccess
 	servers := server.LanServersAnnounced(multicastIPs, ports)
 	if servers == nil {
-		fmt.Println("Could not listen to server announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
+		fmt.Println("Could not listen to 'server' announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
 		errorCode = internal.ErrListenServerAnnouncements
 	}
 	if servers != nil && len(servers) > 0 {
@@ -117,27 +117,27 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 			serversStr = append(serversStr, ips)
 		}
 		if announcedNewerVersion {
-			fmt.Println("Found at least a server with a newer version than the client. The launcher should be upgraded.")
+			fmt.Println("Found at least a 'server' with a newer version than this 'launcher'. This 'launcher' should be upgraded.")
 		}
 		if announcedOlderVersion {
-			fmt.Println("Found at least a server with an older version than the client. The server(s) should be upgraded.")
+			fmt.Println("Found at least a 'server' with an older version than this 'launcher'. The 'server'(s) should be upgraded.")
 		}
 		if len(servers) == 1 {
-			fmt.Printf("Found a single server \"%s\", will connect to it...\n", serverTags[0])
+			fmt.Printf("Found a single 'server' \"%s\", will connect to it...\n", serverTags[0])
 			ok, ip = SelectBestServerIp(serversStr[0])
 			if !ok {
-				fmt.Println("Server is not reachable. Check the client can connect to", ip, "on TCP port 443 (HTTPS)")
+				fmt.Println("'Server' is not reachable. Check the client can connect to", ip, "on TCP port 443 (HTTPS)")
 				errorCode = internal.ErrServerUnreachable
 				return
 			}
 		} else {
 			var option int
 			for {
-				fmt.Println("Found the following servers:")
+				fmt.Println("Found the following 'server's:")
 				for i := range serversStr {
 					fmt.Printf("%d. %s\n", i+1, serverTags[i])
 				}
-				fmt.Printf("Enter the number of the server (1-%d): ", len(serversStr))
+				fmt.Printf("Enter the number of the 'server' (1-%d): ", len(serversStr))
 				_, err := fmt.Scan(&option)
 				if err != nil || option < 1 || option > len(serversStr) {
 					fmt.Println("Invalid (or error reading) option. Please enter a number from the list.")
@@ -151,7 +151,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 				if ok {
 					break
 				} else {
-					fmt.Println(fmt.Sprintf("Server #%d is not reachable. Check the client can connect to it on TCP port 443 (HTTPS).", option))
+					fmt.Println(fmt.Sprintf("'Server' #%d is not reachable. Check the client can connect to it on TCP port 443 (HTTPS).", option))
 					fmt.Println("Please enter the same (to retry) or another number from the list")
 				}
 			}
@@ -163,12 +163,12 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 func (c *Config) StartServer(executable string, args []string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
 	serverExecutablePath := server.GetExecutablePath(executable)
 	if serverExecutablePath == "" {
-		fmt.Println("Cannot find server executable path. Set it manually in Server.Executable.")
+		fmt.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
 		errorCode = internal.ErrServerExecutable
 		return
 	}
 	if executable != serverExecutablePath {
-		fmt.Println("Found server executable path:", serverExecutablePath)
+		fmt.Println("Found 'server' executable path:", serverExecutablePath)
 	}
 
 	if exists, certificateFolder, cert := common.CertificatePair(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) {
@@ -178,7 +178,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 			return
 		}
 		if certificateFolder == "" {
-			fmt.Println("Cannot find certificate folder of the server. Make sure the folder structure of the server is correct.")
+			fmt.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
 			errorCode = internal.ErrServerCertDirectory
 			return
 		}
@@ -189,12 +189,12 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 				fmt.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d. See documentation for "genCert" to check what it means.`+"\n", result.ExitCode)
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			return
 		}
 	}
-	fmt.Println("Starting server, authorize 'server' in firewall if needed...")
+	fmt.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -205,22 +205,22 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 	var serverExe string
 	result, serverExe, ip = server.StartServer(stopStr, executable, args)
 	if result.Success() {
-		fmt.Println("Server started.")
+		fmt.Println("'Server' started.")
 		if stop {
 			c.SetServerExe(serverExe)
 		}
 	} else {
-		fmt.Println("Could not start server.")
+		fmt.Println("Could not start 'server'.")
 		errorCode = internal.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d. See documentation for "server" to check what it means`+"\n", result.ExitCode)
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 		} else {
-			fmt.Println("Try running the server manually.")
+			fmt.Println("Try running the 'server' manually.")
 		}
 	}
 	return
