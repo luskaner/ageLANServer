@@ -4,6 +4,7 @@ import (
 	"github.com/luskaner/ageLANServer/battle-server-broadcast"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"golang.org/x/sys/windows"
+	"time"
 )
 
 func waitForProcess(PID uint32) bool {
@@ -17,7 +18,7 @@ func waitForProcess(PID uint32) bool {
 		_ = windows.CloseHandle(handle)
 	}(handle)
 
-	_, err = windows.WaitForSingleObject(handle, windows.INFINITE)
+	_, err = windows.WaitForSingleObject(handle, uint32((5 * time.Minute).Milliseconds()))
 
 	if err != nil {
 		return false
