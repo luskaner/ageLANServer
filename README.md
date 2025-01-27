@@ -316,7 +316,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    a custom launcher for 100% offline play.
 4. **Run** the `launcher-...`, Shell script.
 
-*Note: If you have any issues run the `cleanup-<game>` Shell script.*
+*Note: If you have any issues run the `bin/config revert -a`.*
 
 </details>
 

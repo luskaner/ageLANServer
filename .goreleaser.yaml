@@ -327,12 +327,6 @@ archives:
         dst: launcher/launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher/launcher_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup_aoe1.bat
-        dst: launcher/cleanup_aoe1.bat
-      - src: launcher-config/resources/windows/cleanup_aoe2.bat
-        dst: launcher/cleanup_aoe2.bat
-      - src: launcher-config/resources/windows/cleanup_aoe3.bat
-        dst: launcher/cleanup_aoe3.bat
     format: zip
   - id: all_windows_arm64
     builds:
@@ -376,12 +370,6 @@ archives:
         dst: launcher/launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher/launcher_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup_aoe1.bat
-        dst: launcher/cleanup_aoe1.bat
-      - src: launcher-config/resources/windows/cleanup_aoe2.bat
-        dst: launcher/cleanup_aoe2.bat
-      - src: launcher-config/resources/windows/cleanup_aoe3.bat
-        dst: launcher/cleanup_aoe3.bat
     format: tar.xz
   - id: all_linux
     builds:
@@ -444,18 +432,6 @@ archives:
           mode: 0744
       - src: launcher/resources/unix/launcher_aoe3.sh
         dst: launcher/launcher_aoe3.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe1.sh
-        dst: launcher/cleanup_aoe1.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe2.sh
-        dst: launcher/cleanup_aoe2.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe3.sh
-        dst: launcher/cleanup_aoe3.sh
         info:
           mode: 0744
     format: tar.xz
@@ -612,12 +588,6 @@ archives:
         dst: launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup_aoe1.bat
-        dst: cleanup_aoe1.bat
-      - src: launcher-config/resources/windows/cleanup_aoe2.bat
-        dst: cleanup_aoe2.bat
-      - src: launcher-config/resources/windows/cleanup_aoe3.bat
-        dst: cleanup_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
     format: zip
   - id: launcher_windows_arm64
@@ -648,12 +618,6 @@ archives:
         dst: launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher_aoe3.bat
-      - src: launcher-config/resources/windows/cleanup_aoe1.bat
-        dst: cleanup_aoe1.bat
-      - src: launcher-config/resources/windows/cleanup_aoe2.bat
-        dst: cleanup_aoe2.bat
-      - src: launcher-config/resources/windows/cleanup_aoe3.bat
-        dst: cleanup_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
     format: tar.xz
   - id: launcher_linux
@@ -688,18 +652,6 @@ archives:
           mode: 0744
       - src: launcher/resources/unix/launcher_aoe3.sh
         dst: launcher_age3.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe1.sh
-        dst: cleanup_aoe1.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe2.sh
-        dst: cleanup_aoe2.sh
-        info:
-          mode: 0744
-      - src: launcher-config/resources/unix/cleanup_aoe3.sh
-        dst: cleanup_aoe3.sh
         info:
           mode: 0744
     name_template: >-

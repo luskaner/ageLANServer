@@ -6,6 +6,5 @@ if %ERRORLEVEL%==0 (
     timeout /t 10
 ) else (
     echo Program finished with errors...
-    echo You may try running "cleanup-aoe3.bat" as regular user.
     pause
 )
