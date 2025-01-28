@@ -12,7 +12,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 - Windows:
     - 10 (no S edition/mode).
     - (Storage) Server 2016.
-    - IoT (no Arm32).
+    - 10 IoT (no Arm32).
     - Server IoT 2019.
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
@@ -77,7 +77,6 @@ the [`responses`](resources/responses) base directory.
 - [`Item Definitions`](resources/responses/age1/itemDefinitions.json): Definitions of items. Includes rewards,
   challenges and
   other items.
--
 
 #### Age of Empires II: Definitive Edition
 
