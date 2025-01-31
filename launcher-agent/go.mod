@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
-	github.com/luskaner/ageLANServer/common v0.0.0-20241204232812-4e96c2e19aea
+	github.com/luskaner/ageLANServer/common v0.0.0-20250131230124-e6fa21875cdb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20241225211103-3a8661980cd5
 	golang.org/x/sys v0.29.0
 )
