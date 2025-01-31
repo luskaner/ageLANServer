@@ -7,6 +7,5 @@ if [ $? -eq 0 ]; then
   sleep 10
 else
   echo "Program finished with errors..."
-  echo 'You may try running "cleanup-aoe1.sh" as regular user.'
   read -p "Press any key to exit..."
 fi

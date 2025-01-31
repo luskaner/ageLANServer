@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/elliotchance/orderedmap/v3"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[stri
 	r.KeyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
-	r.Login = orderedmap.New[string, string]()
+	r.Login = orderedmap.NewOrderedMap[string, string]()
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
@@ -57,15 +58,10 @@ func (r *MainResources) initializeLogin(gameId string) {
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(data, r.Login)
-	if err != nil {
-		panic(err)
-	}
-	r.LoginData = make([]i.A, r.Login.Len())
-	j := 0
-	for el := r.Login.Oldest(); el != nil; el = el.Next() {
-		r.LoginData[j] = i.A{el.Key, el.Value}
-		j++
+	re := regexp.MustCompile(`"([^"]*)"`)
+	matches := re.FindAllStringSubmatch(string(data), -1)
+	for j := 0; j < len(matches)-1; j += 2 {
+		r.Login.Set(matches[j][1], matches[j+1][1])
 	}
 }
 
@@ -81,11 +77,10 @@ func (r *MainResources) initializeResponses(gameId string) {
 			continue
 		}
 		if r.keyedFilenames.ContainsOne(name) {
-			var result = orderedmap.New[string, any]()
-			err = json.Unmarshal(data, result)
-			if err == nil {
-				rawSignature, _ := result.Get("dataSignature")
-				serverSignature := rawSignature.(string)
+			re := regexp.MustCompile(`"dataSignature"\s*:\s*"(.*?)"`)
+			matches := re.FindStringSubmatch(string(data))
+			if len(matches) == 1 {
+				serverSignature := matches[1]
 				r.KeyedFiles[name] = data
 				r.nameToSignature[name] = serverSignature
 			}

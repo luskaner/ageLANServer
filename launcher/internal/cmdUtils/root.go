@@ -101,20 +101,20 @@ func (c *Config) Revert() {
 		c.KillAgent()
 	}
 	if serverExe := c.ServerExe(); len(serverExe) > 0 {
-		fmt.Println("Stopping server...")
+		fmt.Println("Stopping 'server'...")
 		if proc, err := commonProcess.Kill(serverExe); err == nil {
-			fmt.Println("Server stopped.")
+			fmt.Println("'Server' stopped.")
 		} else {
-			fmt.Println("Failed to stop server.")
+			fmt.Println("Failed to stop 'server'.")
 			fmt.Println("Error message: " + err.Error())
 			if proc != nil {
-				fmt.Println("You may try killing it manually. Search for the process PID inside server.pid if it exists")
+				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
 			}
 		}
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN); result.Success() {
+		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, true); result.Success() {
 			fmt.Println("Cleaned up.")
 		} else {
 			fmt.Println("Failed to clean up.")
@@ -122,7 +122,7 @@ func (c *Config) Revert() {
 				fmt.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d. See documentation for "config" to check what it means`+"\n", result.ExitCode)
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 		}
 	}
@@ -142,11 +142,13 @@ func anyProcessExists(names []string) bool {
 	return len(processes) > 0
 }
 
-func GameRunning(gameId string) bool {
+func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
-	if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
-		fmt.Println("Game is already running, exiting...")
-		return true
+	for gameId := range common.AllGames.Iter() {
+		if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
+			fmt.Println("Some Age game is already running, exit the game and execute the 'launcher' again.")
+			return true
+		}
 	}
 	return false
 }

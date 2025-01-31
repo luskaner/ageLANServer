@@ -26,7 +26,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 				fmt.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d. See documentation for "config" to check what it means.`+"\n", result.ExitCode)
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 		} else {
 			if metadata {

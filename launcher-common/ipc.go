@@ -3,13 +3,12 @@ package launcher_common
 import (
 	"github.com/luskaner/ageLANServer/common"
 	"net"
-	"os"
-	"path"
 )
 
 const ConfigAdminIpcRevert byte = 0
 const ConfigAdminIpcSetup byte = 1
 const ConfigAdminIpcExit byte = 2
+const configAdminIpcName = common.Name + `-launcher-config-admin-agent`
 
 type (
 	ConfigAdminIpcSetupCommand struct {
@@ -23,7 +22,3 @@ type (
 		Certificate bool
 	}
 )
-
-func ConfigAdminIpcName() string {
-	return path.Join(os.TempDir(), common.Name+`-launcher-config-admin-agent`)
-}

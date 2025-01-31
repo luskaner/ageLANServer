@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/x509"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
@@ -21,7 +22,7 @@ import (
 
 func removeUserCert() bool {
 	fmt.Println("Removing previously added user certificate, authorize it if needed ...")
-	if _, err := wrapper.RemoveUserCert(); err == nil {
+	if _, err := wrapper.RemoveUserCerts(); err == nil {
 		fmt.Println("Successfully removed user certificate")
 		return true
 	} else {
@@ -108,7 +109,7 @@ var setUpCmd = &cobra.Command{
 				fmt.Println("Failed to parse certificate")
 				os.Exit(internal.ErrUserCertAddParse)
 			}
-			if err := wrapper.AddUserCert(crt); err == nil {
+			if err := wrapper.AddUserCerts([]*x509.Certificate{crt}); err == nil {
 				fmt.Println("Successfully added user certificate")
 				addedUserCert = true
 			} else {
@@ -154,7 +155,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		hostMappings := mapset.NewSet[string]()
+		hostMappings := mapset.NewThreadUnsafeSet[string]()
 		if len(cmd.MapIPs) > 0 {
 			for _, ip := range cmd.MapIPs {
 				hostMappings.Add(ip.String())
@@ -165,7 +166,7 @@ var setUpCmd = &cobra.Command{
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
 				if !result.Success() {
-					fmt.Println("Failed to start config-admin-agent")
+					fmt.Println("Failed to start 'config-admin-agent'")
 					if result.Err != nil {
 						fmt.Println(result.Err)
 					}
@@ -176,26 +177,26 @@ var setUpCmd = &cobra.Command{
 				} else {
 					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
-						fmt.Println("Failed to connect to config-admin-agent after starting it. Kill the 'config-admin-agent' process manually")
+						fmt.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
 						os.Exit(internal.ErrStartAgentVerify)
 					}
 				}
 			}
 			if agentStarted {
-				fmt.Println("Communicating with config-admin-agent to add local cert and/or host mappings...")
+				fmt.Println("Communicating with 'config-admin-agent' to add local cert and/or host mappings...")
 			} else {
-				if isAdmin {
-					fmt.Println("Running config-admin to add local cert and/or host mappings...")
-				} else {
-					fmt.Println("Running config-admin to add local cert and/or host mappings, authorize it if needed...")
+				fmt.Print("Running 'config-admin' to add local cert and/or host mappings")
+				if !isAdmin {
+					fmt.Print(", authorize it if needed")
 				}
+				fmt.Println("...")
 			}
 			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
-					fmt.Println("Successfully communicated with config-admin-agent")
+					fmt.Println("Successfully communicated with 'config-admin-agent'")
 				} else {
-					fmt.Println("Successfully ran config-admin")
+					fmt.Println("Successfully ran 'config-admin'")
 				}
 			} else {
 				if err != nil {
@@ -223,28 +224,28 @@ var setUpCmd = &cobra.Command{
 					}
 				}
 				if agentStarted {
-					fmt.Println("Failed to communicate with config-admin-agent. Communicating with it to shutdown...")
+					fmt.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
 					if agentEndOnError {
 						if err := internal.StopAgentIfNeeded(); err != nil {
 							failedStopAgent := true
 							if isAdmin {
 								_, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
 								if err == nil {
-									fmt.Println("Successfully killed config-admin-agent.")
+									fmt.Println("Successfully killed 'config-admin-agent'.")
 									failedStopAgent = false
 								}
 							}
 							if failedStopAgent {
-								fmt.Println("Failed to stop config-admin-agent. Kill the 'config-admin-agent' process manually")
+								fmt.Println("Failed to stop 'config-admin-agent'. Kill it manually using the task manager")
 								fmt.Println("Error message: " + err.Error())
 								os.Exit(internal.ErrStartAgentRevert)
 							}
 						} else {
-							fmt.Println("Successfully stopped config-admin-agent.")
+							fmt.Println("Successfully stopped 'config-admin-agent'.")
 						}
 					}
 				} else {
-					fmt.Println("Failed to run config-admin")
+					fmt.Println("Failed to run 'config-admin'")
 				}
 				os.Exit(errorCode)
 			}
@@ -286,14 +287,14 @@ func InitSetUp() {
 		"agentStart",
 		"g",
 		false,
-		"Start the config-admin-agent if it is not running, we are not admin and is needed for admin action.",
+		"Start the 'config-admin-agent' if it is not running, we are not admin and is needed for admin action.",
 	)
 	setUpCmd.Flags().BoolVarP(
 		&agentEndOnError,
 		"agentEndOnError",
 		"r",
 		false,
-		"Stop the config-admin-agent if it is running and any admin action failed.",
+		"Stop the 'config-admin-agent' if it is running and any admin action failed.",
 	)
 	err := setUpCmd.Flags().MarkHidden("agentStart")
 	if err != nil {

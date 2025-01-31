@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/x509"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
@@ -17,7 +18,7 @@ import (
 
 func untrustCertificate() bool {
 	fmt.Println("Removing previously added local certificate")
-	if _, err := cert.UntrustCertificate(false); err != nil {
+	if _, err := cert.UntrustCertificates(false); err != nil {
 		fmt.Println("Successfully removed local certificate")
 		return true
 	} else {
@@ -43,7 +44,7 @@ var setUpCmd = &cobra.Command{
 				fmt.Println("Failed to parse certificate")
 				os.Exit(internal.ErrLocalCertAddParse)
 			}
-			if err := cert.TrustCertificate(false, crt); err == nil {
+			if err := cert.TrustCertificates(false, []*x509.Certificate{crt}); err == nil {
 				fmt.Println("Successfully added local certificate")
 				trustedCertificate = true
 				sigs := make(chan os.Signal, 1)
@@ -64,13 +65,13 @@ var setUpCmd = &cobra.Command{
 			fmt.Println("Adding IP mappings")
 			mappings := make(map[string]mapset.Set[string])
 			if len(cmd.MapIPs) > 0 {
-				mappings[common.Domain] = mapset.NewSet[string]()
+				mappings[common.Domain] = mapset.NewThreadUnsafeSet[string]()
 				for _, ip := range cmd.MapIPs {
 					mappings[common.Domain].Add(ip.String())
 				}
 			}
 			if cmd.MapCDN {
-				mappings[launcherCommon.CDNDomain] = mapset.NewSet[string]()
+				mappings[launcherCommon.CDNDomain] = mapset.NewThreadUnsafeSet[string]()
 				mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
 			}
 			if ok, _ := hosts.AddHosts(mappings); ok {

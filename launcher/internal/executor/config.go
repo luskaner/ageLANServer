@@ -8,6 +8,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
+	"runtime"
 )
 
 func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool) (result *exec.Result) {
@@ -56,9 +57,9 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	return
 }
 
-func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) (result *exec.Result) {
+func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, failfast bool) (result *exec.Result) {
 	args := []string{launcherCommon.ConfigRevertCmd}
-	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN)...)
+	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN, failfast)...)
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	if removeUserCert || removeLocalCert {
 		certStore.ReloadSystemCertificates()
@@ -66,7 +67,7 @@ func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert 
 	return
 }
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, failfast bool) []string {
 	args := make([]string, 0)
 	args = append(args, "-e")
 	args = append(args, game)
@@ -90,6 +91,9 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	}
 	if unmapCDN {
 		args = append(args, "-c")
+	}
+	if !failfast && unmapIPs && (runtime.GOOS == "linux" || removeLocalCert) && removeLocalCert && restoreMetadata && restoreProfiles && unmapCDN {
+		args = append(args, "-a")
 	}
 	return args
 }

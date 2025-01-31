@@ -50,11 +50,11 @@ func cachedIpToHosts(ip string) (bool, mapset.Set[string]) {
 func cacheMapping(host string, ip string) {
 	hostToLower := strings.ToLower(host)
 	if _, exists := hostToIps[hostToLower]; !exists {
-		hostToIps[hostToLower] = mapset.NewSet[string]()
+		hostToIps[hostToLower] = mapset.NewThreadUnsafeSet[string]()
 	}
 	hostToIps[hostToLower].Add(ip)
 	if _, exists := ipToHosts[ip]; !exists {
-		ipToHosts[ip] = mapset.NewSet[string]()
+		ipToHosts[ip] = mapset.NewThreadUnsafeSet[string]()
 	}
 	ipToHosts[ip].Add(host)
 	if _, exists := failedIpToHosts[ip]; exists {
@@ -67,7 +67,7 @@ func cacheMapping(host string, ip string) {
 
 func HostOrIpToIps(host string) mapset.Set[string] {
 	if ip := net.ParseIP(host); ip != nil {
-		var ips = mapset.NewSet[string]()
+		var ips = mapset.NewThreadUnsafeSet[string]()
 		if ip.To4() != nil {
 			if ip.IsUnspecified() {
 				ips.Append(ResolveUnspecifiedIps()...)
@@ -81,7 +81,7 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 		if cached {
 			return cachedIps
 		}
-		ips := mapset.NewSet[string]()
+		ips := mapset.NewThreadUnsafeSet[string]()
 		ipsFromDns := common.HostToIps(host)
 		if ipsFromDns != nil {
 			for _, ipRaw := range ipsFromDns {
@@ -144,7 +144,7 @@ func IpToHosts(ip string) mapset.Set[string] {
 	if cached {
 		return cachedHosts
 	}
-	hosts := mapset.NewSet[string]()
+	hosts := mapset.NewThreadUnsafeSet[string]()
 	hostsFromDns := ipToDnsName(ip)
 	if hostsFromDns != nil {
 		for _, hostStr := range hostsFromDns {

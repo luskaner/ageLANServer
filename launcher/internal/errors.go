@@ -13,12 +13,11 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrAnnouncementPort
 	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
-	ErrServerCertMissing
+	ErrServerCertMissingExpired
 	ErrServerCertDirectory
 	ErrServerCertCreate
 	ErrServerStart
@@ -39,5 +38,4 @@ const (
 	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
-	ErrUnsupportedOS
 )

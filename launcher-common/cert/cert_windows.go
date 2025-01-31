@@ -18,31 +18,32 @@ func openStore(userStore bool) (windows.Handle, error) {
 	return windows.CertOpenStore(windows.CERT_STORE_PROV_SYSTEM, 0, 0, flags, uintptr(unsafe.Pointer(rootStr)))
 }
 
-func TrustCertificate(userStore bool, cert *x509.Certificate) error {
-	certBytes := cert.Raw
-	certContext, err := windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
-	if err != nil {
-		return err
-	}
-
-	defer func(ctx *windows.CertContext) {
-		_ = windows.CertFreeCertificateContext(ctx)
-	}(certContext)
-
+func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	store, err := openStore(userStore)
-
 	if err != nil {
 		return err
 	}
-
 	defer func(store windows.Handle, flags uint32) {
 		_ = windows.CertCloseStore(store, flags)
 	}(store, 0)
 
-	return windows.CertAddCertificateContextToStore(store, certContext, windows.CERT_STORE_ADD_NEW, nil)
+	for _, cert := range certs {
+		certBytes := cert.Raw
+		var certContext *windows.CertContext
+		certContext, err = windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
+		if err != nil {
+			return err
+		}
+		err = windows.CertAddCertificateContextToStore(store, certContext, windows.CERT_STORE_ADD_NEW, nil)
+		_ = windows.CertFreeCertificateContext(certContext)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
+func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 	var store windows.Handle
 	store, err = openStore(userStore)
 	if err != nil {
@@ -52,23 +53,31 @@ func UntrustCertificate(userStore bool) (cert *x509.Certificate, err error) {
 		_ = windows.CertCloseStore(store, flags)
 	}(store, 0)
 
+	certs = make([]*x509.Certificate, 0)
 	var certContext *windows.CertContext
-	certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
+	for {
+		certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), certContext)
+		if certContext == nil {
+			break
+		}
+		if err != nil {
+			return
+		}
+		certBytes := make([]byte, certContext.Length)
+		for i := range certBytes {
+			certBytes[i] = *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(certContext.EncodedCert)) + uintptr(i)))
+		}
+		var cert *x509.Certificate
+		cert, err = x509.ParseCertificate(certBytes)
+		if err != nil {
+			return
+		}
+		certs = append(certs, cert)
 
-	if err != nil {
-		return
-	}
-	certBytes := make([]byte, certContext.Length)
-	for i := range certBytes {
-		certBytes[i] = *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(certContext.EncodedCert)) + uintptr(i)))
-	}
-	cert, err = x509.ParseCertificate(certBytes)
-	if err != nil {
-		return
-	}
-	err = windows.CertDeleteCertificateFromStore(certContext)
-	if err != nil {
-		return
+		err = windows.CertDeleteCertificateFromStore(certContext)
+		if err != nil {
+			return
+		}
 	}
 	return
 }

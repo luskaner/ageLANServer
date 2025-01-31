@@ -7,12 +7,12 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 )
 
-func RemoveUserCert() (crt *x509.Certificate, err error) {
-	return cert.UntrustCertificate(true)
+func RemoveUserCerts() (crts []*x509.Certificate, err error) {
+	return cert.UntrustCertificates(true)
 }
 
-func AddUserCert(crt *x509.Certificate) error {
-	return cert.TrustCertificate(true, crt)
+func AddUserCerts(crts []*x509.Certificate) error {
+	return cert.TrustCertificates(true, crts)
 }
 
 func BytesToCertificate(data []byte) *x509.Certificate {

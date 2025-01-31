@@ -11,12 +11,12 @@ import (
 func (c *Config) AddCert(canAdd string) (errorCode int) {
 	if !server.CheckConnectionFromServer(common.Domain, false) {
 		if canAdd != "false" {
-			certMsg := fmt.Sprintf("Adding server certificate to %s store", canAdd)
+			certMsg := fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
 			if canAdd == "user" {
 				certMsg += ", accept the dialog."
 			} else {
 				if !c.CfgAgentStarted() {
-					certMsg += `, authorize "config-admin-agent" if needed.`
+					certMsg += `, authorize 'config-admin-agent' if needed.`
 				}
 			}
 			fmt.Println(certMsg)
@@ -39,7 +39,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 					fmt.Println("Error message: " + result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					fmt.Printf(`Exit code: %d. See documentation for "config" to check what it means.`+"\n", result.ExitCode)
+					fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 				}
 				return
 			} else if canAdd == "local" {
@@ -52,7 +52,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 				errorCode = internal.ErrServerConnectSecure
 				return
 			} else if !server.LanServer(common.Domain, false) {
-				fmt.Println("Something went wrong, " + common.Domain + " either points to the original server or there is a certificate issue.")
+				fmt.Println("Something went wrong, " + common.Domain + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return
 			}
@@ -62,7 +62,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 			return
 		}
 	} else if !server.LanServer(common.Domain, false) {
-		fmt.Println("Something went wrong, " + common.Domain + " either points to the original server or there is a certificate issue.")
+		fmt.Println("Something went wrong, " + common.Domain + " either points to the original 'server' or there is a certificate issue.")
 		errorCode = internal.ErrServerConnectSecure
 	}
 	return

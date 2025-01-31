@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/launcher
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.7.0
