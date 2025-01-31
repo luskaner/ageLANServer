@@ -674,3 +674,9 @@ signs:
   - artifacts: checksum
     cmd: gpg2
     args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
+release:
+  draft: true
+  replace_existing_draft: false
+  use_existing_draft: true
+  replace_existing_artifacts: true
+  prerelease: 'auto'
