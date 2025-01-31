@@ -12,7 +12,7 @@ import (
 func ChangePresence(users *models.MainUsers, user *models.MainUser, presence int8) {
 	user.SetPresence(presence)
 	profileInfo := i.A{user.GetProfileInfo(true)}
-	for _, u := range users.GetUserIds() {
+	for u := range users.GetUserIds() {
 		sess, ok := models.GetSessionByUserId(u)
 		if ok {
 			wss.SendOrStoreMessage(

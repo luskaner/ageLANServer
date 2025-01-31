@@ -9,6 +9,7 @@ updates:
     directories: # Location of package manifests
       - "/common"
       - "/launcher*"
-      - "/server*"
+      - "/server"
+      - "/server-genCert"
     schedule:
       interval: "daily"

@@ -5,7 +5,7 @@ Copy `go.work.example` to `go.work`
 ### System requirements
 
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all out-the-box.
-- [Go 1.22](https://go.dev/dl/).
+- [Go 1.23](https://go.dev/dl/).
 - [Git](https://git-scm.com/downloads).
 - [Task](https://taskfile.dev/installation/).
 - [GoReleaser](https://goreleaser.com/).

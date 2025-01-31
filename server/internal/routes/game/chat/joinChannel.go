@@ -1,8 +1,6 @@
 package chat
 
 import (
-	"encoding/json"
-	"fmt"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -38,13 +36,8 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	}
 	encodedUsers := user.JoinChatChannel(chatChannel)
 	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
-	jsonData, err := json.Marshal(i.A{0, chatChannelIdStr, 0, encodedUsers})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(r.RemoteAddr, string(jsonData))
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false)}}
-	for _, userId := range users.GetUserIds() {
+	for userId := range users.GetUserIds() {
 		var existingUserSession *models.Session
 		existingUserSession, ok = models.GetSessionByUserId(userId)
 		if ok {

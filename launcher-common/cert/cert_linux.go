@@ -63,48 +63,50 @@ func getCertPath() (err error, certPath string) {
 	return
 }
 
-func TrustCertificate(_ bool, cert *x509.Certificate) error {
+func TrustCertificates(_ bool, certs []*x509.Certificate) error {
 	err, certPath := getCertPath()
 	if err != nil {
 		return err
 	}
 
-	var certFile *os.File
+	for _, cert := range certs {
+		var certFile *os.File
 
-	certFile, err = os.CreateTemp("", "*")
-	if err != nil {
-		return err
-	}
+		certFile, err = os.CreateTemp("", "*")
+		if err != nil {
+			return err
+		}
 
-	pemData := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert.Raw,
-	})
+		pemData := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert.Raw,
+		})
 
-	_, err = certFile.Write(pemData)
-	if err != nil {
-		return err
-	}
+		_, err = certFile.Write(pemData)
+		if err != nil {
+			return err
+		}
 
-	err = certFile.Close()
-	if err != nil {
-		return err
-	}
+		err = certFile.Close()
+		if err != nil {
+			return err
+		}
 
-	err = os.Rename(certFile.Name(), certPath)
-	if err != nil {
-		return err
-	}
+		err = os.Rename(certFile.Name(), certPath)
+		if err != nil {
+			return err
+		}
 
-	err = os.Chmod(certPath, 0644)
-	if err != nil {
-		return err
+		err = os.Chmod(certPath, 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	return updateStore()
 }
 
-func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
+func UntrustCertificates(_ bool) (certs []*x509.Certificate, err error) {
 	var certPath string
 	err, certPath = getCertPath()
 	if err != nil {
@@ -130,6 +132,7 @@ func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
 	}
 
 	block, _ := pem.Decode(certBytes)
+	var cert *x509.Certificate
 	cert, err = x509.ParseCertificate(block.Bytes)
 
 	if err != nil {
@@ -142,5 +145,9 @@ func UntrustCertificate(_ bool) (cert *x509.Certificate, err error) {
 	}
 
 	err = updateStore()
+	if err != nil {
+		certs = []*x509.Certificate{cert}
+	}
+
 	return
 }

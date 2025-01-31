@@ -93,7 +93,7 @@ func ConnectAgentIfNeeded() (err error) {
 		return
 	}
 	var conn net.Conn
-	conn, err = net.Dial("unix", launcherCommon.ConfigAdminIpcName())
+	conn, err = DialIPC()
 	if err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func StartAgentIfNeeded() (result *exec.Result) {
 	if ipc != nil {
 		return
 	}
-	fmt.Println("Starting agent...")
+	fmt.Println("Starting 'agent'...")
 	preAgentStart()
 	file := common.GetExeFileName(true, common.LauncherConfigAdminAgent)
 	result = exec.Options{File: file, AsAdmin: true, Pid: true}.Exec()

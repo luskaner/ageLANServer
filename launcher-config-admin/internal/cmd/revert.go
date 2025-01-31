@@ -16,9 +16,9 @@ import (
 	"syscall"
 )
 
-func trustCertificate(certificate *x509.Certificate) bool {
+func trustCertificates(certificates []*x509.Certificate) bool {
 	fmt.Println("Adding previously removed local certificate")
-	if err := cert.TrustCertificate(false, certificate); err == nil {
+	if err := cert.TrustCertificates(false, certificates); err == nil {
 		fmt.Println("Successfully added local certificate")
 		return true
 	} else {
@@ -36,17 +36,17 @@ var revertCmd = &cobra.Command{
 			cmd.UnmapIPs = true
 			cmd.RemoveLocalCert = true
 		}
-		var removedCertificate *x509.Certificate
+		var removedCertificates []*x509.Certificate
 		if cmd.RemoveLocalCert {
 			fmt.Println("Removing local certificate")
-			if removedCertificate, err := cert.UntrustCertificate(false); err == nil {
+			if removedCertificates, err := cert.UntrustCertificates(false); err == nil {
 				fmt.Println("Successfully removed local certificate")
 				sigs := make(chan os.Signal, 1)
 				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 				go func() {
 					_, ok := <-sigs
 					if ok {
-						trustCertificate(removedCertificate)
+						trustCertificates(removedCertificates)
 						os.Exit(common.ErrSignal)
 					}
 				}()
@@ -58,7 +58,7 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		if cmd.UnmapCDN || cmd.UnmapIPs {
-			hsts := mapset.NewSet[string]()
+			hsts := mapset.NewThreadUnsafeSet[string]()
 			if cmd.UnmapIPs {
 				hsts.Add(common.Domain)
 			}
@@ -71,8 +71,8 @@ var revertCmd = &cobra.Command{
 			} else {
 				errorCode := internal.ErrIpMapRemove
 				if !cmd.RemoveAll {
-					if removedCertificate != nil {
-						if !trustCertificate(removedCertificate) {
+					if removedCertificates != nil {
+						if !trustCertificates(removedCertificates) {
 							errorCode = internal.ErrIpMapRemoveRevert
 						}
 					}

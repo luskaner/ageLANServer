@@ -179,7 +179,7 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	if gameSet.ContainsOne(common.GameAoE3) {
 		chatGroup.HandleFunc("POST", "/joinChannel", chat.JoinChannel)
 	}
-	if gameSet.ContainsOne(common.GameAoE2) {
+	if gameSet.ContainsOne(common.GameAoE3) {
 		chatGroup.HandleFunc("POST", "/leaveChannel", chat.LeaveChannel)
 	}
 	if gameSet.ContainsOne(common.GameAoE3) {

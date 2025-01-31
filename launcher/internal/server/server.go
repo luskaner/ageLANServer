@@ -48,10 +48,10 @@ func StartServer(stop string, executable string, args []string) (result *commonE
 			time.Sleep(time.Second)
 		}
 		if proc, err := commonProcess.Kill(executablePath); err != nil {
-			fmt.Println("Failed to stop server")
+			fmt.Println("Failed to stop 'server'")
 			fmt.Println("Error message: " + result.Err.Error())
 			if proc != nil {
-				fmt.Println("You may try killing it manually. Search for the process PID inside server.pid if it exists")
+				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
 			}
 		}
 		result = nil
@@ -215,7 +215,7 @@ func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*comm
 					m = &common.AnnounceMessage{
 						Version: version,
 						Data:    data,
-						Ips:     mapset.NewSet[string](),
+						Ips:     mapset.NewThreadUnsafeSet[string](),
 					}
 					servers[id] = m
 				}

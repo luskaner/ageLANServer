@@ -7,6 +7,7 @@ import (
 	"mvdan.cc/sh/v3/shell"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 )
 
@@ -32,10 +33,8 @@ func ProcessesPID(names []string) map[string]uint32 {
 				continue
 			}
 			cmdlineName := filepath.Base(args[0])
-			for _, name := range names {
-				if cmdlineName == name {
-					processesPid[name] = uint32(pid)
-				}
+			if slices.Contains(names, cmdlineName) {
+				processesPid[cmdlineName] = uint32(pid)
 			}
 		}
 	}

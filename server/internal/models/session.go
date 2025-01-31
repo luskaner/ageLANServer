@@ -32,7 +32,7 @@ func generateSessionId() string {
 			func() {
 				internal.RngLock.Lock()
 				defer internal.RngLock.Unlock()
-				sessionId[i] = sessionLetters[internal.Rng.Intn(len(sessionLetters))]
+				sessionId[i] = sessionLetters[internal.Rng.IntN(len(sessionLetters))]
 			}()
 		}
 		sessionIdStr := string(sessionId)

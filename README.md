@@ -15,7 +15,8 @@ Supported games:
 connected to
 the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline.**
 
-⚠️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals. Expect only updates to fix bugs and for dependencies/compiler.**
+⚠️ **Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals.
+Expect only updates to fix bugs and for dependencies/compiler.**
 
 ℹ️ My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information
 to download a Steam Emulator and play 100% offline.
@@ -113,11 +114,13 @@ in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Qu
 
 #### Stable
 
-- Windows 10 (no S edition/mode).
-- Windows Server 2016.
-- Windows IoT.
+- Windows:
+    - 10 (no S edition/mode).
+    - (Storage) Server 2016.
+    - 10 IoT (no Arm32).
+    - Server IoT 2019.
 - Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
-- macOS: Catalina (v10.15).
+- macOS: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -129,14 +132,14 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.22.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.23.
 
 </details>
 
 ### Launcher
 
 - Windows (no S edition/mode):
-    - 10 (1803 - Redstone 5) on x86-64 (recommended).
+    - 10 on x86-64 (recommended).
     - 11 on ARM.
 - Linux: *recent* distribution with Steam on x86-64 using Steam Play.
 
@@ -184,10 +187,9 @@ supported operating systems.
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10, Server 2025 or IoT on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
-        * **10 IoT on ARM32**: ...\_server\_*A.B.C*_win_arm32.zip
-        * **10, Server 2016 or IoT on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
-        * **10 or 10 IoT on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
+        * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
+        * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
+        * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
     * Linux:
         * Kernel 3.1 on **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
         * Kernel 2.6.23 on **ARM32**:
@@ -195,7 +197,7 @@ supported operating systems.
             * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz
         * Kernel 2.6.23 on **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
         * Kernel 2.6.23 on **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Catalina (v10.15): ...\_server\_*A.B.C*_mac.tar.gz
+    * macOS - Big Sur (v11): ...\_server\_*A.B.C*_mac.tar.gz
 
 </details>
 
@@ -314,7 +316,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    a custom launcher for 100% offline play.
 4. **Run** the `launcher-...`, Shell script.
 
-*Note: If you have any issues run the `cleanup-<game>` Shell script.*
+*Note: If you have any issues run the `bin/config revert -a`.*
 
 </details>
 

@@ -69,7 +69,7 @@ func requiresMapCDN() bool {
 
 func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (errorCode int) {
 	var mapCDN bool
-	ips := mapset.NewSet[string]()
+	ips := mapset.NewThreadUnsafeSet[string]()
 	if requiresMapCDN() {
 		if !canMap {
 			fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
@@ -80,7 +80,7 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 	}
 	if !launcherCommon.Matches(host, common.Domain) {
 		if !canMap {
-			fmt.Println("serverStart is false and canAddHost is false but server does not match "+common.Domain+". You should have added the host ip mapping to", common.Domain, "in the hosts file (or just set canAddHost to true).")
+			fmt.Println("serverStart is false and canAddHost is false but 'server' does not match "+common.Domain+". You should have added the host ip mapping to", common.Domain, "in the hosts file (or just set canAddHost to true).")
 			errorCode = internal.ErrConfigIpMap
 			return
 		} else {
@@ -104,18 +104,18 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 		return
 	}
 	if !ips.IsEmpty() || mapCDN {
-		if commonExecutor.IsAdmin() {
-			fmt.Println("Adding host to hosts file.")
-		} else {
-			fmt.Println("Adding host to hosts file, authorize \"config-admin-agent\" if needed...")
+		fmt.Print("Adding host to hosts file")
+		if !commonExecutor.IsAdmin() {
+			fmt.Print(", authorize 'config-admin-agent' if needed")
 		}
+		fmt.Println("...")
 		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true); !result.Success() {
 			fmt.Println("Failed to add host.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d. See documentation for "config" to check what it means.`+"\n", result.ExitCode)
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			errorCode = internal.ErrConfigIpMapAdd
 		} else {

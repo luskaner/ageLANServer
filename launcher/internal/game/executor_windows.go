@@ -27,7 +27,7 @@ func appName(id string) string {
 }
 
 func isInstalledOnXbox(id string) bool {
-	// Does not seem there is another way without cgo?
+	// TODO: Implement natively
 	return commonExecutor.Options{
 		File:        "powershell",
 		SpecialFile: true,

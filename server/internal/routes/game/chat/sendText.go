@@ -40,8 +40,7 @@ func SendText(w http.ResponseWriter, r *http.Request) {
 	user.SendChatChannelMessage(chatChannel, text)
 	i.JSON(&w, i.A{0})
 	staticResponse := i.A{chatChannelIdStr, strconv.Itoa(int(user.GetId())), "", text}
-	existingUsers := chatChannel.GetUsers()
-	for _, existingUser := range existingUsers {
+	for existingUser := range chatChannel.GetUsers() {
 		var existingUserSession *models.Session
 		existingUserSession, ok = models.GetSessionByUserId(existingUser.GetId())
 		wss.SendOrStoreMessage(
