@@ -18,7 +18,7 @@ Resides in `bin` subdirectory.
 CLI is available. You can see the available options with
 `config -h`.
 
-You may run `revert -a` to revert all changes (forced).
+You may run `revert -a -e <game>` (where game is either `age1`, `age2` or `age3`) to revert all changes (forced).
 
 ## Exit Codes
 
