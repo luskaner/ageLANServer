@@ -210,7 +210,7 @@ var (
 			}
 			fmt.Println(`...`)
 			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, false); !revertResult.Success() {
-				if _, _, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil {
+				if _, proc, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
 					fmt.Println("Failed to kill 'config-admin-agent' process: ", err, "Kill it using the task manager with admin rights.")
 				} else {
 					fmt.Println("Failed to cleanup configuration, try to remove certificates and/or host mappings manually.")
@@ -218,7 +218,7 @@ var (
 				return
 			}
 			pidPath, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
-			if err == nil && proc != nil && pidPath != "" {
+			if err == nil && proc != nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
 			defer func() {
