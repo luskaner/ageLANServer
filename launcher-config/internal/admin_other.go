@@ -20,8 +20,7 @@ func preAgentStart() {
 func postAgentStart(file string) {
 	if !executor.IsAdmin() {
 		for i := 0; i < 30; i++ {
-			_, proc, _ := process.Process(file)
-			if proc != nil {
+			if _, proc, err := process.Process(file); err == nil && proc != nil {
 				break
 			}
 			time.Sleep(time.Second)

@@ -236,10 +236,9 @@ var revertCmd = &cobra.Command{
 			}
 			if failedStopAgent {
 				exeFileName := common.GetExeFileName(true, common.LauncherConfigAdminAgent)
-				if _, _, err := commonProcess.Process(exeFileName); err == nil {
+				if pid, proc, err := commonProcess.Process(exeFileName); err == nil {
 					if isAdmin {
-						_, err := commonProcess.Kill(exeFileName)
-						if err == nil {
+						if err := commonProcess.KillProc(pid, proc); err == nil {
 							fmt.Println("Successfully killed 'config-admin-agent'.")
 							failedStopAgent = false
 						} else {
@@ -248,6 +247,8 @@ var revertCmd = &cobra.Command{
 					} else {
 						fmt.Println("Re-run as administrator to kill 'config-admin-agent'")
 					}
+				} else {
+					failedStopAgent = false
 				}
 			}
 			if failedStopAgent && errorCode == common.ErrSuccess {
