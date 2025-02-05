@@ -7,7 +7,7 @@ require (
 	github.com/luskaner/ageLANServer/common v0.0.0-20250131230124-e6fa21875cdb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250131232254-981189020ab6
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sys v0.29.0
+	golang.org/x/sys v0.30.0
 )
 
 require (
