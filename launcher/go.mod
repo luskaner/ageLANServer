@@ -6,7 +6,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
-	github.com/luskaner/ageLANServer/common v0.0.0-20250131230124-e6fa21875cdb
+	github.com/luskaner/ageLANServer/common v0.0.0-20250211232506-d78e4c055f48
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250131232254-981189020ab6
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
