@@ -327,7 +327,7 @@ archives:
         dst: launcher/launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher/launcher_aoe3.bat
-    format: zip
+    formats: zip
   - id: all_windows_arm64
     builds:
       - server_64_full_windows_arm64
@@ -370,7 +370,7 @@ archives:
         dst: launcher/launcher_aoe2.bat
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher/launcher_aoe3.bat
-    format: tar.xz
+    formats: tar.xz
   - id: all_linux
     builds:
       - server_64_full_linux
@@ -434,7 +434,7 @@ archives:
         dst: launcher/launcher_aoe3.sh
         info:
           mode: 0744
-    format: tar.xz
+    formats: tar.xz
   - id: server_windows
     builds:
       - server_32_windows
@@ -465,7 +465,7 @@ archives:
         dst: docs/LICENSE.txt
       - src: README.md
         dst: docs/README.txt
-    format: zip
+    formats: zip
   - id: server_linux_tar_xz
     builds: [ server_64_arm_linux, server-genCert_64_arm_linux ]
     name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_linux_arm64"
@@ -494,7 +494,7 @@ archives:
         dst: docs/LICENSE
       - src: README.md
         dst: docs/README
-    format: tar.xz
+    formats: tar.xz
   - id: server_linux_tar_gz
     builds: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
     name_template: >-
@@ -589,7 +589,7 @@ archives:
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
-    format: zip
+    formats: zip
   - id: launcher_windows_arm64
     builds:
       - launcher_windows_arm64
@@ -619,7 +619,7 @@ archives:
       - src: launcher/resources/windows/launcher_aoe3.bat
         dst: launcher_aoe3.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
-    format: tar.xz
+    formats: tar.xz
   - id: launcher_linux
     builds:
       - launcher_linux
@@ -660,7 +660,7 @@ archives:
       {{- if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
-    format: tar.xz
+    formats: tar.xz
 universal_binaries:
   - id: server_64_macos
     name_template: 'server'
