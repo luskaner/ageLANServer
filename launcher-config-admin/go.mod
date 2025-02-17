@@ -6,7 +6,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250211232506-d78e4c055f48
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250211234553-78b33fb31da5
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/sys v0.30.0
 )
 
