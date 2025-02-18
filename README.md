@@ -1,4 +1,6 @@
 # Age LAN Server
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fluskaner%2FageLANServer.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fluskaner%2FageLANServer?ref=badge_shield)
+
 
 Age LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
 connection **to the game server**  ensuring the game LAN functionality is still available even if the official
@@ -332,3 +334,7 @@ You and all the clients connecting to your server are only authorized to use thi
 - Use this software in a LAN environment.
 
 Disclaimer: This software is not affiliated or endorsed by any publisher or developer of the games.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fluskaner%2FageLANServer.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fluskaner%2FageLANServer?ref=badge_large)
