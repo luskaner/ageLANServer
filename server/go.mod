@@ -12,7 +12,7 @@ require (
 	github.com/luskaner/ageLANServer/common v0.0.0-20250211232506-d78e4c055f48
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.36.0
 )
 
 require (
