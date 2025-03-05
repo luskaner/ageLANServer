@@ -10,7 +10,7 @@ require (
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250211234553-78b33fb31da5
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.36.0
 	golang.org/x/sys v0.30.0
 	mvdan.cc/sh/v3 v3.10.0
 )
