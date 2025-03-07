@@ -12,7 +12,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/net v0.37.0
 	golang.org/x/sys v0.31.0
-	mvdan.cc/sh/v3 v3.10.0
+	mvdan.cc/sh/v3 v3.11.0
 )
 
 require (
