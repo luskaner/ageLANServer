@@ -10,7 +10,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/sys v0.31.0
 	golang.org/x/term v0.29.0
-	mvdan.cc/sh/v3 v3.10.0
+	mvdan.cc/sh/v3 v3.11.0
 )
 
 require (
