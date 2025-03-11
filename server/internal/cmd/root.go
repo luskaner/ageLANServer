@@ -178,9 +178,9 @@ func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().BoolP("announce", "a", true, "Announce 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
+	rootCmd.PersistentFlags().StringP("announce", "a", "true", "Announce 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
-	rootCmd.PersistentFlags().BoolP("announceMulticast", "m", true, "Whether to announce the 'server' using Multicast.")
+	rootCmd.PersistentFlags().StringP("announceMulticast", "m", "true", "Whether to announce the 'server' using Multicast.")
 	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
 	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
 	cmd.GamesCommand(rootCmd.PersistentFlags())
