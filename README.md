@@ -3,7 +3,7 @@
 Age LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
 connection **to the game server**  ensuring the game LAN functionality is still available even if the official
 server
-is in maintenance or are eventually shutdown.
+is in maintenance or is eventually shutdown.
 
 **🎮 Supported games:**
 
