@@ -74,26 +74,27 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	if !executor.IsAdmin() {
 		args = append(args, "-g")
 	}
-	if unmapIPs {
-		args = append(args, "-i")
-	}
-	if removeUserCert {
-		args = append(args, "-u")
-	}
-	if removeLocalCert {
-		args = append(args, "-l")
-	}
-	if restoreMetadata {
-		args = append(args, "-m")
-	}
-	if restoreProfiles {
-		args = append(args, "-p")
-	}
-	if unmapCDN {
-		args = append(args, "-c")
-	}
 	if !failfast && unmapIPs && (runtime.GOOS == "linux" || removeLocalCert) && removeLocalCert && restoreMetadata && restoreProfiles && unmapCDN {
 		args = append(args, "-a")
+	} else {
+		if unmapIPs {
+			args = append(args, "-i")
+		}
+		if removeUserCert {
+			args = append(args, "-u")
+		}
+		if removeLocalCert {
+			args = append(args, "-l")
+		}
+		if restoreMetadata {
+			args = append(args, "-m")
+		}
+		if restoreProfiles {
+			args = append(args, "-p")
+		}
+		if unmapCDN {
+			args = append(args, "-c")
+		}
 	}
 	return args
 }
