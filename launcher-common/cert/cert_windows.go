@@ -56,12 +56,12 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 	certs = make([]*x509.Certificate, 0)
 	var certContext *windows.CertContext
 	for {
-		certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), certContext)
-		if certContext == nil {
+		certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
+		if certContext == nil || err != nil {
+			if len(certs) > 0 {
+				err = nil
+			}
 			break
-		}
-		if err != nil {
-			return
 		}
 		certBytes := make([]byte, certContext.Length)
 		for i := range certBytes {
@@ -70,13 +70,13 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 		var cert *x509.Certificate
 		cert, err = x509.ParseCertificate(certBytes)
 		if err != nil {
-			return
+			break
 		}
 		certs = append(certs, cert)
 
 		err = windows.CertDeleteCertificateFromStore(certContext)
 		if err != nil {
-			return
+			break
 		}
 	}
 	return
