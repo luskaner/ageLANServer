@@ -222,7 +222,7 @@ Exceptions on tag/commit signature:
     * *631cfa1* through *9eb66cf* (*both included*): rebase and merge PR issue.
     * *55697d4*: rebase of dependabot.
     * *feb28de*: partially verified due to dependabot.
-    * *d2b1749* and *82ca9f1*: merge mistake.
+    * *d2b1749*, *82ca9f1* and *baa75ce*: merge mistake.
 
 </details>
 
