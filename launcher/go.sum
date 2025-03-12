@@ -35,8 +35,8 @@ github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 h1:EB9EKyv7koSQS
 github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
 github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca h1:+aPDct4PqPtVxziMtiTzgCIFko/XTyDFhIuvwhQQfBA=
 github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca/go.mod h1:Niv5d5TzOlCfAwIyJUanpIKmmytcl8etPRL6CfNg/rg=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250211234553-78b33fb31da5 h1:0ZFEooPSqg/N3SVrrrF58sbqU0ev7xzqqkEvITqjTe8=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250211234553-78b33fb31da5/go.mod h1:McGBl0tlDj+MVZolonHgK0vPITSVEHCYBmGeAMNzO0o=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa h1:2bewX1bVKv3HK57kPFpFGjifvYElGwYflwpg2ZU2Axo=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa/go.mod h1:uamB4cuz8MkAvLV2kBQjhB0/kt4PN+xnsReq9Ue/cQ4=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
 github.com/magiconair/properties v1.8.7/go.mod h1:Dhd985XPs7jluiymwWYZ0G4Z61jb3vdS329zhj2hYo0=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
