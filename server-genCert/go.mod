@@ -4,7 +4,7 @@ go 1.23.0
 
 require github.com/spf13/cobra v1.9.1
 
-require github.com/luskaner/ageLANServer/common v0.0.0-20250211232506-d78e4c055f48
+require github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca
 
 require (
 	github.com/deckarep/golang-set/v2 v2.7.0 // indirect
