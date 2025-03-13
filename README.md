@@ -267,26 +267,27 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 1. **Download** the proper *full* asset from the latest
    stable release from https://github.com/luskaner/ageLANServer/releases.
 2. **Uncompress** it somewhere.
-3. If not using the Steam or Xbox launcher, **edit the `
+3. *Windows Optional*: Unblock the `.exe` files as explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
+4. If not using the Steam or Xbox launcher, **edit the `
    launcher/resources/config.<game>.toml` file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-4. **Execute `launcher/launcher-<game>`**: you will be asked for
+5. **Execute `launcher/launcher-<game>`**: you will be asked for
    admin elevation and
    confirmation of other dialogs as
    needed, you
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
-5. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
+6. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
    launch
    it will host the "server" and the rest will auto-discover and connect to it.
-6. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
+7. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
    select **LAN** before creating the Lobby (AoE III) or select the "LAN" menu option (AoE I). In AoE I/II, setting it
    to
    public
    visibility is recommended.
-7. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
+8. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
    and sending an invite as needed. You can share the link to join the lobby automatically (only works if already
    in-game).
 
