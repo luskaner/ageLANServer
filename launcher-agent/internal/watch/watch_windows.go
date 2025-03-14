@@ -18,9 +18,10 @@ func waitForProcess(PID uint32) bool {
 		_ = windows.CloseHandle(handle)
 	}(handle)
 
-	_, err = windows.WaitForSingleObject(handle, uint32((5 * time.Minute).Milliseconds()))
+	var event uint32
+	event, err = windows.WaitForSingleObject(handle, uint32((5 * time.Minute).Milliseconds()))
 
-	if err != nil {
+	if err != nil || event == uint32(windows.WAIT_TIMEOUT) {
 		return false
 	}
 
