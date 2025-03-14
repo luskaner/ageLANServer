@@ -70,7 +70,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 	}
 	fmt.Print("Starting game")
 	if _, ok := executer.(game.CustomExecutor); ok {
-		fmt.Println(", authorize it if needed")
+		fmt.Print(", authorize it if needed")
 	}
 	fmt.Println("...")
 	var result *commonExecutor.Result
