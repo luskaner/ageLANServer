@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
-	github.com/deckarep/golang-set/v2 v2.7.0
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca
