@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/deckarep/golang-set/v2 v2.7.0
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa
 	github.com/spf13/cobra v1.9.1
