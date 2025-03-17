@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/andygrunwald/vdf v1.1.0
-	github.com/deckarep/golang-set/v2 v2.7.0
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/hairyhenderson/go-which v0.2.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca
 	github.com/spf13/cobra v1.9.1
