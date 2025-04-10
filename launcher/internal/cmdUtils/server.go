@@ -87,8 +87,8 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 			ips := data.Ips.ToSlice()
 			sort.Strings(ips)
 			hosts := mapset.NewThreadUnsafeSet[string]()
-			for _, ip := range ips {
-				hosts.Append(launcherCommon.IpToHosts(ip).ToSlice()...)
+			for _, foundIp := range ips {
+				hosts.Append(launcherCommon.IpToHosts(foundIp).ToSlice()...)
 			}
 			ipsStr := strings.Join(ips, ", ")
 			hostsStr := ""
@@ -122,7 +122,9 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 		if announcedOlderVersion {
 			fmt.Println("Found at least a 'server' with an older version than this 'launcher'. The 'server'(s) should be upgraded.")
 		}
-		if len(servers) == 1 {
+		if len(serversStr) == 0 {
+			return
+		} else if len(serversStr) == 1 {
 			fmt.Printf("Found a single 'server' \"%s\", will connect to it...\n", serverTags[0])
 			ok, ip = SelectBestServerIp(serversStr[0])
 			if !ok {
