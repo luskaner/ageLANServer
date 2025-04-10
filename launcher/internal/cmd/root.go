@@ -66,12 +66,12 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
-			isAdmin := commonExecutor.IsAdmin()
 			var errorCode = common.ErrSuccess
 			defer func() {
 				_ = lock.Unlock()
 				os.Exit(errorCode)
 			}()
+			isAdmin := commonExecutor.IsAdmin()
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
 			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")
