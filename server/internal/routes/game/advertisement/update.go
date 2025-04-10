@@ -27,18 +27,31 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	advertisements := models.G(r).Advertisements()
-	adv, ok := advertisements.GetAdvertisement(q.Id)
+	var response i.A
+	var ok bool
+	advertisements.WithWriteLock(q.Id, func() {
+		var adv *models.MainAdvertisement
+		adv, ok = advertisements.GetAdvertisement(q.Id)
+		if !ok {
+			return
+		}
+
+		if gameTitle != common.GameAoE2 {
+			q.PlatformSessionId = adv.UnsafeGetPlatformSessionId()
+			q.Joinable = true
+		}
+		advertisements.UpdateUnsafe(adv, &q)
+
+		if gameTitle == common.GameAoE2 {
+			response = adv.UnsafeEncode(gameTitle)
+		}
+		ok = true
+	})
 	if !ok {
 		updateReturnError(gameTitle, &w)
 		return
 	}
-	if gameTitle != common.GameAoE2 {
-		q.PlatformSessionId = adv.GetPlatformSessionId()
-		q.Joinable = true
-	}
-	advertisements.Update(adv, &q)
-
-	if gameTitle != common.GameAoE2 {
+	if response == nil {
 		i.JSON(&w,
 			i.A{
 				0,
@@ -48,9 +61,8 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w,
 			i.A{
 				0,
-				adv.Encode(gameTitle),
+				response,
 			},
 		)
 	}
-
 }

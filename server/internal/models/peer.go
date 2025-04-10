@@ -1,69 +1,62 @@
 package models
 
 import (
-	mapset "github.com/deckarep/golang-set/v2"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"sync"
+	"sync/atomic"
 )
 
+type MainPeerMutable struct {
+	Race int32
+	Team int32
+}
+
 type MainPeer struct {
-	advertisement *MainAdvertisement
-	user          *MainUser
-	race          int32
-	team          int32
-	invites       mapset.Set[*MainUser]
-	lock          *sync.RWMutex
+	advertisementId int32
+	advertisementIp string
+	userId          int32
+	userStatId      int32
+	mutable         *atomic.Value
+	invites         *i.SafeSet[*MainUser]
 }
 
-func (peer *MainPeer) GetAdvertisementId() int32 {
-	return peer.advertisement.GetId()
+func NewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) *MainPeer {
+	peer := &MainPeer{
+		advertisementId: advertisementId,
+		advertisementIp: advertisementIp,
+		userId:          userId,
+		userStatId:      userStatId,
+		mutable:         &atomic.Value{},
+		invites:         i.NewSafeSet[*MainUser](),
+	}
+	peer.UpdateMutable(race, team)
+	return peer
 }
 
-func (peer *MainPeer) GetUser() *MainUser {
-	return peer.user
-}
-
-func (peer *MainPeer) GetRace() int32 {
-	peer.lock.RLock()
-	defer peer.lock.RUnlock()
-	return peer.race
-}
-
-func (peer *MainPeer) GetTeam() int32 {
-	peer.lock.RLock()
-	defer peer.lock.RUnlock()
-	return peer.team
+func (peer *MainPeer) GetMutable() *MainPeerMutable {
+	return peer.mutable.Load().(*MainPeerMutable)
 }
 
 func (peer *MainPeer) Encode() i.A {
-	peer.lock.RLock()
-	defer peer.lock.RUnlock()
+	mutable := peer.GetMutable()
 	return i.A{
-		peer.advertisement.GetId(),
-		peer.user.GetId(),
+		peer.advertisementId,
+		peer.userId,
 		-1,
-		peer.user.GetStatId(),
-		peer.race,
-		peer.team,
-		peer.advertisement.GetIp(),
+		peer.userStatId,
+		mutable.Race,
+		mutable.Team,
+		peer.advertisementIp,
 	}
 }
 
-func (peer *MainPeer) Invite(user *MainUser) {
-	peer.invites.Add(user)
+func (peer *MainPeer) Invite(user *MainUser) bool {
+	return peer.invites.Store(user)
 }
 
-func (peer *MainPeer) Uninvite(user *MainUser) {
-	peer.invites.Remove(user)
+func (peer *MainPeer) Uninvite(user *MainUser) bool {
+	return peer.invites.Delete(user)
 }
 
-func (peer *MainPeer) IsInvited(user *MainUser) bool {
-	return peer.invites.ContainsOne(user)
-}
-
-func (peer *MainPeer) Update(race int32, team int32) {
-	peer.lock.Lock()
-	defer peer.lock.Unlock()
-	peer.race = race
-	peer.team = team
+func (peer *MainPeer) UpdateMutable(race int32, team int32) {
+	peer.mutable.Store(&MainPeerMutable{race, team})
 }

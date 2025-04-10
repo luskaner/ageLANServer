@@ -27,28 +27,29 @@ func GetLanAdvertisements(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lanServerGuids := strings.Split(strings.ReplaceAll(strings.Trim(q.RelayRegions, `[]`), `"`, ``), ",")
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	lanServerGuidsMap := make(map[string]struct{}, len(lanServerGuids))
 	for _, guid := range lanServerGuids {
 		lanServerGuidsMap[guid] = struct{}{}
 	}
 	game := models.G(r)
 	title := game.Title()
-	currentUser, _ := game.Users().GetUserById(sess.GetUserId())
-	advs := game.Advertisements().FindAdvertisementsEncoded(title, func(adv *models.MainAdvertisement) bool {
+	currentUserId := sess.GetUserId()
+	advs := game.Advertisements().LockedFindAdvertisementsEncoded(title, true, func(adv *models.MainAdvertisement) bool {
 		_, relayRegionMatches := lanServerGuidsMap[adv.GetRelayRegion()]
-		_, isPeer := adv.GetPeer(currentUser)
-		return adv.GetJoinable() &&
-			adv.GetVisible() &&
+		peers := adv.GetPeers()
+		_, isPeer := peers.Load(currentUserId)
+		return adv.UnsafeGetJoinable() &&
+			adv.UnsafeGetVisible() &&
 			!isPeer &&
-			adv.GetAppBinaryChecksum() == q.AppBinaryChecksum &&
-			adv.GetDataChecksum() == q.DataChecksum &&
-			adv.GetMatchType() == q.MatchType &&
-			adv.GetModDllFile() == q.ModDllFile &&
-			adv.GetModDllChecksum() == q.ModDllChecksum &&
-			adv.GetModName() == q.ModName &&
-			adv.GetModVersion() == q.ModVersion &&
-			adv.GetVersionFlags() == q.VersionFlags &&
+			adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
+			adv.UnsafeGetDataChecksum() == q.DataChecksum &&
+			adv.UnsafeGetMatchType() == q.MatchType &&
+			adv.UnsafeGetModDllFile() == q.ModDllFile &&
+			adv.UnsafeGetModDllChecksum() == q.ModDllChecksum &&
+			adv.UnsafeGetModName() == q.ModName &&
+			adv.UnsafeGetModVersion() == q.ModVersion &&
+			adv.UnsafeGetVersionFlags() == q.VersionFlags &&
 			relayRegionMatches
 	})
 	if advs == nil {

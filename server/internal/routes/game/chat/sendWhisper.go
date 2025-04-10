@@ -31,8 +31,12 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	currentSession, _ := middleware.Session(r)
-	currentUser, _ := models.G(r).Users().GetUserById(currentSession.GetUserId())
+	currentSession := middleware.Session(r)
+	currentUser, ok := models.G(r).Users().GetUserById(currentSession.GetUserId())
+	if !ok {
+		i.JSON(&w, i.A{2})
+		return
+	}
 	i.JSON(&w, i.A{0})
 	wss.SendOrStoreMessage(
 		session,

@@ -2,12 +2,10 @@ package models
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/elliotchance/orderedmap/v3"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"sync"
+	"math/rand/v2"
 	"time"
 )
 
@@ -36,7 +34,7 @@ type MainAdvertisement struct {
 	mapName           string
 	description       string
 	dataChecksum      int32
-	host              *MainUser
+	hostId            int32
 	modDll            ModDll
 	modName           string
 	modVersion        string
@@ -56,228 +54,173 @@ type MainAdvertisement struct {
 	platformSessionId uint64
 	state             int8
 	startTime         int64
-	chat              []*MainMessage
-	peers             *orderedmap.OrderedMap[*MainUser, *MainPeer]
-	lock              *sync.RWMutex
-	chatLock          *sync.RWMutex
-	peerLock          *i.KeyRWMutex
+	peers             *i.SafeOrderedMap[int32, *MainPeer]
 }
 
 type MainAdvertisements struct {
 	store *i.SafeMap[int32, *MainAdvertisement]
+	locks *i.KeyRWMutex[int32]
 	users *MainUsers
 }
 
 func (advs *MainAdvertisements) Initialize(users *MainUsers) {
 	advs.store = i.NewSafeMap[int32, *MainAdvertisement]()
+	advs.locks = i.NewKeyRWMutex[int32]()
 	advs.users = users
 }
 
-func (adv *MainAdvertisement) GetModDllChecksum() int32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetModDllChecksum requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetModDllChecksum() int32 {
 	return adv.modDll.checksum
 }
 
-func (adv *MainAdvertisement) GetModDllFile() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetModDllFile requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetModDllFile() string {
 	return adv.modDll.file
 }
 
-func (adv *MainAdvertisement) GetPasswordValue() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetPasswordValue requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetPasswordValue() string {
 	return adv.password.value
 }
 
-func (adv *MainAdvertisement) GetStartTime() int64 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetStartTime requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetStartTime() int64 {
 	return adv.startTime
 }
 
-func (adv *MainAdvertisement) GetState() int8 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetState requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetState() int8 {
 	return adv.state
 }
 
 func (adv *MainAdvertisement) GetId() int32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
 	return adv.id
 }
 
-func (adv *MainAdvertisement) GetDescription() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetDescription requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetDescription() string {
 	return adv.description
 }
 
 func (adv *MainAdvertisement) GetRelayRegion() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
 	return adv.relayRegion
 }
 
-func (adv *MainAdvertisement) GetJoinable() bool {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetJoinable requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetJoinable() bool {
 	return adv.joinable
 }
 
-func (adv *MainAdvertisement) GetVisible() bool {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetVisible requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetVisible() bool {
 	return adv.visible
 }
 
-func (adv *MainAdvertisement) GetHost() *MainUser {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
-	return adv.host
+func (adv *MainAdvertisement) GetHostId() int32 {
+	return adv.hostId
 }
 
-func (adv *MainAdvertisement) GetAppBinaryChecksum() int32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetAppBinaryChecksum requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetAppBinaryChecksum() int32 {
 	return adv.appBinaryChecksum
 }
 
-func (adv *MainAdvertisement) GetDataChecksum() int32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetDataChecksum requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetDataChecksum() int32 {
 	return adv.dataChecksum
 }
 
-func (adv *MainAdvertisement) GetMatchType() uint8 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetMatchType requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetMatchType() uint8 {
 	return adv.matchType
 }
 
-func (adv *MainAdvertisement) GetModName() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetModName requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetModName() string {
 	return adv.modName
 }
 
-func (adv *MainAdvertisement) GetModVersion() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetModVersion requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetModVersion() string {
 	return adv.modVersion
 }
 
 func (adv *MainAdvertisement) GetIp() string {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
 	return adv.ip
 }
 
-func (adv *MainAdvertisement) GetVersionFlags() uint32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetVersionFlags requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetVersionFlags() uint32 {
 	return adv.versionFlags
 }
 
-func (adv *MainAdvertisement) GetPlatformSessionId() uint64 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetPlatformSessionId requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetPlatformSessionId() uint64 {
 	return adv.platformSessionId
 }
 
-func (adv *MainAdvertisement) GetObserversDelay() uint32 {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+// UnsafeGetObserversDelay requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetObserversDelay() uint32 {
 	return adv.observers.delay
 }
 
-func (adv *MainAdvertisement) GetPeers() *orderedmap.OrderedMap[*MainUser, *MainPeer] {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
+func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, *MainPeer] {
 	return adv.peers
 }
 
-func (adv *MainAdvertisement) GetPeer(user *MainUser) (*MainPeer, bool) {
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
-	userId := user.GetId()
-	adv.peerLock.RLock(userId)
-	defer adv.peerLock.RUnlock(userId)
-	u, exists := adv.peers.Get(user)
-	if !exists {
-		return nil, false
-	}
-	return u, true
-}
-
 func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) *MainAdvertisement {
-	if advFrom.Id != -1 {
-		return nil
+	adv := &MainAdvertisement{}
+	i.WithRng(func(rand *rand.Rand) {
+		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
+	})
+	adv.relayRegion = advFrom.RelayRegion
+	adv.hostId = advFrom.HostId
+	adv.party = advFrom.Party
+	adv.race = advFrom.Race
+	adv.team = advFrom.Team
+	adv.statGroup = advFrom.StatGroup
+	adv.peers = i.NewSafeOrderedMap[int32, *MainPeer]()
+	advs.UpdateUnsafe(adv, &shared.AdvertisementUpdateRequest{
+		AppBinaryChecksum: advFrom.AppBinaryChecksum,
+		DataChecksum:      advFrom.DataChecksum,
+		ModDllChecksum:    advFrom.ModDllChecksum,
+		ModDllFile:        advFrom.ModDllFile,
+		ModName:           advFrom.ModName,
+		ModVersion:        advFrom.ModVersion,
+		VersionFlags:      advFrom.VersionFlags,
+		Description:       advFrom.Description,
+		AutomatchPollId:   advFrom.AutomatchPollId,
+		MapName:           advFrom.MapName,
+		Observable:        advFrom.Observable,
+		ObserverPassword:  advFrom.ObserverPassword,
+		ObserverDelay:     advFrom.ObserverDelay,
+		Password:          advFrom.Password,
+		Passworded:        advFrom.Passworded,
+		Visible:           advFrom.Visible,
+		Joinable:          advFrom.Joinable,
+		MatchType:         advFrom.MatchType,
+		MaxPlayers:        advFrom.MaxPlayers,
+		Options:           advFrom.Options,
+		SlotInfo:          advFrom.SlotInfo,
+		PlatformSessionId: advFrom.PlatformSessionId,
+		State:             advFrom.State,
+	})
+	exists := true
+	var storedAdv *MainAdvertisement
+	for exists {
+		i.WithRng(func(rand *rand.Rand) {
+			adv.id = rand.Int32()
+		})
+		storedAdv, exists = advs.store.Store(adv.id, adv, func(_ *MainAdvertisement) bool {
+			return false
+		})
 	}
-	var id int32
-	for {
-		func() {
-			i.RngLock.Lock()
-			defer i.RngLock.Unlock()
-			id = i.Rng.Int32()
-		}()
-		_, exists := advs.store.Load(id)
-		if !exists {
-			adv := &MainAdvertisement{
-				lock:     &sync.RWMutex{},
-				chatLock: &sync.RWMutex{},
-				peerLock: i.NewKeyRWMutex(),
-			}
-			adv.id = id
-			func() {
-				i.RngLock.Lock()
-				defer i.RngLock.Unlock()
-				adv.ip = fmt.Sprintf("/10.0.11.%d", i.Rng.IntN(254)+1)
-			}()
-			adv.relayRegion = advFrom.RelayRegion
-			adv.party = advFrom.Party
-			adv.race = advFrom.Race
-			adv.team = advFrom.Team
-			adv.statGroup = advFrom.StatGroup
-			adv.peers = orderedmap.NewOrderedMap[*MainUser, *MainPeer]()
-			adv.chat = make([]*MainMessage, 0)
-			advs.update(adv, &shared.AdvertisementUpdateRequest{
-				Id:                adv.id,
-				AppBinaryChecksum: advFrom.AppBinaryChecksum,
-				DataChecksum:      advFrom.DataChecksum,
-				ModDllChecksum:    advFrom.ModDllChecksum,
-				ModDllFile:        advFrom.ModDllFile,
-				ModName:           advFrom.ModName,
-				ModVersion:        advFrom.ModVersion,
-				VersionFlags:      advFrom.VersionFlags,
-				Description:       advFrom.Description,
-				AutomatchPollId:   advFrom.AutomatchPollId,
-				MapName:           advFrom.MapName,
-				HostId:            advFrom.HostId,
-				Observable:        advFrom.Observable,
-				ObserverPassword:  advFrom.ObserverPassword,
-				ObserverDelay:     advFrom.ObserverDelay,
-				Password:          advFrom.Password,
-				Passworded:        advFrom.Passworded,
-				Visible:           advFrom.Visible,
-				Joinable:          advFrom.Joinable,
-				MatchType:         advFrom.MatchType,
-				MaxPlayers:        advFrom.MaxPlayers,
-				Options:           advFrom.Options,
-				SlotInfo:          advFrom.SlotInfo,
-				PlatformSessionId: advFrom.PlatformSessionId,
-				State:             advFrom.State,
-			})
-			advs.store.Store(id, adv)
-			return adv
-		}
-	}
+	return storedAdv
 }
 
-func (adv *MainAdvertisement) AddMessage(broadcast bool, content string, typeId uint8, sender *MainUser, receivers []*MainUser) *MainMessage {
-	message := &MainMessage{
+func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, sender *MainUser, receivers []*MainUser) *MainMessage {
+	return &MainMessage{
 		advertisementId: adv.GetId(),
 		time:            time.Now().UTC().Unix(),
 		broadcast:       broadcast,
@@ -286,110 +229,87 @@ func (adv *MainAdvertisement) AddMessage(broadcast bool, content string, typeId 
 		sender:          sender,
 		receivers:       receivers,
 	}
-	adv.chatLock.Lock()
-	defer adv.chatLock.Unlock()
-	adv.chat = append(adv.chat, message)
-	return message
 }
 
-func (advs *MainAdvertisements) Update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
-	advs.update(adv, advFrom)
+func (advs *MainAdvertisements) WithReadLock(id int32, action func()) {
+	advs.locks.RLock(id)
+	defer advs.locks.RUnlock(id)
+	action()
 }
 
-func (advs *MainAdvertisements) update(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
-	func() {
-		adv.lock.Lock()
-		defer adv.lock.Unlock()
-		if adv.host != nil {
-			adv.host.SetAdvertisement(nil)
-			adv.host = nil
-		}
-		adv.host, _ = advs.users.GetUserById(advFrom.HostId)
-		adv.host.SetAdvertisement(adv)
-		adv.automatchPollId = advFrom.AutomatchPollId
-		adv.appBinaryChecksum = advFrom.AppBinaryChecksum
-		adv.mapName = advFrom.MapName
-		adv.description = advFrom.Description
-		adv.dataChecksum = advFrom.DataChecksum
-		adv.modDll.checksum = advFrom.ModDllChecksum
-		adv.modDll.file = advFrom.ModDllFile
-		adv.modName = advFrom.ModName
-		adv.modVersion = advFrom.ModVersion
-		adv.observers.delay = advFrom.ObserverDelay
-		adv.observers.enabled = advFrom.Observable
-		adv.observers.password = advFrom.ObserverPassword
-		adv.password.enabled = advFrom.Passworded
-		adv.password.value = advFrom.Password
-		adv.visible = advFrom.Visible
-		adv.versionFlags = advFrom.VersionFlags
-		adv.joinable = advFrom.Joinable
-		adv.matchType = advFrom.MatchType
-		adv.maxPlayers = advFrom.MaxPlayers
-		adv.options = advFrom.Options
-		adv.slotInfo = advFrom.SlotInfo
-		adv.platformSessionId = advFrom.PlatformSessionId
-	}()
-	adv.UpdateState(advFrom.State)
+func (advs *MainAdvertisements) WithWriteLock(id int32, action func()) {
+	advs.locks.Lock(id)
+	defer advs.locks.Unlock(id)
+	action()
+}
+
+// UpdateUnsafe is safe only if adv has not been stored yet
+func (advs *MainAdvertisements) UpdateUnsafe(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
+	adv.hostId = advFrom.HostId
+	adv.automatchPollId = advFrom.AutomatchPollId
+	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
+	adv.mapName = advFrom.MapName
+	adv.description = advFrom.Description
+	adv.dataChecksum = advFrom.DataChecksum
+	adv.modDll.checksum = advFrom.ModDllChecksum
+	adv.modDll.file = advFrom.ModDllFile
+	adv.modName = advFrom.ModName
+	adv.modVersion = advFrom.ModVersion
+	adv.observers.delay = advFrom.ObserverDelay
+	adv.observers.enabled = advFrom.Observable
+	adv.observers.password = advFrom.ObserverPassword
+	adv.password.enabled = advFrom.Passworded
+	adv.password.value = advFrom.Password
+	adv.visible = advFrom.Visible
+	adv.versionFlags = advFrom.VersionFlags
+	adv.joinable = advFrom.Joinable
+	adv.matchType = advFrom.MatchType
+	adv.maxPlayers = advFrom.MaxPlayers
+	adv.options = advFrom.Options
+	adv.slotInfo = advFrom.SlotInfo
+	adv.platformSessionId = advFrom.PlatformSessionId
+	adv.UnsafeUpdateState(advFrom.State)
 }
 
 func (advs *MainAdvertisements) GetAdvertisement(id int32) (*MainAdvertisement, bool) {
 	return advs.store.Load(id)
 }
 
-func (advs *MainAdvertisements) NewPeer(adv *MainAdvertisement, u *MainUser, race int32, team int32) *MainPeer {
-	if peer, ok := adv.GetPeer(u); ok {
-		// Ignore already added peers (via host & join)
-		return peer
+// UnsafeNewPeer requires advertisement write lock
+func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) *MainPeer {
+	adv, exists := advs.GetAdvertisement(advertisementId)
+	if !exists {
+		return nil
 	}
-	peer := &MainPeer{
-		advertisement: adv,
-		user:          u,
-		race:          race,
-		team:          team,
-		invites:       mapset.NewSet[*MainUser](),
-		lock:          &sync.RWMutex{},
-	}
-	userId := peer.user.GetId()
-	adv.peerLock.Lock(userId)
-	defer adv.peerLock.Unlock(userId)
-	adv.peers.Set(peer.user, peer)
-	u.SetAdvertisement(adv)
-	return peer
+	peer := NewPeer(advertisementId, advertisementIp, userId, userStatId, race, team)
+	_, storedPeer := adv.peers.Store(peer.userId, peer, func(_ *MainPeer) bool {
+		return false
+	})
+	return storedPeer
 }
 
-func (advs *MainAdvertisements) RemovePeer(adv *MainAdvertisement, user *MainUser) {
-	func() {
-		adv.peerLock.Lock(user.GetId())
-		defer adv.peerLock.Unlock(user.GetId())
-		adv.peers.Delete(user)
-		user.SetAdvertisement(nil)
-	}()
-	if adv.host == user {
-		advs.Delete(adv)
+// UnsafeRemovePeer requires advertisement write lock
+func (advs *MainAdvertisements) UnsafeRemovePeer(advertisementId int32, userId int32) bool {
+	adv, exists := advs.GetAdvertisement(advertisementId)
+	if !exists {
+		return false
 	}
+	if !adv.peers.Delete(userId) {
+		return false
+	}
+	if adv.hostId == userId {
+		advs.UnsafeDelete(adv)
+	}
+	return true
 }
 
-func (adv *MainAdvertisement) UpdatePeer(user *MainUser, race int32, team int32) {
-	userId := user.GetId()
-	adv.peerLock.Lock(userId)
-	defer adv.peerLock.Unlock(userId)
-	peer, _ := adv.peers.Get(user)
-	peer.Update(race, team)
-}
-
-func (advs *MainAdvertisements) Delete(adv *MainAdvertisement) {
-	adv.lock.Lock()
-	defer adv.lock.Unlock()
+// UnsafeDelete requires advertisement write lock
+func (advs *MainAdvertisements) UnsafeDelete(adv *MainAdvertisement) {
 	advs.store.Delete(adv.id)
-	adv.host.SetAdvertisement(nil)
-	for el := range adv.peers.Values() {
-		el.GetUser().SetAdvertisement(nil)
-	}
 }
 
-func (adv *MainAdvertisement) UpdateState(state int8) {
-	adv.lock.Lock()
-	defer adv.lock.Unlock()
+// UnsafeUpdateState is only safe if advertisement has not been added yet
+func (adv *MainAdvertisement) UnsafeUpdateState(state int8) {
 	previousState := adv.state
 	adv.state = state
 	if adv.state == 1 && previousState != 1 {
@@ -399,31 +319,25 @@ func (adv *MainAdvertisement) UpdateState(state int8) {
 	}
 }
 
-func (adv *MainAdvertisement) UpdatePlatformSessionId(sessionId uint64) {
-	adv.lock.Lock()
-	defer adv.lock.Unlock()
+// UnsafeUpdatePlatformSessionId requires advertisement write lock
+func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(sessionId uint64) {
 	adv.platformSessionId = sessionId
 }
 
-func (adv *MainAdvertisement) EncodePeers() i.A {
-	var peers = make(i.A, adv.peers.Len())
+func (adv *MainAdvertisement) EncodePeers() []i.A {
+	peersLen, peers := adv.peers.Values()
+	encodedPeers := make([]i.A, peersLen)
 	j := 0
-	for key, p := range adv.peers.AllFromFront() {
-		userId := key.GetId()
-		func() {
-			adv.peerLock.RLock(userId)
-			defer adv.peerLock.RUnlock(userId)
-			peers[j] = p.Encode()
-		}()
+	for p := range peers {
+		encodedPeers[j] = p.Encode()
 		j++
 	}
-	return peers
+	return encodedPeers
 }
 
-func (adv *MainAdvertisement) Encode(gameId string) i.A {
+// UnsafeEncode requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 	var visible uint8
-	adv.lock.RLock()
-	defer adv.lock.RUnlock()
 	if adv.visible {
 		visible = 1
 	} else {
@@ -462,7 +376,7 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 	}
 	response = append(
 		response,
-		adv.host.GetId(),
+		adv.hostId,
 		started,
 		adv.description,
 	)
@@ -482,7 +396,7 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 		0,
 		0,
 		0,
-		adv.GetObserversDelay(),
+		adv.UnsafeGetObserversDelay(),
 		1,
 		1,
 		startTime,
@@ -494,29 +408,45 @@ func (adv *MainAdvertisement) Encode(gameId string) i.A {
 	return response
 }
 
-func (advs *MainAdvertisements) FindAdvertisements(matches func(adv *MainAdvertisement) bool) []*MainAdvertisement {
-	var res []*MainAdvertisement
-	for _, adv := range advs.store.Iter() {
-		func() {
-			adv.lock.RLock()
-			defer adv.lock.RUnlock()
-			if matches(adv) {
-				res = append(res, adv)
-			}
-		}()
+// UnsafeFirstAdvertisement requires advertisement read lock unless only safe advertisement properties are checked
+func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainAdvertisement) bool) *MainAdvertisement {
+	for adv := range advs.store.Values() {
+		if matches(adv) {
+			return adv
+		}
+	}
+	return nil
+}
+
+func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
+	var res []i.A
+	for adv := range advs.store.Values() {
+		advId := adv.GetId()
+		if preMatchesLocking {
+			func() {
+				advs.locks.RLock(advId)
+				defer advs.locks.RUnlock(advId)
+				if matches(adv) {
+					res = append(res, adv.UnsafeEncode(gameId))
+				}
+			}()
+		} else {
+			advs.WithReadLock(adv.GetId(), func() {
+				res = append(res, adv.UnsafeEncode(gameId))
+			})
+		}
 	}
 	return res
 }
 
-func (advs *MainAdvertisements) FindAdvertisementsEncoded(gameId string, matches func(adv *MainAdvertisement) bool) []i.A {
-	var res []i.A
-	advsOriginal := advs.FindAdvertisements(matches)
-	for _, adv := range advsOriginal {
-		func() {
-			adv.lock.RLock()
-			defer adv.lock.RUnlock()
-			res = append(res, adv.Encode(gameId))
-		}()
-	}
-	return res
+func (advs *MainAdvertisements) GetUserAdvertisement(userId int32) *MainAdvertisement {
+	return advs.UnsafeFirstAdvertisement(func(adv *MainAdvertisement) bool {
+		_, peerIter := adv.peers.Keys()
+		for usId := range peerIter {
+			if usId == userId {
+				return true
+			}
+		}
+		return false
+	})
 }

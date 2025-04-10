@@ -7,15 +7,20 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 )
+
+type connectionWrapper struct {
+	writeLock *sync.Mutex
+	conn      *websocket.Conn
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
-var lock = i.NewKeyRWMutex()
-var connections = i.NewSafeMap[string, *websocket.Conn]()
+var connections = i.NewSafeMap[string, *connectionWrapper]()
 var writeWait = 1 * time.Second
 
 func closeConn(conn *websocket.Conn, closeCode int, text string) {
@@ -40,7 +45,11 @@ func parseMessage(message i.H, currentSession *models.Session) (uint32, *models.
 		}
 	}
 	if currentSession != nil {
-		sess, _ = models.GetSessionById(currentSession.GetId())
+		var ok bool
+		sess, ok = models.GetSessionById(currentSession.GetId())
+		if !ok {
+			return 0, nil
+		}
 	}
 	return op, sess
 }
@@ -71,11 +80,16 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionToken := sess.GetId()
-	func() {
-		lock.Lock(sessionToken)
-		defer lock.Unlock(sessionToken)
-		connections.Store(sessionToken, conn)
-	}()
+	connWrapper := &connectionWrapper{
+		writeLock: &sync.Mutex{},
+		conn:      conn,
+	}
+	connections.Store(
+		sessionToken,
+		connWrapper,
+		nil,
+	)
+
 	sess.ResetExpiryTimer()
 
 	conn.SetPingHandler(func(message string) error {
@@ -98,8 +112,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	})
 
 	defer func() {
-		lock.Lock(sessionToken)
-		defer lock.Unlock(sessionToken)
 		connections.Delete(sessionToken)
 		closeConn(conn, websocket.CloseNormalClosure, "Invalid message")
 	}()
@@ -115,14 +127,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		if op == 0 {
 			if sess == nil {
 				break
-			} else if sess.GetId() != sessionToken {
-				func() {
-					lock.Lock(sessionToken)
-					defer lock.Unlock(sessionToken)
-					connections.Delete(sessionToken)
-					sessionToken = sess.GetId()
-					connections.Store(sessionToken, conn)
-				}()
+			}
+			if sessId := sess.GetId(); sessId != sessionToken {
+				connections.StoreAndDelete(sessId, connWrapper, sessionToken)
+				sessionToken = sessId
 			}
 		} else if _, ok := models.GetSessionById(sessionToken); !ok {
 			break
@@ -131,22 +139,16 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func SendMessage(sessionId string, message i.A) bool {
-	var ok bool
-	var conn *websocket.Conn
-	func() {
-		lock.RLock(sessionId)
-		defer lock.RUnlock(sessionId)
-		conn, ok = connections.Load(sessionId)
-	}()
+func sendMessage(sessionId string, message i.A) bool {
+	connWrapper, ok := connections.Load(sessionId)
 
 	if !ok {
 		return false
 	}
 
-	lock.Lock(sessionId)
-	defer lock.Unlock(sessionId)
-	err := conn.WriteJSON(message)
+	connWrapper.writeLock.Lock()
+	defer connWrapper.writeLock.Unlock()
+	err := connWrapper.conn.WriteJSON(message)
 
 	if err != nil {
 		return false
@@ -158,7 +160,7 @@ func SendMessage(sessionId string, message i.A) bool {
 func SendOrStoreMessage(session *models.Session, action string, message i.A) {
 	finalMessage := i.A{0, action, session.GetUserId(), message}
 	go func(session *models.Session, finalMessage i.A) {
-		if ok := SendMessage(session.GetId(), finalMessage); !ok {
+		if ok := sendMessage(session.GetId(), finalMessage); !ok {
 			session.AddMessage(finalMessage)
 		}
 	}(session, finalMessage)

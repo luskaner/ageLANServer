@@ -21,9 +21,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
 	game := models.G(r)
-	u, _ := game.Users().GetUserById(sess.GetUserId())
 	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
 	if !ok {
 		i.JSON(&w, i.A{2})
@@ -35,17 +33,23 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
+	peers := adv.GetPeers()
 	var peer *models.MainPeer
-	peer, ok = adv.GetPeer(inviter)
+	sess := middleware.Session(r)
+	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	if !peer.IsInvited(u) {
+	peer, ok = peers.Load(inviter.GetId())
+	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	peer.Uninvite(u)
+	if !peer.Uninvite(u) {
+		i.JSON(&w, i.A{0})
+		return
+	}
 	var inviterSession *models.Session
 	inviterSession, ok = models.GetSessionByUserId(inviter.GetId())
 	if ok {

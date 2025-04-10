@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"math/rand/v2"
 	"net/http"
 	"time"
 )
@@ -16,6 +17,7 @@ type request struct {
 	PlatformUserId uint64 `schema:"platformUserID"`
 	Alias          string `schema:"alias"`
 	GameId         string `schema:"title"`
+	MacAddress     string `schema:"macAddress"`
 }
 
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
@@ -27,16 +29,14 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	var t2 int64
 	var t3 int64
-	func() {
-		i.RngLock.Lock()
-		defer i.RngLock.Unlock()
-		t2 = t - i.Rng.Int64N(3600*2-3600+1) + 3600
-		t3 = t - i.Rng.Int64N(3600*2-3600+1) + 3600
-	}()
+	i.WithRng(func(rand *rand.Rand) {
+		t2 = t - rand.Int64N(3600*2-3600+1) + 3600
+		t3 = t - rand.Int64N(3600*2-3600+1) + 3600
+	})
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
-	u := users.GetOrCreateUser(title, r.RemoteAddr, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	u := users.GetOrCreateUser(title, r.RemoteAddr, req.MacAddress, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
 	sess, ok := models.GetSessionByUserId(u.GetId())
 	if ok {
 		sess.Delete()

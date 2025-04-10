@@ -27,14 +27,18 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	users := game.Users()
-	user, _ := users.GetUserById(sess.GetUserId())
-	if chatChannel.HasUser(user) {
+	user, ok := users.GetUserById(sess.GetUserId())
+	if !ok {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
-	encodedUsers := user.JoinChatChannel(chatChannel)
+	exists, encodedUsers := chatChannel.AddUser(user)
+	if exists {
+		i.JSON(&w, i.A{2, "", 0, i.A{}})
+		return
+	}
 	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false)}}
 	for userId := range users.GetUserIds() {

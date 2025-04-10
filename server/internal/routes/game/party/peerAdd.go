@@ -9,33 +9,55 @@ import (
 )
 
 func PeerAdd(w http.ResponseWriter, r *http.Request) {
-	adv, length, profileIds, raceIds, statGroupIds, teamIds := shared.ParseParameters(r)
-	if adv == nil {
+	parseError, advId, length, profileIds, raceIds, teamIds := shared.ParseParameters(r)
+	if parseError {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
+	currentUserId := sess.GetUserId()
 	game := models.G(r)
 	gameUsers := game.Users()
-	currentUser, _ := gameUsers.GetUserById(sess.GetUserId())
-	// Only the host can add peers
-	host := adv.GetHost()
-	if host != currentUser {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	users := make([]*models.MainUser, length)
-	for j := 0; j < length; j++ {
-		u, ok := gameUsers.GetUserById(profileIds[j])
-		if !ok || u.GetStatId() != statGroupIds[j] {
-			i.JSON(&w, i.A{2})
+	advertisements := game.Advertisements()
+	var ok bool
+	advertisements.WithWriteLock(advId, func() {
+		adv, exists := advertisements.GetAdvertisement(advId)
+		if !exists {
 			return
 		}
-		users[j] = u
+		// Only the host can add peers
+		if hostId := adv.GetHostId(); hostId != currentUserId {
+			return
+		}
+		users := make([]*models.MainUser, length)
+		for j := 0; j < length; j++ {
+			var u *models.MainUser
+			u, ok = gameUsers.GetUserById(profileIds[j])
+			if !ok {
+				return
+			}
+			users[j] = u
+		}
+		advIp := adv.GetIp()
+		var addedUserIds []int32
+		for j, u := range users {
+			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatId(), raceIds[j], teamIds[j]); peer != nil {
+				addedUserIds = append(addedUserIds, u.GetId())
+			} else {
+				break
+			}
+		}
+		if len(addedUserIds) == len(users) {
+			ok = true
+		} else {
+			for _, userId := range addedUserIds {
+				advertisements.UnsafeRemovePeer(advId, userId)
+			}
+		}
+	})
+	if ok {
+		i.JSON(&w, i.A{0})
+	} else {
+		i.JSON(&w, i.A{2})
 	}
-	advertisements := game.Advertisements()
-	for j, u := range users {
-		advertisements.NewPeer(adv, u, raceIds[j], teamIds[j])
-	}
-	i.JSON(&w, i.A{0})
 }

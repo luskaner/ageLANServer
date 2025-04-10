@@ -35,10 +35,8 @@ func GameMiddleware(next http.Handler) http.Handler {
 				}
 			}
 			if gameId == "" {
-				session, ok := Session(r)
-				if ok {
-					gameId = session.GetGameId()
-				}
+				session := Session(r)
+				gameId = session.GetGameId()
 			}
 			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
 			if !gameSet.ContainsOne(gameId) {

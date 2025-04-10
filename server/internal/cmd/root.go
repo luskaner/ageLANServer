@@ -47,6 +47,9 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			if viper.GetBool("GeneratePlatformUserId") {
+				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
+			}
 			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
 			if gameSet.IsEmpty() {
 				fmt.Println("No games specified")

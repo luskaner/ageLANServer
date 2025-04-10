@@ -25,9 +25,13 @@ func Relationships(gameTitle string, users *models.MainUsers, user *models.MainU
 func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	// As we don't have knowledge of Steam/Xbox friends, nor it is supposed to be many players on the server
 	// just return all online users as if they were friends (AoE3) or last connections (AoE2)
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	game := models.G(r)
 	users := game.Users()
-	currentUser, _ := users.GetUserById(sess.GetUserId())
-	i.JSON(&w, Relationships(game.Title(), users, currentUser))
+	currentUser, ok := users.GetUserById(sess.GetUserId())
+	if ok {
+		i.JSON(&w, Relationships(game.Title(), users, currentUser))
+	} else {
+		i.JSON(&w, i.A{0, []i.A{}, i.A{}, i.A{}, i.A{}, []i.A{}, i.A{}, i.A{}})
+	}
 }

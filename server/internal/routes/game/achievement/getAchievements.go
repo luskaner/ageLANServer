@@ -7,7 +7,7 @@ import (
 )
 
 func GetAchievements(w http.ResponseWriter, r *http.Request) {
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	i.JSON(&w,
 		i.A{
 			0,

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/elliotchance/orderedmap/v3"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 	"os"
@@ -21,7 +20,6 @@ var CloudFolder = filepath.Join(responsesFolder, "cloud")
 
 type MainResources struct {
 	keyedFilenames  mapset.Set[string]
-	Login           *orderedmap.OrderedMap[string, string]
 	ChatChannels    map[string]MainChatChannel
 	LoginData       []i.A
 	ArrayFiles      map[string]i.A
@@ -35,7 +33,6 @@ func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[stri
 	r.KeyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
-	r.Login = orderedmap.NewOrderedMap[string, string]()
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
@@ -61,7 +58,7 @@ func (r *MainResources) initializeLogin(gameId string) {
 	re := regexp.MustCompile(`"([^"]*)"`)
 	matches := re.FindAllStringSubmatch(string(data), -1)
 	for j := 0; j < len(matches)-1; j += 2 {
-		r.Login.Set(matches[j][1], matches[j+1][1])
+		r.LoginData = append(r.LoginData, i.A{matches[j][1], matches[j+1][1]})
 	}
 }
 

@@ -10,31 +10,49 @@ import (
 
 func PeerUpdate(w http.ResponseWriter, r *http.Request) {
 	// What about isNonParticipants[]? observers? ai players?
-	adv, length, profileIds, raceIds, statGroupIds, teamIds := shared.ParseParameters(r)
-	if adv == nil {
+	parseError, advId, length, profileIds, raceIds, teamIds := shared.ParseParameters(r)
+	if parseError {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
-	users := make([]*models.MainUser, length)
-	gameUsers := models.G(r).Users()
-	currentUser, _ := gameUsers.GetUserById(sess.GetUserId())
-	// Only the host can update peers
-	if adv.GetHost() != currentUser {
-		i.JSON(&w, i.A{2})
-		return
-	}
-
-	for j := 0; j < length; j++ {
-		u, ok := gameUsers.GetUserById(profileIds[j])
-		if !ok || u.GetStatId() != statGroupIds[j] {
-			i.JSON(&w, i.A{2})
+	sess := middleware.Session(r)
+	game := models.G(r)
+	gameUsers := game.Users()
+	advertisements := game.Advertisements()
+	currentUserId := sess.GetUserId()
+	var ok bool
+	advertisements.WithWriteLock(advId, func() {
+		adv, exists := advertisements.GetAdvertisement(advId)
+		if !exists {
 			return
 		}
-		users[j] = u
+		// Only the host can update peers
+		if hostId := adv.GetHostId(); hostId != currentUserId {
+			return
+		}
+		advPeers := adv.GetPeers()
+		var peers []*models.MainPeer
+		for j := 0; j < length; j++ {
+			var u *models.MainUser
+			u, ok = gameUsers.GetUserById(profileIds[j])
+			if !ok {
+				return
+			}
+			var peer *models.MainPeer
+			peer, ok = advPeers.Load(u.GetId())
+			if !ok {
+				return
+			}
+			peers = append(peers, peer)
+		}
+		for j, peer := range peers {
+			peer.UpdateMutable(raceIds[j], teamIds[j])
+		}
+		ok = true
+	})
+	if ok {
+		i.JSON(&w, i.A{0})
+	} else {
+		i.JSON(&w, i.A{2})
 	}
-	for j, u := range users {
-		adv.UpdatePeer(u, raceIds[j], teamIds[j])
-	}
-	i.JSON(&w, i.A{0})
 }
