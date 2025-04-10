@@ -286,7 +286,7 @@ builds:
     goamd64: [ "v1" ]
 archives:
   - id: all_windows_amd64
-    builds:
+    ids:
       - server_64_full_windows_amd64
       - server-genCert_64_full_windows_amd64
       - launcher_full_windows_amd64
@@ -329,7 +329,7 @@ archives:
         dst: launcher/launcher_aoe3.bat
     formats: zip
   - id: all_windows_arm64
-    builds:
+    ids:
       - server_64_full_windows_arm64
       - server-genCert_64_full_windows_arm64
       - launcher_full_windows_arm64
@@ -372,7 +372,7 @@ archives:
         dst: launcher/launcher_aoe3.bat
     formats: tar.xz
   - id: all_linux
-    builds:
+    ids:
       - server_64_full_linux
       - server-genCert_64_full_linux
       - launcher_full_linux
@@ -436,7 +436,7 @@ archives:
           mode: 0744
     formats: tar.xz
   - id: server_windows
-    builds:
+    ids:
       - server_32_windows
       - server-genCert_32_windows
       - server_64_windows_amd64
@@ -467,7 +467,7 @@ archives:
         dst: docs/README.txt
     formats: zip
   - id: server_linux_tar_xz
-    builds: [ server_64_arm_linux, server-genCert_64_arm_linux ]
+    ids: [ server_64_arm_linux, server-genCert_64_arm_linux ]
     name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_linux_arm64"
     files:
       - src: server/resources/config
@@ -496,7 +496,7 @@ archives:
         dst: docs/README
     formats: tar.xz
   - id: server_linux_tar_gz
-    builds: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
+    ids: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_linux
@@ -531,7 +531,7 @@ archives:
       - src: README.md
         dst: docs/README
   - id: server_macos
-    builds: [ server_64_macos, server-genCert_64_macos ]
+    ids: [ server_64_macos, server-genCert_64_macos ]
     name_template: >-
       {{- .ProjectName }}_server_
       {{- .RawVersion }}_mac
@@ -561,7 +561,7 @@ archives:
       - src: README.md
         dst: docs/README
   - id: launcher_windows_amd64
-    builds:
+    ids:
       - launcher_windows_amd64
       - launcher-agent_windows_amd64
       - launcher-config_windows_amd64
@@ -591,7 +591,7 @@ archives:
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
     formats: zip
   - id: launcher_windows_arm64
-    builds:
+    ids:
       - launcher_windows_arm64
       - launcher-agent_windows_arm64
       - launcher-config_windows_arm64
@@ -621,7 +621,7 @@ archives:
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
     formats: tar.xz
   - id: launcher_linux
-    builds:
+    ids:
       - launcher_linux
       - launcher-agent_linux
       - launcher-config_linux
