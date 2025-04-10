@@ -2,8 +2,6 @@ module github.com/luskaner/ageLANServer/launcher
 
 go 1.23.0
 
-toolchain go1.24.1
-
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0

@@ -55,6 +55,10 @@ func main() {
 		_, ok := <-sigs
 		if ok {
 			exitCode = common.ErrSignal
+			defer func() {
+				_ = lock.Unlock()
+				os.Exit(exitCode)
+			}()
 			if len(revertFlags) > 0 {
 				internal.RunConfig(revertFlags)
 			}
@@ -64,8 +68,6 @@ func main() {
 			if serverExe != "-" {
 				_, _ = commonProcess.Kill(serverExe)
 			}
-			_ = lock.Unlock()
-			os.Exit(exitCode)
 		}
 	}()
 	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
