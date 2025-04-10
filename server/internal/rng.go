@@ -8,5 +8,11 @@ import (
 
 var seed = uint64(time.Now().UnixNano())
 var src = rand.NewPCG(seed, seed)
-var Rng = rand.New(src)
-var RngLock = sync.Mutex{}
+var rng = rand.New(src)
+var rngLock = sync.Mutex{}
+
+func WithRng(action func(rand *rand.Rand)) {
+	rngLock.Lock()
+	defer rngLock.Unlock()
+	action(rng)
+}

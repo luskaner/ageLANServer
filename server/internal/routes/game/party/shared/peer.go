@@ -2,42 +2,40 @@ package shared
 
 import (
 	"encoding/json"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
 )
 
-func ParseParameters(r *http.Request) (*models.MainAdvertisement, int, []int32, []int32, []int32, []int32) {
+func ParseParameters(r *http.Request) (parseError bool, advId int32, length int, profileIds []int32, raceIds []int32, teamIds []int32) {
 	profileIdsStr := r.PostFormValue("profile_ids")
-	var profileIds []int32
 	err := json.Unmarshal([]byte(profileIdsStr), &profileIds)
 	if err != nil {
-		profileIds = []int32{}
+		parseError = true
+		return
 	}
 	raceIdsStr := r.PostFormValue("race_ids")
-	var raceIds []int32
 	err = json.Unmarshal([]byte(raceIdsStr), &raceIds)
 	if err != nil {
-		raceIds = []int32{}
-	}
-	statGroupIdsStr := r.PostFormValue("statGroup_ids")
-	var statGroupIds []int32
-	err = json.Unmarshal([]byte(statGroupIdsStr), &statGroupIds)
-	if err != nil {
-		statGroupIds = []int32{}
+		parseError = true
+		return
 	}
 	teamIdsStr := r.PostFormValue("teamIDs")
-	var teamIds []int32
 	err = json.Unmarshal([]byte(teamIdsStr), &teamIds)
 	if err != nil {
-		teamIds = []int32{}
+		parseError = true
+		return
+	}
+	if min(len(profileIds), len(raceIds), len(teamIds)) != max(len(profileIds), len(raceIds), len(teamIds)) {
+		parseError = true
+		return
 	}
 	advIdStr := r.PostFormValue("match_id")
-	advId, err := strconv.ParseInt(advIdStr, 10, 32)
-	var adv *models.MainAdvertisement
-	if err == nil {
-		adv, _ = models.G(r).Advertisements().GetAdvertisement(int32(advId))
+	advIdInt64, err := strconv.ParseInt(advIdStr, 10, 32)
+	if err != nil {
+		parseError = true
+		return
 	}
-	length := min(len(profileIds), len(raceIds), len(statGroupIds), len(teamIds))
-	return adv, length, profileIds, raceIds, statGroupIds, teamIds
+	advId = int32(advIdInt64)
+	length = len(profileIds)
+	return
 }

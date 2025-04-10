@@ -13,20 +13,28 @@ import (
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	game := models.G(r)
 	users := game.Users()
-	u, _ := users.GetUserById(sess.GetUserId())
-	if adv := u.GetAdvertisement(); adv != nil {
-		game.Advertisements().RemovePeer(adv, u)
+	advertisements := game.Advertisements()
+	u, ok := users.GetUserById(sess.GetUserId())
+	if !ok {
+		i.JSON(&w, i.A{2})
+		return
 	}
-	for channelId, channel := range u.GetChannels() {
-		u.LeaveChatChannel(channel)
-		chat.NotifyLeaveChannel(users, u, channelId)
-		// AoE3 only takes into account the first notify in a readSession return
-		// so delay each message by 100ms so they go in different responses
-		// otherwise, it would appear as it left the first channel only
-		time.Sleep(100 * time.Millisecond)
+	if adv := advertisements.GetUserAdvertisement(u.GetId()); adv != nil {
+		advertisements.WithWriteLock(adv.GetId(), func() {
+			game.Advertisements().UnsafeRemovePeer(adv.GetId(), u.GetId())
+		})
+	}
+	for channelId, channel := range game.ChatChannels().Iter() {
+		if channel.RemoveUser(u) {
+			chat.NotifyLeaveChannel(users, u, channelId)
+			// AoE3 only takes into account the first notify in a readSession return
+			// so delay each message by 100ms so they go in different responses
+			// otherwise, it would appear as it left the first channel only
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 	relationship.ChangePresence(users, u, 0)
 	if game.Title() == common.GameAoE3 {

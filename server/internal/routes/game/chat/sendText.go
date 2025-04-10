@@ -31,13 +31,12 @@ func SendText(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
-	user, _ := game.Users().GetUserById(sess.GetUserId())
-	if !chatChannel.HasUser(user) {
+	sess := middleware.Session(r)
+	user, ok := game.Users().GetUserById(sess.GetUserId())
+	if !ok || !chatChannel.HasUser(user) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	user.SendChatChannelMessage(chatChannel, text)
 	i.JSON(&w, i.A{0})
 	staticResponse := i.A{chatChannelIdStr, strconv.Itoa(int(user.GetId())), "", text}
 	for existingUser := range chatChannel.GetUsers() {

@@ -2,57 +2,53 @@ package internal
 
 import "sync"
 
-type KeyRWMutex struct {
+type KeyRWMutex[K comparable] struct {
 	mu      sync.RWMutex
-	mutexes map[interface{}]*sync.RWMutex
+	mutexes map[K]*sync.RWMutex
 }
 
-func NewKeyRWMutex() *KeyRWMutex {
-	return &KeyRWMutex{
-		mutexes: make(map[interface{}]*sync.RWMutex),
+func NewKeyRWMutex[K comparable]() *KeyRWMutex[K] {
+	return &KeyRWMutex[K]{
+		mutexes: make(map[K]*sync.RWMutex),
 	}
 }
 
-func (kl *KeyRWMutex) Lock(key interface{}) {
-	ok, lock := kl.rlock(key)
-	if !ok {
-		lock = &sync.RWMutex{}
-		func() {
-			kl.mu.Lock()
-			defer kl.mu.Unlock()
-			kl.mutexes[key] = lock
-		}()
-	}
-	lock.Lock()
+func (kl *KeyRWMutex[K]) Lock(key K) {
+	kl.getOrCreateLock(key).Lock()
 }
 
-func (kl *KeyRWMutex) rlock(key interface{}) (ok bool, lock *sync.RWMutex) {
+func (kl *KeyRWMutex[K]) RLock(key K) {
+	kl.getOrCreateLock(key).RLock()
+}
+
+func (kl *KeyRWMutex[K]) Unlock(key K) {
 	kl.mu.RLock()
-	defer kl.mu.RUnlock()
-	lock, ok = kl.mutexes[key]
-	return
-}
-
-func (kl *KeyRWMutex) RLock(key interface{}) {
-	ok, lock := kl.rlock(key)
-
-	if ok {
-		lock.RLock()
-	}
-}
-
-func (kl *KeyRWMutex) Unlock(key interface{}) {
-	ok, lock := kl.rlock(key)
-
+	lock, ok := kl.mutexes[key]
+	kl.mu.RUnlock()
 	if ok {
 		lock.Unlock()
 	}
 }
 
-func (kl *KeyRWMutex) RUnlock(key interface{}) {
-	ok, lock := kl.rlock(key)
-
+func (kl *KeyRWMutex[K]) RUnlock(key K) {
+	kl.mu.RLock()
+	lock, ok := kl.mutexes[key]
+	kl.mu.RUnlock()
 	if ok {
 		lock.RUnlock()
 	}
+}
+
+func (kl *KeyRWMutex[K]) getOrCreateLock(key K) *sync.RWMutex {
+	kl.mu.RLock()
+	lock, ok := kl.mutexes[key]
+	kl.mu.RUnlock()
+	if ok {
+		return lock
+	}
+	newLock := &sync.RWMutex{}
+	kl.mu.Lock()
+	kl.mutexes[key] = newLock
+	kl.mu.Unlock()
+	return newLock
 }

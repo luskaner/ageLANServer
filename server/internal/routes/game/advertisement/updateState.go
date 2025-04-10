@@ -5,6 +5,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"iter"
 	"net/http"
 	"strconv"
 )
@@ -17,32 +18,44 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	advStr := r.PostFormValue("advertisementid")
-	advId, err := strconv.ParseInt(advStr, 10, 32)
+	advId64, err := strconv.ParseInt(advStr, 10, 32)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	game := models.G(r)
 	gameTitle := game.Title()
-	adv, ok := game.Advertisements().GetAdvertisement(int32(advId))
-	if !ok {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	adv.UpdateState(int8(state))
-	if adv.GetState() == 1 {
-		peers := adv.GetPeers()
-		peersLen := peers.Len()
+	advertisements := game.Advertisements()
+	advId := int32(advId64)
+	var ok bool
+	var peersLen int
+	var peers iter.Seq2[int32, *models.MainPeer]
+	var advStartTime int64
+	var advEncoded i.A
+	advertisements.WithWriteLock(advId, func() {
+		var adv *models.MainAdvertisement
+		adv, ok = game.Advertisements().GetAdvertisement(advId)
+		if !ok {
+			i.JSON(&w, i.A{2})
+			return
+		}
+		adv.UnsafeUpdateState(int8(state))
+		if adv.UnsafeGetState() == 1 {
+			peersLen, peers = adv.GetPeers().Iter()
+			advEncoded = adv.UnsafeEncode(gameTitle)
+			advStartTime = adv.UnsafeGetStartTime()
+		}
+		ok = true
+	})
+	if ok {
 		userIds := make([]i.A, peersLen)
 		userIdStr := make([]i.A, peersLen)
 		races := make([]i.A, peersLen)
 		challengeProgress := make([]i.A, peersLen)
 		sessions := make([]*models.Session, peersLen)
-		advEncoded := adv.Encode(gameTitle)
 		j := 0
-		for peer := range adv.GetPeers().Values() {
+		for userId, peer := range peers {
 			var sess *models.Session
-			userId := peer.GetUser().GetId()
 			sess, ok = models.GetSessionByUserId(userId)
 			if !ok {
 				continue
@@ -50,7 +63,8 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 			userIdSingleStr := strconv.Itoa(int(userId))
 			userIds[j] = i.A{userId, i.A{}}
 			userIdStr[j] = i.A{userIdSingleStr, i.A{}}
-			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peer.GetRace()))}
+			peerMutable := peer.GetMutable()
+			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peerMutable.Race))}
 			challengeProgress[j] = i.A{userIdSingleStr, shared.GetChallengeProgressData()}
 			sessions[j] = sess
 			j++
@@ -62,13 +76,15 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 				i.A{
 					userIds,
 					races,
-					adv.GetStartTime(),
+					advStartTime,
 					userIdStr,
 					advEncoded,
 					challengeProgress,
 				},
 			)
 		}
+		i.JSON(&w, i.A{0})
+	} else {
+		i.JSON(&w, i.A{2})
 	}
-	i.JSON(&w, i.A{0})
 }

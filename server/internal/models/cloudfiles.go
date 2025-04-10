@@ -47,7 +47,10 @@ func BuildCloudfilesIndex(configFolder string, baseFolder string) *CloudFiles {
 	if err != nil {
 		return nil
 	}
-	index := CloudFiles{baseFolder: baseFolder, Credentials: &Credentials{}}
+	index := CloudFiles{
+		baseFolder:  baseFolder,
+		Credentials: &Credentials{},
+	}
 	err = json.Unmarshal(data, &index.Value)
 	if err != nil {
 		panic(err)

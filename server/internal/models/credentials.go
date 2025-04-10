@@ -3,15 +3,15 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	mapset "github.com/deckarep/golang-set/v2"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"sync"
+	"math/rand/v2"
 	"time"
 )
 
+const expiry = time.Minute * 5
+
 type Credentials struct {
-	store    *i.SafeMap[string, *Credential]
-	hashLock sync.Mutex
+	store *i.SafeMap[string, *Credential]
 }
 
 type Credential struct {
@@ -24,56 +24,37 @@ func (creds *Credentials) Initialize() {
 	creds.store = i.NewSafeMap[string, *Credential]()
 }
 
-func (creds *Credentials) Delete(signature string) {
-	creds.store.Delete(signature)
-}
-
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
-	for {
-		func() {
-			i.RngLock.Lock()
-			defer i.RngLock.Unlock()
-			for j := 0; j < 32; j++ {
-				b[j] = byte(i.Rng.UintN(256))
-			}
-		}()
-		var hash [32]byte
-		func() {
-			creds.hashLock.Lock()
-			defer creds.hashLock.Unlock()
-			hash = sha256.Sum256(b)
-		}()
-		sig := base64.StdEncoding.EncodeToString(hash[:])
-		if _, exists := creds.GetCredentials(sig); !exists {
-			return sig
+	i.WithRng(func(rand *rand.Rand) {
+		for j := 0; j < len(b); j++ {
+			b[j] = byte(rand.UintN(256))
 		}
-	}
+	})
+	hash := sha256.Sum256(b)
+	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
 func (creds *Credentials) CreateCredentials(key string) *Credential {
-	creds.removeCredentialsExpired()
-	info := &Credential{
-		key:       key,
-		signature: creds.generateSignature(),
-		expiry:    time.Now().UTC().Add(time.Minute * 5),
+	var storedCred *Credential
+	for exists := true; exists; {
+		info := &Credential{
+			key:       key,
+			signature: creds.generateSignature(),
+			expiry:    time.Now().UTC().Add(expiry),
+		}
+		storedCred, exists = creds.store.Store(info.signature, info, func(_ *Credential) bool {
+			return false
+		})
 	}
-	creds.store.Store(info.signature, info)
-	return info
+	time.AfterFunc(expiry, func() {
+		creds.store.Delete(storedCred.signature)
+	})
+	return storedCred
 }
 
 func (creds *Credentials) GetCredentials(signature string) (*Credential, bool) {
-	cred, exists := creds.store.Load(signature)
-	if exists && cred.Expired() {
-		creds.Delete(cred.signature)
-		exists = false
-		cred = nil
-	}
-	return cred, exists
-}
-
-func (cred *Credential) Expired() bool {
-	return time.Now().UTC().After(cred.expiry)
+	return creds.store.Load(signature)
 }
 
 func (cred *Credential) GetExpiry() time.Time {
@@ -86,16 +67,4 @@ func (cred *Credential) GetSignature() string {
 
 func (cred *Credential) GetKey() string {
 	return cred.key
-}
-
-func (creds *Credentials) removeCredentialsExpired() {
-	signaturesToRemove := mapset.NewThreadUnsafeSet[string]()
-	for credKey, credValue := range creds.store.Iter() {
-		if credValue.Expired() {
-			signaturesToRemove.Add(credKey)
-		}
-	}
-	for sig := range signaturesToRemove.Iter() {
-		creds.Delete(sig)
-	}
 }

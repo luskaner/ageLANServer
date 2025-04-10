@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func ChangePresence(users *models.MainUsers, user *models.MainUser, presence int8) {
+func ChangePresence(users *models.MainUsers, user *models.MainUser, presence int32) {
 	user.SetPresence(presence)
 	profileInfo := i.A{user.GetProfileInfo(true)}
 	for u := range users.GetUserIds() {
@@ -35,9 +35,13 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	users := models.G(r).Users()
-	u, _ := users.GetUserById(sess.GetUserId())
-	ChangePresence(users, u, int8(presence))
-	i.JSON(&w, i.A{0})
+	u, ok := users.GetUserById(sess.GetUserId())
+	if ok {
+		ChangePresence(users, u, int32(presence))
+		i.JSON(&w, i.A{0})
+	} else {
+		i.JSON(&w, i.A{2})
+	}
 }

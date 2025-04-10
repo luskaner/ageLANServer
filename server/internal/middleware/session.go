@@ -15,12 +15,12 @@ var anonymousPaths = map[string]bool{
 	"/game/news/getNews":           true,
 }
 
-func Session(r *http.Request) (*models.Session, bool) {
+func Session(r *http.Request) *models.Session {
 	sessAny, ok := r.Context().Value("session").(*models.Session)
 	if !ok {
-		return nil, false
+		panic("Session should have been set already")
 	}
-	return sessAny, true
+	return sessAny
 }
 
 func SessionMiddleware(next http.Handler) http.Handler {

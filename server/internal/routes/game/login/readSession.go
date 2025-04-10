@@ -29,7 +29,7 @@ func ReadSession(w http.ResponseWriter, r *http.Request) {
 		returnError(w)
 		return
 	}
-	sess, _ := middleware.Session(r)
+	sess := middleware.Session(r)
 	messageId, messages := sess.WaitForMessages(uint(ackIdUint))
 	returnData(w, messageId, messages)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"iter"
 	"net/http"
 )
 
@@ -21,28 +22,39 @@ func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	game := models.G(r)
-	adv, ok := game.Advertisements().GetAdvertisement(req.MatchID)
+	advertisements := game.Advertisements()
+	var currentUserId int32
+	var peersId iter.Seq[int32]
+	var ok bool
+	advertisements.WithWriteLock(req.MatchID, func() {
+		var adv *models.MainAdvertisement
+		adv, ok = advertisements.GetAdvertisement(req.MatchID)
+		if !ok {
+			return
+		}
+
+		sess := middleware.Session(r)
+		currentUserId = sess.GetUserId()
+		peers := adv.GetPeers()
+		if _, ok = peers.Load(currentUserId); !ok {
+			return
+		}
+
+		adv.UnsafeUpdatePlatformSessionId(req.PlatformSessionId)
+
+		_, peersId = peers.Keys()
+		ok = true
+	})
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
-
-	sess, _ := middleware.Session(r)
-	u, _ := game.Users().GetUserById(sess.GetUserId())
-	var peer *models.MainPeer
-	if peer, ok = adv.GetPeer(u); !ok {
-		i.JSON(&w, i.A{2})
-		return
-	}
-
-	adv.UpdatePlatformSessionId(req.PlatformSessionId)
 	message := i.A{req.MatchID, "0", req.PlatformSessionId}
-
-	for el := range adv.GetPeers().Values() {
-		if el == peer {
+	for peerId := range peersId {
+		if currentUserId == peerId {
 			continue
 		}
-		if currentSess, ok := models.GetSessionByUserId(el.GetUser().GetId()); ok {
+		if currentSess, ok := models.GetSessionByUserId(peerId); ok {
 			wss.SendOrStoreMessage(
 				currentSess,
 				"PlatformSessionUpdateMessage",

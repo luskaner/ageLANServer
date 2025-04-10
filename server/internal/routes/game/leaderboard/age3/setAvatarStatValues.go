@@ -31,11 +31,19 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	response := make([]i.A, min(len(avatarStatIds), len(values)))
+	if len(avatarStatIds) != len(values) {
+		i.JSON(&w, i.A{2, i.A{}, i.A{}})
+		return
+	}
+	response := make([]i.A, len(avatarStatIds))
 	users := models.G(r).Users()
 
 	for j := 0; j < len(response); j++ {
-		u, _ := users.GetUserByStatId(avatarStatIds[j])
+		u, ok := users.GetUserByStatId(avatarStatIds[j])
+		if !ok {
+			i.JSON(&w, i.A{2, i.A{}, i.A{}})
+			return
+		}
 		response[j] = i.A{avatarStatIds[j], u.GetId(), values[j], "", time.Now().UTC().Unix()}
 	}
 	i.JSON(&w, i.A{0, i.A{0}, response})

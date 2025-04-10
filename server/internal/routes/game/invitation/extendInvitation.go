@@ -19,16 +19,29 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess, _ := middleware.Session(r)
 	game := models.G(r)
-	u, _ := game.Users().GetUserById(sess.GetUserId())
-	adv, ok := game.Advertisements().GetAdvertisement(q.AdvertisementId)
-	if !ok || adv.GetPasswordValue() != q.AdvertisementPassword {
+	advertisements := game.Advertisements()
+	adv, ok := advertisements.GetAdvertisement(q.AdvertisementId)
+	if ok {
+		var password string
+		advertisements.WithReadLock(adv.GetId(), func() {
+			password = adv.UnsafeGetPasswordValue()
+		})
+		ok = password == q.AdvertisementPassword
+	}
+	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
+	peers := adv.GetPeers()
 	var peer *models.MainPeer
-	peer, ok = adv.GetPeer(u)
+	sess := middleware.Session(r)
+	u, ok := game.Users().GetUserById(sess.GetUserId())
+	if !ok {
+		i.JSON(&w, i.A{2})
+		return
+	}
+	peer, ok = peers.Load(u.GetId())
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -39,11 +52,10 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	if peer.IsInvited(invitee) {
+	if !peer.Invite(invitee) {
 		i.JSON(&w, i.A{0})
 		return
 	}
-	peer.Invite(invitee)
 	var inviteeSession *models.Session
 	inviteeSession, ok = models.GetSessionByUserId(invitee.GetId())
 	if ok {
