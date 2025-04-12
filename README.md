@@ -148,15 +148,15 @@ require admin rights elevation.**
 - Age of Empires: Definitive Edition
   on [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on
-  Windows*). Requires version *100.2.31845.0* or later.
+  Windows*). Recommended version *100.2.31845.0* or later.
 - Age of Empires II: Definitive Edition
   on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
-  Windows*). Requires a late 2023 version of the game.
+  Windows*). Recommended a late 2023 version or later.
 - Age of Empires III: Definitive Edition
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
-  Windows*). Requires a late 2023 version of the game.
+  Windows*). Recommended a late 2023 version or later.
 
 *Note: An up-to-date version is highly recommended as there are known issues with older versions.*
 
