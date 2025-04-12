@@ -38,4 +38,5 @@ const (
 	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
+	ErrCertMismatch
 )

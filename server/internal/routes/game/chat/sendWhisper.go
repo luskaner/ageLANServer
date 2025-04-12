@@ -32,7 +32,8 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	currentSession := middleware.Session(r)
-	currentUser, ok := models.G(r).Users().GetUserById(currentSession.GetUserId())
+	game := models.G(r)
+	currentUser, ok := game.Users().GetUserById(currentSession.GetUserId())
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -42,7 +43,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		session,
 		"PersonalChatMessage",
 		i.A{
-			currentUser.GetProfileInfo(false),
+			currentUser.GetProfileInfo(false, game.Title(), session.GetClientLibVersion()),
 			"",
 			text,
 		},

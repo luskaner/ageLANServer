@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/spf13/cobra"
 	"net"
@@ -18,7 +17,7 @@ func InitSetUp(cmd *cobra.Command) {
 		"ip",
 		"i",
 		nil,
-		fmt.Sprintf("IP to resolve to '%s' in local DNS server (up to 9)", common.Domain),
+		"IP to resolve in local DNS server (up to 9)",
 	)
 	cmd.Flags().BoolVarP(
 		&MapCDN,

@@ -7,6 +7,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"net"
+	"slices"
 )
 
 var mappedCdn = false
@@ -53,10 +54,12 @@ func checkCertificateValidity(cert *x509.Certificate) bool {
 	if cert == nil {
 		return false
 	}
-	if cert.Subject.CommonName != common.Domain {
+	hosts := common.AllHosts()
+	if cert.Subject.CommonName != common.Name {
 		return false
 	}
-	if len(cert.DNSNames) != 1 || cert.DNSNames[0] != common.Domain {
+
+	if !slices.Equal(cert.DNSNames, hosts) {
 		return false
 	}
 	return true

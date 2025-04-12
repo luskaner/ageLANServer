@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
 	"github.com/spf13/viper"
 	"net/http"
+	"strings"
 )
 
 var gamePathHandlers = map[string]map[string]map[string]http.HandlerFunc{
@@ -34,7 +35,7 @@ func GameMiddleware(next http.Handler) http.Handler {
 					gameId = r.Form.Get("title")
 				}
 			}
-			if gameId == "" {
+			if gameId == "" && !strings.HasPrefix(r.URL.Path, "/cloudfiles/game/") {
 				session := Session(r)
 				gameId = session.GetGameId()
 			}

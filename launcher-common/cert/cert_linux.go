@@ -59,7 +59,7 @@ func getCertPath() (err error, certPath string) {
 		err = fmt.Errorf("cert store not found")
 		return
 	}
-	certPath = path.Join(foundPath, fmt.Sprintf("%s.crt", common.Domain))
+	certPath = path.Join(foundPath, fmt.Sprintf("%s.crt", common.Name))
 	return
 }
 

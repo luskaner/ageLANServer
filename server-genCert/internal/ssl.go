@@ -18,11 +18,10 @@ func GenerateCertificatePair(folder string) bool {
 	if err != nil {
 		return false
 	}
-
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			CommonName:   common.Domain,
+			CommonName:   common.Name,
 			Organization: []string{common.CertSubjectOrganization},
 		},
 		NotBefore: time.Now(),
@@ -31,7 +30,7 @@ func GenerateCertificatePair(folder string) bool {
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
 		},
-		DNSNames: []string{common.Domain},
+		DNSNames: common.AllHosts(),
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, template, template, &privateKey.PublicKey, privateKey)

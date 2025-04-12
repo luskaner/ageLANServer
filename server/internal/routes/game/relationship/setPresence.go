@@ -9,9 +9,9 @@ import (
 	"strconv"
 )
 
-func ChangePresence(users *models.MainUsers, user *models.MainUser, presence int32) {
+func ChangePresence(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser, presence int32) {
 	user.SetPresence(presence)
-	profileInfo := i.A{user.GetProfileInfo(true)}
+	profileInfo := i.A{user.GetProfileInfo(true, gameTitle, clientLibVersion)}
 	for u := range users.GetUserIds() {
 		sess, ok := models.GetSessionByUserId(u)
 		if ok {
@@ -36,10 +36,11 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess := middleware.Session(r)
-	users := models.G(r).Users()
+	game := models.G(r)
+	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		ChangePresence(users, u, int32(presence))
+		ChangePresence(game.Title(), sess.GetClientLibVersion(), users, u, int32(presence))
 		i.JSON(&w, i.A{0})
 	} else {
 		i.JSON(&w, i.A{2})

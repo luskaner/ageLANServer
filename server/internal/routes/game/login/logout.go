@@ -29,16 +29,16 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	for channelId, channel := range game.ChatChannels().Iter() {
 		if channel.RemoveUser(u) {
-			chat.NotifyLeaveChannel(users, u, channelId)
+			chat.NotifyLeaveChannel(users, u, channelId, game.Title(), sess.GetClientLibVersion())
 			// AoE3 only takes into account the first notify in a readSession return
 			// so delay each message by 100ms so they go in different responses
 			// otherwise, it would appear as it left the first channel only
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	relationship.ChangePresence(users, u, 0)
+	relationship.ChangePresence(game.Title(), sess.GetClientLibVersion(), users, u, 0)
 	if game.Title() == common.GameAoE3 {
-		profileInfo := u.GetProfileInfo(false)
+		profileInfo := u.GetProfileInfo(false, game.Title(), sess.GetClientLibVersion())
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := models.GetSessionByUserId(user)
