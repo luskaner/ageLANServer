@@ -158,7 +158,7 @@ require admin rights elevation.**
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
   Windows*). Recommended a late 2023 version or later.
 
-*Note: An up-to-date version is highly recommended as there are known issues with older versions.*
+*Note: An up-to-date (or slightly older) version is highly recommended as there are known issues with older versions.*
 
 ## Binaries
 
