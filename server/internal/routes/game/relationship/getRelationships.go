@@ -8,10 +8,10 @@ import (
 	"net/http"
 )
 
-func Relationships(gameTitle string, users *models.MainUsers, user *models.MainUser) i.A {
+func Relationships(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {
 	profileInfo := users.GetProfileInfo(true, func(u *models.MainUser) bool {
 		return u != user && u.GetPresence() > 0
-	})
+	}, gameTitle, clientLibVersion)
 	friends := profileInfo
 	lastConnection := profileInfo
 	if gameTitle == common.GameAoE3 {
@@ -30,7 +30,7 @@ func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	users := game.Users()
 	currentUser, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		i.JSON(&w, Relationships(game.Title(), users, currentUser))
+		i.JSON(&w, Relationships(game.Title(), sess.GetClientLibVersion(), users, currentUser))
 	} else {
 		i.JSON(&w, i.A{0, []i.A{}, i.A{}, i.A{}, i.A{}, []i.A{}, i.A{}, i.A{}})
 	}

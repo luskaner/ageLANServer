@@ -13,11 +13,12 @@ import (
 )
 
 type request struct {
-	AccountType    string `schema:"accountType"`
-	PlatformUserId uint64 `schema:"platformUserID"`
-	Alias          string `schema:"alias"`
-	GameId         string `schema:"title"`
-	MacAddress     string `schema:"macAddress"`
+	AccountType      string `schema:"accountType"`
+	PlatformUserId   uint64 `schema:"platformUserID"`
+	Alias            string `schema:"alias"`
+	GameId           string `schema:"title"`
+	MacAddress       string `schema:"macAddress"`
+	ClientLibVersion uint16 `schema:"clientLibVersion"`
 }
 
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
@@ -41,10 +42,10 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		sess.Delete()
 	}
-	sessionId := models.CreateSession(req.GameId, u.GetId())
+	sessionId := models.CreateSession(req.GameId, u.GetId(), req.ClientLibVersion)
 	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(users, u, 1)
-	profileInfo := u.GetProfileInfo(false)
+	relationship.ChangePresence(req.GameId, req.ClientLibVersion, users, u, 1)
+	profileInfo := u.GetProfileInfo(false, req.GameId, req.ClientLibVersion)
 	if title == common.GameAoE3 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
@@ -62,7 +63,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title == common.GameAoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo())
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.GameId, req.ClientLibVersion))
 	}
 	var unknownProfileInfoList i.A
 	switch title {
@@ -93,7 +94,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	server := i.A{""}
 	if title != common.GameAoE1 {
-		server = append(server, nil)
+		server = append(server, "localhost")
 	}
 	server = append(server, "127.0.0.1", 27012, 27112)
 	if title != common.GameAoE1 {
@@ -126,7 +127,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
-		relationship.Relationships(title, users, u),
+		relationship.Relationships(title, req.ClientLibVersion, users, u),
 		extraProfileInfoList,
 		unknownProfileInfoList,
 		nil,

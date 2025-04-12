@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/spf13/cobra"
 )
 
@@ -18,14 +15,14 @@ func InitRevert(cmd *cobra.Command) {
 		"ip",
 		"i",
 		false,
-		fmt.Sprintf("Remove the IP mappings from the local DNS server that resolve to '%s'", common.Domain),
+		"Remove the IP mappings from the local DNS server",
 	)
 	cmd.Flags().BoolVarP(
 		&UnmapCDN,
 		"CDN",
 		"c",
 		false,
-		fmt.Sprintf("Remove the mappings from the local DNS server that resolve %s to '%s'", launcherCommon.CDNIP, common.Domain),
+		"Remove the CDN mappings from the local DNS server",
 	)
 	cmd.Flags().BoolVarP(
 		&RemoveLocalCert,

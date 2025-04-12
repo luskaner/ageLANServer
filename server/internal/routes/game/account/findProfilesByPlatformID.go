@@ -3,6 +3,7 @@ package account
 import (
 	"encoding/json"
 	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 )
@@ -23,9 +24,12 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 	for _, platformId := range platformIds {
 		platformIdsMap[platformId] = struct{}{}
 	}
-	profileInfo := models.G(r).Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
+	game := models.G(r)
+	gameTitle := game.Title()
+	sess := middleware.Session(r)
+	profileInfo := game.Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		_, ok := platformIdsMap[currentUser.GetPlatformUserID()]
 		return ok
-	})
+	}, gameTitle, sess.GetClientLibVersion())
 	i.JSON(&w, i.A{0, profileInfo})
 }

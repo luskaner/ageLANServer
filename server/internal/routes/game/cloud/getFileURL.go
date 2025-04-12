@@ -31,7 +31,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 			name,
 			fileData.Length,
 			fileData.Id,
-			fmt.Sprintf("https://%s/cloudfiles/%s", common.Domain, finalPart),
+			fmt.Sprintf("https://%s/cloudfiles/%s", r.Host, finalPart),
 		}
 		if gameTitle == common.GameAoE2 {
 			description = append(

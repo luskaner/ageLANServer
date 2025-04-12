@@ -16,6 +16,8 @@
     "RL_TELEMCELLPATH": "/tenants/phoenix/routes/steam/",
     "RL_TELEMPLAYFABHOST": "12EA5.playfabapi.com",
     "RL_TELEMPLAYFABPATH": "/Event/WriteTelemetryEvents",
+    "RL_FORCE_CROSS_NETWORK_PLAY_ON": [],
+    "RL_FORCE_CROSS_NETWORK_PLAY_OFF": [],
     "RL_CLUSTERNAME": "aoelive_",
     "RL_TITLEID": "24",
     "RL_OBSERVERCUSTOMDELAY": "180",

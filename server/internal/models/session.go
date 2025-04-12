@@ -8,12 +8,13 @@ import (
 )
 
 type Session struct {
-	id              string
-	expiryTimer     *time.Timer
-	expiryTimerLock sync.Mutex
-	userId          int32
-	gameId          string
-	messageChan     chan internal.A
+	id               string
+	clientLibVersion uint16
+	expiryTimer      *time.Timer
+	expiryTimerLock  sync.Mutex
+	userId           int32
+	gameId           string
+	messageChan      chan internal.A
 }
 
 var sessionStore = internal.NewSafeMap[string, *Session]()
@@ -43,6 +44,10 @@ func (sess *Session) GetUserId() int32 {
 
 func (sess *Session) GetGameId() string {
 	return sess.gameId
+}
+
+func (sess *Session) GetClientLibVersion() uint16 {
+	return sess.clientLibVersion
 }
 
 func (sess *Session) AddMessage(message internal.A) {
@@ -90,11 +95,12 @@ func (sess *Session) ResetExpiryTimer() {
 	sess.expiryTimer.Reset(sessionDuration)
 }
 
-func CreateSession(gameId string, userId int32) string {
+func CreateSession(gameId string, userId int32, clientLibVersion uint16) string {
 	session := &Session{
-		userId:      userId,
-		gameId:      gameId,
-		messageChan: make(chan internal.A, 100),
+		userId:           userId,
+		gameId:           gameId,
+		clientLibVersion: clientLibVersion,
+		messageChan:      make(chan internal.A, 100),
 	}
 	defer func() {
 		session.expiryTimer = time.AfterFunc(sessionDuration, func() {

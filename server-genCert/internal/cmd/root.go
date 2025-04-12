@@ -16,7 +16,7 @@ var Version string
 var (
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "genCert generates a self-signed certificate to act as " + common.Domain,
+		Short: "genCert generates a self-signed certificate",
 		Run: func(_ *cobra.Command, _ []string) {
 			exe, _ := os.Executable()
 			serverExe := path.Join(filepath.Dir(filepath.Dir(exe)), common.GetExeFileName(true, common.Server))

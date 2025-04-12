@@ -36,12 +36,12 @@ func (channel *MainChatChannel) GetUsers() iter.Seq[*MainUser] {
 	}
 }
 
-func (channel *MainChatChannel) AddUser(user *MainUser) (exists bool, encodedUsers internal.A) {
+func (channel *MainChatChannel) AddUser(user *MainUser, gameId string, clientLibVersion uint16) (exists bool, encodedUsers internal.A) {
 	exists, _ = channel.users.IterAndStore(user.GetId(), user, nil, func(length int, users iter.Seq2[int32, *MainUser]) {
 		i := 0
 		encodedUsers = make(internal.A, length)
 		for _, el := range users {
-			encodedUsers[i] = internal.A{0, el.GetProfileInfo(false)}
+			encodedUsers[i] = internal.A{0, el.GetProfileInfo(false, gameId, clientLibVersion)}
 			i++
 		}
 	})

@@ -56,7 +56,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 			inviteeSession,
 			"CancelInvitationMessage",
 			i.A{
-				u.GetProfileInfo(false),
+				u.GetProfileInfo(false, game.Title(), inviteeSession.GetClientLibVersion()),
 				q.AdvertisementId,
 			},
 		)

@@ -78,30 +78,34 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool) (err
 		}
 		mapCDN = true
 	}
-	if !launcherCommon.Matches(host, common.Domain) {
-		if !canMap {
-			fmt.Println("serverStart is false and canAddHost is false but 'server' does not match "+common.Domain+". You should have added the host ip mapping to", common.Domain, "in the hosts file (or just set canAddHost to true).")
-			errorCode = internal.ErrConfigIpMap
-			return
-		} else {
-			var ip string
-			if alreadySelectedIp {
-				ip = host
+	resolvedIps := mapset.NewThreadUnsafeSet[string]()
+	for _, domain := range common.AllHosts() {
+		if !launcherCommon.Matches(host, domain) {
+			if !canMap {
+				fmt.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
+				errorCode = internal.ErrConfigIpMap
+				return
 			} else {
-				resolvedIps := launcherCommon.HostOrIpToIps(host)
-				var ok bool
-				if ok, ip = SelectBestServerIp(resolvedIps.ToSlice()); !ok {
-					fmt.Println("Failed to find a reachable IP for " + host + ".")
-					errorCode = internal.ErrConfigIpMapFind
-					return
+				if alreadySelectedIp {
+					ips.Add(host)
+				} else {
+					resolvedIps = resolvedIps.Union(launcherCommon.HostOrIpToIps(host))
 				}
 			}
+		} else if !server.CheckConnectionFromServer(domain, true) {
+			fmt.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
+			errorCode = internal.ErrServerUnreachable
+			return
+		}
+	}
+	if resolvedIps.Cardinality() > 0 {
+		if ok, ip := SelectBestServerIp(resolvedIps.ToSlice()); !ok {
+			fmt.Println("Failed to find a reachable IP for " + host + ".")
+			errorCode = internal.ErrConfigIpMapFind
+			return
+		} else {
 			ips.Add(ip)
 		}
-	} else if !server.CheckConnectionFromServer(common.Domain, true) {
-		fmt.Println("serverStart is false and host matches. " + common.Domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
-		errorCode = internal.ErrServerUnreachable
-		return
 	}
 	if !ips.IsEmpty() || mapCDN {
 		fmt.Print("Adding host to hosts file")
