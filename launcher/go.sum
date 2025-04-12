@@ -34,8 +34,8 @@ github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 h1:EB9EKyv7koSQS
 github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
 github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e h1:IBQnn8y0YzYzrZ4PV8XL2CiLBkhDCryAsdTcO1B6M7s=
 github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e/go.mod h1:EijkZMLMh81yYh8xf3pVKkdU4AGnWsL9r9NsukeE0x0=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa h1:2bewX1bVKv3HK57kPFpFGjifvYElGwYflwpg2ZU2Axo=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa/go.mod h1:uamB4cuz8MkAvLV2kBQjhB0/kt4PN+xnsReq9Ue/cQ4=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250412213800-aa7c9ded629c h1:PwdPxtgN4gurhjOe/k3cga2qFFpntvdgByhQjVsP+Iw=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250412213800-aa7c9ded629c/go.mod h1:9B/wP4az3UhXslsCg2M3a4nALG480F31XYoDbInQZmw=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
