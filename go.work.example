@@ -13,6 +13,6 @@ use (
 	server
 )
 
-replace github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca => ./common
+replace github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e => ./common
 replace github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250312195141-972d30abfdaa => ./launcher-common
 replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast
