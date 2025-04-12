@@ -1,10 +1,10 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
-github.com/deckarep/golang-set/v2 v2.7.0 h1:gIloKvD7yH2oip4VLhsv3JyLLFnC0Y2mlusgcvJYW5k=
-github.com/deckarep/golang-set/v2 v2.7.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
+github.com/deckarep/golang-set/v2 v2.8.0 h1:swm0rlPCmdWn9mESxKOjWk8hXSqoxOp+ZlfuyaAdFlQ=
+github.com/deckarep/golang-set/v2 v2.8.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca h1:+aPDct4PqPtVxziMtiTzgCIFko/XTyDFhIuvwhQQfBA=
-github.com/luskaner/ageLANServer/common v0.0.0-20250312193842-5a711c2386ca/go.mod h1:Niv5d5TzOlCfAwIyJUanpIKmmytcl8etPRL6CfNg/rg=
+github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e h1:IBQnn8y0YzYzrZ4PV8XL2CiLBkhDCryAsdTcO1B6M7s=
+github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e/go.mod h1:EijkZMLMh81yYh8xf3pVKkdU4AGnWsL9r9NsukeE0x0=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spf13/cobra v1.9.1 h1:CXSaggrXdbHK9CF+8ywj8Amf7PBRmPCOJugH954Nnlo=
 github.com/spf13/cobra v1.9.1/go.mod h1:nDyEzZ8ogv936Cinf6g1RU9MRY64Ir93oCnqb9wxYW0=
