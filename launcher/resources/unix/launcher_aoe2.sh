@@ -7,5 +7,6 @@ if [ $? -eq 0 ]; then
   sleep 10
 else
   echo "Program finished with errors..."
-  read -p "Press any key to exit..."
+  echo "Press any key to exit..."
+  read dummy
 fi
