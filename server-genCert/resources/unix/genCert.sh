@@ -2,4 +2,5 @@
 
 cd "$(dirname "$0")"
 ./genCert
-read -p "Press any key to exit..."
+echo "Press any key to exit..."
+read dummy
