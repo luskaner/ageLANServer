@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 )
 
@@ -75,15 +74,8 @@ func loadSystemRoots() (*x509.CertPool, error) {
 		return roots, nil
 	}
 
-	rootsValue := reflect.ValueOf(roots)
-	lenMethod := rootsValue.MethodByName("len")
-	results := lenMethod.Call(nil)
-
-	if results[0].Int() > 0 {
-		return roots, nil
-	}
-
-	return nil, firstErr
+	// FIXME: Workaround
+	return roots, nil
 }
 
 // readUniqueDirectoryEntries is like os.ReadDir but omits
