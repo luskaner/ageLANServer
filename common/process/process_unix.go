@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 func ProcessesPID(names []string) map[string]uint32 {
@@ -26,7 +27,9 @@ func ProcessesPID(names []string) map[string]uint32 {
 			if err != nil {
 				continue
 			}
-			cmdlineStr := string(cmdline)
+			cmdlineStr := strings.TrimSpace(
+				strings.ReplaceAll(strings.ReplaceAll(string(cmdline), "\x00", " "), "\\", "/"),
+			)
 			var args []string
 			args, err = shell.Fields(cmdlineStr, nil)
 			if err != nil || len(args) == 0 {
