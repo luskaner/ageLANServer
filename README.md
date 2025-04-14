@@ -267,7 +267,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 1. **Download** the proper *full* asset from the latest
    stable release from https://github.com/luskaner/ageLANServer/releases.
 2. **Uncompress** it somewhere.
-3. *Windows Optional*: *You may need to add the laucnher/server binaries to the exception list of your Antivirus*.
+3. *Windows Optional*: *You may need to add the launcher/server binaries to the exception list of your Antivirus*.
 4. *Windows Optional*: Unblock the `.exe` files as explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
 5. If not using the Steam or Xbox launcher, **edit the `
    launcher/resources/config.<game>.toml` file** with a text editor (like Notepad)
