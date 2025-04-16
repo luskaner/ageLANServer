@@ -145,9 +145,6 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 					fmt.Println("Invalid (or error reading) option. Please enter a number from the list.")
 					continue
 				}
-				if option == len(serversStr) {
-					break
-				}
 				ips := serversStr[option-1]
 				ok, ip = SelectBestServerIp(ips)
 				if ok {
