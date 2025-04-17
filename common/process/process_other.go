@@ -13,8 +13,12 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 	if err != nil {
 		return
 	}
-	if err = proc.Signal(unix.Signal(0)); err != nil && !errors.Is(err, unix.EPERM) {
-		proc = nil
+	if err = proc.Signal(unix.Signal(0)); err != nil {
+		if errors.Is(err, unix.EPERM) {
+			err = nil
+		} else {
+			proc = nil
+		}
 	}
 	return
 }
