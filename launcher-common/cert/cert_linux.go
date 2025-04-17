@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 var updateStoreBinaries = []string{
@@ -94,7 +95,42 @@ func TrustCertificates(_ bool, certs []*x509.Certificate) error {
 
 		err = os.Rename(certFile.Name(), certPath)
 		if err != nil {
-			return err
+			// Likely certFile does not share filesystem with certPath
+			var certFileTmp *os.File
+			certFileTmp, err = os.CreateTemp(filepath.Dir(certPath), ".*")
+			if err != nil {
+				_ = os.Remove(certFile.Name())
+				return err
+			}
+
+			var newCertFile *os.File
+			newCertFile, err = os.Open(certFile.Name())
+			if err != nil {
+				_ = os.Remove(certFile.Name())
+				_ = os.Remove(certFileTmp.Name())
+				return err
+			}
+
+			_, err = io.Copy(certFileTmp, newCertFile)
+			_ = newCertFile.Close()
+			_ = os.Remove(newCertFile.Name())
+			if err != nil {
+				_ = os.Remove(certFileTmp.Name())
+				return err
+			}
+
+			err = certFileTmp.Close()
+			if err != nil {
+				_ = os.Remove(certFileTmp.Name())
+				return err
+			}
+
+			err = os.Rename(certFileTmp.Name(), certPath)
+
+			if err != nil {
+				_ = os.Remove(certFileTmp.Name())
+				return err
+			}
 		}
 
 		err = os.Chmod(certPath, 0644)
