@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -172,6 +173,17 @@ var (
 			}
 
 			config.SetGameId(gameId)
+
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println(r)
+					fmt.Println(string(debug.Stack()))
+					errorCode = common.ErrGeneral
+				}
+				if errorCode != common.ErrSuccess {
+					config.Revert()
+				}
+			}()
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 			go func() {
@@ -182,7 +194,6 @@ var (
 					os.Exit(errorCode)
 				}
 			}()
-
 			/*
 				Ensure:
 				* No running config-admin-agent nor agent processes
@@ -221,11 +232,6 @@ var (
 			if err == nil && proc != nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
-			defer func() {
-				if errorCode != common.ErrSuccess {
-					config.Revert()
-				}
-			}()
 			// Setup
 			fmt.Println("Setting up...")
 			if len(setupCommand) > 0 {
