@@ -22,7 +22,7 @@ func openHostsFile() (err error, f *os.File) {
 		os.O_RDWR,
 		0666,
 	)
-	if f != nil {
+	if err == nil {
 		err = lockFile(f)
 		if err != nil {
 			_ = f.Close()
@@ -56,7 +56,7 @@ func host(line string) string {
 
 func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File) {
 	err, f = openHostsFile()
-	if f == nil {
+	if err != nil {
 		return
 	}
 	existingHosts = mapset.NewThreadUnsafeSet[string]()
@@ -69,12 +69,16 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 			existingHosts.Add(lineHost)
 		}
 	}
+	if err = scanner.Err(); err != nil {
+		_ = unlockFile(f)
+		_ = f.Close()
+	}
 	return
 }
 
 func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *os.File) {
 	err, f = openHostsFile()
-	if f == nil {
+	if err != nil {
 		return
 	}
 	var line string
@@ -88,6 +92,10 @@ func missingIpMappings(mappings *map[string]mapset.Set[string]) (err error, f *o
 				delete(*mappings, lineHost)
 			}
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		_ = unlockFile(f)
+		_ = f.Close()
 	}
 	return
 }
@@ -116,7 +124,7 @@ func AddHosts(mappings map[string]mapset.Set[string]) (ok bool, err error) {
 	err = updateHosts(hostsFile, func(f *os.File) error {
 		for hostname, ips := range mappings {
 			for ip := range ips.Iter() {
-				_, err = f.WriteString(fmt.Sprintf("\r\n%s\t%s\t%s", ip, hostname, hostEndMarking))
+				_, err = f.WriteString(fmt.Sprintf("%s%s\t%s\t%s", lineEnding, ip, hostname, hostEndMarking))
 				if err != nil {
 					return err
 				}
@@ -195,6 +203,9 @@ func updateHosts(hostsFile *os.File, updater func(file *os.File) error) error {
 
 func RemoveHosts(hosts mapset.Set[string]) error {
 	err, existingHosts, hostsFile := getExistingHosts(hosts)
+	if err != nil {
+		return err
+	}
 	if existingHosts.IsEmpty() {
 		if hostsFile != nil && lock != nil {
 			_ = unlockFile(hostsFile)
@@ -219,7 +230,9 @@ func RemoveHosts(hosts mapset.Set[string]) error {
 			return err
 		}
 
-		for scanner := bufio.NewScanner(f); scanner.Scan(); line = scanner.Text() {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line = scanner.Text()
 			addLine := false
 			if !strings.HasSuffix(line, hostEndMarking) {
 				addLine = true
@@ -234,12 +247,16 @@ func RemoveHosts(hosts mapset.Set[string]) error {
 			}
 		}
 
+		if err = scanner.Err(); err != nil {
+			return err
+		}
+
 		_, err = f.Seek(0, io.SeekStart)
 		if err != nil {
 			return err
 		}
 
-		linesJoined := strings.Join(lines[1:], "\r\n")
+		linesJoined := strings.Join(lines, lineEnding)
 		_, err = f.WriteString(linesJoined)
 		if err != nil {
 			return err
