@@ -18,7 +18,7 @@ import (
 
 func untrustCertificate() bool {
 	fmt.Println("Removing previously added local certificate")
-	if _, err := cert.UntrustCertificates(false); err != nil {
+	if _, err := cert.UntrustCertificates(false); err == nil {
 		fmt.Println("Successfully removed local certificate")
 		return true
 	} else {
