@@ -18,7 +18,11 @@ var (
 		Use:   filepath.Base(os.Args[0]),
 		Short: "genCert generates a self-signed certificate",
 		Run: func(_ *cobra.Command, _ []string) {
-			exe, _ := os.Executable()
+			exe, err := os.Executable()
+			if err != nil {
+				fmt.Println("Could not get executable path")
+				os.Exit(common.ErrGeneral)
+			}
 			serverExe := path.Join(filepath.Dir(filepath.Dir(exe)), common.GetExeFileName(true, common.Server))
 			serverFolder := common.CertificatePairFolder(serverExe)
 			if serverFolder == "" {
