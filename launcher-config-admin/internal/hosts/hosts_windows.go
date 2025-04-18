@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 )
 
+const lineEnding = "\r\n"
+
 var lock *windows.Overlapped
 
 func lockFile(file *os.File) (err error) {

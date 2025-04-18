@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+const lineEnding = "\n"
+
 var lock *unix.Flock_t
 
 func lockFile(file *os.File) (err error) {
@@ -27,7 +29,7 @@ func unlockFile(file *os.File) (err error) {
 	lock.Type = unix.F_UNLCK
 	err = unix.FcntlFlock(file.Fd(), unix.F_SETLK, lock)
 	if err == nil {
-		lock = &unix.Flock_t{}
+		lock = nil
 	} else {
 		lock.Type = unix.F_WRLCK
 	}
