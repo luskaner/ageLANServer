@@ -19,7 +19,6 @@ func handleClient(c net.Conn) (exit bool) {
 	decoder := gob.NewDecoder(c)
 	encoder := gob.NewEncoder(c)
 	var action byte
-	var exitCode = ErrNonExistingAction
 	var err error
 
 	for !exit {
@@ -27,6 +26,8 @@ func handleClient(c net.Conn) (exit bool) {
 			_ = encoder.Encode(ErrDecode)
 			return
 		}
+
+		var exitCode = ErrNonExistingAction
 
 		switch action {
 		case launcherCommon.ConfigAdminIpcRevert:
@@ -41,6 +42,7 @@ func handleClient(c net.Conn) (exit bool) {
 				exitCode = ErrConnectionClosing
 			} else {
 				exit = true
+				exitCode = common.ErrSuccess
 			}
 		}
 
@@ -88,8 +90,9 @@ func handleSetUp(decoder *gob.Decoder) int {
 		if addedCert {
 			return ErrCertAlreadyAdded
 		}
-		cert, _ = x509.ParseCertificate(msg.Certificate)
-		if !checkCertificateValidity(cert) {
+		var err error
+		cert, err = x509.ParseCertificate(msg.Certificate)
+		if err != nil || !checkCertificateValidity(cert) {
 			return ErrCertInvalid
 		}
 	}
@@ -110,14 +113,14 @@ func handleRevert(decoder *gob.Decoder) int {
 	revertIps := msg.IPs && mappedIps
 	revertCert := msg.Certificate && addedCert
 	revertCdn := msg.CDN && mappedCdn
-	if !revertIps && !revertCert {
+	if !revertIps && !revertCert && !revertCdn {
 		return common.ErrSuccess
 	}
 	result := executor.RunRevert(revertIps, revertCert, revertCdn, true)
 	if result.Success() {
-		mappedCdn = !revertCdn
-		mappedIps = !revertIps
-		addedCert = !revertCert
+		mappedCdn = mappedCdn && !revertCdn
+		mappedIps = mappedIps && !revertIps
+		addedCert = addedCert && !revertCert
 	}
 	return result.ExitCode
 }
