@@ -34,7 +34,7 @@ func (c *Config) AddCert(canAdd string) (errorCode int) {
 				return
 			}
 		} else if !server.LanServer(host, false) {
-			fmt.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
+			fmt.Println("Something went wrong, " + host + " points to the original 'server'.")
 			errorCode = internal.ErrServerConnectSecure
 			return
 		}
