@@ -343,7 +343,7 @@ func Execute() error {
 	}
 	var pathNamesInfo string
 	if runtime.GOOS == "windows" {
-		pathNamesInfo += " Path names need to use double backslashes or be within single quotes."
+		pathNamesInfo += " Path names need to use double backslashes within single quotes or be within double quotes."
 	}
 	cmd.GameCommand(rootCmd.PersistentFlags())
 	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE")
