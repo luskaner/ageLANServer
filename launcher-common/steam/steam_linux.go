@@ -17,6 +17,14 @@ var dirs = []string{
 	"$HOME/snap/steam/common/{suffixDir}",
 	// Flatpak
 	"$HOME/.var/app/com.valvesoftware.Steam/{suffixDir}",
+	// Less common from https://github.com/lutris/lutris/blob/master/lutris/util/steam/config.py
+	"$HOME/.steam/debian-installation",
+	"$HOME/.steam",
+	"$HOME/.local/share/steam",
+	"$HOME/snap/steam/common/.local/share/Steam",
+	"$HOME/.var/app/com.valvesoftware.Steam/data/Steam",
+	"/usr/share/steam",
+	"/usr/local/share/steam",
 }
 
 func ConfigPath() string {
