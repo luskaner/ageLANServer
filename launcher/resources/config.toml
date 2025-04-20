@@ -29,7 +29,7 @@ Start = 'auto'
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
-# Windows: Path names need to use double backslashes or be within single quotes.
+# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = ['-e', '{Game}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored

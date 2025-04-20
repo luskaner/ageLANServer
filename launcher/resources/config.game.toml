@@ -1,11 +1,11 @@
 [Config]
 # Executable to run (including arguments) to run first after the "Setting up..." line.
 # The command must return a 0 exit code to continue. If you need to keep it running spawn a new detached process.
-# Windows: Path names need to use double backslashes or be within single quotes.
+# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 SetupCommand = []
 # Executable to run (including arguments) to run after SetupCommand, game has exited and everything has been reverted. It may run before if there is an error.
-# Windows: Path names need to use double backslashes or be within single quotes.
+# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 RevertCommand = []
 
@@ -14,6 +14,6 @@ RevertCommand = []
 # Use a path to the game launcher, 'steam' or 'msstore' (Windows-only) to use the default launcher
 Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
-# Windows: Path names need to use double backslashes or be within single quotes.
+# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = []
