@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250417200628-a14436fb0820
-	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250412213800-aa7c9ded629c
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250421164953-333230e3ec11
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	golang.org/x/net v0.39.0
@@ -19,7 +19,7 @@ require (
 	github.com/andygrunwald/vdf v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
-	github.com/hairyhenderson/go-which v0.2.0 // indirect
+	github.com/hairyhenderson/go-which v0.2.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
