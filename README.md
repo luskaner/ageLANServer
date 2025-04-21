@@ -138,7 +138,9 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows (no S edition/mode):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux: distribution with Steam on x86-64.
+- Linux:
+    - Kernel 2.6.23 on x86-64 (recommended).
+    - Kernel 3.1 on ARM64.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
