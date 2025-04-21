@@ -6,7 +6,7 @@ require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/hairyhenderson/go-which v0.2.2
-	github.com/luskaner/ageLANServer/common v0.0.0-20250412211822-13220daf2c6e
+	github.com/luskaner/ageLANServer/common v0.0.0-20250417200628-a14436fb0820
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/sys v0.32.0
 	golang.org/x/term v0.31.0
