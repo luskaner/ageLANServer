@@ -10,7 +10,7 @@ system and reverting that configuration upon exit.
 - Windows (no S edition/mode):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux: *recent* distribution with Steam on x86-64 using Steam Play.
+- Linux: distribution with Steam on x86-64.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
