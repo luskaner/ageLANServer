@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
@@ -304,6 +305,10 @@ var (
 					return
 				}
 			} else {
+				if viper.GetString("Server.Start") == "auto" {
+					fmt.Println("No 'server's were found, proceeding to start one, press the Enter key to continue...")
+					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+				}
 				errorCode, serverHost = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
