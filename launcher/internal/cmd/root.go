@@ -309,11 +309,17 @@ var (
 					return
 				}
 			}
+			serverCertificate := server.ReadCertificateFromServer(serverHost)
+			if serverCertificate == nil {
+				fmt.Println("Failed to read certificate from " + serverHost + ". Try to access it with your browser and checking the certificate.")
+				errorCode = internal.ErrReadCert
+				return
+			}
 			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp)
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.AddCert(canTrustCertificate)
+			errorCode = config.AddCert(serverCertificate, canTrustCertificate)
 			if errorCode != common.ErrSuccess {
 				return
 			}
