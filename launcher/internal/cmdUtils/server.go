@@ -124,14 +124,6 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 		}
 		if len(serversStr) == 0 {
 			return
-		} else if len(serversStr) == 1 {
-			fmt.Printf("Found a single 'server' \"%s\", will connect to it...\n", serverTags[0])
-			ok, ip = SelectBestServerIp(serversStr[0])
-			if !ok {
-				fmt.Println("'Server' is not reachable. Check the client can connect to any", serversStr[0], "on TCP port 443 (HTTPS)")
-				errorCode = internal.ErrServerUnreachable
-				return
-			}
 		} else {
 			var option int
 			for {
