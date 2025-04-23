@@ -5,6 +5,9 @@ connection **to the game server**  ensuring the game LAN functionality is still 
 server
 is in maintenance or is eventually shutdown.
 
+> [!IMPORTANT]
+> You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being connected to the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline. My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information to download a Steam Emulator and play 100% offline.
+
 **🎮 Supported games:**
 
 * **Age of Empires: Definitive Edition**.
@@ -15,12 +18,6 @@ is in maintenance or is eventually shutdown.
 > Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals.
 Expect only updates to fix bugs and for dependencies/compiler.
 
-> [!IMPORTANT]
-> You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being connected to the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline. My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information to download a Steam Emulator and play 100% offline.
-
-> [!TIP]
-> See more details in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
-
 ## ⚙️Features
 
 - 🌐 Scenarios.
@@ -29,6 +26,9 @@ Expect only updates to fix bugs and for dependencies/compiler.
 - 📦 Data mods.
 - 🗣️ Lobby chatting.
 - 🎮 Crossplay Steam & Xbox.
+
+> [!TIP]
+> See more details in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
 
 ### Age of Empires II: Definitive Edition and Age of Empires III: Definitive Edition
 
@@ -59,7 +59,7 @@ Expect only updates to fix bugs and for dependencies/compiler.
 <summary>List of limitations</summary>
 
 - Joining a game lobby from a link only works if the game is already running.
-- Steam Workshop integration only works if using the official launcher.
+- Subscribing to online mods only works if using the official launcher.
 - Lobbies can only be created in *LAN mode* which has its own limitations:
     - No Ranked.
     - No Spectate.
