@@ -7,8 +7,9 @@ assignees: luskaner
 
 ---
 
-**ℹ️ MAKE SURE YOU HAVE READ [TROUBLESHOOTING](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
-and [QA](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)) FIRST.**
+**ℹ️ MAKE SURE YOU HAVE READ [TROUBLESHOOTING](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting) and [QA](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)) FIRST**. 
+
+You are expected to do a followup on any doubts or testing required to reproduce or resolve the issue.
 
 **Describe the bug**
 A clear and concise description of what the bug is.
