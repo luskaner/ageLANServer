@@ -277,7 +277,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    the `Client.Executable` section to point to the game launcher path.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. **Execute `launcher/launcher-<game>`**: you will be asked for
+6. **Execute `launcher/launcher_<game>` script**: you will be asked for
    admin elevation and
    confirmation of other dialogs as
    needed, you
