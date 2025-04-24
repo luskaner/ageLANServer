@@ -18,23 +18,7 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
-	fmt.Println("Looking for the game...")
-	executer := game.MakeExecutor(c.gameId, executable)
-	var customExecutor game.CustomExecutor
-	switch executer.(type) {
-	case game.SteamExecutor:
-		fmt.Println("Game found on Steam.")
-	case game.XboxExecutor:
-		fmt.Println("Game found on Xbox.")
-	case game.CustomExecutor:
-		customExecutor = executer.(game.CustomExecutor)
-		fmt.Println("Game found on custom path.")
-	default:
-		fmt.Println("Game not found.")
-		errorCode = internal.ErrGameLauncherNotFound
-		return
-	}
+func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	if canBroadcastBattleServer != "false" {
 		if game.RequiresBattleServerBroadcast() {
 			canBroadcastBattleServer = "true"

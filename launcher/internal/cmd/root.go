@@ -13,6 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/game"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -154,6 +155,23 @@ var (
 			serverExecutable := viper.GetString("Server.Executable")
 			clientExecutable := viper.GetString("Client.Executable")
 			serverHost := viper.GetString("Server.Host")
+
+			fmt.Println("Looking for the game...")
+			executer := game.MakeExecutor(gameId, clientExecutable)
+			var customExecutor game.CustomExecutor
+			switch executer.(type) {
+			case game.SteamExecutor:
+				fmt.Println("Game found on Steam.")
+			case game.XboxExecutor:
+				fmt.Println("Game found on Xbox.")
+			case game.CustomExecutor:
+				customExecutor = executer.(game.CustomExecutor)
+				fmt.Println("Game found on custom path.")
+			default:
+				fmt.Println("Game not found.")
+				errorCode = internal.ErrGameLauncherNotFound
+				return
+			}
 
 			if isAdmin {
 				fmt.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
@@ -332,7 +350,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(clientExecutable, clientArgs, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(executer, customExecutor, clientArgs, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )
