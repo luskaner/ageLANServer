@@ -35,13 +35,16 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 		errorCode = internal.ErrGameLauncherNotFound
 		return
 	}
-	var broadcastBattleServer bool
-	if canBroadcastBattleServer == "auto" && game.RequiresBattleServerBroadcast() {
-		canBroadcastBattleServer = "true"
+	if canBroadcastBattleServer != "false" {
+		if game.RequiresBattleServerBroadcast() {
+			canBroadcastBattleServer = "true"
+		} else {
+			canBroadcastBattleServer = "false"
+		}
 	}
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
-	if len(revertCommand) > 0 || broadcastBattleServer || len(c.serverExe) > 0 || requiresConfigRevert {
+	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || len(c.serverExe) > 0 || requiresConfigRevert {
 		fmt.Print("Starting 'agent'")
 		if canBroadcastBattleServer == "true" {
 			fmt.Print(", authorize it in firewall if needed")
@@ -52,7 +55,7 @@ func (c *Config) LaunchAgentAndGame(executable string, args []string, canTrustCe
 		if requiresConfigRevert {
 			revertFlags = executor.RevertFlags(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, true)
 		}
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, broadcastBattleServer, revertCommand, revertFlags)
+		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true", revertCommand, revertFlags)
 		if !result.Success() {
 			fmt.Println("Failed to start 'agent'.")
 			errorCode = internal.ErrAgentStart
