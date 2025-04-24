@@ -1,6 +1,6 @@
 # Age LAN Server
 
-Age LAN Server is a web server that allows you to play multiplayer **LAN** game modes without having an internet
+Age LAN Server is a web server (with its launcher) that allows you to play multiplayer **LAN** game modes without having an internet
 connection **to the game server**  ensuring the game LAN functionality is still available even if the official
 server
 is in maintenance or is eventually shutdown.
@@ -303,7 +303,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    from https://github.com/luskaner/ageLANServer/releases.
 2. **Generate the certificate** by simply executing `bin/genCert`.
 3. If needed **edit the [config](server/resources/config/config.toml) file**.
-4. **Run** the `server` binary for all games or the `server-` game-specific script.
+4. **Run** the `server` binary for all games or the `server_` game-specific script.
 
 </details>
 
@@ -316,7 +316,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    need to edit the
    `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use
    a custom launcher for 100% offline play.
-4. **Run** the `launcher-...`, Shell script.
+4. **Run** the `launcher_...` script.
 
 *Note: If you have any issues run the `bin/config revert -a`.*
 
