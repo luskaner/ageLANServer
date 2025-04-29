@@ -41,7 +41,7 @@ func cachedIpToHosts(ip string) (bool, mapset.Set[string]) {
 	var cachedHosts mapset.Set[string]
 	if cachedHosts, cached = ipToHosts[ip]; cached {
 		result = cachedHosts
-	} else if failedTime, ok := failedHostToIps[ip]; ok && time.Since(failedTime) < cacheTime {
+	} else if failedTime, ok := failedIpToHosts[ip]; ok && time.Since(failedTime) < cacheTime {
 		cached = true
 	}
 	return cached, result
@@ -60,7 +60,7 @@ func cacheMapping(host string, ip string) {
 	if _, exists := failedIpToHosts[ip]; exists {
 		delete(failedIpToHosts, ip)
 	}
-	if _, exists := failedIpToHosts[hostToLower]; exists {
+	if _, exists := failedHostToIps[hostToLower]; exists {
 		delete(failedHostToIps, hostToLower)
 	}
 }
