@@ -17,15 +17,14 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"mvdan.cc/sh/v3/shell"
 	"net"
 	"net/netip"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -35,21 +34,8 @@ const autoValue = "auto"
 const trueValue = "true"
 const falseValue = "false"
 
-var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)
 var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
-
-func parseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
-	for key, value := range values {
-		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
-	}
-	if runtime.GOOS == "windows" {
-		cmdArgs = reWinToLinVar.ReplaceAllString(cmdArgs, `$$$1`)
-	}
-	args, err = shell.Fields(cmdArgs, nil)
-	return
-}
 
 var (
 	Version                        string
@@ -118,28 +104,21 @@ var (
 			serverValues := map[string]string{
 				"Game": gameId,
 			}
-			serverArgs, err := parseCommandArgs("Server.ExecutableArgs", serverValues)
+			serverArgs, err := cmdUtils.ParseCommandArgs("Server.ExecutableArgs", serverValues)
 			if err != nil {
 				fmt.Println("Failed to parse 'server' executable arguments")
 				errorCode = internal.ErrInvalidServerArgs
 				return
 			}
-			var clientArgs []string
-			clientArgs, err = parseCommandArgs("Client.ExecutableArgs", nil)
-			if err != nil {
-				fmt.Println("Failed to parse 'server' executable arguments")
-				errorCode = internal.ErrInvalidClientArgs
-				return
-			}
 			var setupCommand []string
-			setupCommand, err = parseCommandArgs("Config.SetupCommand", nil)
+			setupCommand, err = cmdUtils.ParseCommandArgs("Config.SetupCommand", nil)
 			if err != nil {
 				fmt.Println("Failed to parse setup command")
 				errorCode = internal.ErrInvalidSetupCommand
 				return
 			}
 			var revertCommand []string
-			revertCommand, err = parseCommandArgs("Config.RevertCommand", nil)
+			revertCommand, err = cmdUtils.ParseCommandArgs("Config.RevertCommand", nil)
 			if err != nil {
 				fmt.Println("Failed to parse revert command")
 				errorCode = internal.ErrInvalidRevertCommand
@@ -239,7 +218,7 @@ var (
 				fmt.Printf(`, authorize 'config-admin' if needed`)
 			}
 			fmt.Println(`...`)
-			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, false); !revertResult.Success() {
+			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", false); !revertResult.Success() {
 				if _, proc, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
 					fmt.Println("Failed to kill 'config-admin-agent' process: ", err, "Kill it using the task manager with admin rights.")
 				} else {
@@ -338,7 +317,9 @@ var (
 				errorCode = internal.ErrReadCert
 				return
 			}
-			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp)
+			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+				return strings.Contains(s, "{HostFilePath}")
+			}))
 			if errorCode != common.ErrSuccess {
 				return
 			}
@@ -350,7 +331,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(executer, customExecutor, clientArgs, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )

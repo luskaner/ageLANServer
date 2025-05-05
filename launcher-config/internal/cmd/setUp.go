@@ -10,6 +10,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
+	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
@@ -156,10 +157,37 @@ var setUpCmd = &cobra.Command{
 			}
 		}
 		hostMappings := mapset.NewThreadUnsafeSet[string]()
-		if len(cmd.MapIPs) > 0 {
+		if hostFilePath == "" {
 			for _, ip := range cmd.MapIPs {
 				hostMappings.Add(ip.String())
 			}
+		} else {
+			if cmd.MapCDN || len(cmd.MapIPs) > 0 {
+				if ok, _ := hosts.AddHosts(hostFilePath, hosts.WindowsLineEnding, nil); ok {
+					fmt.Println("Successfully added host mappings")
+				} else {
+					fmt.Println("Failed to add host mappings")
+					_ = os.Remove(hostFilePath)
+					errorCode := internal.ErrHostsAdd
+					if addedUserCert {
+						if !removeUserCert() {
+							errorCode = internal.ErrAdminSetupRevert
+						}
+					}
+					if backedUpMetadata {
+						if !restoreMetadata() {
+							errorCode = internal.ErrAdminSetupRevert
+						}
+					}
+					if backedUpProfiles {
+						if !restoreProfiles() {
+							errorCode = internal.ErrAdminSetupRevert
+						}
+					}
+					os.Exit(errorCode)
+				}
+			}
+			cmd.MapCDN = false
 		}
 		if cmd.AddLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
@@ -223,6 +251,9 @@ var setUpCmd = &cobra.Command{
 						errorCode = internal.ErrAdminSetupRevert
 					}
 				}
+				if hostFilePath != "" {
+					_ = os.Remove(hostFilePath)
+				}
 				if agentStarted {
 					fmt.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
 					if agentEndOnError {
@@ -259,6 +290,13 @@ func InitSetUp() {
 	}
 	cmd.InitSetUp(setUpCmd)
 	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameId)
+	setUpCmd.Flags().StringVarP(
+		&hostFilePath,
+		"hostFilePath",
+		"o",
+		"",
+		"Path to the host file. Only relevant when using 'ip' and/or 'CDN' option. If empty, it will use the system path",
+	)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(
 			&AddUserCertData,

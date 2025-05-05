@@ -24,6 +24,7 @@ type Config struct {
 	agentStarted    bool
 	setupCommandRan bool
 	revertCommand   []string
+	hostFilePath    string
 }
 
 func (c *Config) MappedHosts() {
@@ -69,6 +70,10 @@ func (c *Config) SetGameId(id string) {
 	c.gameId = id
 }
 
+func (c *Config) SetHostFilePath(path string) {
+	c.hostFilePath = path
+}
+
 func (c *Config) CfgAgentStarted() bool {
 	return !commonExecutor.IsAdmin() && c.startedAgent
 }
@@ -96,6 +101,10 @@ func (c *Config) RevertCommand() []string {
 	return []string{}
 }
 
+func (c *Config) HostFilePath() string {
+	return c.hostFilePath
+}
+
 func (c *Config) Revert() {
 	if c.AgentStarted() {
 		c.KillAgent()
@@ -114,7 +123,7 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, true); result.Success() {
+		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, true); result.Success() {
 			fmt.Println("Cleaned up.")
 		} else {
 			fmt.Println("Failed to clean up.")

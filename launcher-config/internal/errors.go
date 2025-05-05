@@ -24,4 +24,5 @@ const (
 	ErrAdminSetup
 	ErrAdminSetupRevert
 	ErrRevertStopAgent
+	ErrHostsAdd
 )

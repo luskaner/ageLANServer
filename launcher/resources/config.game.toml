@@ -11,9 +11,13 @@ RevertCommand = []
 
 [Client]
 # The path to the game launcher, if 'auto', the Steam and then the Xbox (Windows-only) one will be launched if found
-# Use a path to the game launcher, 'steam' or 'msstore' (Windows-only) to use the default launcher
+# Use a path to the game launcher, 'steam' or 'msstore' (Windows-only) to use the default launcher.
+# Note: It is not recommended to use an executable that requires admin rights (but it is supported).
 Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
+# {HostFilePath} will be replaced by the host file path.
+# If using this variable, 'Config.CanAddHost' setting will be ignored.
+# The host file follows the Windows format.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = []

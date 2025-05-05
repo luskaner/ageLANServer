@@ -61,7 +61,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string) (er
 	} else {
 		addUserCertData = serverCertificate.Raw
 	}
-	if result := executor.RunSetUp("", nil, addUserCertData, addLocalCertData, false, false, false, false); !result.Success() {
+	if result := executor.RunSetUp("", nil, addUserCertData, addLocalCertData, false, false, false, false, ""); !result.Success() {
 		fmt.Println("Failed to trust certificate")
 		errorCode = internal.ErrConfigCertAdd
 		if result.Err != nil {

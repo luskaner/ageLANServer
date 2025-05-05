@@ -1,6 +1,7 @@
 [Config]
 # Whether or not to add a local dns entry if it's needed to connect to the server with the official domain.
 # Including to avoid receiving that it's on maintenance.
+# If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 # Note: Will require admin privileges.
 CanAddHost = true
 # Whether or not to trust the certificate of the server in user or local store, or not at all.

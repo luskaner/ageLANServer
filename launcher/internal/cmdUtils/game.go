@@ -8,6 +8,8 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
+	"runtime"
+	"strings"
 )
 
 func (c *Config) KillAgent() {
@@ -18,7 +20,7 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, args []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	if canBroadcastBattleServer != "false" {
 		if game.RequiresBattleServerBroadcast() {
 			canBroadcastBattleServer = "true"
@@ -37,7 +39,7 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		steamProcess, xboxProcess := executer.GameProcesses()
 		var revertFlags []string
 		if requiresConfigRevert {
-			revertFlags = executor.RevertFlags(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, true)
+			revertFlags = executor.RevertFlags(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, true)
 		}
 		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true", revertCommand, revertFlags)
 		if !result.Success() {
@@ -56,11 +58,28 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		}
 	}
 	fmt.Print("Starting game")
-	if _, ok := executer.(game.CustomExecutor); ok {
+	if customExecutor.Executable != "" {
 		fmt.Print(", authorize it if needed")
 	}
 	fmt.Println("...")
 	var result *commonExecutor.Result
+	var values map[string]string
+	if hostFilePath := c.HostFilePath(); hostFilePath != "" {
+		if runtime.GOOS == "linux" {
+			// Change the linux path to a windows one that can be accessed from within Wine.
+			// Assume path is absolute.
+			hostFilePath = "Z:" + strings.ReplaceAll(hostFilePath, `/`, `\`)
+		}
+		values = map[string]string{
+			"HostFilePath": hostFilePath,
+		}
+	}
+	args, err := ParseCommandArgs("Client.ExecutableArgs", values)
+	if err != nil {
+		fmt.Println("Failed to parse client executable arguments")
+		errorCode = internal.ErrInvalidClientArgs
+		return
+	}
 
 	if result = executer.Execute(args); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
