@@ -82,11 +82,15 @@ func GetExecutablePath(executable string) string {
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
+	ip, ok := launcherCommon.HostOrIpToIps(host).Pop()
+	if !ok {
+		ip = host
+	}
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(insecureSkipVerify),
+		TLSClientConfig: TlsConfig(host, insecureSkipVerify),
 	}
 	client := &http.Client{Transport: tr}
-	resp, err := client.Head(fmt.Sprintf("https://%s/test", host))
+	resp, err := client.Head(fmt.Sprintf("https://%s/test", ip))
 	if err != nil {
 		return false
 	}

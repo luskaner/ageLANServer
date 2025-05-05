@@ -3,11 +3,11 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
+	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 	"github.com/spf13/cobra"
@@ -63,20 +63,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if len(cmd.MapIPs) > 0 || cmd.MapCDN {
 			fmt.Println("Adding IP mappings")
-			mappings := make(map[string]mapset.Set[string])
-			if len(cmd.MapIPs) > 0 {
-				for _, host := range common.AllHosts() {
-					mappings[host] = mapset.NewThreadUnsafeSet[string]()
-					for _, ip := range cmd.MapIPs {
-						mappings[host].Add(ip.String())
-					}
-				}
-			}
-			if cmd.MapCDN {
-				mappings[launcherCommon.CDNDomain] = mapset.NewThreadUnsafeSet[string]()
-				mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
-			}
-			if ok, _ := hosts.AddHosts(mappings); ok {
+			if ok, _ := launcherCommonHosts.AddHosts(hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
 				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd
