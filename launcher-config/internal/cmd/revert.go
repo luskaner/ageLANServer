@@ -160,13 +160,7 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		var agentConnected bool
-		configUnmapIps := cmd.UnmapIPs
-		configUnmapCDN := cmd.UnmapCDN
-		if hostFilePath != "" {
-			configUnmapIps = false
-			configUnmapCDN = false
-		}
-		if cmd.RemoveLocalCert || configUnmapIps || configUnmapCDN {
+		if cmd.RemoveLocalCert || cmd.UnmapIPs || cmd.UnmapCDN {
 			agentConnected = internal.ConnectAgentIfNeeded() == nil
 			if agentConnected {
 				fmt.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
@@ -178,7 +172,7 @@ var revertCmd = &cobra.Command{
 				fmt.Println("...")
 			}
 			var err error
-			err, errorCode = internal.RunRevert(configUnmapIps, cmd.RemoveLocalCert, configUnmapCDN, !cmd.RemoveAll)
+			err, errorCode = internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
 			if err == nil && errorCode == common.ErrSuccess {
 				if agentConnected {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")
@@ -223,8 +217,11 @@ var revertCmd = &cobra.Command{
 		if cmd.RemoveAll {
 			errorCode = common.ErrSuccess
 		}
-		if errorCode == common.ErrSuccess && hostFilePath != "" && (cmd.UnmapIPs || cmd.UnmapCDN) {
+		if errorCode == common.ErrSuccess && hostFilePath != "" {
 			_ = os.Remove(hostFilePath)
+		}
+		if errorCode == common.ErrSuccess && certFilePath != "" {
+			_ = os.Remove(certFilePath)
 		}
 		if stopAgent {
 			failedStopAgent := true
@@ -284,7 +281,14 @@ func InitRevert() {
 		"hostFilePath",
 		"o",
 		"",
-		"Path to the host file. Only relevant when using 'ip' and/or 'CDN' option. If empty, it will use the system path",
+		"Path to the host file.",
+	)
+	revertCmd.Flags().StringVarP(
+		&certFilePath,
+		"certFilePath",
+		"t",
+		"",
+		"Path to the certificate file.",
 	)
 	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(

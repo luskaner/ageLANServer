@@ -78,12 +78,8 @@ func TrustCertificates(_ bool, certs []*x509.Certificate) error {
 			return err
 		}
 
-		pemData := pem.EncodeToMemory(&pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: cert.Raw,
-		})
+		err = WriteAsPem(cert.Raw, certFile)
 
-		_, err = certFile.Write(pemData)
 		if err != nil {
 			return err
 		}

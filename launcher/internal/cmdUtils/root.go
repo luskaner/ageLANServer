@@ -25,25 +25,34 @@ type Config struct {
 	setupCommandRan bool
 	revertCommand   []string
 	hostFilePath    string
+	certFilePath    string
 }
 
 func (c *Config) MappedHosts() {
 	c.startedAgent = true
-	c.unmapIPs = true
+	if c.hostFilePath == "" {
+		c.unmapIPs = true
+	}
 }
 
 func (c *Config) MappedCDN() {
 	c.startedAgent = true
-	c.unmapCDN = true
+	if c.hostFilePath == "" {
+		c.unmapCDN = true
+	}
 }
 
 func (c *Config) LocalCert() {
 	c.startedAgent = true
-	c.removeLocalCert = true
+	if c.certFilePath == "" {
+		c.removeLocalCert = true
+	}
 }
 
 func (c *Config) UserCert() {
-	c.removeUserCert = true
+	if c.certFilePath == "" {
+		c.removeUserCert = true
+	}
 }
 
 func (c *Config) BackedUpMetadata() {
@@ -74,12 +83,16 @@ func (c *Config) SetHostFilePath(path string) {
 	c.hostFilePath = path
 }
 
+func (c *Config) SetCertFilePath(path string) {
+	c.certFilePath = path
+}
+
 func (c *Config) CfgAgentStarted() bool {
 	return !commonExecutor.IsAdmin() && c.startedAgent
 }
 
 func (c *Config) RequiresConfigRevert() bool {
-	return c.unmapIPs || c.unmapCDN || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
+	return c.hostFilePath != "" || c.certFilePath != "" || c.unmapIPs || c.unmapCDN || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
 }
 
 func (c *Config) RequiresRunningRevertCommand() bool {
@@ -105,6 +118,10 @@ func (c *Config) HostFilePath() string {
 	return c.hostFilePath
 }
 
+func (c *Config) CertFilePath() string {
+	return c.certFilePath
+}
+
 func (c *Config) Revert() {
 	if c.AgentStarted() {
 		c.KillAgent()
@@ -123,7 +140,7 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, true); result.Success() {
+		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, c.certFilePath, true); result.Success() {
 			fmt.Println("Cleaned up.")
 		} else {
 			fmt.Println("Failed to clean up.")

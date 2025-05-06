@@ -20,7 +20,7 @@ const WindowsLineEnding = "\r\n"
 var mappingRegExp = regexp.MustCompile(`(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(?P<host>\S+)`)
 
 func CreateTemp() (*os.File, error) {
-	return os.CreateTemp("", common.Name+".*")
+	return os.CreateTemp("", common.Name+"_host_*.txt")
 }
 
 func HostMappings() map[string]mapset.Set[string] {
