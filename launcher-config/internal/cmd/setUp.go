@@ -9,6 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
@@ -101,6 +102,15 @@ var setUpCmd = &cobra.Command{
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
+		var addLocalCertData []byte = nil
+		if certFilePath != "" {
+			if len(cmd.AddLocalCertData) == 0 {
+				fmt.Println("Certificate file path is set but no local certificate data is provided")
+				os.Exit(internal.ErrMissingLocalCertData)
+			}
+		} else {
+			addLocalCertData = cmd.AddLocalCertData
+		}
 		fmt.Printf("Setting up configuration for %s...\n", gameId)
 		isAdmin := executor.IsAdmin()
 		if AddUserCertData != nil {
@@ -189,7 +199,38 @@ var setUpCmd = &cobra.Command{
 			}
 			cmd.MapCDN = false
 		}
-		if cmd.AddLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
+		if certFilePath != "" {
+			certFile, err := os.Create(certFilePath)
+			if err == nil {
+				err = cert.WriteAsPem(cmd.AddLocalCertData, certFile)
+				if err != nil {
+					_ = certFile.Close()
+				}
+			}
+			if err != nil {
+				fmt.Println("Error saving certificate file:", err)
+				_ = os.Remove(hostFilePath)
+				_ = os.Remove(certFilePath)
+				errorCode := internal.ErrUserCertAdd
+				if addedUserCert {
+					if !removeUserCert() {
+						errorCode = internal.ErrAdminSetupRevert
+					}
+				}
+				if backedUpMetadata {
+					if !restoreMetadata() {
+						errorCode = internal.ErrAdminSetupRevert
+					}
+				}
+				if backedUpProfiles {
+					if !restoreProfiles() {
+						errorCode = internal.ErrAdminSetupRevert
+					}
+				}
+				os.Exit(errorCode)
+			}
+		}
+		if addLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -219,7 +260,7 @@ var setUpCmd = &cobra.Command{
 				}
 				fmt.Println("...")
 			}
-			err, exitCode := internal.RunSetUp(hostMappings, cmd.AddLocalCertData, cmd.MapCDN)
+			err, exitCode := internal.RunSetUp(hostMappings, addLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")
@@ -253,6 +294,9 @@ var setUpCmd = &cobra.Command{
 				}
 				if hostFilePath != "" {
 					_ = os.Remove(hostFilePath)
+				}
+				if certFilePath != "" {
+					_ = os.Remove(certFilePath)
 				}
 				if agentStarted {
 					fmt.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
@@ -296,6 +340,13 @@ func InitSetUp() {
 		"o",
 		"",
 		"Path to the host file. Only relevant when using 'ip' and/or 'CDN' option. If empty, it will use the system path",
+	)
+	setUpCmd.Flags().StringVarP(
+		&certFilePath,
+		"certFilePath",
+		"t",
+		"",
+		"Path to the certificate file. It requires the 'localCert' option to be set. If non-empty the certificate will be saved only to the specified path.",
 	)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(

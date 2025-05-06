@@ -25,4 +25,5 @@ const (
 	ErrAdminSetupRevert
 	ErrRevertStopAgent
 	ErrHostsAdd
+	ErrMissingLocalCertData
 )

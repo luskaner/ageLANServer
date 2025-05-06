@@ -218,7 +218,7 @@ var (
 				fmt.Printf(`, authorize 'config-admin' if needed`)
 			}
 			fmt.Println(`...`)
-			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", false); !revertResult.Success() {
+			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", false); !revertResult.Success() {
 				if _, proc, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
 					fmt.Println("Failed to kill 'config-admin-agent' process: ", err, "Kill it using the task manager with admin rights.")
 				} else {
@@ -323,7 +323,9 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.AddCert(serverCertificate, canTrustCertificate)
+			errorCode = config.AddCert(serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+				return strings.Contains(s, "{CertFilePath}")
+			}))
 			if errorCode != common.ErrSuccess {
 				return
 			}

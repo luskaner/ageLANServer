@@ -11,7 +11,7 @@ import (
 	"runtime"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
@@ -57,6 +57,10 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "-o")
 		args = append(args, hostFilePath)
 	}
+	if certFilePath != "" {
+		args = append(args, "-t")
+		args = append(args, certFilePath)
+	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	if reloadSystemCertificates {
 		certStore.ReloadSystemCertificates()
@@ -67,9 +71,9 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	return
 }
 
-func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, failfast bool) (result *exec.Result) {
+func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, failfast bool) (result *exec.Result) {
 	args := []string{launcherCommon.ConfigRevertCmd}
-	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN, hostFilePath, failfast)...)
+	args = append(args, RevertFlags(game, unmapIPs, removeUserCert, removeLocalCert, restoreMetadata, restoreProfiles, unmapCDN, hostFilePath, certFilePath, failfast)...)
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	if removeUserCert || removeLocalCert {
 		certStore.ReloadSystemCertificates()
@@ -80,7 +84,7 @@ func RunRevert(game string, unmapIPs bool, removeUserCert bool, removeLocalCert 
 	return
 }
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, failfast bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, failfast bool) []string {
 	args := make([]string, 0)
 	args = append(args, "-e")
 	args = append(args, game)
@@ -112,6 +116,10 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	if hostFilePath != "" {
 		args = append(args, "-o")
 		args = append(args, hostFilePath)
+	}
+	if certFilePath != "" {
+		args = append(args, "-t")
+		args = append(args, certFilePath)
 	}
 	return args
 }

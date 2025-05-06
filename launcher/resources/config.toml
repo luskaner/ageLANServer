@@ -8,6 +8,7 @@ CanAddHost = true
 # false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
 # local: trust the certificate in the local store. Requires admin rights.
 # user: trust the certificate in the user store. Requires user consent. Only on Windows.
+# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
 # Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
 # Either 'auto' or 'false'. This is only necessary in Windows, on the rest of systems it is always 'false'.

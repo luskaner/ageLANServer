@@ -118,7 +118,6 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool, cust
 		}
 	}
 	if !ips.IsEmpty() || mapCDN {
-		fmt.Print("Adding host to hosts file")
 		if customHostFile {
 			hostFile, err := hosts.CreateTemp()
 			if err != nil {
@@ -128,12 +127,16 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool, cust
 				return internal.ErrConfigIpMapAdd
 			}
 			c.SetHostFilePath(hostFile.Name())
-		} else if !commonExecutor.IsAdmin() {
-			fmt.Print(", authorize 'config-admin-agent' if needed")
+			fmt.Printf("Saving hosts to '%s' file", hostFile.Name())
+		} else {
+			fmt.Print("Adding hosts to hosts file")
+			if !commonExecutor.IsAdmin() {
+				fmt.Print(", authorize 'config-admin-agent' if needed")
+			}
 		}
 		fmt.Println("...")
-		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true, c.HostFilePath()); !result.Success() {
-			fmt.Println("Failed to add host.")
+		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true, c.HostFilePath(), ""); !result.Success() {
+			fmt.Println("Failed to add hosts.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
 			}
