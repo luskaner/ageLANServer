@@ -17,7 +17,7 @@ Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
 # {HostFilePath} will be replaced by the host file path.
 # If using this variable, 'Config.CanAddHost' setting will be ignored.
-# The host file follows the Windows format.
+# The host file follows the Windows system format.
 # {CertFilePath} will be replaced by the certificate file path.
 # If using this variable, 'Config.CanTrustCertificate' setting will be ignored.
 # The format is the same as the server stored certificate.
