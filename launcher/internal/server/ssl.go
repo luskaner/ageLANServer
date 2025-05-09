@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"github.com/luskaner/ageLANServer/common"
+	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
 	"os"
@@ -12,14 +13,19 @@ import (
 	"time"
 )
 
-func TlsConfig(insecureSkipVerify bool) *tls.Config {
+func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
 	return &tls.Config{
 		InsecureSkipVerify: insecureSkipVerify,
+		ServerName:         serverName,
 	}
 }
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(host, "443"), TlsConfig(insecureSkipVerify))
+	ip, ok := launcher_common.HostOrIpToIps(host).Pop()
+	if !ok {
+		ip = host
+	}
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify))
 	if err != nil {
 		return nil
 	}

@@ -217,6 +217,12 @@ var revertCmd = &cobra.Command{
 		if cmd.RemoveAll {
 			errorCode = common.ErrSuccess
 		}
+		if errorCode == common.ErrSuccess && hostFilePath != "" {
+			_ = os.Remove(hostFilePath)
+		}
+		if errorCode == common.ErrSuccess && certFilePath != "" {
+			_ = os.Remove(certFilePath)
+		}
 		if stopAgent {
 			failedStopAgent := true
 			if agentConnected {
@@ -270,6 +276,20 @@ func InitRevert() {
 	}
 	cmd.InitRevert(revertCmd)
 	commonCmd.GameVarCommand(revertCmd.Flags(), &gameId)
+	revertCmd.Flags().StringVarP(
+		&hostFilePath,
+		"hostFilePath",
+		"o",
+		"",
+		"Path to the host file.",
+	)
+	revertCmd.Flags().StringVarP(
+		&certFilePath,
+		"certFilePath",
+		"t",
+		"",
+		"Path to the certificate file.",
+	)
 	if runtime.GOOS != "linux" {
 		revertCmd.Flags().BoolVarP(
 			&RemoveUserCert,

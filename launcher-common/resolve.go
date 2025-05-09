@@ -9,10 +9,14 @@ import (
 )
 
 var cacheTime = 1 * time.Minute
-var failedIpToHosts = make(map[string]time.Time)
-var failedHostToIps = make(map[string]time.Time)
-var ipToHosts = make(map[string]mapset.Set[string])
-var hostToIps = make(map[string]mapset.Set[string])
+var failedIpToHosts map[string]time.Time
+var failedHostToIps map[string]time.Time
+var ipToHosts map[string]mapset.Set[string]
+var hostToIps map[string]mapset.Set[string]
+
+func init() {
+	ClearCache()
+}
 
 func ipToDnsName(ip string) []string {
 	names, err := net.LookupAddr(ip)
@@ -47,7 +51,7 @@ func cachedIpToHosts(ip string) (bool, mapset.Set[string]) {
 	return cached, result
 }
 
-func cacheMapping(host string, ip string) {
+func CacheMapping(host string, ip string) {
 	hostToLower := strings.ToLower(host)
 	if _, exists := hostToIps[hostToLower]; !exists {
 		hostToIps[hostToLower] = mapset.NewThreadUnsafeSet[string]()
@@ -65,6 +69,13 @@ func cacheMapping(host string, ip string) {
 	}
 }
 
+func ClearCache() {
+	failedIpToHosts = make(map[string]time.Time)
+	failedHostToIps = make(map[string]time.Time)
+	ipToHosts = make(map[string]mapset.Set[string])
+	hostToIps = make(map[string]mapset.Set[string])
+}
+
 func HostOrIpToIps(host string) mapset.Set[string] {
 	if ip := net.ParseIP(host); ip != nil {
 		var ips = mapset.NewThreadUnsafeSet[string]()
@@ -79,7 +90,7 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 	} else {
 		cached, cachedIps := cachedHostToIps(host)
 		if cached {
-			return cachedIps
+			return cachedIps.Clone()
 		}
 		ips := mapset.NewThreadUnsafeSet[string]()
 		ipsFromDns := common.HostToIps(host)
@@ -87,7 +98,7 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 			for _, ipRaw := range ipsFromDns {
 				ipStr := ipRaw.String()
 				ips.Add(ipStr)
-				cacheMapping(host, ipStr)
+				CacheMapping(host, ipStr)
 			}
 		}
 		return ips
@@ -149,7 +160,7 @@ func IpToHosts(ip string) mapset.Set[string] {
 	if hostsFromDns != nil {
 		for _, hostStr := range hostsFromDns {
 			hosts.Add(hostStr)
-			cacheMapping(hostStr, ip)
+			CacheMapping(hostStr, ip)
 		}
 	}
 	return hosts
