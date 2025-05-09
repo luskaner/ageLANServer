@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250509182900-004eee02182d
-	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509182900-004eee02182d
+	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509184920-220e5090865c
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/sys v0.33.0
 )
