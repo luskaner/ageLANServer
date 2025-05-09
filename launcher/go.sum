@@ -30,8 +30,8 @@ github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 h1:EB9EKyv7koSQS
 github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
 github.com/luskaner/ageLANServer/common v0.0.0-20250509182900-004eee02182d h1:nCtmjFsnKpRk+awDtOrO+1ox1DdIl5iIPbOlO1nL6F8=
 github.com/luskaner/ageLANServer/common v0.0.0-20250509182900-004eee02182d/go.mod h1:xf4zFb3YeeMW7D2zGLEAsXSIZiwu4qVsXHC0ed/AwH4=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509182900-004eee02182d h1:GN1S8mk16CzSlfPLFBY6ILwlR6FNL+zKwGSO0ZqQbEo=
-github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509182900-004eee02182d/go.mod h1:P+rqphxgXI5dRYEAxhjGGTrgSn/UcNFXQZRIa4+E3CA=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509184920-220e5090865c h1:3JtSJNyXDUI+tgWoWNrP0Nfb3MJTyQULKbYRpZfhTDI=
+github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509184920-220e5090865c/go.mod h1:bE1rDD+kBgRN1tIp/p4fyRc05YuTUhfFNgOsH4f95g0=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
 github.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
