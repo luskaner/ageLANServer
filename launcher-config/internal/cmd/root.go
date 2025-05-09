@@ -14,6 +14,8 @@ var RootCmd = &cobra.Command{
 
 var Version string
 var gameId string
+var hostFilePath string
+var certFilePath string
 
 func Execute() error {
 	RootCmd.Version = Version

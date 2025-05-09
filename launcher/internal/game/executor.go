@@ -34,13 +34,23 @@ func (exec SteamExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) 
 	return
 }
 
+func (exec CustomExecutor) execute(args []string, admin bool) (result *commonExecutor.Result) {
+	options := commonExecutor.Options{File: exec.Executable, Args: args}
+	if admin {
+		options.AsAdmin = true
+		options.ShowWindow = true
+	}
+	result = options.Exec()
+	return
+}
+
 func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.Result) {
-	result = commonExecutor.Options{File: exec.Executable, Args: args}.Exec()
+	result = exec.execute(args, false)
 	return
 }
 
 func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.Result) {
-	result = commonExecutor.Options{File: exec.Executable, AsAdmin: true, ShowWindow: true, Args: args}.Exec()
+	result = exec.execute(args, true)
 	return
 }
 
