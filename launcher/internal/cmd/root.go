@@ -146,6 +146,16 @@ var (
 			case game.CustomExecutor:
 				customExecutor = executer.(game.CustomExecutor)
 				fmt.Println("Game found on custom path.")
+				if runtime.GOOS == "linux" {
+					if isolateMetadata {
+						fmt.Println("Isolating metadata is not supported.")
+						isolateMetadata = false
+					}
+					if isolateProfiles {
+						fmt.Println("Isolating profiles is not supported.")
+						isolateProfiles = false
+					}
+				}
 			default:
 				fmt.Println("Game not found.")
 				errorCode = internal.ErrGameLauncherNotFound
@@ -358,8 +368,12 @@ func Execute() error {
 		pathNamesInfo += " Path names need to use double backslashes within single quotes or be within double quotes."
 	}
 	cmd.GameCommand(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE")
-	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared.")
+	var suffixIsolate string
+	if runtime.GOOS == "linux" {
+		suffixIsolate = " Unsupported when using a custom launcher."
+	}
+	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
+	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared."+suffixIsolate)
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
