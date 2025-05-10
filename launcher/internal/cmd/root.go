@@ -399,6 +399,9 @@ func Execute() error {
 		clientExeTip += `or "msstore"`
 	}
 	clientExeTip += " to use the default launcher."
+	if runtime.GOOS == "linux" {
+		clientExeTip += " If using a custom launcher, the isolation of the metadata and profiles will be disabled."
+	}
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", clientExeTip)
 	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
