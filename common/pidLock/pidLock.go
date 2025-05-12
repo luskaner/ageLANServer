@@ -32,7 +32,12 @@ func openFile() (err error, f *os.File) {
 }
 
 func writePid(f *os.File) error {
-	_, err := f.WriteString(strconv.Itoa(os.Getpid()))
+	str := strconv.Itoa(os.Getpid())
+	err := f.Truncate(int64(len(str)))
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(str)
 	if err != nil {
 		return err
 	}
