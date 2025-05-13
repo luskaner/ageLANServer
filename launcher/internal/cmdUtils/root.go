@@ -7,6 +7,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 	"runtime"
 )
 
@@ -92,7 +93,7 @@ func (c *Config) Revert() {
 		}
 	}
 	if c.RequiresRunningRevertCommand() {
-		err := launcherCommon.RunRevertCommand()
+		err := executor.RunRevertCommand()
 		if err != nil {
 			fmt.Println("Failed to run revert command.")
 			fmt.Println("Error message: " + err.Error())
@@ -131,5 +132,7 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		UseWorkingPath: true,
 		Args:           args,
 	}.Exec()
+	certStore.ReloadSystemCertificates()
+	launcherCommon.ClearCache()
 	return
 }
