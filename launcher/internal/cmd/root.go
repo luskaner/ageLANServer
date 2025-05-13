@@ -135,6 +135,7 @@ var (
 			clientExecutable := viper.GetString("Client.Executable")
 			serverHost := viper.GetString("Server.Host")
 
+			fmt.Printf("Game %s.\n", gameId)
 			fmt.Println("Looking for the game...")
 			executer := game.MakeExecutor(gameId, clientExecutable)
 			var customExecutor game.CustomExecutor
@@ -205,11 +206,8 @@ var (
 			/*
 				Ensure:
 				* No running config-admin-agent nor agent processes
-				* No backed up profiles or metadata
-				* No trusted certificates
-				* No mapped hosts
+				* Any previous changes are reverted
 			*/
-			fmt.Printf("Game %s.\n", gameId)
 			fmt.Println("Cleaning up (if needed)...")
 			config.KillAgent()
 			launcherCommon.ConfigRevert(gameId, false, executor.RunRevert)
