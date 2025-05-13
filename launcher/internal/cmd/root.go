@@ -215,7 +215,7 @@ var (
 			if err == nil && proc != nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
-			if err = launcherCommon.RunRevertCommand(); err != nil {
+			if err = executor.RunRevertCommand(); err != nil {
 				fmt.Println("Failed to run revert command.")
 				fmt.Println("Error message: " + err.Error())
 			}
