@@ -22,7 +22,7 @@ func SelectBestServerIp(ips []string) (ok bool, ip string) {
 			if parsedIp.IsLoopback() {
 				return true, curIp
 			}
-			successIps = append(successIps, net.ParseIP(curIp).To4())
+			successIps = append(successIps, parsedIp.To4())
 		}
 	}
 
