@@ -5,7 +5,6 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	launcherExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"runtime"
@@ -15,17 +14,12 @@ type Config struct {
 	gameId          string
 	serverExe       string
 	setupCommandRan bool
-	revertCommand   []string
 	hostFilePath    string
 	certFilePath    string
 }
 
 func (c *Config) SetServerExe(exe string) {
 	c.serverExe = exe
-}
-
-func (c *Config) SetRevertCommand(cmd []string) {
-	c.revertCommand = cmd
 }
 
 func (c *Config) SetGameId(id string) {
@@ -41,14 +35,21 @@ func (c *Config) SetCertFilePath(path string) {
 }
 
 func (c *Config) RequiresConfigRevert() bool {
-	if err, args := launcherCommon.LoadRevertArgs(); err == nil && len(args) > 0 {
+	if err, args := launcherCommon.RevertConfigStore.Load(); err == nil && len(args) > 0 {
 		return true
 	}
 	return false
 }
 
+func (c *Config) revertCommand() []string {
+	if err, args := launcherCommon.RevertCommandStore.Load(); err == nil {
+		return args
+	}
+	return []string{}
+}
+
 func (c *Config) RequiresRunningRevertCommand() bool {
-	return c.setupCommandRan && len(c.revertCommand) > 0
+	return c.setupCommandRan && len(c.revertCommand()) > 0
 }
 
 func (c *Config) ServerExe() string {
@@ -57,7 +58,7 @@ func (c *Config) ServerExe() string {
 
 func (c *Config) RevertCommand() []string {
 	if c.setupCommandRan {
-		return c.revertCommand
+		return c.revertCommand()
 	}
 	return []string{}
 }
@@ -91,7 +92,7 @@ func (c *Config) Revert() {
 		}
 	}
 	if c.RequiresRunningRevertCommand() {
-		err := c.RunRevertCommand()
+		err := launcherCommon.RunRevertCommand()
 		if err != nil {
 			fmt.Println("Failed to run revert command.")
 			fmt.Println("Error message: " + err.Error())
@@ -130,10 +131,5 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		UseWorkingPath: true,
 		Args:           args,
 	}.Exec()
-	return
-}
-
-func (c *Config) RunRevertCommand() (err error) {
-	err = launcherExecutor.RunRevertCommand(c.revertCommand)
 	return
 }

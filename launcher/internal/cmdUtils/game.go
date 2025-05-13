@@ -41,7 +41,7 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		}
 		fmt.Println("...")
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true", revertCommand)
+		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true")
 		if !result.Success() {
 			fmt.Println("Failed to start 'agent'.")
 			errorCode = internal.ErrAgentStart

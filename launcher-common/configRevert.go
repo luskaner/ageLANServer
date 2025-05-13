@@ -2,88 +2,17 @@ package launcher_common
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
-	"strings"
-	"sync"
 )
 
-const file = common.Name + "_config_revert.txt"
-const sep = "|"
-
-var mutex sync.RWMutex
-
-func byteToStringSlice(s []byte) []string {
-	return strings.Split(string(s), sep)
-}
-
-func LoadRevertArgs() (err error, flags []string) {
-	var content []byte
-	mutex.RLock()
-	func() {
-		defer mutex.RUnlock()
-		content, err = os.ReadFile(path())
-	}()
-	if err != nil {
-		if os.IsNotExist(err) {
-			err = nil
-		}
-		return
-	}
-	flags = byteToStringSlice(content)
-	return
-}
-
-func StoreRevertArgs(flags []string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-	f, err := os.OpenFile(path(), os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
-	var content []byte
-	content, err = io.ReadAll(f)
-	if err != nil {
-		return err
-	}
-	flagsToSave := byteToStringSlice(content)
-	existingFlags := mapset.NewSet[string](flagsToSave...)
-	for _, flag := range flags {
-		if !existingFlags.ContainsOne(flag) {
-			flagsToSave = append(flagsToSave, flag)
-		}
-	}
-	_, err = f.Seek(0, io.SeekStart)
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString(strings.Join(flagsToSave, sep))
-	return err
-}
-
-func RemoveRevertArgs() error {
-	mutex.Lock()
-	var err error
-	func() {
-		defer mutex.Unlock()
-		err = os.Remove(path())
-	}()
-	if os.IsNotExist(err) {
-		return nil
-	}
-	return err
-}
+var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
 func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, stopAgent bool, failfast bool) []string {
 	args := make([]string, 0)
@@ -131,7 +60,7 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
-	err, revertFlags := LoadRevertArgs()
+	err, revertFlags := RevertConfigStore.Load()
 	if err != nil || len(revertFlags) > 0 {
 		var stopAgent bool
 		var revertLine string
@@ -149,11 +78,12 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 			stopAgent = true
 		}
 
-		if err = RemoveRevertArgs(); err != nil {
+		if err = RevertConfigStore.Delete(); err != nil {
 			if !headless {
 				fmt.Println("Failed to clear revert flags: ", err)
 			}
 		}
+
 		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
 		if !headless {
 			revertLine += "configuration"
@@ -217,8 +147,4 @@ func RunRevert(flags []string, bin bool) (result *exec.Result) {
 	args = append(args, flags...)
 	result = exec.Options{File: common.GetExeFileName(bin, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	return
-}
-
-func path() string {
-	return filepath.Join(os.TempDir(), file)
 }
