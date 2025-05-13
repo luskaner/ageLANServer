@@ -83,7 +83,7 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 			launcherCommon.RequiresStopConfigAgent(args),
 			true,
 		)
-		if err := launcherCommon.StoreRevertArgs(revertArgs); err != nil {
+		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
 			fmt.Println("Failed to store revert arguments, reverting setup...")
 			result = RunRevert(revertArgs, false)
 			if !result.Success() {
