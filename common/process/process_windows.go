@@ -58,14 +58,14 @@ func processesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly 
 
 func FindProcess(pid int) (proc *os.Process, err error) {
 	proc, err = os.FindProcess(pid)
-	if err != nil {
-		return
-	}
 	entries := processesEntry(func(entry *windows.ProcessEntry32) bool {
 		return int(entry.ProcessID) == pid
 	}, true)
 	if len(entries) == 0 {
 		proc = nil
+	} else if err != nil {
+		proc = &os.Process{Pid: pid}
+		err = nil
 	}
 	return
 }
