@@ -13,10 +13,14 @@ import (
 )
 
 func (c *Config) KillAgent() {
-	proc, err := commonProcess.Kill(common.GetExeFileName(false, common.LauncherAgent))
-	fmt.Println(`Stopping 'agent''...`)
-	if err != nil && proc != nil {
-		fmt.Println("Could not stop it. Kill it using your task manager")
+	agent := common.GetExeFileName(false, common.LauncherAgent)
+	proc, err := commonProcess.Kill(agent)
+	if proc != nil {
+		fmt.Println("Killing 'agent'...")
+		if err != nil {
+			fmt.Println("Failed to kill it: ", err, ", try using the task manager.")
+			return
+		}
 	}
 }
 
@@ -37,11 +41,7 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		}
 		fmt.Println("...")
 		steamProcess, xboxProcess := executer.GameProcesses()
-		var revertFlags []string
-		if requiresConfigRevert {
-			revertFlags = executor.RevertFlags(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, c.certFilePath, true)
-		}
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true", revertCommand, revertFlags)
+		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true", revertCommand)
 		if !result.Success() {
 			fmt.Println("Failed to start 'agent'.")
 			errorCode = internal.ErrAgentStart
@@ -53,7 +53,6 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 			}
 			return
 		} else {
-			c.SetAgentStarted()
 			fmt.Println("'Agent' started.")
 		}
 	}
@@ -99,9 +98,7 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 	if !result.Success() {
 		errorCode = internal.ErrGameLauncherStart
 		fmt.Println("Game failed to start. Error message: " + result.Err.Error())
-		if c.AgentStarted() {
-			c.KillAgent()
-		}
+		c.KillAgent()
 	} else {
 		fmt.Println("Game started.")
 	}

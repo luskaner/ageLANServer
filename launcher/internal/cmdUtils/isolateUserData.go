@@ -28,13 +28,6 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 			if result.ExitCode != common.ErrSuccess {
 				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
-		} else {
-			if metadata {
-				c.BackedUpMetadata()
-			}
-			if profiles {
-				c.BackedUpProfiles()
-			}
 		}
 	}
 	return

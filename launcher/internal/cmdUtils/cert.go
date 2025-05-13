@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
+	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
@@ -69,7 +70,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		if canAdd == "user" {
 			certMsg += ", accept the dialog"
 		} else {
-			if !c.CfgAgentStarted() {
+			if !launcher_common.ConfigAdminAgentRunning(false) {
 				certMsg += `, authorize 'config-admin-agent' if needed`
 			}
 		}
@@ -95,10 +96,6 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 			fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 		}
 		return
-	} else if canAdd == "local" {
-		c.LocalCert()
-	} else {
-		c.UserCert()
 	}
 	if !customCertFile {
 		for _, host := range hosts {
