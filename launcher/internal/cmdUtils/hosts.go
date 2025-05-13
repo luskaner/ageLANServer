@@ -145,12 +145,6 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool, cust
 			}
 			errorCode = internal.ErrConfigIpMapAdd
 		} else {
-			if !ips.IsEmpty() {
-				c.MappedHosts()
-			}
-			if mapCDN {
-				c.MappedCDN()
-			}
 			if customHostFile {
 				cmd.MapCDN = mapCDN
 				for ip := range ips.Iter() {

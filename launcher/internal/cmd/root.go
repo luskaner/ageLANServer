@@ -210,33 +210,11 @@ var (
 				* No mapped hosts
 			*/
 			fmt.Printf("Game %s.\n", gameId)
-			fmt.Println("Cleaning up...")
-			agent := common.GetExeFileName(false, common.LauncherAgent)
+			fmt.Println("Cleaning up (if needed)...")
+			config.KillAgent()
+			launcherCommon.ConfigRevert(gameId, false, executor.RunRevert)
 			var proc *os.Process
-			var pidPath string
-			pidPath, proc, err = commonProcess.Process(agent)
-			if err == nil && proc != nil && pidPath != "" {
-				fmt.Println("Killing 'agent'...")
-				err = commonProcess.KillProc(pidPath, proc)
-				if err != nil {
-					fmt.Println("Failed to kill it: ", err, "Try using the task manager.")
-					return
-				}
-			}
-			fmt.Printf(`Reverting all configuration and stopping its agent`)
-			if !isAdmin {
-				fmt.Printf(`, authorize 'config-admin' if needed`)
-			}
-			fmt.Println(`...`)
-			if revertResult := executor.RunRevert(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", false); !revertResult.Success() {
-				if _, proc, err = commonProcess.Process(common.GetExeFileName(false, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
-					fmt.Println("Failed to kill 'config-admin-agent' process: ", err, "Kill it using the task manager with admin rights.")
-				} else {
-					fmt.Println("Failed to cleanup configuration, try to remove certificates and/or host mappings manually.")
-				}
-				return
-			}
-			pidPath, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
+			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
 			if err == nil && proc != nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}

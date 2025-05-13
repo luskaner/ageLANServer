@@ -4,8 +4,8 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
+	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
 	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"os"
 	"os/signal"
@@ -44,10 +44,6 @@ func main() {
 	if revertCmdLength > 0 {
 		revertCmd = os.Args[revertCmdStart:revertCmdEnd]
 	}
-	var revertFlags []string
-	if int64(len(os.Args)) > revertCmdEnd {
-		revertFlags = os.Args[revertCmdEnd:]
-	}
 	var exitCode int
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -59,9 +55,7 @@ func main() {
 				_ = lock.Unlock()
 				os.Exit(exitCode)
 			}()
-			if len(revertFlags) > 0 {
-				internal.RunConfig(revertFlags)
-			}
+			launcher_common.ConfigRevert(gameId, true, nil)
 			if len(revertCmd) > 0 {
 				_ = launcherCommonExecutor.RunRevertCommand(revertCmd)
 			}
@@ -70,7 +64,7 @@ func main() {
 			}
 		}
 	}()
-	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, revertFlags, revertCmd, &exitCode)
+	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, revertCmd, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

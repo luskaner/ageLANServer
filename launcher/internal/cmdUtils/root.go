@@ -3,8 +3,8 @@ package cmdUtils
 import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	launcherExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
@@ -13,58 +13,11 @@ import (
 
 type Config struct {
 	gameId          string
-	startedAgent    bool
-	unmapIPs        bool
-	unmapCDN        bool
-	removeUserCert  bool
-	removeLocalCert bool
-	restoreMetadata bool
-	restoreProfiles bool
 	serverExe       string
-	agentStarted    bool
 	setupCommandRan bool
 	revertCommand   []string
 	hostFilePath    string
 	certFilePath    string
-}
-
-func (c *Config) MappedHosts() {
-	c.startedAgent = true
-	if c.hostFilePath == "" {
-		c.unmapIPs = true
-	}
-}
-
-func (c *Config) MappedCDN() {
-	c.startedAgent = true
-	if c.hostFilePath == "" {
-		c.unmapCDN = true
-	}
-}
-
-func (c *Config) LocalCert() {
-	c.startedAgent = true
-	if c.certFilePath == "" {
-		c.removeLocalCert = true
-	}
-}
-
-func (c *Config) UserCert() {
-	if c.certFilePath == "" {
-		c.removeUserCert = true
-	}
-}
-
-func (c *Config) BackedUpMetadata() {
-	c.restoreMetadata = true
-}
-
-func (c *Config) BackedUpProfiles() {
-	c.restoreProfiles = true
-}
-
-func (c *Config) SetAgentStarted() {
-	c.agentStarted = true
 }
 
 func (c *Config) SetServerExe(exe string) {
@@ -87,20 +40,15 @@ func (c *Config) SetCertFilePath(path string) {
 	c.certFilePath = path
 }
 
-func (c *Config) CfgAgentStarted() bool {
-	return !commonExecutor.IsAdmin() && c.startedAgent
-}
-
 func (c *Config) RequiresConfigRevert() bool {
-	return c.hostFilePath != "" || c.certFilePath != "" || c.unmapIPs || c.unmapCDN || c.removeUserCert || c.removeLocalCert || c.restoreMetadata || c.restoreProfiles
+	if err, args := launcherCommon.LoadRevertArgs(); err == nil && len(args) > 0 {
+		return true
+	}
+	return false
 }
 
 func (c *Config) RequiresRunningRevertCommand() bool {
 	return c.setupCommandRan && len(c.revertCommand) > 0
-}
-
-func (c *Config) AgentStarted() bool {
-	return c.agentStarted
 }
 
 func (c *Config) ServerExe() string {
@@ -123,9 +71,7 @@ func (c *Config) CertFilePath() string {
 }
 
 func (c *Config) Revert() {
-	if c.AgentStarted() {
-		c.KillAgent()
-	}
+	c.KillAgent()
 	if serverExe := c.ServerExe(); len(serverExe) > 0 {
 		fmt.Println("Stopping 'server'...")
 		if proc, err := commonProcess.Kill(serverExe); err == nil {
@@ -140,16 +86,8 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if result := executor.RunRevert(c.gameId, c.unmapIPs, c.removeUserCert, c.removeLocalCert, c.restoreMetadata, c.restoreProfiles, c.unmapCDN, c.hostFilePath, c.certFilePath, true); result.Success() {
-			fmt.Println("Cleaned up.")
-		} else {
+		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert); !ok {
 			fmt.Println("Failed to clean up.")
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
 		}
 	}
 	if c.RequiresRunningRevertCommand() {
