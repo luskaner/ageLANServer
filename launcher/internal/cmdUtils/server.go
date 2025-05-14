@@ -194,7 +194,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 	}
 	var result *commonExecutor.Result
 	var serverExe string
-	result, serverExe, ip = server.StartServer(stopStr, executable, args)
+	result, serverExe, ip = server.StartServer(stopStr, executable, args, SelectBestServerIp)
 	if result.Success() {
 		fmt.Println("'Server' started.")
 		if stop {

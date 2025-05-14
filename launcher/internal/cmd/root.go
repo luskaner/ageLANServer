@@ -242,7 +242,6 @@ var (
 					return
 				}
 			}
-			alreadySelectedIp := false
 			if serverStart == "auto" {
 				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
 				portsStr := make([]string, len(announcePorts))
@@ -266,7 +265,6 @@ var (
 					return
 				} else if selectedServerIp != "" {
 					serverHost = selectedServerIp
-					alreadySelectedIp = true
 					serverStart = "false"
 					if serverStop == "auto" && (!isAdmin || runtime.GOOS == "windows") {
 						serverStop = "false"
@@ -278,6 +276,7 @@ var (
 					}
 				}
 			}
+			var serverIP string
 			if serverStart == "false" {
 				if serverStop == "true" {
 					fmt.Println("serverStart is false. Ignoring serverStop being true.")
@@ -297,23 +296,27 @@ var (
 					errorCode = internal.ErrInvalidServerStart
 					return
 				}
+				var ok bool
+				if ok, serverIP = cmdUtils.SelectBestServerIp(launcherCommon.HostOrIpToIps(serverHost).ToSlice()); !ok {
+					fmt.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
+				}
 			} else {
 				if viper.GetString("Server.Start") == "auto" {
 					fmt.Println("No 'server's were found, proceeding to start one, press the Enter key to continue...")
 					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 				}
-				errorCode, serverHost = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
+				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
 				}
 			}
-			serverCertificate := server.ReadCertificateFromServer(serverHost)
+			serverCertificate := server.ReadCertificateFromServer(serverIP)
 			if serverCertificate == nil {
-				fmt.Println("Failed to read certificate from " + serverHost + ". Try to access it with your browser and checking the certificate.")
+				fmt.Println("Failed to read certificate from " + serverIP + ". Try to access it with your browser and checking the certificate.")
 				errorCode = internal.ErrReadCert
 				return
 			}
-			errorCode = config.MapHosts(serverHost, canAddHost, alreadySelectedIp, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode = config.MapHosts(serverIP, canAddHost, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{HostFilePath}")
 			}))
 			if errorCode != common.ErrSuccess {

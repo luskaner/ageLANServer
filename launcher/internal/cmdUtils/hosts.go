@@ -70,52 +70,39 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool, customHostFile bool) (errorCode int) {
+func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCode int) {
 	var mapCDN bool
+	var mapIP bool
 	ips := mapset.NewThreadUnsafeSet[string]()
-	if customHostFile {
-		mapCDN = true
-	} else if requiresMapCDN() {
-		if !canMap {
-			fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
-			errorCode = internal.ErrConfigCDNMap
-			return
-		}
-		mapCDN = true
-	}
-	resolvedIps := mapset.NewThreadUnsafeSet[string]()
-	addHost := func(host string) {
-		if alreadySelectedIp {
-			ips.Add(host)
-		} else {
-			resolvedIps = resolvedIps.Union(launcherCommon.HostOrIpToIps(host))
-		}
-	}
-	for _, domain := range common.AllHosts() {
-		if customHostFile {
-			addHost(host)
-		} else if !launcherCommon.Matches(host, domain) {
+	if !customHostFile {
+		if requiresMapCDN() {
 			if !canMap {
-				fmt.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
-				errorCode = internal.ErrConfigIpMap
+				fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
+				errorCode = internal.ErrConfigCDNMap
 				return
-			} else {
-				addHost(host)
 			}
-		} else if !server.CheckConnectionFromServer(domain, true) {
-			fmt.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
-			errorCode = internal.ErrServerUnreachable
-			return
+			mapCDN = true
 		}
+		for _, domain := range common.AllHosts() {
+			if !launcherCommon.Matches(ip, domain) {
+				if !canMap {
+					fmt.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
+					errorCode = internal.ErrConfigIpMap
+					return
+				} else {
+					mapIP = true
+				}
+			} else if !server.CheckConnectionFromServer(domain, true) {
+				fmt.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
+				errorCode = internal.ErrServerUnreachable
+				return
+			}
+		}
+	} else {
+		mapIP = true
 	}
-	if resolvedIps.Cardinality() > 0 {
-		if ok, ip := SelectBestServerIp(resolvedIps.ToSlice()); !ok {
-			fmt.Println("Failed to find a reachable IP for " + host + ".")
-			errorCode = internal.ErrConfigIpMapFind
-			return
-		} else {
-			ips.Add(ip)
-		}
+	if mapIP {
+		ips.Add(ip)
 	}
 	if !ips.IsEmpty() || mapCDN {
 		if customHostFile {
@@ -144,19 +131,15 @@ func (c *Config) MapHosts(host string, canMap bool, alreadySelectedIp bool, cust
 				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			errorCode = internal.ErrConfigIpMapAdd
-		} else {
-			if customHostFile {
-				cmd.MapCDN = mapCDN
-				for ip := range ips.Iter() {
-					if parsedIP := net.ParseIP(ip); parsedIP != nil {
-						cmd.MapIPs = append(cmd.MapIPs, parsedIP)
-					}
-				}
-				mappings := hosts.HostMappings()
-				for hostToCache, ipsToCache := range mappings {
-					for ipToCache := range ipsToCache.Iter() {
-						launcherCommon.CacheMapping(hostToCache, ipToCache)
-					}
+		} else if customHostFile {
+			cmd.MapCDN = true
+			if parsedIP := net.ParseIP(ip); parsedIP != nil {
+				cmd.MapIPs = append(cmd.MapIPs, parsedIP)
+			}
+			mappings := hosts.HostMappings()
+			for hostToCache, ipsToCache := range mappings {
+				for ipToCache := range ipsToCache.Iter() {
+					launcherCommon.CacheMapping(hostToCache, ipToCache)
 				}
 			}
 		}
