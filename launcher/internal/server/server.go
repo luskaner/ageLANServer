@@ -24,7 +24,7 @@ import (
 var autoServerDir = []string{fmt.Sprintf(`%c%s%c`, filepath.Separator, common.Server, filepath.Separator), fmt.Sprintf(`%c..%c`, filepath.Separator, filepath.Separator), fmt.Sprintf(`%c..%c%s%c`, filepath.Separator, filepath.Separator, common.Server, filepath.Separator)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
-func StartServer(stop string, executable string, args []string) (result *commonExecutor.Result, executablePath string, ip string) {
+func StartServer(stop string, executable string, args []string, selectBestServerIP func(ips []string) (ok bool, ip string)) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
@@ -37,13 +37,12 @@ func StartServer(stop string, executable string, args []string) (result *commonE
 	}
 	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}.Exec()
 	if result.Success() {
+		var ok bool
+		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).ToSlice()
 		// Wait up to 30s for server to start
 		for i := 0; i < 30; i++ {
-			for curIp := range launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).Iter() {
-				if LanServer(curIp, true) {
-					ip = curIp
-					return
-				}
+			if ok, ip = selectBestServerIP(localIPs); ok {
+				return
 			}
 			time.Sleep(time.Second)
 		}
