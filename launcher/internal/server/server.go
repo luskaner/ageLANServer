@@ -40,11 +40,17 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 		var ok bool
 		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).ToSlice()
 		// Wait up to 30s for server to start
-		for i := 0; i < 30; i++ {
-			if ok, ip = selectBestServerIP(localIPs); ok {
-				return
+		timeout := time.After(30 * time.Second)
+	loop:
+		for {
+			select {
+			case <-timeout:
+				break loop
+			default:
+				if ok, ip = selectBestServerIP(localIPs); ok {
+					break loop
+				}
 			}
-			time.Sleep(time.Second)
 		}
 		if proc, err := commonProcess.Kill(executablePath); err != nil {
 			fmt.Println("Failed to stop 'server'")
