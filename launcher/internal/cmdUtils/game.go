@@ -97,7 +97,9 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 	}
 	if !result.Success() {
 		errorCode = internal.ErrGameLauncherStart
-		fmt.Println("Game failed to start. Error message: " + result.Err.Error())
+		if result.Err != nil {
+			fmt.Println("Game failed to start. Error message: " + result.Err.Error())
+		}
 		c.KillAgent()
 	} else {
 		fmt.Println("Game started.")

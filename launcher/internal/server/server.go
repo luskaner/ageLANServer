@@ -54,7 +54,9 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 		}
 		if proc, err := commonProcess.Kill(executablePath); err != nil {
 			fmt.Println("Failed to stop 'server'")
-			fmt.Println("Error message: " + result.Err.Error())
+			if result.Err != nil {
+				fmt.Println("Error message: " + result.Err.Error())
+			}
 			if proc != nil {
 				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
 			}
