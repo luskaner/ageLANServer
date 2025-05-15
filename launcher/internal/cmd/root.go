@@ -47,7 +47,7 @@ var (
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN 'server'",
-		Long:  "launcher discovers or starts a local LAN 'server', optionally isolates the user data, configures the local DNS server, HTTPS certificate and finally launches the game launcher",
+		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
