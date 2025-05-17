@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/luskaner/ageLANServer/common v0.0.0-20250509182900-004eee02182d
+	github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250509184920-220e5090865c
 )
 
