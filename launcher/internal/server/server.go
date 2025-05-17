@@ -48,7 +48,7 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 				break loop
 			default:
 				if ok, ip = selectBestServerIP(localIPs); ok {
-					break loop
+					return
 				}
 			}
 		}
