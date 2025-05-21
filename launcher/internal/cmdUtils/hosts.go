@@ -21,7 +21,7 @@ import (
 const timeLayout = "2006-01-02 15:04:05"
 
 func requiresMapCDN() bool {
-	client := http.Client{Timeout: 3}
+	client := http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get(fmt.Sprintf("https://%s/aoe/rl-server-status.json", launcherCommon.CDNDomain))
 	if err != nil {
 		return false
