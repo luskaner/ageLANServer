@@ -80,7 +80,7 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 			mapCDN,
 			hostFilePath,
 			certFilePath,
-			launcherCommon.RequiresStopConfigAgent(args),
+			launcherCommon.ConfigAdminAgentRunning(false),
 			true,
 		)
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {

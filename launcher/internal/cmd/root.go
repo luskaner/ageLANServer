@@ -208,8 +208,14 @@ var (
 				* Any previous changes are reverted
 			*/
 			fmt.Println("Cleaning up (if needed)...")
-			config.KillAgent()
-			launcherCommon.ConfigRevert(gameId, false, executor.RunRevert)
+			if !config.KillAgent() {
+				errorCode = common.ErrGeneral
+				return
+			}
+			if !launcherCommon.ConfigRevert(gameId, false, executor.RunRevert) {
+				errorCode = common.ErrGeneral
+				return
+			}
 			var proc *os.Process
 			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
 			if err == nil && proc != nil {

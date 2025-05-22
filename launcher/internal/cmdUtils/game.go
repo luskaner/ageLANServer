@@ -12,16 +12,17 @@ import (
 	"strings"
 )
 
-func (c *Config) KillAgent() {
+func (c *Config) KillAgent() bool {
 	agent := common.GetExeFileName(false, common.LauncherAgent)
 	proc, err := commonProcess.Kill(agent)
 	if proc != nil {
 		fmt.Println("Killing 'agent'...")
 		if err != nil {
 			fmt.Println("Failed to kill it: ", err, ", try using the task manager.")
-			return
+			return false
 		}
 	}
+	return true
 }
 
 func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {

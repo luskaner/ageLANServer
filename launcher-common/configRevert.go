@@ -61,30 +61,28 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 		runRevertFn = RunRevert
 	}
 	err, revertFlags := RevertConfigStore.Load()
-	if err != nil || len(revertFlags) > 0 {
-		var stopAgent bool
-		var revertLine string
+	stopAgent := ConfigAdminAgentRunning(headless)
+	var revertLine string
+
+	if err != nil || (len(revertFlags) == 0 && stopAgent) {
+		revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", stopAgent, false)
+	}
+	if len(revertFlags) > 0 {
+		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
+		if headless && requiresRevertAdminElevation {
+			return false
+		}
 		if !headless {
 			revertLine = "Reverting "
 		}
-		if err != nil {
-			if !headless {
-				fmt.Println("Failed to get revert flags: ", err)
-				revertLine += "all possible "
-			}
-			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", stopAgent, false)
-		} else if !headless && slices.Contains(revertFlags, "-g") {
-			stopAgent = true
+		if err != nil && !headless {
+			fmt.Println("Failed to get revert flags: ", err)
+			revertLine += "all possible "
+		}
+		if err = RevertConfigStore.Delete(); err != nil && !headless {
+			fmt.Println("Failed to clear revert flags: ", err)
 		}
 
-		if err = RevertConfigStore.Delete(); err != nil {
-			if !headless {
-				fmt.Println("Failed to clear revert flags: ", err)
-			}
-		}
-
-		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
 		if !headless {
 			revertLine += "configuration"
 			fmt.Print(revertLine)
@@ -94,19 +92,22 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 				fmt.Print(` and stopping its agent`)
 			}
 			fmt.Println(`...`)
-		} else if requiresRevertAdminElevation {
-			return false
 		}
 
-		if revertResult := runRevertFn(revertFlags, headless); !revertResult.Success() {
+		if stopAgent && !slices.Contains(revertFlags, "-g") {
+			revertFlags = append(revertFlags, "-g")
+		}
+		success := runRevertFn(revertFlags, headless).Success()
+		if !success && !headless {
+			fmt.Println("Failed to cleanup configuration, try to do it manually.")
+		}
+		if ConfigAdminAgentRunning(false) {
 			if !headless {
-				if ConfigAdminAgentRunning(false) {
-					fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
-				} else {
-					fmt.Println("Failed to cleanup configuration, try to do it manually.")
-				}
+				fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 			}
 			return false
+		} else {
+			return success
 		}
 	}
 	return true
@@ -133,13 +134,6 @@ func RequiresRevertAdminElevation(args []string, bin bool) bool {
 		return true
 	}
 	return false
-}
-
-func RequiresStopConfigAgent(args []string) bool {
-	return !executor.IsAdmin() && (slices.Contains(args, "-g") || (slices.Contains(args, "-l") &&
-		!slices.Contains(args, "-t")) ||
-		(((slices.Contains(args, "-c")) || slices.Contains(args, "-i")) &&
-			!slices.Contains(args, "-o")))
 }
 
 func RunRevert(flags []string, bin bool) (result *exec.Result) {
