@@ -13,33 +13,33 @@ import (
 )
 
 type RunSetUpOptions struct {
-	Game             string
-	HostFilePath     string
-	MapIps           mapset.Set[string]
-	MapCDN           bool
-	CertFilePath     string
-	AddUserCertData  []byte
-	AddLocalCertData []byte
-	UserProfilePath  string
-	BackupMetadata   bool
-	BackupProfiles   bool
-	ExitAgentOnError bool
+	Game                   string
+	HostFilePath           string
+	MapIps                 mapset.Set[string]
+	MapCDN                 bool
+	CertFilePath           string
+	AddUserCertData        []byte
+	AddLocalCertData       []byte
+	WindowsUserProfilePath string
+	BackupMetadata         bool
+	BackupProfiles         bool
+	ExitAgentOnError       bool
 }
 
 func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlagsOptions {
 	return &launcherCommon.RevertFlagsOptions{
-		Game:            options.Game,
-		HostFilePath:    options.HostFilePath,
-		UnmapIPs:        options.MapIps != nil && options.MapIps.Cardinality() > 0,
-		UnmapCDN:        options.MapCDN,
-		CertFilePath:    options.CertFilePath,
-		RemoveUserCert:  options.AddUserCertData != nil,
-		RemoveLocalCert: options.AddLocalCertData != nil,
-		UserProfilePath: options.UserProfilePath,
-		RestoreMetadata: options.BackupMetadata,
-		RestoreProfiles: options.BackupProfiles,
-		StopAgent:       launcherCommon.ConfigAdminAgentRunning(false),
-		Failfast:        true,
+		Game:                   options.Game,
+		HostFilePath:           options.HostFilePath,
+		UnmapIPs:               options.MapIps != nil && options.MapIps.Cardinality() > 0,
+		UnmapCDN:               options.MapCDN,
+		CertFilePath:           options.CertFilePath,
+		RemoveUserCert:         options.AddUserCertData != nil,
+		RemoveLocalCert:        options.AddLocalCertData != nil,
+		WindowsUserProfilePath: options.WindowsUserProfilePath,
+		RestoreMetadata:        options.BackupMetadata,
+		RestoreProfiles:        options.BackupProfiles,
+		StopAgent:              launcherCommon.ConfigAdminAgentRunning(false),
+		Failfast:               true,
 	}
 }
 
@@ -81,9 +81,9 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 	if options.BackupProfiles {
 		args = append(args, "-p")
 	}
-	if options.UserProfilePath != "" {
+	if options.WindowsUserProfilePath != "" {
 		args = append(args, "-s")
-		args = append(args, options.UserProfilePath)
+		args = append(args, options.WindowsUserProfilePath)
 	}
 	if options.MapCDN {
 		args = append(args, "-c")

@@ -15,7 +15,7 @@ RevertCommand = []
 # * {AppId} is the 'AppId' of the game as defined in /launcher-common/steam/steam.go
 # Note 1: You may use environment variables.
 # Note 2: You need to set manually the path when using a custom launcher or isolation will be disabled.
-UserProfilePath = 'auto'
+WindowsUserProfilePath = 'auto'
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
 # On AoE I this is always false as it does not store metadata.
 Metadata = true
@@ -26,7 +26,7 @@ Profiles = false
 [Client]
 # Use a path to the game launcher or 'steam' to use the default launcher.
 # Note 1: It is not recommended to use an executable that requires admin rights (but it is supported).
-# Note 2: setting a custom launcher requires setting 'Config.Isolation.UserProfilePath' to a path.
+# Note 2: setting a custom launcher requires setting 'Config.Isolation.WindowsUserProfilePath' to a path.
 # Note 3: You may use environment variables when using a custom path.
 Executable = 'steam'
 # The arguments to pass to the client launcher if it is custom.

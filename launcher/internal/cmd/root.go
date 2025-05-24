@@ -132,18 +132,18 @@ var (
 				isolateMetadata = viper.GetBool("Config.Isolation.Metadata")
 			}
 			isolateProfiles := viper.GetBool("Config.Isolation.Profiles")
-			var isolateUserProfilePath string
+			var isolateWindowsUserProfilePath string
 			if runtime.GOOS == "linux" {
-				isolateUserProfilePathTemp := viper.GetString("Config.Isolation.UserProfilePath")
-				if isolateUserProfilePathTemp != "auto" {
-					if isolateUserProfilePathTempParsed, err := parse.Executable(isolateUserProfilePathTemp, nil); err == nil {
-						isolateUserProfilePath = isolateUserProfilePathTempParsed
+				isolateWindowsUserProfilePathTemp := viper.GetString("Config.Isolation.WindowsUserProfilePath")
+				if isolateWindowsUserProfilePathTemp != "auto" {
+					if windowsIsolateUserProfilePathTempParsed, err := parse.Executable(isolateWindowsUserProfilePathTemp, nil); err == nil {
+						isolateWindowsUserProfilePath = windowsIsolateUserProfilePathTempParsed
 					} else {
-						isolateUserProfilePath = isolateUserProfilePathTemp
+						isolateWindowsUserProfilePath = isolateWindowsUserProfilePathTemp
 					}
 				} else if clientExecutable != "auto" && clientExecutable != "steam" && (isolateMetadata || isolateProfiles) {
 					fmt.Println("You need to set a custom user profile path when enabling some isolation and using a custom launcher.")
-					errorCode = internal.ErrInvalidIsolationUserProfilePath
+					errorCode = internal.ErrInvalidIsolationWindowsUserProfilePath
 					return
 				}
 			}
@@ -340,7 +340,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.IsolateUserData(isolateUserProfilePath, isolateMetadata, isolateProfiles)
+			errorCode = config.IsolateUserData(isolateWindowsUserProfilePath, isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
 				return
 			}
@@ -371,10 +371,10 @@ func Execute() error {
 	cmd.GameCommand(rootCmd.PersistentFlags())
 	var suffixIsolate string
 	if runtime.GOOS == "linux" {
-		suffixIsolate = " When using a custom launcher 'userProfilePath' must be set."
+		suffixIsolate = " When using a custom launcher 'windowsUserProfilePath' must be set."
 	}
 	if runtime.GOOS == "linux" {
-		rootCmd.PersistentFlags().StringP("userProfilePath", "u", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
+		rootCmd.PersistentFlags().StringP("windowsUserProfilePath", "s", "auto", "Windows User Profile Path. Only relevant when using the 'isolateMetadata' or 'isolateProfiles' options. Must be set if using a custom launcher.")
 	}
 	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared."+suffixIsolate)
@@ -420,7 +420,7 @@ func Execute() error {
 		}
 	}
 	if runtime.GOOS == "linux" {
-		if err := viper.BindPFlag("Config.Isolation.UserProfilePath", rootCmd.PersistentFlags().Lookup("userProfilePath")); err != nil {
+		if err := viper.BindPFlag("Config.Isolation.WindowsUserProfilePath", rootCmd.PersistentFlags().Lookup("windowsUserProfilePath")); err != nil {
 			return err
 		}
 	}

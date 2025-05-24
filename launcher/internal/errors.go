@@ -39,5 +39,5 @@ const (
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
-	ErrInvalidIsolationUserProfilePath
+	ErrInvalidIsolationWindowsUserProfilePath
 )

@@ -15,18 +15,18 @@ import (
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
 type RevertFlagsOptions struct {
-	Game            string
-	HostFilePath    string
-	UnmapIPs        bool
-	UnmapCDN        bool
-	CertFilePath    string
-	RemoveUserCert  bool
-	RemoveLocalCert bool
-	UserProfilePath string
-	RestoreMetadata bool
-	RestoreProfiles bool
-	StopAgent       bool
-	Failfast        bool
+	Game                   string
+	HostFilePath           string
+	UnmapIPs               bool
+	UnmapCDN               bool
+	CertFilePath           string
+	RemoveUserCert         bool
+	RemoveLocalCert        bool
+	WindowsUserProfilePath string
+	RestoreMetadata        bool
+	RestoreProfiles        bool
+	StopAgent              bool
+	Failfast               bool
 }
 
 func RevertFlags(options *RevertFlagsOptions) []string {
@@ -68,9 +68,9 @@ func RevertFlags(options *RevertFlagsOptions) []string {
 		args = append(args, "-t")
 		args = append(args, options.CertFilePath)
 	}
-	if options.UserProfilePath != "" {
+	if options.WindowsUserProfilePath != "" {
 		args = append(args, "-s")
-		args = append(args, options.UserProfilePath)
+		args = append(args, options.WindowsUserProfilePath)
 	}
 	return args
 }
