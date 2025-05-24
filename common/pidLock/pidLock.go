@@ -22,7 +22,7 @@ func openFile() (err error, f *os.File) {
 		return
 	}
 	var pidPath string
-	pidPath, proc, err = process.Process(exe)
+	pidPath, _, err = process.Process(exe)
 	if err == nil {
 		return
 	}
