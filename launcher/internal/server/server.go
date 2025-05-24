@@ -45,6 +45,9 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 				if ok, ip = selectBestServerIP(localIPs); ok {
 					return
 				}
+				if _, _, err := commonProcess.Process(executablePath); err != nil {
+					break loop
+				}
 			}
 		}
 		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
