@@ -70,7 +70,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		if canAdd == "user" {
 			certMsg += ", accept the dialog"
 		} else {
-			if !launcher_common.ConfigAdminAgentRunning(false) {
+			if _, _, err := launcher_common.ConfigAdminAgent(false); err != nil {
 				certMsg += `, authorize 'config-admin-agent' if needed`
 			}
 		}

@@ -22,9 +22,8 @@ func openFile() (err error, f *os.File) {
 		return
 	}
 	var pidPath string
-	var proc *os.Process
 	pidPath, proc, err = process.Process(exe)
-	if err == nil && proc != nil {
+	if err == nil {
 		return
 	}
 	f, err = os.OpenFile(pidPath, os.O_CREATE|os.O_WRONLY, 0644)

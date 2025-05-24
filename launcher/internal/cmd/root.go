@@ -222,9 +222,8 @@ var (
 				errorCode = common.ErrGeneral
 				return
 			}
-			var proc *os.Process
-			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
-			if err == nil && proc != nil {
+			_, _, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
+			if err == nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
 			if err = executor.RunRevertCommand(); err != nil {

@@ -27,6 +27,10 @@ type RunSetUpOptions struct {
 }
 
 func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlagsOptions {
+	var stopAgent bool
+	if _, _, err := launcherCommon.ConfigAdminAgent(false); err == nil {
+		stopAgent = true
+	}
 	return &launcherCommon.RevertFlagsOptions{
 		Game:                   options.Game,
 		HostFilePath:           options.HostFilePath,
@@ -38,7 +42,7 @@ func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlags
 		WindowsUserProfilePath: options.WindowsUserProfilePath,
 		RestoreMetadata:        options.BackupMetadata,
 		RestoreProfiles:        options.BackupProfiles,
-		StopAgent:              launcherCommon.ConfigAdminAgentRunning(false),
+		StopAgent:              stopAgent,
 		Failfast:               true,
 	}
 }

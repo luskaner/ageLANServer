@@ -80,11 +80,13 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 		runRevertFn = RunRevert
 	}
 	err, revertFlags := RevertConfigStore.Load()
-	stopAgent := ConfigAdminAgentRunning(headless)
+	var stopAgent bool
+	if _, _, errAgent := ConfigAdminAgent(headless); errAgent == nil {
+		stopAgent = true
+	}
 	var revertLine string
-
-	if err != nil || (len(revertFlags) == 0 && stopAgent) {
-		revertFlags = RevertFlags(&RevertFlagsOptions{
+	allRevertFlags := func(stopAgent bool) []string {
+		return RevertFlags(&RevertFlagsOptions{
 			Game:            gameId,
 			UnmapIPs:        true,
 			UnmapCDN:        true,
@@ -94,6 +96,10 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 			RestoreProfiles: true,
 			StopAgent:       stopAgent,
 		})
+	}
+
+	if err != nil || (len(revertFlags) == 0 && stopAgent) {
+		revertFlags = allRevertFlags(stopAgent)
 	}
 	if len(revertFlags) > 0 {
 		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
@@ -127,10 +133,37 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 		}
 		success := runRevertFn(revertFlags, headless).Success()
 		if !success && !headless {
-			fmt.Println("Failed to cleanup configuration, try to do it manually.")
+			fmt.Print("Failed to cleanup configuration")
+			if !executor.IsAdmin() {
+				fmt.Print(", try to do it manually")
+			}
+			fmt.Println(".")
 		}
-		if ConfigAdminAgentRunning(false) {
-			if !headless {
+		var pidPath string
+		var proc *os.Process
+		if pidPath, proc, err = ConfigAdminAgent(false); err == nil {
+			if executor.IsAdmin() {
+				if !headless {
+					fmt.Println("Killing 'config-admin-agent' process...")
+				}
+				if err = commonProcess.KillProc(pidPath, proc); err == nil {
+					if !headless {
+						fmt.Println("Successfully killed 'config-admin-agent' process.")
+						fmt.Println("Trying to revert all configuration...")
+					}
+					success = runRevertFn(allRevertFlags(false), headless).Success()
+					if success {
+						return true
+					}
+					if !headless {
+						fmt.Println("Failed to cleanup configuration even as admin, try to do it manually.")
+					}
+				} else {
+					if !headless {
+						fmt.Println("Failed to kill 'config-admin-agent' process: ", err)
+					}
+				}
+			} else if !headless {
 				fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 			}
 			return false
@@ -141,18 +174,15 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 	return true
 }
 
-func ConfigAdminAgentRunning(bin bool) bool {
-	if _, proc, err := commonProcess.Process(common.GetExeFileName(bin, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
-		return true
-	}
-	return false
+func ConfigAdminAgent(bin bool) (pidPath string, proc *os.Process, err error) {
+	return commonProcess.Process(common.GetExeFileName(bin, common.LauncherConfigAdminAgent))
 }
 
 func RequiresRevertAdminElevation(args []string, bin bool) bool {
 	if executor.IsAdmin() {
 		return false
 	}
-	if ConfigAdminAgentRunning(bin) {
+	if _, _, err := ConfigAdminAgent(bin); err == nil {
 		return false
 	}
 	if (slices.Contains(args, "-l") &&
