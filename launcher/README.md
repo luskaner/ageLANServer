@@ -42,9 +42,10 @@ CLI is available with similar options as the configuration. You can see the avai
 
 ## Configuration
 
-The configuration options are available in the [`config.toml`](resources/config.toml) and [
-`config.game.toml`](resources/config.game.toml) files. The files contain comments
-that
+The configuration options are available in the
+`config.toml` ([windows](resources/windows/configs/config.toml)/[linux](resources/unix/configs/config.toml)) and [
+`config.game.toml` ([windows](resources/windows/configs/config.game.toml)/[linux](resources/unix/configs/config.game.toml))
+files. The files contain comments that
 should help you understand the options.
 
 ## Exit Codes

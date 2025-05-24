@@ -12,6 +12,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
@@ -104,34 +105,49 @@ var (
 			serverValues := map[string]string{
 				"Game": gameId,
 			}
-			serverArgs, err := cmdUtils.ParseCommandArgs("Server.ExecutableArgs", serverValues)
+			serverArgs, err := parse.CommandArgs(viper.GetStringSlice("Server.ExecutableArgs"), serverValues)
 			if err != nil {
 				fmt.Println("Failed to parse 'server' executable arguments")
 				errorCode = internal.ErrInvalidServerArgs
 				return
 			}
 			var setupCommand []string
-			setupCommand, err = cmdUtils.ParseCommandArgs("Config.SetupCommand", nil)
+			setupCommand, err = parse.CommandArgs(viper.GetStringSlice("Config.SetupCommand"), nil)
 			if err != nil {
 				fmt.Println("Failed to parse setup command")
 				errorCode = internal.ErrInvalidSetupCommand
 				return
 			}
 			var revertCommand []string
-			revertCommand, err = cmdUtils.ParseCommandArgs("Config.RevertCommand", nil)
+			revertCommand, err = parse.CommandArgs(viper.GetStringSlice("Config.RevertCommand"), nil)
 			if err != nil {
 				fmt.Println("Failed to parse revert command")
 				errorCode = internal.ErrInvalidRevertCommand
 				return
 			}
 			canAddHost := viper.GetBool("Config.CanAddHost")
+			clientExecutable := viper.GetString("Client.Executable")
 			var isolateMetadata bool
 			if gameId != common.GameAoE1 {
-				isolateMetadata = viper.GetBool("Config.IsolateMetadata")
+				isolateMetadata = viper.GetBool("Config.Isolation.Metadata")
 			}
-			isolateProfiles := viper.GetBool("Config.IsolateProfiles")
+			isolateProfiles := viper.GetBool("Config.Isolation.Profiles")
+			var isolateUserProfilePath string
+			if runtime.GOOS == "linux" {
+				isolateUserProfilePathTemp := viper.GetString("Config.Isolation.UserProfilePath")
+				if isolateUserProfilePathTemp != "auto" {
+					if isolateUserProfilePathTempParsed, err := parse.Executable(isolateUserProfilePathTemp, nil); err == nil {
+						isolateUserProfilePath = isolateUserProfilePathTempParsed
+					} else {
+						isolateUserProfilePath = isolateUserProfilePathTemp
+					}
+				} else if clientExecutable != "auto" && clientExecutable != "steam" && (isolateMetadata || isolateProfiles) {
+					fmt.Println("You need to set a custom user profile path when enabling some isolation and using a custom launcher.")
+					errorCode = internal.ErrInvalidIsolationUserProfilePath
+					return
+				}
+			}
 			serverExecutable := viper.GetString("Server.Executable")
-			clientExecutable := viper.GetString("Client.Executable")
 			serverHost := viper.GetString("Server.Host")
 
 			fmt.Printf("Game %s.\n", gameId)
@@ -146,16 +162,6 @@ var (
 			case game.CustomExecutor:
 				customExecutor = executer.(game.CustomExecutor)
 				fmt.Println("Game found on custom path.")
-				if runtime.GOOS == "linux" {
-					if isolateMetadata {
-						fmt.Println("Isolating metadata is not supported.")
-						isolateMetadata = false
-					}
-					if isolateProfiles {
-						fmt.Println("Isolating profiles is not supported.")
-						isolateProfiles = false
-					}
-				}
 			default:
 				fmt.Println("Game not found.")
 				errorCode = internal.ErrGameLauncherNotFound
@@ -334,11 +340,11 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
+			errorCode = config.IsolateUserData(isolateUserProfilePath, isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)
+			errorCode = config.LaunchAgentAndGame(executer, customExecutor, viper.GetStringSlice("Client.ExecutableArgs"), canTrustCertificate, canBroadcastBattleServer)
 		},
 	}
 )
@@ -365,7 +371,10 @@ func Execute() error {
 	cmd.GameCommand(rootCmd.PersistentFlags())
 	var suffixIsolate string
 	if runtime.GOOS == "linux" {
-		suffixIsolate = " Unsupported when using a custom launcher."
+		suffixIsolate = " When using a custom launcher 'userProfilePath' must be set."
+	}
+	if runtime.GOOS == "linux" {
+		rootCmd.PersistentFlags().StringP("userProfilePath", "u", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
 	}
 	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
 	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared."+suffixIsolate)
@@ -379,9 +388,9 @@ func Execute() error {
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
 	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
-	clientExeTip := `The type of game client or the path. "auto" will use Steam`
+	clientExeTip := `The type of game client or the path. `
 	if runtime.GOOS == "windows" {
-		clientExeTip += ` and then the Xbox one if found`
+		clientExeTip += `"auto" will use Steam and then the Xbox one if found`
 	}
 	clientExeTip += `. Use a path to the game launcher`
 	if runtime.GOOS == "windows" {
@@ -395,7 +404,7 @@ func Execute() error {
 	}
 	clientExeTip += " to use the default launcher."
 	if runtime.GOOS == "linux" {
-		clientExeTip += " If using a custom launcher, the isolation of the metadata and profiles will be disabled."
+		clientExeTip += " If using a custom launcher, you need to specify the user profile path if you want isolation."
 	}
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", clientExeTip)
 	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
@@ -410,10 +419,15 @@ func Execute() error {
 			return err
 		}
 	}
-	if err := viper.BindPFlag("Config.IsolateMetadata", rootCmd.PersistentFlags().Lookup("isolateMetadata")); err != nil {
+	if runtime.GOOS == "linux" {
+		if err := viper.BindPFlag("Config.Isolation.UserProfilePath", rootCmd.PersistentFlags().Lookup("userProfilePath")); err != nil {
+			return err
+		}
+	}
+	if err := viper.BindPFlag("Config.Isolation.Metadata", rootCmd.PersistentFlags().Lookup("isolateMetadata")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.IsolateProfiles", rootCmd.PersistentFlags().Lookup("isolateProfiles")); err != nil {
+	if err := viper.BindPFlag("Config.Isolation.Profiles", rootCmd.PersistentFlags().Lookup("isolateProfiles")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Config.SetupCommand", rootCmd.PersistentFlags().Lookup("setupCommand")); err != nil {

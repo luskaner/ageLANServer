@@ -12,55 +12,90 @@ import (
 	"slices"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string) (result *exec.Result) {
+type RunSetUpOptions struct {
+	Game             string
+	HostFilePath     string
+	MapIps           mapset.Set[string]
+	MapCDN           bool
+	CertFilePath     string
+	AddUserCertData  []byte
+	AddLocalCertData []byte
+	UserProfilePath  string
+	BackupMetadata   bool
+	BackupProfiles   bool
+	ExitAgentOnError bool
+}
+
+func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlagsOptions {
+	return &launcherCommon.RevertFlagsOptions{
+		Game:            options.Game,
+		HostFilePath:    options.HostFilePath,
+		UnmapIPs:        options.MapIps != nil && options.MapIps.Cardinality() > 0,
+		UnmapCDN:        options.MapCDN,
+		CertFilePath:    options.CertFilePath,
+		RemoveUserCert:  options.AddUserCertData != nil,
+		RemoveLocalCert: options.AddLocalCertData != nil,
+		UserProfilePath: options.UserProfilePath,
+		RestoreMetadata: options.BackupMetadata,
+		RestoreProfiles: options.BackupProfiles,
+		StopAgent:       launcherCommon.ConfigAdminAgentRunning(false),
+		Failfast:        true,
+	}
+}
+
+func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if game != "" {
+	if options.Game != "" {
 		args = append(args, "-e")
-		args = append(args, game)
+		args = append(args, options.Game)
 	}
 	if !executor.IsAdmin() {
 		args = append(args, "-g")
-		if exitAgentOnError {
+		if options.ExitAgentOnError {
 			args = append(args, "-r")
 		}
 	}
-	if mapIps != nil {
-		for ip := range mapIps.Iter() {
+	if options.MapIps != nil {
+		for ip := range options.MapIps.Iter() {
 			args = append(args, "-i")
 			args = append(args, ip)
 			reloadHostMappings = true
 		}
 	}
-	if addLocalCertData != nil {
+	if options.AddLocalCertData != nil {
 		reloadSystemCertificates = true
 		args = append(args, "-l")
-		args = append(args, base64.StdEncoding.EncodeToString(addLocalCertData))
+		args = append(args, base64.StdEncoding.EncodeToString(options.AddLocalCertData))
 	}
-	if addUserCertData != nil {
+	if options.AddUserCertData != nil {
 		reloadSystemCertificates = true
 		args = append(args, "-u")
-		args = append(args, base64.StdEncoding.EncodeToString(addUserCertData))
+		args = append(args, base64.StdEncoding.EncodeToString(options.AddUserCertData))
 	}
-	if backupMetadata {
+	if options.BackupMetadata {
 		args = append(args, "-m")
 	}
-	if backupProfiles {
+	if options.BackupProfiles {
 		args = append(args, "-p")
 	}
-	if mapCDN {
+	if options.UserProfilePath != "" {
+		args = append(args, "-s")
+		args = append(args, options.UserProfilePath)
+	}
+	if options.MapCDN {
 		args = append(args, "-c")
 		reloadHostMappings = true
 	}
-	if hostFilePath != "" {
+	if options.HostFilePath != "" {
 		args = append(args, "-o")
-		args = append(args, hostFilePath)
+		args = append(args, options.HostFilePath)
 	}
-	if certFilePath != "" {
+	if options.CertFilePath != "" {
 		args = append(args, "-t")
-		args = append(args, certFilePath)
+		args = append(args, options.CertFilePath)
 	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	if reloadSystemCertificates {
@@ -70,19 +105,7 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		launcherCommon.ClearCache()
 	}
 	if result.Success() {
-		revertArgs := launcherCommon.RevertFlags(
-			game,
-			mapIps != nil && mapIps.Cardinality() > 0,
-			addUserCertData != nil,
-			addLocalCertData != nil,
-			backupMetadata,
-			backupProfiles,
-			mapCDN,
-			hostFilePath,
-			certFilePath,
-			launcherCommon.ConfigAdminAgentRunning(false),
-			true,
-		)
+		revertArgs := launcherCommon.RevertFlags(options.revertFlagsOptions())
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
 			fmt.Println("Failed to store revert arguments, reverting setup...")
 			result = RunRevert(revertArgs, false)

@@ -32,7 +32,7 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 
 func backupMetadata() bool {
 	fmt.Println("Backing up previously restored metadata")
-	if userData.Metadata(gameId).Backup(gameId) {
+	if userData.Metadata(gameId).Backup(windowsUserProfilePath, gameId) {
 		fmt.Println("Successfully backed up metadata")
 		return true
 	} else {
@@ -43,7 +43,7 @@ func backupMetadata() bool {
 
 func backupProfiles() bool {
 	fmt.Println("Backing up previously restored profiles")
-	if userData.BackupProfiles(gameId) {
+	if userData.BackupProfiles(windowsUserProfilePath, gameId) {
 		fmt.Println("Successfully backed up profiles")
 		return true
 	} else {
@@ -116,7 +116,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreMetadata {
 			fmt.Println("Restoring metadata")
-			if userData.Metadata(gameId).Restore(gameId) {
+			if userData.Metadata(gameId).Restore(windowsUserProfilePath, gameId) {
 				fmt.Println("Successfully restored metadata")
 				restoredMetadata = true
 			} else {
@@ -136,7 +136,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreProfiles {
 			fmt.Println("Restoring profiles")
-			if userData.RestoreProfiles(gameId, reverseFailed) {
+			if userData.RestoreProfiles(windowsUserProfilePath, gameId, reverseFailed) {
 				fmt.Println("Successfully restored profiles")
 				restoredProfiles = true
 			} else {
@@ -297,6 +297,15 @@ func InitRevert() {
 			"u",
 			false,
 			"Remove the certificate from the user's trusted root store",
+		)
+	}
+	if runtime.GOOS != "windows" {
+		revertCmd.Flags().StringVarP(
+			&windowsUserProfilePath,
+			"windowsUserProfilePath",
+			"s",
+			"",
+			"Windows User Profile Path. Only relevant when using the 'metadata' or 'profiles' option.",
 		)
 	}
 	revertCmd.Flags().BoolVarP(

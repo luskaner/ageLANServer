@@ -11,6 +11,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"golang.org/x/net/ipv4"
 	"net"
 	"net/http"
@@ -29,13 +30,7 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 	if executablePath == "" {
 		return
 	}
-	var showWindow bool
-	if stop == "true" {
-		showWindow = false
-	} else {
-		showWindow = true
-	}
-	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}.Exec()
+	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: stop != "true", Pid: true}.Exec()
 	if result.Success() {
 		var ok bool
 		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).ToSlice()
@@ -82,6 +77,9 @@ func GetExecutablePath(executable string) string {
 			}
 		}
 		return ""
+	}
+	if exe, err := parse.Executable(executable, nil); err == nil {
+		return exe
 	}
 	return executable
 }

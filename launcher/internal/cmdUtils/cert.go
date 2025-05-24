@@ -82,7 +82,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 	}
 	certMsg += "..."
 	fmt.Println(certMsg)
-	if result := executor.RunSetUp("", nil, addUserCertData, addLocalCertData, false, false, false, false, "", c.CertFilePath()); !result.Success() {
+	if result := executor.RunSetUp(&executor.RunSetUpOptions{AddUserCertData: addUserCertData, AddLocalCertData: addLocalCertData, CertFilePath: c.CertFilePath()}); !result.Success() {
 		if customCertFile {
 			fmt.Println("Failed to save certificate to file")
 		} else {

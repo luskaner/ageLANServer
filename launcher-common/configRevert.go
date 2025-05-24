@@ -14,44 +14,63 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, stopAgent bool, failfast bool) []string {
+type RevertFlagsOptions struct {
+	Game            string
+	HostFilePath    string
+	UnmapIPs        bool
+	UnmapCDN        bool
+	CertFilePath    string
+	RemoveUserCert  bool
+	RemoveLocalCert bool
+	UserProfilePath string
+	RestoreMetadata bool
+	RestoreProfiles bool
+	StopAgent       bool
+	Failfast        bool
+}
+
+func RevertFlags(options *RevertFlagsOptions) []string {
 	args := make([]string, 0)
-	if game != "" {
+	if options.Game != "" {
 		args = append(args, "-e")
-		args = append(args, game)
+		args = append(args, options.Game)
 	}
-	if stopAgent {
+	if options.StopAgent {
 		args = append(args, "-g")
 	}
-	if !failfast {
+	if !options.Failfast {
 		args = append(args, "-a")
 	} else {
-		if unmapIPs {
+		if options.UnmapIPs {
 			args = append(args, "-i")
 		}
-		if removeUserCert {
+		if options.RemoveUserCert {
 			args = append(args, "-u")
 		}
-		if removeLocalCert {
+		if options.RemoveLocalCert {
 			args = append(args, "-l")
 		}
-		if restoreMetadata {
+		if options.RestoreMetadata {
 			args = append(args, "-m")
 		}
-		if restoreProfiles {
+		if options.RestoreProfiles {
 			args = append(args, "-p")
 		}
-		if unmapCDN {
+		if options.UnmapCDN {
 			args = append(args, "-c")
 		}
 	}
-	if hostFilePath != "" {
+	if options.HostFilePath != "" {
 		args = append(args, "-o")
-		args = append(args, hostFilePath)
+		args = append(args, options.HostFilePath)
 	}
-	if certFilePath != "" {
+	if options.CertFilePath != "" {
 		args = append(args, "-t")
-		args = append(args, certFilePath)
+		args = append(args, options.CertFilePath)
+	}
+	if options.UserProfilePath != "" {
+		args = append(args, "-s")
+		args = append(args, options.UserProfilePath)
 	}
 	return args
 }
@@ -65,7 +84,16 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 	var revertLine string
 
 	if err != nil || (len(revertFlags) == 0 && stopAgent) {
-		revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", stopAgent, false)
+		revertFlags = RevertFlags(&RevertFlagsOptions{
+			Game:            gameId,
+			UnmapIPs:        true,
+			UnmapCDN:        true,
+			RemoveUserCert:  runtime.GOOS == "windows",
+			RemoveLocalCert: true,
+			RestoreMetadata: true,
+			RestoreProfiles: true,
+			StopAgent:       stopAgent,
+		})
 	}
 	if len(revertFlags) > 0 {
 		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)

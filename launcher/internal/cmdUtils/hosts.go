@@ -122,7 +122,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 			}
 		}
 		fmt.Println("...")
-		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true, c.HostFilePath(), ""); !result.Success() {
+		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIps: ips, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
 			fmt.Println("Failed to add hosts.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())

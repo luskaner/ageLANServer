@@ -9,9 +9,9 @@ import (
 
 var profiles []Data
 
-func setProfileData(gameId string) bool {
+func setProfileData(staticBasePath string, gameId string) bool {
 	profiles = make([]Data, 0)
-	entries, err := os.ReadDir(path(gameId))
+	entries, err := os.ReadDir(path(staticBasePath, gameId))
 	if err != nil {
 		return false
 	}
@@ -34,17 +34,17 @@ func setProfileData(gameId string) bool {
 	return true
 }
 
-func runProfileMethod(gameId string, mainMethod func(gameId string, data Data) bool, cleanMethod func(gameId string, data Data) bool, stopOnFailed bool) bool {
-	if !setProfileData(gameId) {
+func runProfileMethod(staticBasePath string, gameId string, mainMethod func(staticBasePath string, gameId string, data Data) bool, cleanMethod func(staticBasePath string, gameId string, data Data) bool, stopOnFailed bool) bool {
+	if !setProfileData(staticBasePath, gameId) {
 		return false
 	}
 	for i := range profiles {
-		if !mainMethod(gameId, profiles[i]) {
+		if !mainMethod(staticBasePath, gameId, profiles[i]) {
 			if !stopOnFailed {
 				continue
 			}
 			for j := i - 1; j >= 0; j-- {
-				_ = cleanMethod(gameId, profiles[j])
+				_ = cleanMethod(staticBasePath, gameId, profiles[j])
 			}
 			return false
 		}
@@ -52,18 +52,18 @@ func runProfileMethod(gameId string, mainMethod func(gameId string, data Data) b
 	return true
 }
 
-func backupProfile(gameId string, data Data) bool {
-	return data.Backup(gameId)
+func backupProfile(staticBasePath string, gameId string, data Data) bool {
+	return data.Backup(staticBasePath, gameId)
 }
 
-func restoreProfile(gameId string, data Data) bool {
-	return data.Restore(gameId)
+func restoreProfile(staticBasePath string, gameId string, data Data) bool {
+	return data.Restore(staticBasePath, gameId)
 }
 
-func BackupProfiles(gameId string) bool {
-	return runProfileMethod(gameId, backupProfile, restoreProfile, true)
+func BackupProfiles(staticBasePath string, gameId string) bool {
+	return runProfileMethod(staticBasePath, gameId, backupProfile, restoreProfile, true)
 }
 
-func RestoreProfiles(gameId string, reverseFailed bool) bool {
-	return runProfileMethod(gameId, restoreProfile, backupProfile, reverseFailed)
+func RestoreProfiles(staticBasePath string, gameId string, reverseFailed bool) bool {
+	return runProfileMethod(staticBasePath, gameId, restoreProfile, backupProfile, reverseFailed)
 }

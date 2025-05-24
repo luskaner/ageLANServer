@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
+func (c *Config) IsolateUserData(userProfilePath string, metadata bool, profiles bool) (errorCode int) {
 	if metadata || profiles {
 		var isolateItems []string
 		if metadata {
@@ -18,7 +18,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 			isolateItems = append(isolateItems, "profiles")
 		}
 		fmt.Println("Backing up " + strings.Join(isolateItems, " and ") + ".")
-		if result := executor.RunSetUp(c.gameId, nil, nil, nil, metadata, profiles, false, false, "", ""); !result.Success() {
+		if result := executor.RunSetUp(&executor.RunSetUpOptions{Game: c.gameId, UserProfilePath: userProfilePath, BackupMetadata: metadata, BackupProfiles: profiles}); !result.Success() {
 			isolateMsg := "Failed to backup "
 			fmt.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
 			errorCode = internal.ErrMetadataProfilesSetup

@@ -4,7 +4,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"time"
 )
 
@@ -24,10 +24,10 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	defer func() {
-		_ = launcher_common.RunRevertCommand()
+		_ = launcherCommon.RunRevertCommand()
 	}()
 	defer func() {
-		launcher_common.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameId, true, nil)
 	}()
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {

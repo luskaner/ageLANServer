@@ -5,22 +5,10 @@
 # Note: Will require admin privileges.
 CanAddHost = true
 # Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
+# false: do not trust the certificate. You will have to trust it manually in the proper store via other means.
 # local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent. Only on Windows.
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
-# Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'. This is only necessary in Windows, on the rest of systems it is always 'false'.
-CanBroadcastBattleServer = 'auto'
-# If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
-# On AoE I this is always false as it does not store metadata.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateMetadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
-# Linux Note: Only supported when not using a custom launcher.
-IsolateProfiles = false
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
@@ -30,11 +18,11 @@ Start = 'auto'
 # 1. './server/'
 # 2. '../'
 # 3. '../server/'
+# Note: You may use environment variables when using a custom path.
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
 # Also, by default, override the IPs address to bind to the server to ensure we can connect if it was changed.
-# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored

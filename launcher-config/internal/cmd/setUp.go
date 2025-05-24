@@ -35,7 +35,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	fmt.Println("Restoring previously backed up metadata")
-	if userData.Metadata(gameId).Restore(gameId) {
+	if userData.Metadata(gameId).Restore(windowsUserProfilePath, gameId) {
 		fmt.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -46,7 +46,7 @@ func restoreMetadata() bool {
 
 func restoreProfiles() bool {
 	fmt.Println("Restoring previously backed up profiles")
-	if userData.RestoreProfiles(gameId, true) {
+	if userData.RestoreProfiles(windowsUserProfilePath, gameId, true) {
 		fmt.Println("Successfully restored profiles")
 		return true
 	} else {
@@ -72,6 +72,7 @@ var BackupMetadata bool
 var BackupProfiles bool
 var agentStart bool
 var agentEndOnError bool
+var windowsUserProfilePath string
 var storeString = "local"
 
 var setUpCmd = &cobra.Command{
@@ -131,7 +132,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupMetadata {
 			fmt.Println("Backing up metadata")
-			if userData.Metadata(gameId).Backup(gameId) {
+			if userData.Metadata(gameId).Backup(windowsUserProfilePath, gameId) {
 				fmt.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
@@ -147,7 +148,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupProfiles {
 			fmt.Println("Backing up profiles")
-			if userData.BackupProfiles(gameId) {
+			if userData.BackupProfiles(windowsUserProfilePath, gameId) {
 				fmt.Println("Successfully backed up profiles")
 				backedUpProfiles = true
 			} else {
@@ -355,6 +356,15 @@ func InitSetUp() {
 			"u",
 			nil,
 			"Add the certificate to the user's trusted root store",
+		)
+	}
+	if runtime.GOOS != "windows" {
+		setUpCmd.Flags().StringVarP(
+			&windowsUserProfilePath,
+			"windowsUserProfilePath",
+			"s",
+			"",
+			"Windows User Profile Path. Only relevant when using the 'metadata' or 'profiles' option.",
 		)
 	}
 	setUpCmd.Flags().BoolVarP(
