@@ -5,13 +5,13 @@ import (
 )
 
 var RemoveLocalCert bool
-var UnmapIPs bool
+var UnmapIP bool
 var UnmapCDN bool
 var RemoveAll bool
 
 func InitRevert(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(
-		&UnmapIPs,
+		&UnmapIP,
 		"ip",
 		"i",
 		false,

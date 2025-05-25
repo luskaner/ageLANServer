@@ -3,7 +3,6 @@ package hosts
 import (
 	"bufio"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
@@ -23,19 +22,15 @@ func CreateTemp() (*os.File, error) {
 	return os.CreateTemp("", common.Name+"_host_*.txt")
 }
 
-func HostMappings() map[string]mapset.Set[string] {
-	mappings := make(map[string]mapset.Set[string])
-	if len(cmd.MapIPs) > 0 {
+func HostMappings() map[string]string {
+	mappings := make(map[string]string)
+	if cmd.MapIP != nil {
 		for _, host := range common.AllHosts() {
-			mappings[host] = mapset.NewThreadUnsafeSet[string]()
-			for _, ip := range cmd.MapIPs {
-				mappings[host].Add(ip.String())
-			}
+			mappings[host] = cmd.MapIP.String()
 		}
 	}
 	if cmd.MapCDN {
-		mappings[launcherCommon.CDNDomain] = mapset.NewThreadUnsafeSet[string]()
-		mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
+		mappings[launcherCommon.CDNDomain] = launcherCommon.CDNIP
 	}
 	return mappings
 }
@@ -49,7 +44,7 @@ func mapping(line string) (string, string) {
 	return matches[1], matches[2]
 }
 
-func missingIpMappings(mappings *map[string]mapset.Set[string], hostFilePath string) (err error, f *os.File) {
+func missingIpMappings(mappings *map[string]string, hostFilePath string) (err error, f *os.File) {
 	err, f = OpenHostsFile(hostFilePath)
 	if err != nil {
 		return
@@ -59,11 +54,8 @@ func missingIpMappings(mappings *map[string]mapset.Set[string], hostFilePath str
 	for scanner.Scan() {
 		line = scanner.Text()
 		lineIp, lineHost := mapping(line)
-		if ips, ok := (*mappings)[lineHost]; ok && ips.ContainsOne(lineIp) {
-			(*mappings)[lineHost].Remove(lineIp)
-			if (*mappings)[lineHost].IsEmpty() {
-				delete(*mappings, lineHost)
-			}
+		if ip, ok := (*mappings)[lineHost]; ok && ip == lineIp {
+			delete(*mappings, lineHost)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -179,12 +171,10 @@ func AddHosts(hostFilePath string, lineEnding string, flushFn func() (result *ex
 	}
 
 	err = UpdateHosts(hostsFile, func(f *os.File) error {
-		for hostname, ips := range mappings {
-			for ip := range ips.Iter() {
-				_, err = f.WriteString(fmt.Sprintf("%s%s\t%s\t%s", lineEnding, ip, hostname, HostEndMarking))
-				if err != nil {
-					return err
-				}
+		for hostname, ip := range mappings {
+			_, err = f.WriteString(fmt.Sprintf("%s%s\t%s\t%s", lineEnding, ip, hostname, HostEndMarking))
+			if err != nil {
+				return err
 			}
 		}
 		_, err = f.Seek(0, io.SeekStart)

@@ -3,7 +3,6 @@ package cmdUtils
 import (
 	"encoding/json"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -73,7 +72,7 @@ func requiresMapCDN() bool {
 func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCode int) {
 	var mapCDN bool
 	var mapIP bool
-	ips := mapset.NewThreadUnsafeSet[string]()
+	var ipToMap string
 	if !customHostFile {
 		if requiresMapCDN() {
 			if !canMap {
@@ -102,9 +101,9 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		mapIP = true
 	}
 	if mapIP {
-		ips.Add(ip)
+		ipToMap = ip
 	}
-	if !ips.IsEmpty() || mapCDN {
+	if ipToMap != "" || mapCDN {
 		if customHostFile {
 			hostFile, err := hosts.CreateTemp()
 			if err != nil {
@@ -122,7 +121,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 			}
 		}
 		fmt.Println("...")
-		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIps: ips, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
+		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIp: ipToMap, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
 			fmt.Println("Failed to add hosts.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
@@ -134,13 +133,11 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		} else if customHostFile {
 			cmd.MapCDN = true
 			if parsedIP := net.ParseIP(ip); parsedIP != nil {
-				cmd.MapIPs = append(cmd.MapIPs, parsedIP)
+				cmd.MapIP = parsedIP
 			}
 			mappings := hosts.HostMappings()
-			for hostToCache, ipsToCache := range mappings {
-				for ipToCache := range ipsToCache.Iter() {
-					launcherCommon.CacheMapping(hostToCache, ipToCache)
-				}
+			for hostToCache, ipToCache := range mappings {
+				launcherCommon.CacheMapping(hostToCache, ipToCache)
 			}
 		}
 	}

@@ -3,7 +3,6 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -78,12 +77,8 @@ var storeString = "local"
 var setUpCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Setups configuration",
-	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
+	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
 	Run: func(_ *cobra.Command, _ []string) {
-		if len(cmd.MapIPs) > 9 {
-			fmt.Println("Too many IPs. Up to 9 can be mapped")
-			os.Exit(launcherCommon.ErrIpMapAddTooMany)
-		}
 		var addedUserCert bool
 		var backedUpMetadata bool
 		var backedUpProfiles bool
@@ -167,13 +162,11 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		hostMappings := mapset.NewThreadUnsafeSet[string]()
+		var hostToMap string
 		if hostFilePath == "" {
-			for _, ip := range cmd.MapIPs {
-				hostMappings.Add(ip.String())
-			}
+			hostToMap = cmd.MapIP.String()
 		} else {
-			if cmd.MapCDN || len(cmd.MapIPs) > 0 {
+			if cmd.MapCDN || cmd.MapIP != nil {
 				if ok, _ := hosts.AddHosts(hostFilePath, hosts.WindowsLineEnding, nil); ok {
 					fmt.Println("Successfully added host mappings")
 				} else {
@@ -231,7 +224,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		if addLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
+		if addLocalCertData != nil || hostToMap != "" || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -261,7 +254,7 @@ var setUpCmd = &cobra.Command{
 				}
 				fmt.Println("...")
 			}
-			err, exitCode := internal.RunSetUp(hostMappings, addLocalCertData, cmd.MapCDN)
+			err, exitCode := internal.RunSetUp(hostToMap, addLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")

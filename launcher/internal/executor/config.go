@@ -3,7 +3,6 @@ package executor
 import (
 	"encoding/base64"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -15,7 +14,7 @@ import (
 type RunSetUpOptions struct {
 	Game                   string
 	HostFilePath           string
-	MapIps                 mapset.Set[string]
+	MapIp                  string
 	MapCDN                 bool
 	CertFilePath           string
 	AddUserCertData        []byte
@@ -34,7 +33,7 @@ func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlags
 	return &launcherCommon.RevertFlagsOptions{
 		Game:                   options.Game,
 		HostFilePath:           options.HostFilePath,
-		UnmapIPs:               options.MapIps != nil && options.MapIps.Cardinality() > 0,
+		UnmapIP:                options.MapIp != "",
 		UnmapCDN:               options.MapCDN,
 		CertFilePath:           options.CertFilePath,
 		RemoveUserCert:         options.AddUserCertData != nil,
@@ -62,12 +61,10 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 			args = append(args, "-r")
 		}
 	}
-	if options.MapIps != nil {
-		for ip := range options.MapIps.Iter() {
-			args = append(args, "-i")
-			args = append(args, ip)
-			reloadHostMappings = true
-		}
+	if options.MapIp != "" {
+		args = append(args, "-i")
+		args = append(args, options.MapIp)
+		reloadHostMappings = true
 	}
 	if options.AddLocalCertData != nil {
 		reloadSystemCertificates = true

@@ -13,12 +13,12 @@ const configAdminIpcName = common.Name + `-launcher-config-admin-agent`
 type (
 	ConfigAdminIpcSetupCommand struct {
 		CDN         bool
-		IPs         []net.IP
+		IP          net.IP
 		Certificate []byte
 	}
 	ConfigAdminIpcRevertCommand struct {
 		CDN         bool
-		IPs         bool
+		IP          bool
 		Certificate bool
 	}
 )

@@ -67,7 +67,7 @@ func undoRevert(removedUserCerts []*x509.Certificate, restoredMetadata bool, res
 var revertCmd = &cobra.Command{
 	Use:   "revert",
 	Short: "Reverts configuration",
-	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata\n* User profiles",
+	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata\n* User profiles",
 	Run: func(_ *cobra.Command, _ []string) {
 		var removedUserCerts []*x509.Certificate
 		var restoredMetadata bool
@@ -85,7 +85,7 @@ var revertCmd = &cobra.Command{
 		isAdmin := executor.IsAdmin()
 		reverseFailed := true
 		if cmd.RemoveAll {
-			cmd.UnmapIPs = true
+			cmd.UnmapIP = true
 			cmd.UnmapCDN = true
 			cmd.RemoveLocalCert = true
 			if runtime.GOOS != "linux" {
@@ -160,7 +160,7 @@ var revertCmd = &cobra.Command{
 			}
 		}
 		var agentConnected bool
-		if cmd.RemoveLocalCert || cmd.UnmapIPs || cmd.UnmapCDN {
+		if cmd.RemoveLocalCert || cmd.UnmapIP || cmd.UnmapCDN {
 			agentConnected = internal.ConnectAgentIfNeeded() == nil
 			if agentConnected {
 				fmt.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
@@ -172,7 +172,7 @@ var revertCmd = &cobra.Command{
 				fmt.Println("...")
 			}
 			var err error
-			err, errorCode = internal.RunRevert(cmd.UnmapIPs, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
+			err, errorCode = internal.RunRevert(cmd.UnmapIP, cmd.RemoveLocalCert, cmd.UnmapCDN, !cmd.RemoveAll)
 			if err == nil && errorCode == common.ErrSuccess {
 				if agentConnected {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")

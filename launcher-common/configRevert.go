@@ -17,7 +17,7 @@ var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_c
 type RevertFlagsOptions struct {
 	Game                   string
 	HostFilePath           string
-	UnmapIPs               bool
+	UnmapIP                bool
 	UnmapCDN               bool
 	CertFilePath           string
 	RemoveUserCert         bool
@@ -41,7 +41,7 @@ func RevertFlags(options *RevertFlagsOptions) []string {
 	if !options.Failfast {
 		args = append(args, "-a")
 	} else {
-		if options.UnmapIPs {
+		if options.UnmapIP {
 			args = append(args, "-i")
 		}
 		if options.RemoveUserCert {
@@ -88,7 +88,7 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 	allRevertFlags := func(stopAgent bool) []string {
 		return RevertFlags(&RevertFlagsOptions{
 			Game:            gameId,
-			UnmapIPs:        true,
+			UnmapIP:         true,
 			UnmapCDN:        true,
 			RemoveUserCert:  runtime.GOOS == "windows",
 			RemoveLocalCert: true,
