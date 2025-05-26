@@ -237,6 +237,9 @@ var (
 					return
 				}
 			}
+			if mismatchHosts := cmdUtils.InternalExternalDnsMismatch(); !mismatchHosts.IsEmpty() {
+				fmt.Printf("hosts %s already mapped. This can cause issues in the configuration.\n", strings.Join(mismatchHosts.ToSlice(), ", "))
+			}
 			// Setup
 			fmt.Println("Setting up...")
 			if len(setupCommand) > 0 {

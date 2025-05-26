@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
+	github.com/likexian/doh v0.7.1
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250517201605-76715e6a0d9c
@@ -21,6 +22,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/hairyhenderson/go-which v0.2.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/likexian/gokit v0.25.15 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
