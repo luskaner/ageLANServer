@@ -4,10 +4,25 @@ import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"syscall"
+	"unsafe"
 )
 
-const appNamePrefix = "Microsoft."
-const appPublisherId = "8wekyb3d8bbwe"
+var (
+	modkernelbase                   = syscall.NewLazyDLL("kernelbase.dll")
+	procFindPackagesByPackageFamily = modkernelbase.NewProc("FindPackagesByPackageFamily")
+)
+
+const (
+	PackageFilterHead       uint32 = 0x10
+	ErrorSuccess            uint32 = 0
+	ErrorInsufficientBuffer uint32 = 122
+)
+
+const (
+	appNamePrefix  = "Microsoft."
+	appPublisherId = "8wekyb3d8bbwe"
+)
 
 func appNameSuffix(id string) string {
 	switch id {
@@ -26,18 +41,41 @@ func appName(id string) string {
 	return appNamePrefix + appNameSuffix(id)
 }
 
+func appFamilyName(id string) string {
+	return appName(id) + "_" + appPublisherId
+}
+
 func isInstalledOnXbox(id string) bool {
-	// TODO: Implement natively
-	return commonExecutor.Options{
-		File:        "powershell",
-		SpecialFile: true,
-		Wait:        true,
-		ExitCode:    true,
-		Args: []string{
-			"-Command",
-			fmt.Sprintf("if ((Get-AppxPackage).Name -eq '%s') { exit 0 } else { exit 1 }", appName(id)),
-		},
-	}.Exec().Success()
+	packageFamilyName := appFamilyName(id)
+	errLoadDll := modkernelbase.Load()
+	if errLoadDll != nil {
+		return false
+	}
+	if procFindPackagesByPackageFamily.Find() != nil {
+		return false
+	}
+	pfnUTF16, err := syscall.UTF16PtrFromString(packageFamilyName)
+	if err != nil {
+		return false
+	}
+	var count uint32
+	var bufferLength uint32
+
+	result, _, _ := procFindPackagesByPackageFamily.Call(
+		uintptr(unsafe.Pointer(pfnUTF16)),
+		uintptr(PackageFilterHead),
+		uintptr(unsafe.Pointer(&count)),
+		uintptr(0),
+		uintptr(unsafe.Pointer(&bufferLength)),
+		uintptr(0),
+		uintptr(0),
+	)
+
+	apiReturnCode := uint32(result)
+	if apiReturnCode == ErrorSuccess || apiReturnCode == ErrorInsufficientBuffer {
+		return count > 0
+	}
+	return false
 }
 
 func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
@@ -48,7 +86,7 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool)
 
 func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	result = commonExecutor.Options{
-		File:        fmt.Sprintf(`shell:appsfolder\%s_%s!App`, appName(exec.gameId), appPublisherId),
+		File:        fmt.Sprintf(`shell:appsfolder\%s!App`, appFamilyName(exec.gameId)),
 		Shell:       true,
 		SpecialFile: true,
 	}.Exec()
