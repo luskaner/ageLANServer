@@ -3,9 +3,11 @@ package steam
 import (
 	"fmt"
 	"github.com/andygrunwald/vdf"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type Game struct {
@@ -56,17 +58,25 @@ func (g Game) GameInstalled() bool {
 		return false
 	}
 	var folderMap map[string]interface{}
+	libraryPaths := mapset.NewThreadUnsafeSet[string]()
 	for _, folder := range libraryFolders {
 		folderMap, ok = folder.(map[string]interface{})
 		if !ok {
 			continue
 		}
 		var apps map[string]interface{}
+		libraryPaths.Add(folderMap["path"].(string))
 		apps, ok = folderMap["apps"].(map[string]interface{})
 		if !ok {
 			continue
 		}
 		if _, exists := apps[g.AppId]; exists {
+			return true
+		}
+	}
+	for libraryPath := range libraryPaths.Iter() {
+		var stat os.FileInfo
+		if stat, err = os.Stat(filepath.Join(libraryPath, "steamapps", fmt.Sprintf("appmanifest_%s.acf", g.AppId))); err == nil && !stat.IsDir() {
 			return true
 		}
 	}
