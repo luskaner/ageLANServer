@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"syscall"
+	"golang.org/x/sys/windows"
 	"unsafe"
 )
 
 var (
-	modkernelbase                   = syscall.NewLazyDLL("kernelbase.dll")
+	modkernelbase                   = windows.NewLazyDLL("kernelbase.dll")
 	procFindPackagesByPackageFamily = modkernelbase.NewProc("FindPackagesByPackageFamily")
 )
 
@@ -54,7 +54,7 @@ func isInstalledOnXbox(id string) bool {
 	if procFindPackagesByPackageFamily.Find() != nil {
 		return false
 	}
-	pfnUTF16, err := syscall.UTF16PtrFromString(packageFamilyName)
+	pfnUTF16, err := windows.UTF16PtrFromString(packageFamilyName)
 	if err != nil {
 		return false
 	}
