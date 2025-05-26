@@ -41,49 +41,33 @@ func backupMetadata() bool {
 	}
 }
 
-func backupProfiles() bool {
-	fmt.Println("Backing up previously restored profiles")
-	if userData.BackupProfiles(windowsUserProfilePath, gameId) {
-		fmt.Println("Successfully backed up profiles")
-		return true
-	} else {
-		fmt.Println("Failed to back up profiles")
-		return false
-	}
-}
-
-func undoRevert(removedUserCerts []*x509.Certificate, restoredMetadata bool, restoredProfiles bool) {
+func undoRevert(removedUserCerts []*x509.Certificate, restoredMetadata bool) {
 	if removedUserCerts != nil {
 		addUserCerts(removedUserCerts)
 	}
 	if restoredMetadata {
 		backupMetadata()
 	}
-	if restoredProfiles {
-		backupProfiles()
-	}
 }
 
 var revertCmd = &cobra.Command{
 	Use:   "revert",
 	Short: "Reverts configuration",
-	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata\n* User profiles",
+	Long:  "Reverts any of the following:\n* Any host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* User metadata",
 	Run: func(_ *cobra.Command, _ []string) {
 		var removedUserCerts []*x509.Certificate
 		var restoredMetadata bool
-		var restoredProfiles bool
 		var errorCode int
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
 			_, ok := <-sigs
 			if ok {
-				undoRevert(removedUserCerts, restoredMetadata, restoredProfiles)
+				undoRevert(removedUserCerts, restoredMetadata)
 				os.Exit(common.ErrSignal)
 			}
 		}()
 		isAdmin := executor.IsAdmin()
-		reverseFailed := true
 		if cmd.RemoveAll {
 			cmd.UnmapIP = true
 			cmd.UnmapCDN = true
@@ -92,13 +76,11 @@ var revertCmd = &cobra.Command{
 				RemoveUserCert = true
 			}
 			RestoreMetadata = true
-			RestoreProfiles = true
-			reverseFailed = false
 		}
 		if gameId == common.GameAoE1 {
 			RestoreMetadata = false
 		}
-		if (restoredMetadata || restoredProfiles) && !common.SupportedGames.ContainsOne(gameId) {
+		if restoredMetadata && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
@@ -129,31 +111,6 @@ var revertCmd = &cobra.Command{
 					}
 				}
 				fmt.Println("Failed to restore metadata")
-				if !cmd.RemoveAll {
-					os.Exit(errorCode)
-				}
-			}
-		}
-		if RestoreProfiles {
-			fmt.Println("Restoring profiles")
-			if userData.RestoreProfiles(windowsUserProfilePath, gameId, reverseFailed) {
-				fmt.Println("Successfully restored profiles")
-				restoredProfiles = true
-			} else {
-				errorCode := internal.ErrProfilesRestore
-				if !cmd.RemoveAll {
-					if removedUserCerts != nil {
-						if !addUserCerts(removedUserCerts) {
-							errorCode = internal.ErrProfilesRestoreRevert
-						}
-					}
-					if restoredMetadata {
-						if !backupMetadata() {
-							errorCode = internal.ErrProfilesRestoreRevert
-						}
-					}
-				}
-				fmt.Println("Failed to restore profiles")
 				if !cmd.RemoveAll {
 					os.Exit(errorCode)
 				}
@@ -197,11 +154,6 @@ var revertCmd = &cobra.Command{
 					}
 					if restoredMetadata {
 						if !backupMetadata() {
-							errorCode = internal.ErrAdminRevertRevert
-						}
-					}
-					if restoredProfiles {
-						if !backupProfiles() {
 							errorCode = internal.ErrAdminRevertRevert
 						}
 					}
@@ -267,7 +219,6 @@ var revertCmd = &cobra.Command{
 
 var RemoveUserCert bool
 var RestoreMetadata bool
-var RestoreProfiles bool
 var stopAgent bool
 
 func InitRevert() {
@@ -305,7 +256,7 @@ func InitRevert() {
 			"windowsUserProfilePath",
 			"s",
 			"",
-			"Windows User Profile Path. Only relevant when using the 'metadata' or 'profiles' option.",
+			"Windows User Profile Path. Only relevant when using the 'metadata' option.",
 		)
 	}
 	revertCmd.Flags().BoolVarP(
@@ -314,13 +265,6 @@ func InitRevert() {
 		"m",
 		false,
 		"Restore metadata. Not compatible with AoE:DE",
-	)
-	revertCmd.Flags().BoolVarP(
-		&RestoreProfiles,
-		"profiles",
-		"p",
-		false,
-		"Restore profiles",
 	)
 	revertCmd.Flags().BoolVarP(
 		&stopAgent,

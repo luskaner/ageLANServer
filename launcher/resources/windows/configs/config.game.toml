@@ -13,9 +13,6 @@ RevertCommand = []
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
 # On AoE I this is always false as it does not store metadata.
 Metadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
-Profiles = false
 
 [Client]
 # The path to the game launcher, if 'auto', the Steam and then the Xbox one will be launched if found

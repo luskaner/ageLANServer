@@ -19,6 +19,10 @@ require admin rights elevation.**
 
 ## Features
 
+## Base
+
+- Revert changes (if not properly reverted before).
+
 ## Server
 
 - Generate a self-signed certificate.
@@ -29,11 +33,13 @@ require admin rights elevation.**
 ## Client (via [`bin\config`](../launcher-config/README.md))
 
 - Isolated metadata directory (except AoE I).
-- Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.
 
-All possible client modifications are reverted upon the launcher's exit.
+# Agent (via [`bin\agent`](../launcher-agent/README.md))
+
+- Revert changes.
+- Smart re-broadcast the battle server through other network interfaces apart from the most priority one.
 
 ## Command Line
 

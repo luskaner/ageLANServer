@@ -24,7 +24,6 @@ type RevertFlagsOptions struct {
 	RemoveLocalCert        bool
 	WindowsUserProfilePath string
 	RestoreMetadata        bool
-	RestoreProfiles        bool
 	StopAgent              bool
 	Failfast               bool
 }
@@ -52,9 +51,6 @@ func RevertFlags(options *RevertFlagsOptions) []string {
 		}
 		if options.RestoreMetadata {
 			args = append(args, "-m")
-		}
-		if options.RestoreProfiles {
-			args = append(args, "-p")
 		}
 		if options.UnmapCDN {
 			args = append(args, "-c")
@@ -93,7 +89,6 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 			RemoveUserCert:  runtime.GOOS == "windows",
 			RemoveLocalCert: true,
 			RestoreMetadata: true,
-			RestoreProfiles: true,
 			StopAgent:       stopAgent,
 		})
 	}

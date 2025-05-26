@@ -43,32 +43,17 @@ func restoreMetadata() bool {
 	}
 }
 
-func restoreProfiles() bool {
-	fmt.Println("Restoring previously backed up profiles")
-	if userData.RestoreProfiles(windowsUserProfilePath, gameId, true) {
-		fmt.Println("Successfully restored profiles")
-		return true
-	} else {
-		fmt.Println("Failed to restore profiles")
-		return false
-	}
-}
-
-func undoSetUp(addedUserCert bool, backedUpMetadata bool, backedUpProfiles bool) {
+func undoSetUp(addedUserCert bool, backedUpMetadata bool) {
 	if addedUserCert {
 		removeUserCert()
 	}
 	if backedUpMetadata {
 		restoreMetadata()
 	}
-	if backedUpProfiles {
-		restoreProfiles()
-	}
 }
 
 var AddUserCertData []byte
 var BackupMetadata bool
-var BackupProfiles bool
 var agentStart bool
 var agentEndOnError bool
 var windowsUserProfilePath string
@@ -77,24 +62,23 @@ var storeString = "local"
 var setUpCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Setups configuration",
-	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
+	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS resolver\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata",
 	Run: func(_ *cobra.Command, _ []string) {
 		var addedUserCert bool
 		var backedUpMetadata bool
-		var backedUpProfiles bool
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
 			_, ok := <-sigs
 			if ok {
-				undoSetUp(addedUserCert, backedUpMetadata, backedUpProfiles)
+				undoSetUp(addedUserCert, backedUpMetadata)
 				os.Exit(common.ErrSignal)
 			}
 		}()
 		if gameId == common.GameAoE1 {
 			BackupMetadata = false
 		}
-		if (BackupMetadata || BackupProfiles) && !common.SupportedGames.ContainsOne(gameId) {
+		if BackupMetadata && !common.SupportedGames.ContainsOne(gameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
@@ -141,27 +125,6 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		if BackupProfiles {
-			fmt.Println("Backing up profiles")
-			if userData.BackupProfiles(windowsUserProfilePath, gameId) {
-				fmt.Println("Successfully backed up profiles")
-				backedUpProfiles = true
-			} else {
-				errorCode := internal.ErrProfilesBackup
-				if addedUserCert {
-					if !removeUserCert() {
-						errorCode = internal.ErrProfilesBackupRevert
-					}
-				}
-				if backedUpMetadata {
-					if !restoreMetadata() {
-						errorCode = internal.ErrProfilesBackupRevert
-					}
-				}
-				fmt.Println("Failed to back up profiles")
-				os.Exit(errorCode)
-			}
-		}
 		var hostToMap string
 		if hostFilePath == "" {
 			hostToMap = cmd.MapIP.String()
@@ -180,11 +143,6 @@ var setUpCmd = &cobra.Command{
 					}
 					if backedUpMetadata {
 						if !restoreMetadata() {
-							errorCode = internal.ErrAdminSetupRevert
-						}
-					}
-					if backedUpProfiles {
-						if !restoreProfiles() {
 							errorCode = internal.ErrAdminSetupRevert
 						}
 					}
@@ -213,11 +171,6 @@ var setUpCmd = &cobra.Command{
 				}
 				if backedUpMetadata {
 					if !restoreMetadata() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpProfiles {
-					if !restoreProfiles() {
 						errorCode = internal.ErrAdminSetupRevert
 					}
 				}
@@ -278,11 +231,6 @@ var setUpCmd = &cobra.Command{
 				}
 				if backedUpMetadata {
 					if !restoreMetadata() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpProfiles {
-					if !restoreProfiles() {
 						errorCode = internal.ErrAdminSetupRevert
 					}
 				}
@@ -357,7 +305,7 @@ func InitSetUp() {
 			"windowsUserProfilePath",
 			"s",
 			"",
-			"Windows User Profile Path. Only relevant when using the 'metadata' or 'profiles' option.",
+			"Windows User Profile Path. Only relevant when using the 'metadata' option.",
 		)
 	}
 	setUpCmd.Flags().BoolVarP(
@@ -366,13 +314,6 @@ func InitSetUp() {
 		"m",
 		false,
 		"Backup metadata. Not compatible with AoE:DE",
-	)
-	setUpCmd.Flags().BoolVarP(
-		&BackupProfiles,
-		"profiles",
-		"p",
-		false,
-		"Backup profiles",
 	)
 	setUpCmd.Flags().BoolVarP(
 		&agentStart,

@@ -21,7 +21,6 @@ type RunSetUpOptions struct {
 	AddLocalCertData       []byte
 	WindowsUserProfilePath string
 	BackupMetadata         bool
-	BackupProfiles         bool
 	ExitAgentOnError       bool
 }
 
@@ -40,7 +39,6 @@ func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlags
 		RemoveLocalCert:        options.AddLocalCertData != nil,
 		WindowsUserProfilePath: options.WindowsUserProfilePath,
 		RestoreMetadata:        options.BackupMetadata,
-		RestoreProfiles:        options.BackupProfiles,
 		StopAgent:              stopAgent,
 		Failfast:               true,
 	}
@@ -78,9 +76,6 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 	}
 	if options.BackupMetadata {
 		args = append(args, "-m")
-	}
-	if options.BackupProfiles {
-		args = append(args, "-p")
 	}
 	if options.WindowsUserProfilePath != "" {
 		args = append(args, "-s")

@@ -131,7 +131,6 @@ var (
 			if gameId != common.GameAoE1 {
 				isolateMetadata = viper.GetBool("Config.Isolation.Metadata")
 			}
-			isolateProfiles := viper.GetBool("Config.Isolation.Profiles")
 			var isolateWindowsUserProfilePath string
 			if runtime.GOOS == "linux" {
 				isolateWindowsUserProfilePathTemp := viper.GetString("Config.Isolation.WindowsUserProfilePath")
@@ -141,7 +140,7 @@ var (
 					} else {
 						isolateWindowsUserProfilePath = isolateWindowsUserProfilePathTemp
 					}
-				} else if clientExecutable != "auto" && clientExecutable != "steam" && (isolateMetadata || isolateProfiles) {
+				} else if clientExecutable != "auto" && clientExecutable != "steam" && isolateMetadata {
 					fmt.Println("You need to set a custom user profile path when enabling some isolation and using a custom launcher.")
 					errorCode = internal.ErrInvalidIsolationWindowsUserProfilePath
 					return
@@ -342,7 +341,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.IsolateUserData(isolateWindowsUserProfilePath, isolateMetadata, isolateProfiles)
+			errorCode = config.IsolateUserData(isolateWindowsUserProfilePath, isolateMetadata)
 			if errorCode != common.ErrSuccess {
 				return
 			}
@@ -376,10 +375,9 @@ func Execute() error {
 		suffixIsolate = " When using a custom launcher 'windowsUserProfilePath' must be set."
 	}
 	if runtime.GOOS == "linux" {
-		rootCmd.PersistentFlags().StringP("windowsUserProfilePath", "s", "auto", "Windows User Profile Path. Only relevant when using the 'isolateMetadata' or 'isolateProfiles' options. Must be set if using a custom launcher.")
+		rootCmd.PersistentFlags().StringP("windowsUserProfilePath", "s", "auto", "Windows User Profile Path. Only relevant when using the 'isolateMetadata' option. Must be set if using a custom launcher.")
 	}
 	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
-	rootCmd.PersistentFlags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared."+suffixIsolate)
 	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
@@ -427,9 +425,6 @@ func Execute() error {
 		}
 	}
 	if err := viper.BindPFlag("Config.Isolation.Metadata", rootCmd.PersistentFlags().Lookup("isolateMetadata")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Config.Isolation.Profiles", rootCmd.PersistentFlags().Lookup("isolateProfiles")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Config.SetupCommand", rootCmd.PersistentFlags().Lookup("setupCommand")); err != nil {

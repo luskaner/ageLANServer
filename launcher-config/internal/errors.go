@@ -10,14 +10,10 @@ const (
 	ErrUserCertAddParse
 	ErrMetadataRestore
 	ErrMetadataRestoreRevert
-	ErrProfilesRestore
-	ErrProfilesRestoreRevert
 	ErrAdminRevert
 	ErrAdminRevertRevert
 	ErrMetadataBackup
 	ErrMetadataBackupRevert
-	ErrProfilesBackup
-	ErrProfilesBackupRevert
 	ErrStartAgent
 	ErrStartAgentRevert
 	ErrStartAgentVerify
