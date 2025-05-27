@@ -14,10 +14,6 @@ is in maintenance or is eventually shutdown.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
 
-> [!NOTE]
-> Repository is now on maintenance only due to lack of contributions/funding and having completed the main goals.
-Expect only updates to fix bugs and for dependencies/compiler.
-
 ## ⚙️Features
 
 - 🌐 Scenarios.
