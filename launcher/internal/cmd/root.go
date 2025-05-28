@@ -223,7 +223,7 @@ var (
 			}
 			_, _, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
 			if err == nil {
-				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
+				fmt.Println("'Server' is already running, if you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
 			if err = executor.RunRevertCommand(); err != nil {
 				fmt.Println("Failed to run revert command.")
@@ -237,7 +237,7 @@ var (
 				}
 			}
 			if mismatchHosts := cmdUtils.InternalExternalDnsMismatch(); !mismatchHosts.IsEmpty() {
-				fmt.Printf("hosts %s already mapped. This can cause issues in the configuration.\n", strings.Join(mismatchHosts.ToSlice(), ", "))
+				fmt.Printf("Host(s) %s already mapped. This can cause issues in the configuration.\n", strings.Join(mismatchHosts.ToSlice(), ", "))
 			}
 			// Setup
 			fmt.Println("Setting up...")
