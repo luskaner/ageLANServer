@@ -22,13 +22,12 @@ const (
 	ErrServerCertCreate
 	ErrServerStart
 	ErrConfigIpMap
-	ErrConfigIpMapFind
 	ErrConfigIpMapAdd
 	ErrConfigCertAdd
 	ErrConfigCert
 	ErrReadCert
 	ErrTrustCert
-	ErrMetadataProfilesSetup
+	ErrMetadataSetup
 	ErrAgentStart
 	ErrInvalidServerArgs
 	ErrInvalidClientArgs
@@ -39,4 +38,5 @@ const (
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
+	ErrInvalidIsolationWindowsUserProfilePath
 )

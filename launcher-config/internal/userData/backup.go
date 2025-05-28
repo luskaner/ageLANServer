@@ -28,28 +28,31 @@ func finalPath(gameId string) string {
 	return filepath.Join(finalPathPrefix, suffix)
 }
 
-func (d Data) isolatedPath(gameId string) string {
-	return d.absolutePath(gameId) + `.lan`
+func (d Data) isolatedPath(staticBasePath string, gameId string) string {
+	return d.absolutePath(staticBasePath, gameId) + `.lan`
 }
 
-func (d Data) originalPath(gameId string) string {
-	return d.absolutePath(gameId) + `.bak`
+func (d Data) originalPath(staticBasePath string, gameId string) string {
+	return d.absolutePath(staticBasePath, gameId) + `.bak`
 }
 
-func (d Data) absolutePath(gameId string) string {
-	return filepath.Join(path(gameId), d.Path)
+func (d Data) absolutePath(staticBasePath string, gameId string) string {
+	return filepath.Join(path(staticBasePath, gameId), d.Path)
 }
 
-func path(gameId string) string {
-	return filepath.Join(basePath(gameId), finalPath(gameId))
+func path(staticBasePath string, gameId string) string {
+	if staticBasePath == "" {
+		staticBasePath = basePath(gameId)
+	}
+	return filepath.Join(staticBasePath, finalPath(gameId))
 }
 
-func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok bool) {
+func (d Data) switchPaths(staticBasePath string, gameId string, backupPath string, currentPath string) (ok bool) {
 	if _, err := os.Stat(backupPath); err == nil {
 		return
 	}
 
-	absolutePath := d.absolutePath(gameId)
+	absolutePath := d.absolutePath(staticBasePath, gameId)
 	var mode os.FileMode
 
 	if _, err := os.Stat(absolutePath); errors.Is(err, fs.ErrNotExist) {
@@ -123,10 +126,10 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 	return true
 }
 
-func (d Data) Backup(gameId string) bool {
-	return d.switchPaths(gameId, d.originalPath(gameId), d.isolatedPath(gameId))
+func (d Data) Backup(staticBasePath string, gameId string) bool {
+	return d.switchPaths(staticBasePath, gameId, d.originalPath(staticBasePath, gameId), d.isolatedPath(staticBasePath, gameId))
 }
 
-func (d Data) Restore(gameId string) bool {
-	return d.switchPaths(gameId, d.isolatedPath(gameId), d.originalPath(gameId))
+func (d Data) Restore(staticBasePath string, gameId string) bool {
+	return d.switchPaths(staticBasePath, gameId, d.isolatedPath(staticBasePath, gameId), d.originalPath(staticBasePath, gameId))
 }

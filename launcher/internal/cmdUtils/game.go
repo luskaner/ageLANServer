@@ -6,25 +6,27 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
 	"runtime"
 	"strings"
 )
 
-func (c *Config) KillAgent() {
+func (c *Config) KillAgent() bool {
 	agent := common.GetExeFileName(false, common.LauncherAgent)
 	proc, err := commonProcess.Kill(agent)
 	if proc != nil {
 		fmt.Println("Killing 'agent'...")
 		if err != nil {
 			fmt.Println("Failed to kill it: ", err, ", try using the task manager.")
-			return
+			return false
 		}
 	}
+	return true
 }
 
-func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	if canBroadcastBattleServer != "false" {
 		if game.RequiresBattleServerBroadcast() {
 			canBroadcastBattleServer = "true"
@@ -80,7 +82,7 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 			values["CertFilePath"] = strings.ReplaceAll(certFilePath, `\`, `\\`)
 		}
 	}
-	args, err := ParseCommandArgs("Client.ExecutableArgs", values)
+	args, err := parse.CommandArgs(clientExecutableArgs, values)
 	if err != nil {
 		fmt.Println("Failed to parse client executable arguments")
 		errorCode = internal.ErrInvalidClientArgs

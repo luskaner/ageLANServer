@@ -5,7 +5,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"os"
 	"os/signal"
 	"runtime"
@@ -46,8 +46,8 @@ func main() {
 				_ = lock.Unlock()
 				os.Exit(exitCode)
 			}()
-			launcher_common.ConfigRevert(gameId, true, nil)
-			_ = launcher_common.RunRevertCommand()
+			launcherCommon.ConfigRevert(gameId, true, nil)
+			_ = launcherCommon.RunRevertCommand()
 			if serverExe != "-" {
 				_, _ = commonProcess.Kill(serverExe)
 			}

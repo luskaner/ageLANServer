@@ -30,10 +30,10 @@ func trustCertificates(certificates []*x509.Certificate) bool {
 var revertCmd = &cobra.Command{
 	Use:   "revert",
 	Short: "Reverts configuration",
-	Long:  "Removes one or more host mappings from the local DNS server and/or removes a certificate from the local machine's trusted root store",
+	Long:  "Removes one or more host mappings from the local DNS resolver and/or removes a certificate from the local machine's trusted root store",
 	Run: func(_ *cobra.Command, _ []string) {
 		if cmd.RemoveAll {
-			cmd.UnmapIPs = true
+			cmd.UnmapIP = true
 			cmd.RemoveLocalCert = true
 		}
 		var removedCertificates []*x509.Certificate
@@ -57,9 +57,9 @@ var revertCmd = &cobra.Command{
 				}
 			}
 		}
-		if cmd.UnmapCDN || cmd.UnmapIPs {
+		if cmd.UnmapCDN || cmd.UnmapIP {
 			hsts := mapset.NewThreadUnsafeSet[string]()
-			if cmd.UnmapIPs {
+			if cmd.UnmapIP {
 				for _, host := range common.AllHosts() {
 					hsts.Add(host)
 				}
