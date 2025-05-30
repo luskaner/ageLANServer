@@ -31,11 +31,11 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of features</summary>
 
-- Co-Op Campaigns.
-- Rematch.
-- Invite player to lobby.
-- Share lobby link.
-- Player Search.
+- 🧑‍🤝‍🧑 Co-Op Campaigns.
+- 🔄 Rematch.
+- 📩 Lobby invite.
+- 🔗 Share lobby link.
+- 🔍 Player Search.
 
 </details>
 
@@ -44,8 +44,8 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of features</summary>
 
-- Channels.
-- Whispering.
+- 💬 Channels.
+- 🗣️ Whispering.
 
 </details>
 
@@ -54,12 +54,12 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of limitations</summary>
 
-- Joining a game lobby from a link only works if the game is already running.
-- Subscribing to online mods only works if using the official launcher.
-- Lobbies can only be created in *LAN mode* which has its own limitations:
-    - No Ranked.
-    - No Spectate.
-- Xbox and Steam friend integration.
+- ⚠️ Joining a game lobby from a link only works if the game is already running.
+- ⚠️ Subscribing to online mods only works if using the official launcher.
+- ⚠️ **Lobbies can only be created in *LAN mode*** which has its own limitations:
+    - ❌ **No Ranked**.
+    - ❌ **No Spectate**.
+- ❌ No Xbox and Steam **friend integration**.
 
 </details>
 
@@ -68,7 +68,7 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of limitations</summary>
 
-- No Quick play.
+- ❌ **No Quick play**.
 
 </details>
 
@@ -77,7 +77,7 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of limitations</summary>
 
-- Friend list will instead show all online users as if they were friends.
+- ⚠️ **Friend list** will instead show all online users as if they were friends.
 
 </details>
 
@@ -86,16 +86,16 @@ is in maintenance or is eventually shutdown.
 <details>
 <summary>List of unimplemented features</summary>
 
-- Achievements: only the official server should be able to. Meeting the requirements of an achievement during a
+- ❌ **Achievements**: only the official server should be able to. Meeting the requirements of an achievement during a
   match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
   for more details).
-- Changing player profile icon: the default will always be used.
-- Leaderboards: will appear empty.
-- Player stats: will appear empty.
-- Clans: all players are without clans. Browsing clan will appear empty and creating one will always result in
+- ❌ Changing **player profile icon**: the default will always be used.
+- ❌ **Leaderboards**: will appear empty.
+- ❌ **Player stats**: will appear empty.
+- ❌ **Clans**: all players are outside clans. Browsing clan will appear empty and creating one will always result in
   error.
-- Lobby ban player: will appear like it works but doesn't.
-- Report/Block player: will appear like it works but doesn't.
+- ❌ **Lobby ban player**: will appear like it works but doesn't.
+- ❌ **Report/Block player**: will appear like it works but doesn't.
 
 *Note: Most of these do not apply to Age of Empires: Definitive Edition.*
 
@@ -107,13 +107,13 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- Windows:
+- **Windows**:
     - 10 (no S edition/mode).
     - (Storage) Server 2016.
     - 10 IoT (no Arm32).
     - Server IoT 2019.
-- Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
-- macOS: Big Sur (v11).
+- **Linux**: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
+- **macOS**: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -131,10 +131,10 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- Windows (no S edition/mode):
-    - 10 on x86-64 (recommended).
-    - 11 on ARM.
-- Linux:
+- **Windows** (no S edition/mode):
+    - **10** on x86-64 (recommended).
+    - **11** on ARM.
+- **Linux**:
     - Kernel 2.6.23 on x86-64 (recommended).
     - Kernel 3.1 on ARM64.
 
@@ -280,9 +280,9 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    will also need to allow the connections via the Microsoft Defender Firewall or any other.
 7. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
    launch
-   it will host the "server" and the rest will auto-discover and connect to it.
+   it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
 8. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
-   select **LAN** before creating the Lobby (AoE III) or select the "LAN" menu option (AoE I). In AoE I/II, setting it
+   select **LAN** before creating the Lobby (*AoE III*) or select the "LAN" menu option (*AoE I*). In *AoE I/II*, setting it
    to
    public
    visibility is recommended.
@@ -308,7 +308,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 1. **Download** the proper *launcher* asset from latest stable release
    from https://github.com/luskaner/ageLANServer/releases.
-3. If needed **edit the `launcher/resources/config.<game>.toml` file**. You will
+3. If needed **edit the `launcher/resources/config.<game>.toml` and/or `launcher/resources/config.toml` files**. You will
    need to edit the
    `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use
    a custom launcher for 100% offline play.
