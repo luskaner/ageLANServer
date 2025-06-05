@@ -1,3 +1,3 @@
 package launcher_common
 
-const ConfigRevertCmd = "Revert"
+const ConfigRevertCmd = "revert"
