@@ -5,11 +5,13 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"os"
+	"runtime"
 )
 
 func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
@@ -23,26 +25,69 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 				if canAdd != "false" {
 					cert := server.ReadCertificateFromServer(host)
 					if cert == nil {
-						fmt.Println("Failed to read certificate from " + host + ".")
+						printer.Println(
+							printer.Error,
+							printer.T("Failed to read certificate from "),
+							printer.TS(host, printer.LiteralStyle),
+							printer.T("."),
+						)
 						errorCode = internal.ErrReadCert
 						return
 					} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-						fmt.Println("The certificate for " + host + " does not match the server certificate.")
+						printer.Println(
+							printer.Error,
+							printer.T("The certificate for "),
+							printer.TS(host, printer.LiteralStyle),
+							printer.T(" does not match the "),
+							printer.TS("server", printer.ComponentStyle),
+							printer.T(" certificate."),
+						)
 						errorCode = internal.ErrCertMismatch
 						return
 					}
 					addCert = true
 				} else {
-					fmt.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
+					styledTexts := []*printer.StyledText{
+						printer.TS(host, printer.LiteralStyle),
+						printer.T(" must have been trusted manually. If you want it automatically, set "),
+						printer.TS("Config.CanTrustCertificate", printer.LiteralStyle),
+						printer.TS("local", printer.LiteralStyle),
+					}
+					if runtime.GOOS == "windows" {
+						styledTexts = append(
+							styledTexts,
+							printer.T(" or "),
+							printer.TS("user", printer.LiteralStyle),
+						)
+					}
+					styledTexts = append(styledTexts, printer.T("."))
+					printer.Println(
+						printer.Error,
+						styledTexts...,
+					)
 					errorCode = internal.ErrConfigCert
 					return
 				}
 			} else if cert := server.ReadCertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-				fmt.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
+				printer.Println(
+					printer.Error,
+					printer.T("The certificate for "),
+					printer.TS(host, printer.LiteralStyle),
+					printer.T(" does not match the "),
+					printer.TS("server", printer.ComponentStyle),
+					printer.T(" certificate (or could not be read)."),
+				)
 				errorCode = internal.ErrCertMismatch
 				return
 			} else if !server.LanServer(host, false) {
-				fmt.Println("Something went wrong, " + host + " does not point to a lan server.")
+				printer.Println(
+					printer.Error,
+					printer.T("Something went wrong, "),
+					printer.TS(host, printer.LiteralStyle),
+					printer.T(" does not point to a LAN "),
+					printer.TS("server", printer.ComponentStyle),
+					printer.T("."),
+				)
 				errorCode = internal.ErrServerConnectSecure
 				return
 			}
@@ -51,7 +96,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 	if !addCert {
 		return
 	}
-	var certMsg string
+	var certStyledTexts []*printer.StyledText
 	var addUserCertData []byte
 	var addLocalCertData []byte
 	if customCertFile {
@@ -64,14 +109,35 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		}
 		c.SetCertFilePath(certFile.Name())
 		addLocalCertData = serverCertificate.Raw
-		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
+		certStyledTexts = append(
+			certStyledTexts,
+			printer.T("Saving "),
+			printer.TS("server", printer.ComponentStyle),
+			printer.T(" certificate to file: "),
+			printer.TS(certFile.Name(), printer.FilePathStyle),
+		)
 	} else {
-		certMsg = fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
+		certStyledTexts = append(
+			certStyledTexts,
+			printer.T("Adding "),
+			printer.TS("server", printer.ComponentStyle),
+			printer.T(" certificate to "),
+			printer.TS(canAdd, printer.LiteralStyle),
+			printer.T(" store"),
+		)
 		if canAdd == "user" {
-			certMsg += ", accept the dialog"
+			certStyledTexts = append(
+				certStyledTexts,
+				printer.T(", accept the dialog"),
+			)
 		} else {
-			if _, _, err := launcher_common.ConfigAdminAgent(false); err != nil {
-				certMsg += `, authorize 'config-admin-agent' if needed`
+			if _, _, err := launcherCommon.ConfigAdminAgent(false); err != nil {
+				certStyledTexts = append(
+					certStyledTexts,
+					printer.T(", authorize "),
+					printer.TS("config-admin-agent", printer.ComponentStyle),
+					printer.T(" if needed"),
+				)
 			}
 		}
 		if canAdd == "local" {
@@ -80,31 +146,34 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 			addUserCertData = serverCertificate.Raw
 		}
 	}
-	certMsg += "..."
-	fmt.Println(certMsg)
+	certStyledTexts = append(certStyledTexts, printer.T("..."))
+	fmt.Print(printer.Gen(printer.Configuration, "", certStyledTexts...))
 	if result := executor.RunSetUp(&executor.RunSetUpOptions{AddUserCertData: addUserCertData, AddLocalCertData: addLocalCertData, CertFilePath: c.CertFilePath()}); !result.Success() {
-		if customCertFile {
-			fmt.Println("Failed to save certificate to file")
-		} else {
-			fmt.Println("Failed to trust certificate")
-		}
+		printer.PrintFailedResultError(result)
 		errorCode = internal.ErrConfigCertAdd
-		if result.Err != nil {
-			fmt.Println("Error message: " + result.Err.Error())
-		}
-		if result.ExitCode != common.ErrSuccess {
-			fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-		}
 		return
+	} else {
+		printer.PrintSucceeded()
 	}
 	if !customCertFile {
 		for _, host := range hosts {
 			if !server.CheckConnectionFromServer(host, false) {
-				fmt.Println(host + " must have been trusted automatically at this point.")
+				printer.Println(
+					printer.Error,
+					printer.TS(host, printer.LiteralStyle),
+					printer.T(" must have been trusted automatically at this point."),
+				)
 				errorCode = internal.ErrServerConnectSecure
 				return
 			} else if !server.LanServer(host, false) {
-				fmt.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
+				printer.Println(
+					printer.Error,
+					printer.T("Something went wrong, "),
+					printer.TS(host, printer.LiteralStyle),
+					printer.T(" does not point to a LAN "),
+					printer.TS("server", printer.ComponentStyle),
+					printer.T(" or there is a certificate issue."),
+				)
 				errorCode = internal.ErrTrustCert
 				return
 			}

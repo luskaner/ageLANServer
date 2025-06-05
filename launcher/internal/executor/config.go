@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 	"slices"
 )
@@ -103,10 +104,18 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 	if result.Success() {
 		revertArgs := launcherCommon.RevertFlags(options.revertFlagsOptions())
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
-			fmt.Println("Failed to store revert arguments, reverting setup...")
+			fmt.Print(
+				printer.Gen(
+					printer.Error,
+					"",
+					"Failed to store revert arguments, reverting setup... ",
+				),
+			)
 			result = RunRevert(revertArgs, false)
-			if !result.Success() {
-				fmt.Println("Failed to revert setup.")
+			if result.Success() {
+				printer.PrintSucceeded()
+			} else {
+				printer.PrintFailedResultError(result)
 			}
 			result.Err = err
 		}

@@ -39,4 +39,5 @@ const (
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
 	ErrInvalidIsolationWindowsUserProfilePath
+	ErrServerStartDeclined
 )

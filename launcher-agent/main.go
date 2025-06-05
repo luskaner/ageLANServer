@@ -46,7 +46,7 @@ func main() {
 				_ = lock.Unlock()
 				os.Exit(exitCode)
 			}()
-			launcherCommon.ConfigRevert(gameId, true, nil)
+			launcherCommon.ConfigRevert(gameId, true, nil, nil)
 			_ = launcherCommon.RunRevertCommand()
 			if serverExe != "-" {
 				_, _ = commonProcess.Kill(serverExe)

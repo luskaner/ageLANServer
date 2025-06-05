@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"github.com/luskaner/ageLANServer/common"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
 	"os"
@@ -21,7 +21,7 @@ func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
 }
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	ip, ok := launcher_common.HostOrIpToIps(host).Pop()
+	ip, ok := launcherCommon.HostOrIpToIps(host).Pop()
 	if !ok {
 		ip = host
 	}

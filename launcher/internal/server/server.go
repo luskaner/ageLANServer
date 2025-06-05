@@ -2,8 +2,10 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
@@ -11,7 +13,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"golang.org/x/net/ipv4"
 	"net"
 	"net/http"
@@ -25,11 +27,7 @@ import (
 var autoServerDir = []string{fmt.Sprintf(`%c%s%c`, filepath.Separator, common.Server, filepath.Separator), fmt.Sprintf(`%c..%c`, filepath.Separator, filepath.Separator), fmt.Sprintf(`%c..%c%s%c`, filepath.Separator, filepath.Separator, common.Server, filepath.Separator)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
-func StartServer(stop string, executable string, args []string, selectBestServerIP func(ips []string) (ok bool, ip string)) (result *commonExecutor.Result, executablePath string, ip string) {
-	executablePath = GetExecutablePath(executable)
-	if executablePath == "" {
-		return
-	}
+func StartServer(stop string, executablePath string, args []string, selectBestServerIP func(ips []string) (ok bool, ip string)) (result *commonExecutor.Result, ip string) {
 	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: stop != "true", Pid: true}.Exec()
 	if result.Success() {
 		var ok bool
@@ -51,10 +49,17 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 			}
 		}
 		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
+			fmt.Print(
+				printer.Gen(
+					printer.Error,
+					"",
+					printer.T("Could not connect after starting it, stopping it... "),
+				),
+			)
 			if err = commonProcess.KillProc(pid, proc); err != nil {
-				fmt.Println("Failed to stop 'server'")
-				fmt.Println("Error message: " + err.Error())
-				fmt.Println("You may try killing it manually. Kill process 'server' in your task manager.")
+				printer.PrintFailedError(err)
+			} else {
+				printer.PrintSucceeded()
 			}
 		}
 		result = nil
@@ -62,29 +67,23 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 	return
 }
 
-func GetExecutablePath(executable string) string {
-	if executable == "auto" {
-		ex, err := os.Executable()
-		if err != nil {
-			return ""
-		}
-		exePath := filepath.Dir(ex)
-		var f os.FileInfo
-		for _, dir := range autoServerDir {
-			dirPath := exePath + dir
-			for _, name := range autoServerName {
-				p := dirPath + name
-				if f, err = os.Stat(p); err == nil && !f.IsDir() {
-					return path.Clean(p)
-				}
-			}
-		}
+func ResolveExecutablePath() string {
+	ex, err := os.Executable()
+	if err != nil {
 		return ""
 	}
-	if exe, err := parse.Executable(executable, nil); err == nil {
-		return exe
+	exePath := filepath.Dir(ex)
+	var f os.FileInfo
+	for _, dir := range autoServerDir {
+		dirPath := exePath + dir
+		for _, name := range autoServerName {
+			p := dirPath + name
+			if f, err = os.Stat(p); err == nil && !f.IsDir() {
+				return path.Clean(p)
+			}
+		}
 	}
-	return executable
+	return ""
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
@@ -157,7 +156,7 @@ func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn 
 	return connections
 }
 
-func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*common.AnnounceMessage {
+func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int) map[uuid.UUID]*common.AnnounceMessage {
 	results := make(chan map[uuid.UUID]*common.AnnounceMessage)
 	connections := announcementConnections(multicastIPs, ports)
 	for _, conn := range connections {
@@ -166,11 +165,6 @@ func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*comm
 				_ = conn.Close()
 			}(conn)
 
-			err := conn.SetReadDeadline(time.Now().Add(15 * time.Second))
-			if err != nil {
-				return
-			}
-
 			packetBuffer := make([]byte, 65_536)
 			headerBuffer := make([]byte, len(common.AnnounceHeader))
 			var messageLenBuffer uint16
@@ -178,58 +172,72 @@ func LanServersAnnounced(multicastIPs []net.IP, ports []int) map[uuid.UUID]*comm
 			servers := make(map[uuid.UUID]*common.AnnounceMessage)
 			var n int
 			var serverAddr *net.UDPAddr
-
+		loop:
 			for {
-				_, serverAddr, err = conn.ReadFromUDP(packetBuffer)
-				if err != nil {
-					break
-				}
-				n = copy(headerBuffer, packetBuffer)
-				if n < len(common.AnnounceHeader) || string(headerBuffer) != common.AnnounceHeader {
-					continue
-				}
-				remainingPacketBuffer := packetBuffer[n:]
-				version := remainingPacketBuffer[:common.AnnounceVersionLength][0]
-				remainingPacketBuffer = remainingPacketBuffer[common.AnnounceVersionLength:]
-				var id uuid.UUID
-				id, err = uuid.FromBytes(remainingPacketBuffer[:common.AnnounceIdLength])
-				if err != nil {
-					continue
-				}
-				remainingPacketBuffer = remainingPacketBuffer[common.AnnounceIdLength:]
-				err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
-				if err != nil {
-					continue
-				}
-				remainingPacketBuffer = remainingPacketBuffer[2:]
-				messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
-				var data interface{}
-				switch version {
-				case common.AnnounceVersion0:
-					var msg common.AnnounceMessageData000
-					dec := gob.NewDecoder(messageBuffer)
-					if err = dec.Decode(&msg); err == nil {
-						data = msg
+				select {
+				case <-ctx.Done():
+					break loop
+				default:
+					err := conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+					if err != nil {
+						return
 					}
-				case common.AnnounceVersion1:
-					var msg common.AnnounceMessageData001
-					dec := gob.NewDecoder(messageBuffer)
-					if err = dec.Decode(&msg); err == nil {
-						data = msg
+					_, serverAddr, err = conn.ReadFromUDP(packetBuffer)
+
+					if err != nil {
+						var netErr net.Error
+						if errors.As(err, &netErr) && netErr.Timeout() {
+							continue
+						}
 					}
-				}
-				ip := serverAddr.IP.String()
-				var m *common.AnnounceMessage
-				var ok bool
-				if m, ok = servers[id]; !ok {
-					m = &common.AnnounceMessage{
-						Version: version,
-						Data:    data,
-						Ips:     mapset.NewThreadUnsafeSet[string](),
+
+					n = copy(headerBuffer, packetBuffer)
+					if n < len(common.AnnounceHeader) || string(headerBuffer) != common.AnnounceHeader {
+						continue
 					}
-					servers[id] = m
+					remainingPacketBuffer := packetBuffer[n:]
+					version := remainingPacketBuffer[:common.AnnounceVersionLength][0]
+					remainingPacketBuffer = remainingPacketBuffer[common.AnnounceVersionLength:]
+					var id uuid.UUID
+					id, err = uuid.FromBytes(remainingPacketBuffer[:common.AnnounceIdLength])
+					if err != nil {
+						continue
+					}
+					remainingPacketBuffer = remainingPacketBuffer[common.AnnounceIdLength:]
+					err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
+					if err != nil {
+						continue
+					}
+					remainingPacketBuffer = remainingPacketBuffer[2:]
+					messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
+					var data interface{}
+					switch version {
+					case common.AnnounceVersion0:
+						var msg common.AnnounceMessageData000
+						dec := gob.NewDecoder(messageBuffer)
+						if err = dec.Decode(&msg); err == nil {
+							data = msg
+						}
+					case common.AnnounceVersion1:
+						var msg common.AnnounceMessageData001
+						dec := gob.NewDecoder(messageBuffer)
+						if err = dec.Decode(&msg); err == nil {
+							data = msg
+						}
+					}
+					ip := serverAddr.IP.String()
+					var m *common.AnnounceMessage
+					var ok bool
+					if m, ok = servers[id]; !ok {
+						m = &common.AnnounceMessage{
+							Version: version,
+							Data:    data,
+							Ips:     mapset.NewThreadUnsafeSet[string](),
+						}
+						servers[id] = m
+					}
+					m.Ips.Add(ip)
 				}
-				m.Ips.Add(ip)
 			}
 
 			results <- servers

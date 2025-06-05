@@ -1,7 +1,6 @@
 package launcher_common
 
 import (
-	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
@@ -71,16 +70,39 @@ func RevertFlags(options *RevertFlagsOptions) []string {
 	return args
 }
 
-func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string, bin bool) (result *exec.Result)) bool {
+type ConfigRevertPrinter struct {
+	Revert              func(all bool, requiresRevertAdminElevation bool, stopAgent bool)
+	RevertFlagsErr      func(err error)
+	ClearRevertFlagsErr func(err error)
+	RevertResult        func(result *exec.Result)
+}
+
+func stubConfigRevertPrinter() *ConfigRevertPrinter {
+	return &ConfigRevertPrinter{
+		Revert:              func(_, _, _ bool) {},
+		RevertFlagsErr:      func(_ error) {},
+		ClearRevertFlagsErr: func(_ error) {},
+		RevertResult:        func(_ *exec.Result) {},
+	}
+}
+
+func ConfigRevert(
+	gameId string,
+	binCannotElevate bool,
+	runRevertFn func(flags []string, bin bool) (result *exec.Result),
+	printer *ConfigRevertPrinter,
+) bool {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
+	if printer == nil {
+		printer = stubConfigRevertPrinter()
+	}
 	err, revertFlags := RevertConfigStore.Load()
 	var stopAgent bool
-	if _, _, errAgent := ConfigAdminAgent(headless); errAgent == nil {
+	if _, _, errAgent := ConfigAdminAgent(binCannotElevate); errAgent == nil {
 		stopAgent = true
 	}
-	var revertLine string
 	allRevertFlags := func(stopAgent bool) []string {
 		return RevertFlags(&RevertFlagsOptions{
 			Game:            gameId,
@@ -92,79 +114,29 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 			StopAgent:       stopAgent,
 		})
 	}
-
 	if err != nil || (len(revertFlags) == 0 && stopAgent) {
 		revertFlags = allRevertFlags(stopAgent)
 	}
 	if len(revertFlags) > 0 {
-		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
-		if headless && requiresRevertAdminElevation {
+		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, binCannotElevate)
+		if binCannotElevate && requiresRevertAdminElevation {
 			return false
 		}
-		if !headless {
-			revertLine = "Reverting "
+		var all bool
+		if err != nil {
+			all = true
+			printer.RevertFlagsErr(err)
 		}
-		if err != nil && !headless {
-			fmt.Println("Failed to get revert flags: ", err)
-			revertLine += "all possible "
+		if err = RevertConfigStore.Delete(); err != nil {
+			printer.ClearRevertFlagsErr(err)
 		}
-		if err = RevertConfigStore.Delete(); err != nil && !headless {
-			fmt.Println("Failed to clear revert flags: ", err)
-		}
-
-		if !headless {
-			revertLine += "configuration"
-			fmt.Print(revertLine)
-			if requiresRevertAdminElevation {
-				fmt.Print(`, authorize 'config-admin' if needed`)
-			} else if stopAgent {
-				fmt.Print(` and stopping its agent`)
-			}
-			fmt.Println(`...`)
-		}
-
+		printer.Revert(all, requiresRevertAdminElevation, stopAgent)
 		if stopAgent && !slices.Contains(revertFlags, "-g") {
 			revertFlags = append(revertFlags, "-g")
 		}
-		success := runRevertFn(revertFlags, headless).Success()
-		if !success && !headless {
-			fmt.Print("Failed to cleanup configuration")
-			if !executor.IsAdmin() {
-				fmt.Print(", try to do it manually")
-			}
-			fmt.Println(".")
-		}
-		var pidPath string
-		var proc *os.Process
-		if pidPath, proc, err = ConfigAdminAgent(false); err == nil {
-			if executor.IsAdmin() {
-				if !headless {
-					fmt.Println("Killing 'config-admin-agent' process...")
-				}
-				if err = commonProcess.KillProc(pidPath, proc); err == nil {
-					if !headless {
-						fmt.Println("Successfully killed 'config-admin-agent' process.")
-						fmt.Println("Trying to revert all configuration...")
-					}
-					success = runRevertFn(allRevertFlags(false), headless).Success()
-					if success {
-						return true
-					}
-					if !headless {
-						fmt.Println("Failed to cleanup configuration even as admin, try to do it manually.")
-					}
-				} else {
-					if !headless {
-						fmt.Println("Failed to kill 'config-admin-agent' process: ", err)
-					}
-				}
-			} else if !headless {
-				fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
-			}
-			return false
-		} else {
-			return success
-		}
+		result := runRevertFn(revertFlags, binCannotElevate)
+		printer.RevertResult(result)
+		return result.Success()
 	}
 	return true
 }

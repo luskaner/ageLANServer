@@ -27,7 +27,7 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		_ = launcherCommon.RunRevertCommand()
 	}()
 	defer func() {
-		launcherCommon.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameId, true, nil, nil)
 	}()
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {
