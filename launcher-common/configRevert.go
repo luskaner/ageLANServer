@@ -1,7 +1,6 @@
 package launcher_common
 
 import (
-	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
@@ -14,116 +13,143 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, stopAgent bool, failfast bool) []string {
+type RevertFlagsOptions struct {
+	Game                   string
+	HostFilePath           string
+	UnmapIP                bool
+	UnmapCDN               bool
+	CertFilePath           string
+	RemoveUserCert         bool
+	RemoveLocalCert        bool
+	WindowsUserProfilePath string
+	RestoreMetadata        bool
+	StopAgent              bool
+	Failfast               bool
+}
+
+func RevertFlags(options *RevertFlagsOptions) []string {
 	args := make([]string, 0)
-	if game != "" {
+	if options.Game != "" {
 		args = append(args, "-e")
-		args = append(args, game)
+		args = append(args, options.Game)
 	}
-	if stopAgent {
+	if options.StopAgent {
 		args = append(args, "-g")
 	}
-	if !failfast {
+	if !options.Failfast {
 		args = append(args, "-a")
 	} else {
-		if unmapIPs {
+		if options.UnmapIP {
 			args = append(args, "-i")
 		}
-		if removeUserCert {
+		if options.RemoveUserCert {
 			args = append(args, "-u")
 		}
-		if removeLocalCert {
+		if options.RemoveLocalCert {
 			args = append(args, "-l")
 		}
-		if restoreMetadata {
+		if options.RestoreMetadata {
 			args = append(args, "-m")
 		}
-		if restoreProfiles {
-			args = append(args, "-p")
-		}
-		if unmapCDN {
+		if options.UnmapCDN {
 			args = append(args, "-c")
 		}
 	}
-	if hostFilePath != "" {
+	if options.HostFilePath != "" {
 		args = append(args, "-o")
-		args = append(args, hostFilePath)
+		args = append(args, options.HostFilePath)
 	}
-	if certFilePath != "" {
+	if options.CertFilePath != "" {
 		args = append(args, "-t")
-		args = append(args, certFilePath)
+		args = append(args, options.CertFilePath)
+	}
+	if options.WindowsUserProfilePath != "" {
+		args = append(args, "-s")
+		args = append(args, options.WindowsUserProfilePath)
 	}
 	return args
 }
 
-func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string, bin bool) (result *exec.Result)) bool {
+type ConfigRevertPrinter struct {
+	Revert              func(all bool, requiresRevertAdminElevation bool, stopAgent bool)
+	RevertFlagsErr      func(err error)
+	ClearRevertFlagsErr func(err error)
+	RevertResult        func(result *exec.Result)
+}
+
+func stubConfigRevertPrinter() *ConfigRevertPrinter {
+	return &ConfigRevertPrinter{
+		Revert:              func(_, _, _ bool) {},
+		RevertFlagsErr:      func(_ error) {},
+		ClearRevertFlagsErr: func(_ error) {},
+		RevertResult:        func(_ *exec.Result) {},
+	}
+}
+
+func ConfigRevert(
+	gameId string,
+	binCannotElevate bool,
+	runRevertFn func(flags []string, bin bool) (result *exec.Result),
+	printer *ConfigRevertPrinter,
+) bool {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
+	if printer == nil {
+		printer = stubConfigRevertPrinter()
+	}
 	err, revertFlags := RevertConfigStore.Load()
-	if err != nil || len(revertFlags) > 0 {
-		var stopAgent bool
-		var revertLine string
-		if !headless {
-			revertLine = "Reverting "
+	var stopAgent bool
+	if _, _, errAgent := ConfigAdminAgent(binCannotElevate); errAgent == nil {
+		stopAgent = true
+	}
+	allRevertFlags := func(stopAgent bool) []string {
+		return RevertFlags(&RevertFlagsOptions{
+			Game:            gameId,
+			UnmapIP:         true,
+			UnmapCDN:        true,
+			RemoveUserCert:  runtime.GOOS == "windows",
+			RemoveLocalCert: true,
+			RestoreMetadata: true,
+			StopAgent:       stopAgent,
+		})
+	}
+	if err != nil || (len(revertFlags) == 0 && stopAgent) {
+		revertFlags = allRevertFlags(stopAgent)
+	}
+	if len(revertFlags) > 0 {
+		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, binCannotElevate)
+		if binCannotElevate && requiresRevertAdminElevation {
+			return false
 		}
+		var all bool
 		if err != nil {
-			if !headless {
-				fmt.Println("Failed to get revert flags: ", err)
-				revertLine += "all possible "
-			}
-			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", stopAgent, false)
-		} else if !headless && slices.Contains(revertFlags, "-g") {
-			stopAgent = true
+			all = true
+			printer.RevertFlagsErr(err)
 		}
-
 		if err = RevertConfigStore.Delete(); err != nil {
-			if !headless {
-				fmt.Println("Failed to clear revert flags: ", err)
-			}
+			printer.ClearRevertFlagsErr(err)
 		}
-
-		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
-		if !headless {
-			revertLine += "configuration"
-			fmt.Print(revertLine)
-			if requiresRevertAdminElevation {
-				fmt.Print(`, authorize 'config-admin' if needed`)
-			} else if stopAgent {
-				fmt.Print(` and stopping its agent`)
-			}
-			fmt.Println(`...`)
-		} else if requiresRevertAdminElevation {
-			return false
+		printer.Revert(all, requiresRevertAdminElevation, stopAgent)
+		if stopAgent && !slices.Contains(revertFlags, "-g") {
+			revertFlags = append(revertFlags, "-g")
 		}
-
-		if revertResult := runRevertFn(revertFlags, headless); !revertResult.Success() {
-			if !headless {
-				if ConfigAdminAgentRunning(false) {
-					fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
-				} else {
-					fmt.Println("Failed to cleanup configuration, try to do it manually.")
-				}
-			}
-			return false
-		}
+		result := runRevertFn(revertFlags, binCannotElevate)
+		printer.RevertResult(result)
+		return result.Success()
 	}
 	return true
 }
 
-func ConfigAdminAgentRunning(bin bool) bool {
-	if _, proc, err := commonProcess.Process(common.GetExeFileName(bin, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
-		return true
-	}
-	return false
+func ConfigAdminAgent(bin bool) (pidPath string, proc *os.Process, err error) {
+	return commonProcess.Process(common.GetExeFileName(bin, common.LauncherConfigAdminAgent))
 }
 
 func RequiresRevertAdminElevation(args []string, bin bool) bool {
 	if executor.IsAdmin() {
 		return false
 	}
-	if ConfigAdminAgentRunning(bin) {
+	if _, _, err := ConfigAdminAgent(bin); err == nil {
 		return false
 	}
 	if (slices.Contains(args, "-l") &&
@@ -133,13 +159,6 @@ func RequiresRevertAdminElevation(args []string, bin bool) bool {
 		return true
 	}
 	return false
-}
-
-func RequiresStopConfigAgent(args []string) bool {
-	return !executor.IsAdmin() && (slices.Contains(args, "-g") || (slices.Contains(args, "-l") &&
-		!slices.Contains(args, "-t")) ||
-		(((slices.Contains(args, "-c")) || slices.Contains(args, "-i")) &&
-			!slices.Contains(args, "-o")))
 }
 
 func RunRevert(flags []string, bin bool) (result *exec.Result) {

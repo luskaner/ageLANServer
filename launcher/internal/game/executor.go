@@ -3,6 +3,7 @@ package game
 import (
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher-common/steam"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"os"
 )
 
@@ -91,6 +92,9 @@ func MakeExecutor(gameId string, executable string) Executor {
 				return executor
 			}
 		default:
+			if executableParsed, err := parse.Executable(executable, nil); err == nil {
+				executable = executableParsed
+			}
 			if isInstalledCustom(executable) {
 				return CustomExecutor{Executable: executable}
 			}

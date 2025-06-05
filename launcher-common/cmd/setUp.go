@@ -7,17 +7,17 @@ import (
 	"net"
 )
 
-var MapIPs []net.IP
+var MapIP net.IP
 var AddLocalCertData []byte
 var MapCDN bool
 
 func InitSetUp(cmd *cobra.Command) {
-	cmd.Flags().IPSliceVarP(
-		&MapIPs,
+	cmd.Flags().IPVarP(
+		&MapIP,
 		"ip",
 		"i",
 		nil,
-		"IP to resolve in local DNS server (up to 9)",
+		"IP to resolve in local DNS server",
 	)
 	cmd.Flags().BoolVarP(
 		&MapCDN,
