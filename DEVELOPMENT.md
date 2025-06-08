@@ -4,7 +4,7 @@ Copy `go.work.example` to `go.work`
 
 ### System requirements
 
-- OS requirements correspond to the server/launcher ones. Cross-compilation works on all out-the-box.
+- OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
 - [Go 1.23](https://go.dev/dl/).
 - [Git](https://git-scm.com/downloads).
 - [Task](https://taskfile.dev/installation/).
@@ -35,3 +35,5 @@ Run ```task build```.
 2. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
 3. Copy .env.example to .env and set ```GPG_FINGERPRINT``` to the fingerprint of the key.
 4. Finally run ```task release```
+
+*Note: You will also need a local tag in semantic form like vX.Y.Z*

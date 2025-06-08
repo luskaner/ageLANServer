@@ -14,7 +14,7 @@ require (
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250517201605-76715e6a0d9c
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	golang.org/x/net v0.40.0
+	golang.org/x/net v0.41.0
 	golang.org/x/sys v0.33.0
 	mvdan.cc/sh/v3 v3.11.0
 )
@@ -57,8 +57,8 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
