@@ -6,14 +6,11 @@ import (
 	"strconv"
 )
 
-func RunAgent(game string, steamProcess bool, xboxProcess bool, serverExe string, broadCastBattleServer bool) (result *exec.Result) {
-	if serverExe == "" {
-		serverExe = "-"
-	}
+func RunAgent(game string, steamProcess bool, xboxProcess bool, serverPid int, broadCastBattleServer bool) (result *exec.Result) {
 	args := []string{
 		strconv.FormatBool(steamProcess),
 		strconv.FormatBool(xboxProcess),
-		serverExe,
+		strconv.FormatInt(int64(serverPid), 10),
 		strconv.FormatBool(broadCastBattleServer),
 		game,
 	}

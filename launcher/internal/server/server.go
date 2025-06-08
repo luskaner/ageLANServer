@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -15,23 +16,30 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"golang.org/x/net/ipv4"
+	"io"
 	"net"
 	"net/http"
 	"net/netip"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"time"
 )
 
 var autoServerDir = []string{fmt.Sprintf(`%c%s%c`, filepath.Separator, common.Server, filepath.Separator), fmt.Sprintf(`%c..%c`, filepath.Separator, filepath.Separator), fmt.Sprintf(`%c..%c%s%c`, filepath.Separator, filepath.Separator, common.Server, filepath.Separator)}
 var autoServerName = []string{common.GetExeFileName(true, common.Server)}
 
-func StartServer(stop string, executablePath string, args []string, selectBestServerIP func(ips []string) (ok bool, ip string)) (result *commonExecutor.Result, ip string) {
+type MesuredIpAddress struct {
+	Ip      string
+	Latency time.Duration
+}
+
+func StartServer(gameId string, id uuid.UUID, stop string, executablePath string, args []string) (result *commonExecutor.Result, ip string) {
 	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: stop != "true", Pid: true}.Exec()
 	if result.Success() {
-		var ok bool
-		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).ToSlice()
+		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String())
 		// Wait up to 30s for server to start
 		timeout := time.After(30 * time.Second)
 	loop:
@@ -40,15 +48,16 @@ func StartServer(stop string, executablePath string, args []string, selectBestSe
 			case <-timeout:
 				break loop
 			default:
-				if ok, ip = selectBestServerIP(localIPs); ok {
+				if ips, data := FilterServerIPs(id, gameId, localIPs); data != nil {
+					ip = ips[0].Ip
 					return
 				}
-				if _, _, err := commonProcess.Process(executablePath); err != nil {
+				if _, err := commonProcess.FindProcess(result.Pid); err != nil {
 					break loop
 				}
 			}
 		}
-		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
+		if proc, err := commonProcess.FindProcess(result.Pid); err == nil {
 			fmt.Print(
 				printer.Gen(
 					printer.Error,
@@ -56,7 +65,7 @@ func StartServer(stop string, executablePath string, args []string, selectBestSe
 					printer.T("Could not connect after starting it, stopping it... "),
 				),
 			)
-			if err = commonProcess.KillProc(pid, proc); err != nil {
+			if err = commonProcess.KillProc("", proc); err != nil {
 				printer.PrintFailedError(err)
 			} else {
 				printer.PrintSucceeded()
@@ -86,20 +95,93 @@ func ResolveExecutablePath() string {
 	return ""
 }
 
-func LanServer(host string, insecureSkipVerify bool) bool {
-	ip, ok := launcherCommon.HostOrIpToIps(host).Pop()
-	if !ok {
-		ip = host
+func LanServerHost(id uuid.UUID, gameId string, host string, insecureSkipVerify bool) (ok bool) {
+	ips := launcherCommon.HostOrIpToIps(host)
+	if ips.IsEmpty() {
+		return
+	}
+	for ip := range ips.Iter() {
+		if ok, _, _ = LanServerIP(id, gameId, ip, host, insecureSkipVerify); !ok {
+			return
+		}
+	}
+	return true
+}
+
+func LanServerIP(id uuid.UUID, gameId string, ip string, serverName string, insecureSkipVerify bool) (ok bool, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
+	if id == uuid.Nil {
+		return
 	}
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(host, insecureSkipVerify),
+		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify),
 	}
 	client := &http.Client{Transport: tr}
-	resp, err := client.Head(fmt.Sprintf("https://%s/test", ip))
+	start := time.Now()
+	resp, err := client.Get(fmt.Sprintf("https://%s/test", ip))
+	latency = time.Since(start)
 	if err != nil {
-		return false
+		return
 	}
-	return resp.StatusCode == http.StatusOK
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+	certificates := resp.TLS.PeerCertificates
+	if len(certificates) == 0 {
+		return
+	}
+	// Check if the server is v1.7.3 or higher (minimum version supported)
+	if certificates[0].Subject.CommonName != common.Name {
+		return
+	}
+	version := resp.Header.Get(common.VersionHeader)
+	serverId := resp.Header.Get(common.IdHeader)
+	// Check if the server is v1.7.3 - v1.8.2
+	if version == "" && serverId == "" {
+		ok = true
+		return
+	}
+	versionInt, _ := strconv.Atoi(version)
+	if versionInt > AnnounceVersionSupportedLatest {
+		return
+	}
+	var serverIdUuid uuid.UUID
+	serverIdUuid, err = uuid.Parse(serverId)
+	if err != nil {
+		return
+	}
+	if id != serverIdUuid {
+		return
+	}
+	data = &AnnounceMessageDataSupportedLatest{}
+	if err = json.NewDecoder(resp.Body).Decode(data); err != nil {
+		return
+	}
+	if !slices.Contains(data.GameIds, gameId) {
+		return
+	}
+	ok = true
+	return
+}
+
+func FilterServerIPs(id uuid.UUID, gameId string, possibleIps mapset.Set[string]) (measuredIpAddresses []MesuredIpAddress, data *AnnounceMessageDataSupportedLatest) {
+	for curIp := range possibleIps.Iter() {
+		if ok, latency, tmpData := LanServerIP(id, gameId, curIp, curIp, true); ok {
+			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
+				Ip:      curIp,
+				Latency: latency,
+			})
+			if data == nil {
+				data = tmpData
+			}
+		}
+	}
+	slices.SortStableFunc(measuredIpAddresses, func(a, b MesuredIpAddress) int {
+		return int(a.Latency - b.Latency)
+	})
+	return
 }
 
 func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn {
@@ -156,8 +238,15 @@ func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn 
 	return connections
 }
 
-func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int) map[uuid.UUID]*common.AnnounceMessage {
-	results := make(chan map[uuid.UUID]*common.AnnounceMessage)
+func decodeMessage[T any](buff *bytes.Buffer) T {
+	var msg T
+	dec := gob.NewDecoder(buff)
+	_ = dec.Decode(&msg)
+	return msg
+}
+
+func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int) map[uuid.UUID]*AnnounceMessage {
+	results := make(chan map[uuid.UUID]*AnnounceMessage)
 	connections := announcementConnections(multicastIPs, ports)
 	for _, conn := range connections {
 		go func() {
@@ -169,7 +258,7 @@ func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int
 			headerBuffer := make([]byte, len(common.AnnounceHeader))
 			var messageLenBuffer uint16
 			var messageBuffer *bytes.Buffer
-			servers := make(map[uuid.UUID]*common.AnnounceMessage)
+			servers := make(map[uuid.UUID]*AnnounceMessage)
 			var n int
 			var serverAddr *net.UDPAddr
 		loop:
@@ -196,40 +285,37 @@ func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int
 						continue
 					}
 					remainingPacketBuffer := packetBuffer[n:]
-					version := remainingPacketBuffer[:common.AnnounceVersionLength][0]
-					remainingPacketBuffer = remainingPacketBuffer[common.AnnounceVersionLength:]
+					version := remainingPacketBuffer[:AnnounceVersionLength][0]
+					remainingPacketBuffer = remainingPacketBuffer[AnnounceVersionLength:]
 					var id uuid.UUID
-					id, err = uuid.FromBytes(remainingPacketBuffer[:common.AnnounceIdLength])
+					id, err = uuid.FromBytes(remainingPacketBuffer[:AnnounceIdLength])
 					if err != nil {
 						continue
 					}
-					remainingPacketBuffer = remainingPacketBuffer[common.AnnounceIdLength:]
-					err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
-					if err != nil {
-						continue
-					}
-					remainingPacketBuffer = remainingPacketBuffer[2:]
-					messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
 					var data interface{}
-					switch version {
-					case common.AnnounceVersion0:
-						var msg common.AnnounceMessageData000
-						dec := gob.NewDecoder(messageBuffer)
-						if err = dec.Decode(&msg); err == nil {
-							data = msg
+					if version < common.AnnounceVersion2 {
+						remainingPacketBuffer = remainingPacketBuffer[AnnounceIdLength:]
+						err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
+						if err != nil {
+							continue
 						}
-					case common.AnnounceVersion1:
-						var msg common.AnnounceMessageData001
-						dec := gob.NewDecoder(messageBuffer)
-						if err = dec.Decode(&msg); err == nil {
-							data = msg
+						remainingPacketBuffer = remainingPacketBuffer[2:]
+						messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
+
+						switch version {
+						case common.AnnounceVersion0:
+							data = decodeMessage[common.AnnounceMessageData000](messageBuffer)
+						case common.AnnounceVersion1:
+							data = decodeMessage[common.AnnounceMessageData001](messageBuffer)
+						default:
+							data = nil
 						}
 					}
 					ip := serverAddr.IP.String()
-					var m *common.AnnounceMessage
+					var m *AnnounceMessage
 					var ok bool
 					if m, ok = servers[id]; !ok {
-						m = &common.AnnounceMessage{
+						m = &AnnounceMessage{
 							Version: version,
 							Data:    data,
 							Ips:     mapset.NewThreadUnsafeSet[string](),
@@ -244,7 +330,7 @@ func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int
 		}()
 	}
 
-	servers := make(map[uuid.UUID]*common.AnnounceMessage)
+	servers := make(map[uuid.UUID]*AnnounceMessage)
 	for range ports {
 		for id, server := range <-results {
 			if _, ok := servers[id]; !ok {

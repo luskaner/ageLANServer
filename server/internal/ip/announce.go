@@ -51,7 +51,7 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 		}
 	}(connections)
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(common.AnnouncePeriod)
 	defer ticker.Stop()
 
 	var buf bytes.Buffer

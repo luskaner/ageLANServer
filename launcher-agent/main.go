@@ -29,7 +29,10 @@ func main() {
 	if runtime.GOOS == "windows" {
 		xboxProcess, _ = strconv.ParseBool(os.Args[2])
 	}
-	serverExe := os.Args[3]
+	var serverPid int
+	if serverPidInt64, err := strconv.ParseInt(os.Args[3], 10, 32); err == nil {
+		serverPid = int(serverPidInt64)
+	}
 	var broadcastBattleServer bool
 	if runtime.GOOS == "windows" {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
@@ -48,12 +51,12 @@ func main() {
 			}()
 			launcherCommon.ConfigRevert(gameId, true, nil, nil)
 			_ = launcherCommon.RunRevertCommand()
-			if serverExe != "-" {
-				_, _ = commonProcess.Kill(serverExe)
+			if serverPid != 0 {
+				_ = commonProcess.KillPid(serverPid)
 			}
 		}
 	}()
-	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, &exitCode)
+	watch.Watch(gameId, steamProcess, xboxProcess, serverPid, broadcastBattleServer, &exitCode)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

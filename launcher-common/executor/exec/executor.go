@@ -25,7 +25,7 @@ type Options struct {
 type Result struct {
 	Err      error
 	ExitCode int
-	Pid      uint32
+	Pid      int
 }
 
 func (result *Result) Success() bool {
@@ -52,7 +52,7 @@ func (options Options) standardExec() (result *Result) {
 		result.ExitCode = cmd.ProcessState.ExitCode()
 	}
 	if options.Pid && cmd.ProcessState == nil {
-		result.Pid = uint32(cmd.Process.Pid)
+		result.Pid = cmd.Process.Pid
 	}
 	if err != nil {
 		var exitError *exec.ExitError

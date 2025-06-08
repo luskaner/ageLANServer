@@ -53,7 +53,7 @@ func (options Options) exec() (result *Result) {
 			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, options.File, !options.UseWorkingPath, options.Pid, showWindowInt, options.Args...)
 			result.Err = err
 			if options.Pid {
-				result.Pid = pid
+				result.Pid = int(pid)
 			}
 			if options.ExitCode {
 				result.ExitCode = exitCode

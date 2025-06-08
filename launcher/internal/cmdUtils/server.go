@@ -17,106 +17,57 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"net"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type processedServer struct {
-	ip          string
+	server.MesuredIpAddress
+	id          uuid.UUID
 	description string
 }
 
-func (s *processedServer) Option() huh.Option[string] {
-	return huh.Option[string]{
-		Value: s.description,
-		Key:   s.ip,
+func (s *processedServer) Option() huh.Option[uuid.UUID] {
+	return huh.Option[uuid.UUID]{
+		Key:   s.description,
+		Value: s.id,
 	}
 }
 
-func SelectBestServerIp(ips []string) (ok bool, ip string) {
-	var successIps []net.IP
-
-	for _, curIp := range ips {
-		if server.LanServer(curIp, true) {
-			parsedIp := net.ParseIP(curIp)
-			if parsedIp.IsLoopback() {
-				return true, curIp
-			}
-			successIps = append(successIps, parsedIp.To4())
-		}
-	}
-
-	countSuccessIps := len(successIps)
-	if countSuccessIps == 0 {
-		return
-	}
-
-	ok = true
-	ip = successIps[0].String()
-	interfaces, err := net.Interfaces()
-
-	if err != nil {
-		return
-	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-		addrs, err = i.Addrs()
-		if err != nil {
+func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
+	var processed []*processedServer
+	for serverId, data := range servers {
+		measuredIPs, internalData := server.FilterServerIPs(serverId, gameId, data.Ips)
+		if internalData == nil {
 			continue
 		}
-		for _, addr := range addrs {
-			v, addrOk := addr.(*net.IPNet)
-			if !addrOk {
+		// If the server is v1.7.3 - v1.8.2, the announcement data is only in the announcement itself.
+		if data.Version == common.AnnounceVersion1 {
+			convertedData, ok := data.Data.(common.AnnounceMessageData001)
+			if !ok {
 				continue
 			}
-
-			for _, curIp := range successIps {
-				if v.Contains(curIp) {
-					ip = curIp.String()
-					return
-				}
+			internalData = &common.AnnounceMessageData002{
+				AnnounceMessageData001: common.AnnounceMessageData001{
+					GameIds: convertedData.GameIds,
+				},
+				Version: "v1.7.3 - v1.8.2",
 			}
+		} else if internalData.Version == "development" {
+			internalData.Version = "development (v1.9.0 - )"
 		}
-	}
-
-	return
-}
-
-func processedServers(gameId string, servers map[uuid.UUID]*common.AnnounceMessage) []*processedServer {
-	var processed []*processedServer
-	for _, data := range servers {
-		// Announce version 0 means not using the new domain.
-		if data.Version < common.AnnounceVersion1 {
-			continue
-		}
-		// Check the server is running with game support
-		announceData := data.Data.(common.AnnounceMessageData001)
-		gameIdSet := mapset.NewThreadUnsafeSet[string](announceData.GameIds...)
-		if !gameIdSet.ContainsOne(gameId) {
-			continue
-		}
-		// Check we can connect to the server
-		ok, bestIp := SelectBestServerIp(data.Ips.ToSlice())
-		if !ok {
-			continue
-		}
-		// Announce version 1 could be using the new domain or the old, we need to check it
-		serverCert := server.ReadCertificateFromServer(bestIp)
-		if serverCert == nil || serverCert.Subject.CommonName != common.Name {
-			continue
-		}
+		bestAddress := measuredIPs[0]
 		var bestHostsSlice []string
-		bestHosts := launcherCommon.IpToHosts(bestIp)
+		bestHosts := launcherCommon.IpToHosts(bestAddress.Ip)
 		var alternativeIpSlice []string
 		var alternativeHostsSlice []string
 		alternativeHosts := mapset.NewThreadUnsafeSet[string]()
-		for foundIp := range data.Ips.Iter() {
-			if foundIp != bestIp {
-				alternativeHosts.Append(launcherCommon.IpToHosts(foundIp).Difference(bestHosts).ToSlice()...)
-				alternativeIpSlice = append(alternativeIpSlice, foundIp)
-			}
+		for _, alternativeAddress := range measuredIPs[1:] {
+			alternativeHosts.Append(launcherCommon.IpToHosts(alternativeAddress.Ip).Difference(bestHosts).ToSlice()...)
+			alternativeIpSlice = append(alternativeIpSlice, alternativeAddress.Ip)
 		}
 		sort.Strings(alternativeIpSlice)
 		if !alternativeHosts.IsEmpty() {
@@ -127,7 +78,7 @@ func processedServers(gameId string, servers map[uuid.UUID]*common.AnnounceMessa
 			bestHostsSlice = bestHosts.ToSlice()
 			sort.Strings(bestHostsSlice)
 		}
-		description := lipgloss.NewStyle().Bold(true).Render(bestIp)
+		description := lipgloss.NewStyle().Bold(true).Render(bestAddress.Ip)
 		if len(alternativeIpSlice) > 1 {
 			description += ", "
 			description += strings.Join(alternativeIpSlice, ", ")
@@ -148,16 +99,30 @@ func processedServers(gameId string, servers map[uuid.UUID]*common.AnnounceMessa
 			}
 			description += ")"
 		}
+		description += " | " + printer.Gen(
+			printer.Speed,
+			"",
+			printer.TS(
+				fmt.Sprintf("%d ms", bestAddress.Latency.Truncate(time.Millisecond).Milliseconds()),
+				printer.LiteralStyle,
+			),
+		)
+		description += " | " + internalData.Version
 		processed = append(processed, &processedServer{
-			ip:          bestIp,
-			description: description,
+			id:               serverId,
+			MesuredIpAddress: bestAddress,
+			description:      description,
 		})
 	}
+	slices.SortStableFunc(processed, func(a, b *processedServer) int {
+		return int(a.Latency - b.Latency)
+	})
 	return processed
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel context.CancelFunc, gameId string, multicastIPs []net.IP, ports []int) (errorCode int, ip string) {
+func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel context.CancelFunc, gameId string, startServerId uuid.UUID, multicastIPs []net.IP, ports []int) (errorCode int, id uuid.UUID, ip string) {
 	defer ctxCancel()
+	id = startServerId
 	errorCode = common.ErrSuccess
 	servers := server.LanServersAnnounced(ctx, multicastIPs, ports)
 	if servers == nil {
@@ -191,7 +156,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel c
 			return
 		}
 		if len(procServers) == 1 {
-			var confirm bool
+			confirm := true
 			if err := huh.NewConfirm().
 				Description(procServers[0].description).
 				Title("A single server was found, connect to it?").
@@ -201,33 +166,42 @@ func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel c
 				WithTheme(huh.ThemeBase()).
 				Run(); err == nil {
 				if confirm {
-					ip = procServers[0].ip
+					ip = procServers[0].Ip
+					id = procServers[0].id
 				}
+			} else {
+				errorCode = internal.ErrServerStart
 			}
 		} else {
-			var serverSelected string
-			serverOptions := make([]huh.Option[string], 0, len(procServers))
+			serverOptions := make([]huh.Option[uuid.UUID], len(procServers))
+			serverIdToIp := make(map[uuid.UUID]string, len(procServers))
 			for i, procServer := range procServers {
 				serverOptions[i] = procServer.Option()
+				serverIdToIp[procServer.id] = procServer.Ip
 			}
-			serverOptions = append(serverOptions, huh.Option[string]{
-				Value: "Host a server",
-				Key:   "host",
+			serverOptions = append(serverOptions, huh.Option[uuid.UUID]{
+				Key:   "Host a server",
+				Value: uuid.Nil,
 			})
-			if err := huh.NewSelect[string]().
-				Title("Select a server").
+			id = serverOptions[0].Value
+			selectable := huh.NewSelect[uuid.UUID]().
+				Title("Select a server:").
+				Inline(true).
 				Options(
 					serverOptions...,
 				).
-				Value(&serverSelected).
-				Run(); err == nil {
-				if serverSelected != "host" {
-					ip = serverSelected
+				Value(&id).
+				WithTheme(huh.ThemeBase())
+			if err := selectable.Run(); err == nil {
+				if id != uuid.Nil {
+					ip = serverIdToIp[id]
 				}
+			} else {
+				errorCode = internal.ErrServerStart
 			}
 		}
 	} else {
-		var confirm bool
+		confirm := true
 		if err := huh.NewConfirm().
 			Title("No server was found, host instead?").
 			Affirmative("Host").
@@ -238,12 +212,14 @@ func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel c
 			if !confirm {
 				errorCode = internal.ErrServerStartDeclined
 			}
+		} else {
+			errorCode = internal.ErrServerStart
 		}
 	}
 	return
 }
 
-func (c *Config) StartServer(executable string, args []string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
+func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID, canTrustCertificate bool) (errorCode int, ip string) {
 	var serverExecutablePath string
 	var err error
 	if executable == "auto" {
@@ -346,11 +322,11 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 		stopStr = "false"
 	}
 	var result *commonExecutor.Result
-	result, ip = server.StartServer(stopStr, serverExecutablePath, args, SelectBestServerIp)
+	result, ip = server.StartServer(c.gameId, serverId, stopStr, serverExecutablePath, args)
 	if result.Success() {
 		printer.PrintSucceeded()
 		if stop {
-			c.SetServerExe(serverExecutablePath)
+			c.SetServerPid(result.Pid)
 		}
 	} else {
 		printer.PrintFailedResultError(result)

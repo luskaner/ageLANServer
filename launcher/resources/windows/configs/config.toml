@@ -22,16 +22,20 @@ Start = 'auto'
 # 1. './server/'
 # 2. '../'
 # 3. '../server/'
+# Only server v1.7.3 or higher is supported (recommended to use the same version as the launcher).
 # Note: You may use environment variables when using a custom path.
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
-# {Game} will be replaced by the game name. Default, only start the server for the given name.
-# Also, by default, override the IPs address to bind to the server to ensure we can connect if it was changed.
+# {Game} will be replaced by the game name. Default, only start the server for the given name to ensure compatibility.
+# {Id} will be replaced with a known random id.
+# Used to check we connect to the right server. It is mandatory to set this option when starting a new server.
 # Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
+ExecutableArgs = ['-e', '{Game}', '-d', '{Id}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
-# The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
+# The host may be a DNS name or IPv4 IP. 0.0.0.0 means every local interface IP.
+# Recommended to use an IP.
+# Only servers v1.7.3 or higher are supported (recommended to use the same version as the launcher).
 # Note: See the server config to set the interface to bind to.
 Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)

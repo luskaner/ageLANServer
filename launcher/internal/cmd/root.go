@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
@@ -109,8 +110,25 @@ var (
 				return
 			}
 			config.SetGameId(gameId)
+			serverExecutableArgs := viper.GetStringSlice("Server.ExecutableArgs")
+			if !slices.ContainsFunc(serverExecutableArgs, func(s string) bool {
+				return s == "-d" || s == "--id"
+			}) {
+				printer.Println(
+					printer.Error,
+					printer.TS("Server.ExecutableArgs", printer.OptionStyle),
+					printer.T(" must contain "),
+					printer.TS("-d", printer.LiteralStyle),
+					printer.T(" ( or "),
+					printer.TS("--id", printer.LiteralStyle),
+					printer.T(" )."),
+				)
+				errorCode = internal.ErrInvalidServerArgs
+				return
+			}
 			serverValues := map[string]string{
 				"Game": gameId,
+				"Id":   uuid.NewString(),
 			}
 			serverArgs, err := parse.CommandArgs(viper.GetStringSlice("Server.ExecutableArgs"), serverValues)
 			if err != nil {
@@ -332,6 +350,7 @@ var (
 					printer.PrintSucceeded()
 				}
 			}
+			serverId := uuid.Nil
 			if serverStart == "auto" {
 				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
 				portsStr := make([]string, len(announcePorts))
@@ -356,8 +375,7 @@ var (
 					}
 				}
 				serverListenPeriod := 1 * time.Second
-				serverListenTime := 15 * time.Second
-				serverListenCtx, cancelServerListen := context.WithTimeout(context.Background(), serverListenTime)
+				serverListenCtx, cancelServerListen := context.WithTimeout(context.Background(), server.AnnounceListen)
 				serverListenTicker := time.NewTicker(serverListenPeriod)
 				printInterval := func(i int) {
 					printer.Print(
@@ -372,10 +390,10 @@ var (
 						printer.T(" in the firewall..."),
 					)
 				}
-				printInterval(int(serverListenTime.Seconds()))
+				printInterval(int(server.AnnounceListen.Seconds()))
 				go func() {
 				serverListenLoop:
-					for i := int(serverListenTime.Seconds()) - 1; ; i -= int(serverListenPeriod.Seconds()) {
+					for i := int(server.AnnounceListen.Seconds()) - 1; ; i -= int(serverListenPeriod.Seconds()) {
 						select {
 						case <-serverListenCtx.Done():
 							printer.Print(
@@ -396,7 +414,9 @@ var (
 						}
 					}
 				}()
-				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(serverListenCtx, cancelServerListen, gameId, multicastIPs, announcePorts)
+				var selectedServerIp string
+				startServerId, _ := uuid.Parse(serverValues["Id"])
+				errorCode, serverId, selectedServerIp = cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(serverListenCtx, cancelServerListen, gameId, startServerId, multicastIPs, announcePorts)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
@@ -467,22 +487,23 @@ var (
 					errorCode = internal.ErrInvalidServerStart
 					return
 				}
-				var ok bool
-				if ok, serverIP = cmdUtils.SelectBestServerIp(launcherCommon.HostOrIpToIps(serverHost).ToSlice()); !ok {
+				if serverIPs, data := server.FilterServerIPs(serverId, gameId, launcherCommon.HostOrIpToIps(serverHost)); data == nil {
 					printer.Println(
 						printer.Error,
 						printer.TS("Server.Start", printer.OptionStyle),
 						printer.T(" is "),
 						printer.TS("false", printer.LiteralStyle),
-						printer.T(". Failed to resolve "),
+						printer.T(". Failed to connect to "),
 						printer.TS(serverHost, printer.LiteralStyle),
-						printer.T(" to a valid and reachable IP address."),
+						printer.T("."),
 					)
 					errorCode = internal.ErrInvalidServerStart
 					return
+				} else {
+					serverIP = serverIPs[0].Ip
 				}
 			} else {
-				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
+				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", serverId, canTrustCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
 				}
@@ -504,7 +525,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.AddCert(serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode = config.AddCert(serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
 			}))
 			if errorCode != common.ErrSuccess {

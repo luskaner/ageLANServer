@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/x509"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
@@ -14,7 +15,7 @@ import (
 	"runtime"
 )
 
-func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
+func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
 	hosts := common.AllHosts()
 	var addCert bool
 	if customCertFile {
@@ -79,12 +80,12 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 				)
 				errorCode = internal.ErrCertMismatch
 				return
-			} else if !server.LanServer(host, false) {
+			} else if !server.LanServerHost(serverId, c.gameId, host, false) {
 				printer.Println(
 					printer.Error,
 					printer.T("Something went wrong, "),
 					printer.TS(host, printer.LiteralStyle),
-					printer.T(" does not point to a LAN "),
+					printer.T(" does not point to the LAN "),
 					printer.TS("server", printer.ComponentStyle),
 					printer.T("."),
 				)
@@ -165,12 +166,12 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 				)
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServer(host, false) {
+			} else if !server.LanServerHost(serverId, c.gameId, host, false) {
 				printer.Println(
 					printer.Error,
 					printer.T("Something went wrong, "),
 					printer.TS(host, printer.LiteralStyle),
-					printer.T(" does not point to a LAN "),
+					printer.T(" does not point to the LAN "),
 					printer.TS("server", printer.ComponentStyle),
 					printer.T(" or there is a certificate issue."),
 				)

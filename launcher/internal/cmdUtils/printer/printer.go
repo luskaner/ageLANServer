@@ -22,6 +22,7 @@ const (
 	Execute       = "▶️"
 	AllDone       = "🎉"
 	Stop          = "🛑"
+	Speed         = "⚡️"
 )
 
 type StyledText struct {
@@ -152,10 +153,12 @@ func PrintFailedParseOption(option string, err error) {
 	PrintSimpln(Debug, err.Error())
 }
 
-func PrintResultError(result *exec.Result) (err bool) {
+func PrintResultError(result *exec.Result) {
+	if result == nil {
+		return
+	}
 	if result.Err != nil {
 		PrintError(result.Err)
-		err = true
 	}
 	if result.ExitCode != common.ErrSuccess {
 		Println(
@@ -163,14 +166,12 @@ func PrintResultError(result *exec.Result) (err bool) {
 			T("Exit code: "),
 			TS(strconv.Itoa(result.ExitCode), LiteralStyle),
 		)
-		err = true
 	}
-	return err
 }
 
-func PrintFailedResultError(result *exec.Result) bool {
+func PrintFailedResultError(result *exec.Result) {
 	PrintFailed()
-	return PrintResultError(result)
+	PrintResultError(result)
 }
 
 func PrintFailedError(err error) {

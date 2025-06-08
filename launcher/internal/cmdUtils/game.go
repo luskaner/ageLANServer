@@ -80,7 +80,7 @@ func (c *Config) LaunchAgent(executer game.Executor, canBroadcastBattleServer st
 	}
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
-	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || len(c.serverExe) > 0 || requiresConfigRevert {
+	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || c.serverPid != 0 || requiresConfigRevert {
 		agentStyledTexts := []*printer.StyledText{
 			printer.T("Starting "),
 			printer.TS("agent", printer.ComponentStyle),
@@ -91,7 +91,7 @@ func (c *Config) LaunchAgent(executer game.Executor, canBroadcastBattleServer st
 		agentStyledTexts = append(agentStyledTexts, printer.T("... "))
 		fmt.Print(printer.Gen(printer.Execute, "", agentStyledTexts...))
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true")
+		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverPid, canBroadcastBattleServer == "true")
 		if !result.Success() {
 			printer.PrintFailedResultError(result)
 			return internal.ErrAgentStart

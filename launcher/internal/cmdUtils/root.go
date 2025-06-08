@@ -14,14 +14,14 @@ import (
 
 type Config struct {
 	gameId          string
-	serverExe       string
+	serverPid       int
 	setupCommandRan bool
 	hostFilePath    string
 	certFilePath    string
 }
 
-func (c *Config) SetServerExe(exe string) {
-	c.serverExe = exe
+func (c *Config) SetServerPid(pid int) {
+	c.serverPid = pid
 }
 
 func (c *Config) SetGameId(id string) {
@@ -54,8 +54,8 @@ func (c *Config) RequiresRunningRevertCommand() bool {
 	return c.setupCommandRan && len(c.revertCommand()) > 0
 }
 
-func (c *Config) ServerExe() string {
-	return c.serverExe
+func (c *Config) ServerPid() int {
+	return c.serverPid
 }
 
 func (c *Config) RevertCommand() []string {
@@ -75,7 +75,7 @@ func (c *Config) CertFilePath() string {
 
 func (c *Config) Revert() {
 	c.KillAgent()
-	if serverExe := c.ServerExe(); len(serverExe) > 0 {
+	if serverPid := c.ServerPid(); serverPid != 0 {
 		fmt.Print(printer.Gen(
 			printer.Stop,
 			"",
@@ -83,19 +83,16 @@ func (c *Config) Revert() {
 			printer.TS("server", printer.ComponentStyle),
 			printer.T("... "),
 		))
-		if _, err := commonProcess.Kill(serverExe); err == nil {
+		if err := commonProcess.KillPid(serverPid); err == nil {
 			printer.PrintSucceeded()
 		} else {
 			printer.PrintFailedError(err)
 		}
 	}
 	if c.RequiresConfigRevert() {
-		fmt.Print(
-			printer.Gen(
-				printer.Clean,
-				"",
-				printer.T("Cleaning up... "),
-			),
+		printer.PrintSimpln(
+			printer.Clean,
+			"Cleaning up... ",
 		)
 		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert, printer.ConfigRevertPrinter()); !ok {
 			printer.PrintFailed()
