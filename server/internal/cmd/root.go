@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/pidLock"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/ip"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
@@ -39,27 +39,26 @@ var (
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service for LAN features in AoE: DE, AoE 2:DE and AoE 3:DE.",
-		Run: func(_ *cobra.Command, _ []string) {
-			lock := &pidLock.Lock{}
-			if err := lock.Lock(); err != nil {
-				fmt.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
-				fmt.Println(err.Error())
-				os.Exit(common.ErrPidLock)
+		Short: "server is a service for LAN features in AoE: DE, AoE 2: DE and AoE 3: DE.",
+		Run: func(cmd *cobra.Command, _ []string) {
+			serverId, _ := cmd.Flags().GetString("id")
+			if serverId == "auto" {
+				serverId = uuid.NewString()
 			}
-			if viper.GetBool("GeneratePlatformUserId") {
-				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
+			if parsedId, err := uuid.Parse(serverId); err != nil {
+				fmt.Println("Invalid ID specified:", serverId)
+				os.Exit(internal.ErrInvalidId)
+			} else {
+				internal.Id = parsedId
 			}
 			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
 			if gameSet.IsEmpty() {
 				fmt.Println("No games specified")
-				_ = lock.Unlock()
 				os.Exit(internal.ErrGames)
 			}
 			for game := range gameSet.Iter() {
 				if !common.SupportedGames.ContainsOne(game) {
 					fmt.Println("Invalid game specified:", game)
-					_ = lock.Unlock()
 					os.Exit(internal.ErrGames)
 				}
 			}
@@ -74,7 +73,6 @@ var (
 			addrs := ip.ResolveHosts(hosts)
 			if addrs == nil || len(addrs) == 0 {
 				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
-				_ = lock.Unlock()
 				os.Exit(internal.ErrResolveHost)
 			}
 			mux := http.NewServeMux()
@@ -90,7 +88,6 @@ var (
 				err := os.MkdirAll("logs", 0755)
 				if err != nil {
 					fmt.Println("Failed to create logs directory")
-					_ = lock.Unlock()
 					os.Exit(internal.ErrCreateLogsDir)
 				}
 				t := time.Now()
@@ -98,7 +95,6 @@ var (
 				file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					fmt.Println("Failed to create log file")
-					_ = lock.Unlock()
 					os.Exit(internal.ErrCreateLogFile)
 				}
 				writer = file
@@ -106,7 +102,6 @@ var (
 			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
 			if certificatePairFolder == "" {
 				fmt.Println("Failed to determine certificate pair folder")
-				_ = lock.Unlock()
 				os.Exit(internal.ErrCertDirectory)
 			}
 			stop := make(chan os.Signal, 1)
@@ -123,9 +118,13 @@ var (
 				multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
 				if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
 					fmt.Println("Invalid multicast IP")
-					_ = lock.Unlock()
 					os.Exit(internal.ErrMulticastGroup)
 				}
+			}
+			internal.Version = Version
+			fmt.Println("ID:", serverId)
+			if viper.GetBool("GeneratePlatformUserId") {
+				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
 			broadcast := viper.GetBool("Announcement.Broadcast")
 			announcePort := viper.GetInt("Announcement.Port")
@@ -171,8 +170,6 @@ var (
 
 				fmt.Println("'Server'", server.Addr, "stopped")
 			}
-
-			_ = lock.Unlock()
 		},
 	}
 )
@@ -190,6 +187,7 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the 'server' will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
+	rootCmd.PersistentFlags().StringP("id", "d", "auto", "ID to identify this server. Sent in '/test' and announce data.")
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.PersistentFlags().Lookup("announce")); err != nil {
 		return err
 	}

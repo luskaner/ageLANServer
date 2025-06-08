@@ -2,12 +2,9 @@ package ip
 
 import (
 	"bytes"
-	"encoding/binary"
-	"encoding/gob"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/spf13/viper"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"golang.org/x/net/ipv4"
 	"net"
 	"time"
@@ -57,32 +54,15 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	var messageBuff bytes.Buffer
-	enc := gob.NewEncoder(&messageBuff)
-	err := enc.Encode(common.AnnounceMessageData001{
-		GameIds: viper.GetStringSlice("Games"),
-	})
-	if err != nil {
-		fmt.Println("Error encoding message data.")
-		return
-	}
-	messageBuffBytes := messageBuff.Bytes()
 	var buf bytes.Buffer
 	buf.Write([]byte(common.AnnounceHeader))
-	buf.WriteByte(common.AnnounceVersion1)
-	var uuidBytes []byte
-	uuidBytes, err = uuid.New().MarshalBinary()
+	buf.WriteByte(internal.AnnounceVersionLatest)
+	uuidBytes, err := internal.Id.MarshalBinary()
 	if err != nil {
 		fmt.Println("Error generating ID.")
 		return
 	}
 	buf.Write(uuidBytes)
-	err = binary.Write(&buf, binary.LittleEndian, uint16(len(messageBuffBytes)))
-	if err != nil {
-		fmt.Println("Error encoding message length.")
-		return
-	}
-	buf.Write(messageBuffBytes)
 	bufBytes := buf.Bytes()
 
 	for range ticker.C {

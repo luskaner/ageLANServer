@@ -12,4 +12,5 @@ const (
 	ErrStartServer
 	ErrMulticastGroup
 	ErrGames
+	ErrInvalidId
 )
