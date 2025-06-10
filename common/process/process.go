@@ -77,6 +77,18 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	return
 }
 
+func KillPid(pid int) (err error) {
+	var proc *os.Process
+	proc, err = FindProcess(pid)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			err = nil
+		}
+		return
+	}
+	return KillProc("", proc)
+}
+
 func KillProc(pidPath string, proc *os.Process) (err error) {
 	err = proc.Kill()
 	if err != nil {
@@ -100,7 +112,9 @@ func KillProc(pidPath string, proc *os.Process) (err error) {
 				return
 			}
 		}
-		err = os.Remove(pidPath)
+		if pidPath != "" {
+			err = os.Remove(pidPath)
+		}
 		return
 	}
 }

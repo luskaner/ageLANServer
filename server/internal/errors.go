@@ -12,4 +12,6 @@ const (
 	ErrStartServer
 	ErrMulticastGroup
 	ErrGames
+	ErrInvalidId
+	ErrAnnouncePort
 )

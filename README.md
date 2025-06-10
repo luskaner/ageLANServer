@@ -1,12 +1,16 @@
 # Age LAN Server
 
-Age LAN Server is a web server (with its launcher) that allows you to play multiplayer **LAN** game modes without having an internet
+Age LAN Server is a web server (with its launcher) that allows you to play multiplayer **LAN** game modes without having
+an internet
 connection **to the game server**  ensuring the game LAN functionality is still available even if the official
 server
 is in maintenance or is eventually shutdown.
 
 > [!IMPORTANT]
-> You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being connected to the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline. My other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information to download a Steam Emulator and play 100% offline.
+> You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being
+> connected to the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline. My
+> other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information to
+> download a Steam Emulator and play 100% offline.
 
 **🎮 Supported games:**
 
@@ -24,7 +28,8 @@ is in maintenance or is eventually shutdown.
 - 🎮 Crossplay Steam & Xbox.
 
 > [!TIP]
-> See more details in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
+> See more details
+> in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
 
 ### Age of Empires II: Definitive Edition and Age of Empires III: Definitive Edition
 
@@ -246,13 +251,15 @@ play.
 <details>
     <summary>Features</summary>
 
-- Automatically start/stop the server or connect to an existing one automatically.
-- (Optional) Use an isolated metadata (except AoE I) and profile directories to avoid potential issues with the official
+- Automatically start/stop the server or connect to an existing one.
+- (Optional) Use an isolated metadata (except AoE I) directory to avoid potential issues with the official
   game.
 - (Optional) Modify the hosts file to:
     - Redirect the game's API requests to the LAN server.
     - Redirect the game CDN so it does not detect the official game status.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
+- (Optional) Run custom configuration commands to setup/revert the configuration.
+- (Windows Optional) Re-broadcast the battle server through other network interfaces apart from the most priority one.
 - Automatically find and start the game.
 
 Afterwards, it reverses any changes to allow the official launcher to connect to the official servers.
@@ -266,7 +273,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    stable release from https://github.com/luskaner/ageLANServer/releases.
 2. **Uncompress** it somewhere.
 3. *Windows Optional*: *You may need to add the launcher/server binaries to the exception list of your Antivirus*.
-4. *Windows Optional*: Unblock the `.exe` files as explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
+4. *Windows Optional*: Unblock the `.exe` files as
+   explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
 5. If not using the Steam or Xbox launcher, **edit the `
    launcher/resources/config.<game>.toml` file** with a text editor (like Notepad)
    and modify
@@ -282,7 +290,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    launch
    it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
 8. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
-   select **LAN** before creating the Lobby (*AoE III*) or select the "LAN" menu option (*AoE I*). In *AoE I/II*, setting it
+   select **LAN** before creating the Lobby (*AoE III*) or select the "LAN" menu option (*AoE I*). In *AoE I/II*,
+   setting it
    to
    public
    visibility is recommended.
@@ -308,11 +317,12 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 1. **Download** the proper *launcher* asset from latest stable release
    from https://github.com/luskaner/ageLANServer/releases.
-3. If needed **edit the `launcher/resources/config.<game>.toml` and/or `launcher/resources/config.toml` files**. You will
+2. If needed **edit the `launcher/resources/config.<game>.toml` and/or `launcher/resources/config.toml` files**. You
+   will
    need to edit the
    `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use
    a custom launcher for 100% offline play.
-4. **Run** the `launcher_...` script.
+3. **Run** the `launcher_...` script.
 
 *Note: If you have any issues run the `bin/config revert -a`.*
 
@@ -325,19 +335,31 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) to see how to develop and release builds.
 ## Additional Terms of Use for the Downloadable Package
 
 **Important Notice:**  
-This software is distributed under the [AGPL](https://www.gnu.org/licenses/agpl-3.0.html) (Affero General Public License), which guarantees every user the right to use, study, modify, and redistribute the source code. The following additional terms govern only the contractual relationship between the provider of the downloadable package and the user who obtains it through this channel. These terms **do not affect or restrict** the rights granted under the AGPL, which shall prevail over any additional restrictions when it comes to redistribution, modification, or access to the code.
+This software is distributed under the [AGPL](https://www.gnu.org/licenses/agpl-3.0.html) (Affero General Public
+License), which guarantees every user the right to use, study, modify, and redistribute the source code. The following
+additional terms govern only the contractual relationship between the provider of the downloadable package and the user
+who obtains it through this channel. These terms **do not affect or restrict** the rights granted under the AGPL, which
+shall prevail over any additional restrictions when it comes to redistribution, modification, or access to the code.
 
 **By downloading and using this package, you agree to the following:**
 
 1. **Game License:**  
-   You are only authorized to use this downloadable package if you possess a valid and legal license for the corresponding game, including any downloadable content (DLC) required for the software to operate properly.
+   You are only authorized to use this downloadable package if you possess a valid and legal license for the
+   corresponding game, including any downloadable content (DLC) required for the software to operate properly.
 2. **Compliance with Game Terms:**  
-   The use of the software is contingent upon your full compliance with the terms of service and any applicable conditions established for the game.
+   The use of the software is contingent upon your full compliance with the terms of service and any applicable
+   conditions established for the game.
 3. **Personal Use Only:**  
-   This downloadable package is intended for **strictly personal use**. Commercial use or any use beyond personal purposes is prohibited unless express written consent is obtained from the provider.
+   This downloadable package is intended for **strictly personal use**. Commercial use or any use beyond personal
+   purposes is prohibited unless express written consent is obtained from the provider.
 4. **Usage Environment (LAN):**  
-   The software must be used within a LAN (Local Area Network) environment, as long as the official game servers remain available and operational. If the official servers are undergoing maintenance, become temporarily unavailable, or are permanently withdrawn, this requirement becames void.
+   The software must be used within a LAN (Local Area Network) environment, as long as the official game servers remain
+   available and operational. If the official servers are undergoing maintenance, become temporarily unavailable, or are
+   permanently withdrawn, this requirement becames void.
 5. **Limitation of Provider's Liability:**  
-   These additional terms apply solely to the original downloadable package provided by the provider. The provider assumes no responsibility for any misuse of the software or for intellectual property infringements resulting from its use contrary to these terms. Any liability arising from the improper use of the software lies exclusively with you.
+   These additional terms apply solely to the original downloadable package provided by the provider. The provider
+   assumes no responsibility for any misuse of the software or for intellectual property infringements resulting from
+   its use contrary to these terms. Any liability arising from the improper use of the software lies exclusively with
+   you.
 
 **Disclaimer: This software is not affiliated or endorsed by any publisher or developer of the games.**

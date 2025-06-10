@@ -7,9 +7,8 @@ const (
 	ErrDecode
 	ErrNonExistingAction
 	ErrConnectionClosing
-	ErrIpsInvalid
 	ErrCertAlreadyAdded
-	ErrIpsAlreadyMapped
+	ErrIpAlreadyMapped
 	ErrCertInvalid
 	ErrCDNAlreadyMapped
 )

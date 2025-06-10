@@ -1,26 +1,16 @@
 [Config]
+# Whether to show debug information in the console.
+Debug = false
 # Whether or not to add a local dns entry if it's needed to connect to the server with the official domain.
 # Including to avoid receiving that it's on maintenance.
 # If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 # Note: Will require admin privileges.
 CanAddHost = true
 # Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
+# false: do not trust the certificate. You will have to trust it manually in the proper store via other means.
 # local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent. Only on Windows.
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
-# Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'. This is only necessary in Windows, on the rest of systems it is always 'false'.
-CanBroadcastBattleServer = 'auto'
-# If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
-# On AoE I this is always false as it does not store metadata.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateMetadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
-# Linux Note: Only supported when not using a custom launcher.
-IsolateProfiles = false
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
@@ -30,22 +20,34 @@ Start = 'auto'
 # 1. './server/'
 # 2. '../'
 # 3. '../server/'
+# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
+# Note: You may use environment variables when using a custom path.
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
-# Also, by default, override the IPs address to bind to the server to ensure we can connect if it was changed.
-# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
+# {Id} will be replaced with a known random id.
+# Used to check we connect to the right server. It is mandatory to set this option when starting a new server.
 # Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
+ExecutableArgs = ['-e', '{Game}', '-d', '{Id}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
-# The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
+# The host may be a DNS name or IPv4 IP. 0.0.0.0 means every local interface IP.
+# Recommended to use an IP.
+# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
 # Note: See the server config to set the interface to bind to.
 Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
 Stop = 'auto'
-# Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
-AnnouncePorts = [31978]
-# Announce multicast group adresses to join.
+
+# This section only applies if Server.Start = auto
+# Enabled if NoBroadcast = false or MulticastGroups is not empty. Required if Start = 'auto'.
+[Server.Announcement]
+# Ports (1025 - 65535) to use. If not including the default port, default configured servers will not get discovered.
+Ports = [31978]
+# Multicast group adresses to join. Leave empty to disable multicast.
 # If not including the default group, default configured servers will not get discovered via Multicast.
 # Only IPv4 is supported.
-AnnounceMulticastGroups = ['239.31.97.8']
+MulticastGroups = ['239.31.97.8']
+# Do not broadcast the query to all capable network interfaces when querying servers.
+# The broadcast is done on every capable interface.
+# Might be necessary for some servers that do not respond to multicasts.
+NoBroadcast = false

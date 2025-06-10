@@ -4,7 +4,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"time"
 )
 
@@ -21,19 +21,19 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool, exitCode *int) {
+func Watch(gameId string, steamProcess bool, xboxProcess bool, serverPid int, broadcastBattleServer bool, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	defer func() {
-		_ = launcher_common.RunRevertCommand()
+		_ = launcherCommon.RunRevertCommand()
 	}()
 	defer func() {
-		launcher_common.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameId, true, nil, nil)
 	}()
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
-		if serverExe != "-" {
-			_, _ = commonProcess.Kill(serverExe)
+		if serverPid != 0 {
+			_ = commonProcess.KillPid(serverPid)
 		}
 		return
 	}
@@ -52,8 +52,8 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		break
 	}
 	if waitForProcess(PID) {
-		if serverExe != "-" {
-			if _, err := commonProcess.Kill(serverExe); err != nil {
+		if serverPid != 0 {
+			if err := commonProcess.KillPid(serverPid); err != nil {
 				*exitCode = internal.ErrFailedStopServer
 			}
 		}
