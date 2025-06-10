@@ -1,4 +1,6 @@
 [Config]
+# Whether to show debug information in the console.
+Debug = false
 # Whether or not to add a local dns entry if it's needed to connect to the server with the official domain.
 # Including to avoid receiving that it's on maintenance.
 # If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
@@ -22,7 +24,7 @@ Start = 'auto'
 # 1. './server/'
 # 2. '../'
 # 3. '../server/'
-# Only server v1.7.3 or higher is supported (recommended to use the same version as the launcher).
+# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
 # Note: You may use environment variables when using a custom path.
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
@@ -35,14 +37,22 @@ ExecutableArgs = ['-e', '{Game}', '-d', '{Id}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
 # The host may be a DNS name or IPv4 IP. 0.0.0.0 means every local interface IP.
 # Recommended to use an IP.
-# Only servers v1.7.3 or higher are supported (recommended to use the same version as the launcher).
+# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
 # Note: See the server config to set the interface to bind to.
 Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
 Stop = 'auto'
-# Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
-AnnouncePorts = [31978]
-# Announce multicast group adresses to join.
+
+# This section only applies if Server.Start = auto
+# Enabled if NoBroadcast = false or MulticastGroups is not empty. Required if Start = 'auto'.
+[Server.Announcement]
+# Ports (1025 - 65535) to use. If not including the default port, default configured servers will not get discovered.
+Ports = [31978]
+# Multicast group adresses to join. Leave empty to disable multicast.
 # If not including the default group, default configured servers will not get discovered via Multicast.
 # Only IPv4 is supported.
-AnnounceMulticastGroups = ['239.31.97.8']
+MulticastGroups = []
+# Do not broadcast the query to all capable network interfaces when querying servers.
+# The broadcast is done on every capable interface.
+# Might be necessary to set to false for some servers that do not respond to multicasts.
+NoBroadcast = false

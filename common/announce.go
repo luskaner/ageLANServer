@@ -1,13 +1,11 @@
 package common
 
-import "time"
-
 const AnnouncePort = 31978
 const AnnounceHeader = Name
-const AnnouncePeriod = 10 * time.Second
 const IdHeader = "X-Id"
 const VersionHeader = "X-Version"
 
+//goland:noinspection GoUnusedConst
 const (
 	// AnnounceVersion0 : 1.1.X - v1.4.X
 	AnnounceVersion0 = iota

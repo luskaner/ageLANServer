@@ -113,23 +113,26 @@ var (
 			var servers []*http.Server
 			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			var multicastIP net.IP
-			multicast := viper.GetBool("Announcement.Multicast")
-			if multicast {
-				multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
-				if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
-					fmt.Println("Invalid multicast IP")
-					os.Exit(internal.ErrMulticastGroup)
+			var announcePort int
+			if viper.GetBool("Announcement.Enabled") {
+				announcePort = viper.GetInt("Announcement.Port")
+				if announcePort < 1_025 || announcePort > 65_535 {
+					fmt.Println("Invalid announce port specified:", announcePort)
+					os.Exit(internal.ErrAnnouncePort)
+				}
+				multicastGroup := viper.GetString("Announcement.MulticastGroup")
+				if multicastGroup != "" {
+					multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
+					if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
+						fmt.Println("Invalid multicast IP")
+						os.Exit(internal.ErrMulticastGroup)
+					}
 				}
 			}
 			internal.Version = Version
 			fmt.Println("ID:", serverId)
 			if viper.GetBool("GeneratePlatformUserId") {
 				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
-			}
-			broadcast := viper.GetBool("Announcement.Broadcast")
-			announcePort := viper.GetInt("Announcement.Port")
-			if broadcast || multicast {
-				fmt.Println("Announcing on port", announcePort)
 			}
 			for _, addr := range addrs {
 				server := &http.Server{
@@ -141,10 +144,20 @@ var (
 
 				fmt.Println("Listening on " + server.Addr)
 				go func() {
-					if broadcast || multicast {
-						go func() {
-							ip.Announce(addr, multicastIP, announcePort, broadcast, multicast)
-						}()
+					if announcePort != 0 {
+						if ip.Announce(
+							net.ParseIP(addr.String()),
+							multicastIP,
+							announcePort,
+						) {
+							fmt.Print("Responding to discovery requests on port ", announcePort)
+							if multicastIP != nil {
+								fmt.Print(" (including using Multicast on group ", multicastIP, ")")
+							}
+							fmt.Println()
+						} else {
+							fmt.Println("Failed to respond to discovery requests on port ", announcePort)
+						}
 					}
 					err := server.ListenAndServeTLS(certFile, keyFile)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -180,8 +193,6 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().StringP("announce", "a", "true", "Announce 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	rootCmd.PersistentFlags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
-	rootCmd.PersistentFlags().StringP("announceMulticast", "m", "true", "Whether to announce the 'server' using Multicast.")
-	rootCmd.PersistentFlags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
 	rootCmd.PersistentFlags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
 	cmd.GamesCommand(rootCmd.PersistentFlags())
 	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the 'server' will bind to. Can be set multiple times.")
@@ -192,12 +203,6 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.Port", rootCmd.PersistentFlags().Lookup("announcePort")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Announcement.Broadcast", rootCmd.PersistentFlags().Lookup("announceBroadcast")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Announcement.Multicast", rootCmd.PersistentFlags().Lookup("announceMulticast")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.PersistentFlags().Lookup("announceMulticastGroup")); err != nil {

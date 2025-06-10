@@ -1,4 +1,4 @@
-# The hosts/IPs the server will bind to. Only Ipv4 is supported.
+# The hosts/IPs the server will bind to. Only IPv4 is supported.
 # *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
 Hosts = ['0.0.0.0']
 
@@ -15,14 +15,12 @@ Games = ['age1', 'age2', 'age3']
 
 [Announcement]
 
-# Whether to announce the server. When disabled, the launcher will not automatically detect it.
+# Whether to listen to server requests. When disabled, the launcher will not automatically detect it.
+# The addresses will be the same as the 'Hosts' setting.
 Enabled = true
-# Whether to announce the server using Multicast. More efficient but less compatible than Broadcast.
-Multicast = true
-# Whether to announce the server using Broadcast.
-Broadcast = true
-# Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
+# Port (1025 - 65535) to listen to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
 Port = 31978
-# Multicast group to announce to (IPv4 only).
-# If changed, the launchers will need to specify the address in Server.AnnounceMulticastGroups to receive multicasts.
+# Announce multicast group adresses to join.
+# If changed, the launchers will need to specify the address in Server.Announcement.MulticastGroups to receive multicasts.
+# Leave empty to only respond to broadcast (or unicast) requests.
 MulticastGroup = '239.31.97.8'

@@ -13,7 +13,6 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
@@ -40,4 +39,6 @@ const (
 	ErrCertMismatch
 	ErrInvalidIsolationWindowsUserProfilePath
 	ErrServerStartDeclined
+	ErrAnnouncementPort
+	ErrAnnouncement
 )

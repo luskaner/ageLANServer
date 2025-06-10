@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
@@ -31,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 )
 
 const autoValue = "auto"
@@ -352,21 +350,53 @@ var (
 			}
 			serverId := uuid.Nil
 			if serverStart == "auto" {
-				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
+				broadcast := !viper.GetBool("Server.Announcement.NoBroadcast")
+				announcePorts := viper.GetIntSlice("Server.Announcement.Ports")
 				portsStr := make([]string, len(announcePorts))
 				for i, portInt := range announcePorts {
+					if portInt < 1_025 || portInt > 65_535 {
+						printer.Println(
+							printer.Error,
+							printer.TS("Server.Start", printer.OptionStyle),
+							printer.T(" is "),
+							printer.TS("auto", printer.LiteralStyle),
+							printer.T(". The"),
+							printer.TS("Server.Announcement.Ports", printer.OptionStyle),
+							printer.T("must be 1025-65535 but got: "),
+							printer.TS(fmt.Sprint(announcePorts), printer.LiteralStyle),
+							printer.T("."),
+						)
+						errorCode = internal.ErrAnnouncementPort
+						return
+					}
 					portsStr[i] = strconv.Itoa(portInt)
 				}
-				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
-				multicastIPs := make([]net.IP, len(multicastIPsStr))
+				if len(announcePorts) == 0 {
+					printer.Println(
+						printer.Error,
+						printer.TS("Server.Start", printer.OptionStyle),
+						printer.T(" is "),
+						printer.TS("auto", printer.LiteralStyle),
+						printer.T(". The"),
+						printer.TS("Server.Announcement.Ports", printer.OptionStyle),
+						printer.T(" must not be empty."),
+					)
+					errorCode = internal.ErrAnnouncementPort
+					return
+				}
+				multicastIPsStr := viper.GetStringSlice("Server.Announcement.MulticastGroups")
+				multicastGroups := make([]net.IP, len(multicastIPsStr))
 				for i, str := range multicastIPsStr {
 					if IP := net.ParseIP(str); IP.To4() != nil && IP.IsMulticast() {
-						multicastIPs[i] = IP
+						multicastGroups[i] = IP
 					} else {
 						printer.Println(
 							printer.Error,
-							printer.T("Invalid "),
-							printer.TS("Server.AnnounceMulticastGroups", printer.OptionStyle),
+							printer.TS("Server.Start", printer.OptionStyle),
+							printer.T(" is "),
+							printer.TS("auto", printer.LiteralStyle),
+							printer.T(". Invalid "),
+							printer.TS("Server.Announcement.MulticastGroups", printer.OptionStyle),
 							printer.T(": "),
 							printer.TS(str, printer.LiteralStyle),
 						)
@@ -374,49 +404,32 @@ var (
 						return
 					}
 				}
-				serverListenPeriod := 1 * time.Second
-				serverListenCtx, cancelServerListen := context.WithTimeout(context.Background(), server.AnnounceListen)
-				serverListenTicker := time.NewTicker(serverListenPeriod)
-				printInterval := func(i int) {
-					printer.Print(
-						printer.Receive,
-						"\r\033[2K",
-						printer.T("Listening "),
-						printer.TS(fmt.Sprintf("%d", i), printer.LiteralStyle),
-						printer.T(" s for "),
-						printer.TS("server", printer.ComponentStyle),
-						printer.T(" announcements, you might need to allow the "),
-						printer.TS("launcher", printer.ComponentStyle),
-						printer.T(" in the firewall..."),
+				if len(multicastGroups) == 0 && !broadcast {
+					printer.Println(
+						printer.Error,
+						printer.TS("Server.Start", printer.OptionStyle),
+						printer.T(" is "),
+						printer.TS("auto", printer.LiteralStyle),
+						printer.T(". The"),
+						printer.TS("Server.Announcement.MulticastGroups", printer.OptionStyle),
+						printer.T(" must not be empty or "),
+						printer.TS("Server.Announcement.NoBroadcast", printer.OptionStyle),
+						printer.T(" must be "),
+						printer.TS("false", printer.LiteralStyle),
+						printer.T("."),
 					)
+					errorCode = internal.ErrAnnouncement
+					return
 				}
-				printInterval(int(server.AnnounceListen.Seconds()))
-				go func() {
-				serverListenLoop:
-					for i := int(server.AnnounceListen.Seconds()) - 1; ; i -= int(serverListenPeriod.Seconds()) {
-						select {
-						case <-serverListenCtx.Done():
-							printer.Print(
-								printer.Receive,
-								"\r\033[2K",
-								printer.T("Done listening."),
-							)
-							fmt.Println()
-							serverListenTicker.Stop()
-							break serverListenLoop
-						case <-serverListenTicker.C:
-							time := i
-							if time < 0 {
-								time = 0
-							}
-							printInterval(time)
-							_ = os.Stdout.Sync()
-						}
-					}
-				}()
-				var selectedServerIp string
 				startServerId, _ := uuid.Parse(serverValues["Id"])
-				errorCode, serverId, selectedServerIp = cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(serverListenCtx, cancelServerListen, gameId, startServerId, multicastIPs, announcePorts)
+				var selectedServerIp string
+				errorCode, serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIp(
+					broadcast,
+					gameId,
+					startServerId,
+					multicastGroups,
+					announcePorts,
+				)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
@@ -560,6 +573,7 @@ func Execute() error {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().Bool("debug", false, `# Whether to show debug information in the console.`)
 	rootCmd.PersistentFlags().StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS == "windows" {
@@ -588,7 +602,8 @@ func Execute() error {
 	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
 	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the 'server' if started, "auto" will stop the 'server' if one was started, "false" (will not stop the 'server' regardless if one was started), "true" (will not stop the 'server' even if it was started).`)
 	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
-	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
+	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
+	rootCmd.PersistentFlags().Bool("serverAnnounceNoBroadcast", false, `Do not broadcast the query to all capable network interfaces when detecting current servers.`)
 	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
@@ -613,6 +628,9 @@ func Execute() error {
 	}
 	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", clientExeTip)
 	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
+	if err := viper.BindPFlag("Config.Debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+		return err
+	}
 	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
 		return err
 	}
@@ -644,10 +662,13 @@ func Execute() error {
 	if err := viper.BindPFlag("Server.Stop", rootCmd.PersistentFlags().Lookup("serverStop")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.AnnouncePorts", rootCmd.PersistentFlags().Lookup("serverAnnouncePorts")); err != nil {
+	if err := viper.BindPFlag("Server.Announcement.Ports", rootCmd.PersistentFlags().Lookup("serverAnnouncePorts")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.AnnounceMulticastGroups", rootCmd.PersistentFlags().Lookup("serverAnnounceMulticastGroups")); err != nil {
+	if err := viper.BindPFlag("Server.Announcement.MulticastGroups", rootCmd.PersistentFlags().Lookup("serverAnnounceMulticastGroups")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Server.Announcement.NoBroadcast", rootCmd.PersistentFlags().Lookup("serverAnnounceNoBroadcast")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Server.Host", rootCmd.PersistentFlags().Lookup("server")); err != nil {

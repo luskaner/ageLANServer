@@ -1,12 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
-	"encoding/gob"
 	"encoding/json"
-	"errors"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
@@ -25,6 +21,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -40,8 +37,7 @@ func StartServer(gameId string, id uuid.UUID, stop string, executablePath string
 	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: stop != "true", Pid: true}.Exec()
 	if result.Success() {
 		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String())
-		// Wait up to 30s for server to start
-		timeout := time.After(30 * time.Second)
+		timeout := time.After(time.Duration(localIPs.Cardinality()) * 3 * time.Second)
 	loop:
 		for {
 			select {
@@ -128,19 +124,9 @@ func LanServerIP(id uuid.UUID, gameId string, ip string, serverName string, inse
 	if resp.StatusCode != http.StatusOK {
 		return
 	}
-	certificates := resp.TLS.PeerCertificates
-	if len(certificates) == 0 {
-		return
-	}
-	// Check if the server is v1.7.3 or higher (minimum version supported)
-	if certificates[0].Subject.CommonName != common.Name {
-		return
-	}
 	version := resp.Header.Get(common.VersionHeader)
 	serverId := resp.Header.Get(common.IdHeader)
-	// Check if the server is v1.7.3 - v1.8.2
-	if version == "" && serverId == "" {
-		ok = true
+	if version == "" || serverId == "" {
 		return
 	}
 	versionInt, _ := strconv.Atoi(version)
@@ -184,164 +170,176 @@ func FilterServerIPs(id uuid.UUID, gameId string, possibleIps mapset.Set[string]
 	return
 }
 
-func announcementConnections(multicastIPs []net.IP, ports []int) []*net.UDPConn {
-	var connections []*net.UDPConn
-	var multicastIfs []*net.Interface
-	if len(multicastIPs) > 0 {
-		interfaces, err := net.Interfaces()
-		if err == nil {
-			var addrs []net.Addr
-			for _, i := range interfaces {
-				addrs, err = i.Addrs()
-				if err != nil {
-					continue
-				}
-				for _, addr := range addrs {
-					v, addrOk := addr.(*net.IPNet)
-					if !addrOk {
-						continue
-					}
-					var IP net.IP
-					if IP = v.IP.To4(); IP == nil {
-						continue
-					}
-					if i.Flags&net.FlagRunning != 0 && i.Flags&net.FlagMulticast != 0 {
-						multicastIfs = append(multicastIfs, &i)
-					}
-				}
-			}
-		}
+func QueryServers(ctx context.Context, multicastIPs []net.IP, ports []int, broadcast bool, servers map[uuid.UUID]*AnnounceMessage) {
+	sourceToTargetAddrs := sourceToTargetUDPAddrs(multicastIPs, ports, broadcast)
+	if len(sourceToTargetAddrs) == 0 {
+		return
 	}
-	for _, port := range ports {
-		addr := &net.UDPAddr{
-			IP:   netip.IPv4Unspecified().AsSlice(),
-			Port: port,
-		}
-		conn, err := net.ListenUDP("udp4", addr)
+	type connTarget struct {
+		conn   *net.UDPConn
+		target *net.UDPAddr
+	}
+	var connTargets []*connTarget
+	for source, targets := range sourceToTargetAddrs {
+		conn, err := net.ListenUDP(
+			"udp4",
+			source,
+		)
 		if err != nil {
 			continue
 		}
-		if len(multicastIPs) > 0 {
+		if slices.ContainsFunc(targets, func(addr *net.UDPAddr) bool {
+			return addr.IP.IsMulticast()
+		}) {
 			p := ipv4.NewPacketConn(conn)
-			for _, multicastIP := range multicastIPs {
-				multicastAddr := &net.UDPAddr{
-					IP:   multicastIP,
-					Port: port,
-				}
-				for _, multicastIf := range multicastIfs {
-					_ = p.JoinGroup(multicastIf, multicastAddr)
-				}
+			if err = p.SetMulticastLoopback(true); err != nil {
+				continue
 			}
 		}
-		connections = append(connections, conn)
+		for _, target := range targets {
+			connTargets = append(connTargets, &connTarget{
+				conn:   conn,
+				target: target,
+			})
+		}
 	}
-	return connections
-}
 
-func decodeMessage[T any](buff *bytes.Buffer) T {
-	var msg T
-	dec := gob.NewDecoder(buff)
-	_ = dec.Decode(&msg)
-	return msg
-}
+	if len(connTargets) == 0 {
+		return
+	}
 
-func LanServersAnnounced(ctx context.Context, multicastIPs []net.IP, ports []int) map[uuid.UUID]*AnnounceMessage {
-	results := make(chan map[uuid.UUID]*AnnounceMessage)
-	connections := announcementConnections(multicastIPs, ports)
-	for _, conn := range connections {
-		go func() {
-			defer func(conn *net.UDPConn) {
-				_ = conn.Close()
-			}(conn)
+	defer func(connectionPairs []*connTarget) {
+		for _, connPair := range connectionPairs {
+			_ = connPair.conn.Close()
+		}
+	}(connTargets)
 
-			packetBuffer := make([]byte, 65_536)
-			headerBuffer := make([]byte, len(common.AnnounceHeader))
-			var messageLenBuffer uint16
-			var messageBuffer *bytes.Buffer
-			servers := make(map[uuid.UUID]*AnnounceMessage)
-			var n int
-			var serverAddr *net.UDPAddr
+	data := []byte(common.AnnounceHeader)
+	var serverLock sync.Mutex
+
+	sendAndReceive := func(packetBuffer *[]byte, conn *connTarget, servers map[uuid.UUID]*AnnounceMessage) {
+		if _, err := conn.conn.WriteToUDP(data, conn.target); err != nil {
+			return
+		}
+		if err := conn.conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+			return
+		}
+		n, addr, err := conn.conn.ReadFromUDP(*packetBuffer)
+		if err != nil {
+			return
+		}
+		if n < len(*packetBuffer) {
+			return
+		}
+		if string((*packetBuffer)[:len(common.AnnounceHeader)]) != common.AnnounceHeader {
+			return
+		}
+		var parsedId uuid.UUID
+		parsedId, err = uuid.FromBytes((*packetBuffer)[len(common.AnnounceHeader):])
+		if err != nil {
+			return
+		}
+		func() {
+			serverLock.Lock()
+			defer serverLock.Unlock()
+			var server *AnnounceMessage
+			var ok bool
+			if server, ok = servers[parsedId]; !ok {
+				server = &AnnounceMessage{
+					Ips: mapset.NewThreadUnsafeSet[string](),
+				}
+				servers[parsedId] = server
+			}
+			server.Ips.Add(addr.IP.String())
+		}()
+	}
+
+	for _, conn := range connTargets {
+		go func(conn *connTarget) {
+			ticker := time.NewTicker(1 * time.Second)
+			defer ticker.Stop()
+			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
+			sendAndReceive(&packetBuffer, conn, servers)
 		loop:
 			for {
 				select {
 				case <-ctx.Done():
 					break loop
-				default:
-					err := conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-					if err != nil {
-						return
-					}
-					_, serverAddr, err = conn.ReadFromUDP(packetBuffer)
+				case <-ticker.C:
+					sendAndReceive(&packetBuffer, conn, servers)
+				}
+			}
+		}(conn)
+	}
+	<-ctx.Done()
+}
 
-					if err != nil {
-						var netErr net.Error
-						if errors.As(err, &netErr) && netErr.Timeout() {
-							continue
-						}
-					}
+func sourceToTargetUDPAddrs(multicastGroups []net.IP, targetPorts []int, broadcast bool) (mapping map[*net.UDPAddr][]*net.UDPAddr) {
+	mapping = make(map[*net.UDPAddr][]*net.UDPAddr)
+	interfaces, err := net.Interfaces()
 
-					n = copy(headerBuffer, packetBuffer)
-					if n < len(common.AnnounceHeader) || string(headerBuffer) != common.AnnounceHeader {
-						continue
-					}
-					remainingPacketBuffer := packetBuffer[n:]
-					version := remainingPacketBuffer[:AnnounceVersionLength][0]
-					remainingPacketBuffer = remainingPacketBuffer[AnnounceVersionLength:]
-					var id uuid.UUID
-					id, err = uuid.FromBytes(remainingPacketBuffer[:AnnounceIdLength])
-					if err != nil {
-						continue
-					}
-					var data interface{}
-					if version < common.AnnounceVersion2 {
-						remainingPacketBuffer = remainingPacketBuffer[AnnounceIdLength:]
-						err = binary.Read(bytes.NewReader(remainingPacketBuffer[2:]), binary.LittleEndian, &messageLenBuffer)
-						if err != nil {
-							continue
-						}
-						remainingPacketBuffer = remainingPacketBuffer[2:]
-						messageBuffer = bytes.NewBuffer(remainingPacketBuffer[:messageLenBuffer])
+	if err != nil {
+		return
+	}
 
-						switch version {
-						case common.AnnounceVersion0:
-							data = decodeMessage[common.AnnounceMessageData000](messageBuffer)
-						case common.AnnounceVersion1:
-							data = decodeMessage[common.AnnounceMessageData001](messageBuffer)
-						default:
-							data = nil
-						}
-					}
-					ip := serverAddr.IP.String()
-					var m *AnnounceMessage
-					var ok bool
-					if m, ok = servers[id]; !ok {
-						m = &AnnounceMessage{
-							Version: version,
-							Data:    data,
-							Ips:     mapset.NewThreadUnsafeSet[string](),
-						}
-						servers[id] = m
-					}
-					m.Ips.Add(ip)
+	var addrs []net.Addr
+	for _, i := range interfaces {
+
+		if i.Flags&net.FlagRunning == 0 {
+			continue
+		}
+
+		addrs, err = i.Addrs()
+		if err != nil {
+			return
+		}
+
+		for _, addr := range addrs {
+			var currentIP net.IP
+			v, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+
+			currentIP = v.IP
+			currentIPv4 := currentIP.To4()
+			if currentIPv4 == nil {
+				continue
+			}
+			sourceAddr := &net.UDPAddr{
+				IP: currentIPv4,
+			}
+			mapping[sourceAddr] = make([]*net.UDPAddr, 0)
+			if broadcast && i.Flags&net.FlagBroadcast != 0 {
+				for _, port := range targetPorts {
+					mapping[sourceAddr] = append(mapping[sourceAddr], &net.UDPAddr{
+						IP:   common.CalculateBroadcastIp(currentIPv4, v.Mask),
+						Port: port,
+					})
+				}
+			} else {
+				for _, port := range targetPorts {
+					mapping[sourceAddr] = append(mapping[sourceAddr], &net.UDPAddr{
+						IP:   currentIPv4,
+						Port: port,
+					})
 				}
 			}
 
-			results <- servers
-		}()
-	}
-
-	servers := make(map[uuid.UUID]*AnnounceMessage)
-	for range ports {
-		for id, server := range <-results {
-			if _, ok := servers[id]; !ok {
-				servers[id] = server
-			} else {
-				for ip := range server.Ips.Iter() {
-					servers[id].Ips.Add(ip)
+			if len(multicastGroups) > 0 && i.Flags&net.FlagMulticast != 0 {
+				for _, multicastGroup := range multicastGroups {
+					for _, port := range targetPorts {
+						mapping[sourceAddr] = append(
+							mapping[sourceAddr],
+							&net.UDPAddr{
+								IP:   multicastGroup,
+								Port: port,
+							},
+						)
+					}
 				}
 			}
 		}
 	}
-
-	return servers
+	return
 }

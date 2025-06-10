@@ -13,4 +13,5 @@ const (
 	ErrMulticastGroup
 	ErrGames
 	ErrInvalidId
+	ErrAnnouncePort
 )

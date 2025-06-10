@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/spf13/viper"
 	"strconv"
 	"strings"
 )
@@ -15,7 +16,6 @@ const (
 	Info          = "ℹ️"
 	Debug         = "🐛"
 	Success       = "✔️"
-	Receive       = "📡"
 	Clean         = "🧹"
 	Configuration = "⚙️"
 	Search        = "🔍"
@@ -55,6 +55,7 @@ var (
 	ComponentStyle = lipgloss.NewStyle().Bold(true)
 	LiteralStyle   = lipgloss.NewStyle().Italic(true)
 	OptionStyle    = lipgloss.NewStyle().Italic(true).Bold(true)
+	SeparatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 )
 
 func render[T StyledTextOrText](level string, value T) string {
@@ -83,6 +84,9 @@ func generatePrefix(level string, prefix string) string {
 }
 
 func Gen[T StyledTextOrText](level string, prefix string, styledTexts ...T) string {
+	if level == Debug && !viper.GetBool("Config.Debug") {
+		return ""
+	}
 	finalPrefix := generatePrefix(level, prefix)
 	var suffixBuilder strings.Builder
 	for _, styledText := range styledTexts {
@@ -91,20 +95,26 @@ func Gen[T StyledTextOrText](level string, prefix string, styledTexts ...T) stri
 	return joinMessage(finalPrefix, suffixBuilder.String())
 }
 
-func GenSimpLn(level string, text string) string {
+func genSimpLn(level string, text string) string {
 	return Gen(level, "", text)
 }
 
 func Print[T StyledTextOrText](level string, prefix string, styledTexts ...T) {
-	fmt.Print(Gen(level, prefix, styledTexts...))
+	if str := Gen(level, prefix, styledTexts...); str != "" {
+		fmt.Print(str)
+	}
 }
 
 func Println[T StyledTextOrText](level string, styledTexts ...T) {
-	fmt.Println(Gen(level, "", styledTexts...))
+	if str := Gen(level, "", styledTexts...); str != "" {
+		fmt.Println(str)
+	}
 }
 
 func PrintSimpln(level string, text string) {
-	fmt.Println(GenSimpLn(level, text))
+	if str := genSimpLn(level, text); str != "" {
+		fmt.Println(str)
+	}
 }
 
 func joinMessage(prefix string, suffix string) string {

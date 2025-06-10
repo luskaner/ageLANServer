@@ -19,7 +19,6 @@ import (
 	"os"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -43,21 +42,6 @@ func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessa
 		measuredIPs, internalData := server.FilterServerIPs(serverId, gameId, data.Ips)
 		if internalData == nil {
 			continue
-		}
-		// If the server is v1.7.3 - v1.8.2, the announcement data is only in the announcement itself.
-		if data.Version == common.AnnounceVersion1 {
-			convertedData, ok := data.Data.(common.AnnounceMessageData001)
-			if !ok {
-				continue
-			}
-			internalData = &common.AnnounceMessageData002{
-				AnnounceMessageData001: common.AnnounceMessageData001{
-					GameIds: convertedData.GameIds,
-				},
-				Version: "v1.7.3 - v1.8.2",
-			}
-		} else if internalData.Version == "development" {
-			internalData.Version = "development (v1.9.0 - )"
 		}
 		bestAddress := measuredIPs[0]
 		var bestHostsSlice []string
@@ -99,7 +83,7 @@ func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessa
 			}
 			description += ")"
 		}
-		description += " | " + printer.Gen(
+		description += printer.Gen("", "", printer.TS(" | ", printer.SeparatorStyle)) + printer.Gen(
 			printer.Speed,
 			"",
 			printer.TS(
@@ -107,7 +91,7 @@ func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessa
 				printer.LiteralStyle,
 			),
 		)
-		description += " | " + internalData.Version
+		description += printer.Gen("", "", printer.TS(" | ", printer.SeparatorStyle)) + "📦 " + internalData.Version
 		processed = append(processed, &processedServer{
 			id:               serverId,
 			MesuredIpAddress: bestAddress,
@@ -120,25 +104,32 @@ func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessa
 	return processed
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel context.CancelFunc, gameId string, startServerId uuid.UUID, multicastIPs []net.IP, ports []int) (errorCode int, id uuid.UUID, ip string) {
-	defer ctxCancel()
+func listenServerProgressUI(ctx context.Context, cancel context.CancelFunc) {
+	defer cancel()
+	_ = spinner.New().
+		Style(lipgloss.NewStyle()).
+		TitleStyle(lipgloss.NewStyle()).
+		Title(
+			printer.Gen(
+				"",
+				"",
+				printer.T("Querying "),
+				printer.TS("server", printer.ComponentStyle),
+				printer.T("s, you might need to allow the "),
+				printer.TS("launcher", printer.ComponentStyle),
+				printer.T(" in the firewall..."),
+			),
+		).
+		Context(ctx).
+		Run()
+}
+
+func DiscoverServersAndSelectBestIp(broadcast bool, gameId string, startServerId uuid.UUID, multicastIPs []net.IP, ports []int) (errorCode int, id uuid.UUID, ip string) {
 	id = startServerId
-	errorCode = common.ErrSuccess
-	servers := server.LanServersAnnounced(ctx, multicastIPs, ports)
-	if servers == nil {
-		ctxCancel()
-		printer.Println(
-			printer.Error,
-			printer.T("Could not listen to "),
-			printer.TS("server", printer.ComponentStyle),
-			printer.T(" announcements. Maybe the UDP port "),
-			printer.TS(strconv.Itoa(common.AnnouncePort), printer.LiteralStyle),
-			printer.T(" is blocked or already in use."),
-		)
-		errorCode = internal.ErrListenServerAnnouncements
-		return
-	}
-	ctxCancel()
+	servers := make(map[uuid.UUID]*server.AnnounceMessage)
+	ctx, cancel := context.WithTimeout(context.Background(), server.AnnounceQuery)
+	go listenServerProgressUI(ctx, cancel)
+	server.QueryServers(ctx, multicastIPs, ports, broadcast, servers)
 	if len(servers) > 0 {
 		serverCtx, serverCancel := context.WithCancel(context.Background())
 		var spinnerError error
@@ -186,7 +177,6 @@ func ListenToServerAnnouncementsAndSelectBestIp(ctx context.Context, ctxCancel c
 			id = serverOptions[0].Value
 			selectable := huh.NewSelect[uuid.UUID]().
 				Title("Select a server:").
-				Inline(true).
 				Options(
 					serverOptions...,
 				).
