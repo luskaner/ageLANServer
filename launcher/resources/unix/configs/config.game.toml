@@ -1,0 +1,15 @@
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# This file is meant to be used with a specific game title.
+# The default values are commented out for easy configuration.
+
+#SetupCommand = []
+#RevertCommand = []
+#
+#[Isolation]
+#WindowsUserProfilePath = ''
+#NoMetadata = false
+#
+#[Client]
+#Launcher = ''
+#PathCommand = []

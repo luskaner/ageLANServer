@@ -2,92 +2,74 @@ package ip
 
 import (
 	"bytes"
-	"encoding/binary"
-	"encoding/gob"
-	"fmt"
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/spf13/viper"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"golang.org/x/net/ipv4"
 	"net"
-	"time"
 )
 
-func Announce(listenIP net.IP, multicastIP net.IP, targetBroadcastPort int, broadcast bool, multicast bool) {
-	sourceIPs, targetAddrs := ResolveAddrs(listenIP, multicastIP, targetBroadcastPort, broadcast, multicast)
-	if len(sourceIPs) == 0 {
-		fmt.Println("No suitable addresses found.")
-		return
+func announcementConnections(ips []net.IP, multicastGroups []net.IP, ports []int) []*net.UDPConn {
+	var connections []*net.UDPConn
+	var multicastIfs []*net.Interface
+	interfaces, err := common.IPv4RunningNetworkInterfaces()
+	if err == nil {
+		for iff := range interfaces {
+			if iff.Flags&net.FlagMulticast != 0 {
+				multicastIfs = append(multicastIfs, iff)
+			}
+		}
 	}
-	announce(sourceIPs, targetAddrs)
+	for _, port := range ports {
+		for _, ip := range ips {
+			addr := &net.UDPAddr{
+				IP:   ip.To4(),
+				Port: port,
+			}
+			if conn, err := net.ListenUDP("udp4", addr); err == nil {
+				p := ipv4.NewPacketConn(conn)
+				for _, multicastGroup := range multicastGroups {
+					multicastAddr := &net.UDPAddr{
+						IP:   multicastGroup,
+						Port: port,
+					}
+					for _, multicastIf := range multicastIfs {
+						_ = p.JoinGroup(multicastIf, multicastAddr)
+					}
+				}
+				connections = append(connections, conn)
+			}
+		}
+	}
+	return connections
 }
 
-func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
-	var connections []*net.UDPConn
-	for i := range targetAddrs {
-		sourceAddr := net.UDPAddr{IP: sourceIPs[i]}
-		targetAddr := targetAddrs[i]
-		conn, err := net.DialUDP(
-			"udp4",
-			&sourceAddr,
-			targetAddr,
-		)
-		if targetAddr.IP.IsMulticast() {
-			p := ipv4.NewPacketConn(conn)
-			_ = p.SetMulticastLoopback(true)
-		}
-		if err != nil {
-			continue
-		}
-		fmt.Printf("Announcing %s -> %s\n", sourceAddr.IP.String(), targetAddr.IP.String())
-		connections = append(connections, conn)
-	}
-
+func Announce(ip net.IP, multicastGroup net.IP, port int) bool {
+	connections := announcementConnections([]net.IP{ip}, []net.IP{multicastGroup}, []int{port})
 	if len(connections) == 0 {
-		fmt.Println("All connections failed.")
-		return
+		return false
 	}
-
-	defer func(conns []*net.UDPConn) {
-		for _, conn := range conns {
-			_ = conn.Close()
-		}
-	}(connections)
-
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
-	var messageBuff bytes.Buffer
-	enc := gob.NewEncoder(&messageBuff)
-	err := enc.Encode(common.AnnounceMessageData001{
-		GameIds: viper.GetStringSlice("Games"),
-	})
-	if err != nil {
-		fmt.Println("Error encoding message data.")
-		return
-	}
-	messageBuffBytes := messageBuff.Bytes()
 	var buf bytes.Buffer
 	buf.Write([]byte(common.AnnounceHeader))
-	buf.WriteByte(common.AnnounceVersion1)
-	var uuidBytes []byte
-	uuidBytes, err = uuid.New().MarshalBinary()
-	if err != nil {
-		fmt.Println("Error generating ID.")
-		return
+	idBuffer, _ := i.Id.MarshalBinary()
+	buf.Write(idBuffer)
+	write := buf.Bytes()
+	for _, conn := range connections {
+		go func(conn *net.UDPConn) {
+			defer func(conn *net.UDPConn) {
+				_ = conn.Close()
+			}(conn)
+			packetBuffer := make([]byte, len(common.AnnounceHeader))
+			for {
+				n, clientAddr, err := conn.ReadFromUDP(packetBuffer)
+				if err != nil {
+					continue
+				}
+				if n < len(common.AnnounceHeader) || string(packetBuffer) != common.AnnounceHeader {
+					continue
+				}
+				_, _ = conn.WriteToUDP(write, clientAddr)
+			}
+		}(conn)
 	}
-	buf.Write(uuidBytes)
-	err = binary.Write(&buf, binary.LittleEndian, uint16(len(messageBuffBytes)))
-	if err != nil {
-		fmt.Println("Error encoding message length.")
-		return
-	}
-	buf.Write(messageBuffBytes)
-	bufBytes := buf.Bytes()
-
-	for range ticker.C {
-		for _, conn := range connections {
-			_, _ = conn.Write(bufBytes)
-		}
-	}
+	return true
 }

@@ -106,41 +106,15 @@ func HostOrIpToIps(host string) mapset.Set[string] {
 }
 
 func ResolveUnspecifiedIps() (ips []string) {
-	interfaces, err := net.Interfaces()
-
+	interfaces, err := common.IPv4RunningNetworkInterfaces()
 	if err != nil {
 		return
 	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-
-		if i.Flags&net.FlagRunning == 0 {
-			continue
-		}
-
-		addrs, err = i.Addrs()
-		if err != nil {
-			return
-		}
-
-		for _, addr := range addrs {
-			var currentIp net.IP
-			v, ok := addr.(*net.IPNet)
-			if !ok {
-				continue
-			}
-
-			currentIp = v.IP
-			currentIpv4 := currentIp.To4()
-			if currentIpv4 == nil {
-				continue
-			}
-
-			ips = append(ips, currentIpv4.String())
+	for _, iffIps := range interfaces {
+		for _, n := range iffIps {
+			ips = append(ips, n.IP.String())
 		}
 	}
-
 	return
 }
 

@@ -1,7 +1,10 @@
 package userData
 
-import "os"
+import (
+	"github.com/luskaner/ageLANServer/common"
+	"os"
+)
 
-func basePath(_ string) string {
+func basePath(_ common.GameTitle) string {
 	return os.Getenv("USERPROFILE")
 }

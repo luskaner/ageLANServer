@@ -5,15 +5,10 @@ import (
 )
 
 const (
-	ErrInvalidCanTrustCertificate = iota + launcherCommon.ErrLast
-	ErrInvalidCanBroadcastBattleServer
-	ErrInvalidServerStart
-	ErrInvalidServerStop
+	ErrInvalidServerStart = iota + launcherCommon.ErrLast
 	ErrInvalidServerHost
-	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
@@ -22,21 +17,17 @@ const (
 	ErrServerCertCreate
 	ErrServerStart
 	ErrConfigIpMap
-	ErrConfigIpMapFind
 	ErrConfigIpMapAdd
 	ErrConfigCertAdd
 	ErrConfigCert
 	ErrReadCert
 	ErrTrustCert
-	ErrMetadataProfilesSetup
+	ErrMetadataSetup
 	ErrAgentStart
-	ErrInvalidServerArgs
-	ErrInvalidClientArgs
-	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
 	ErrSetupCommand
 	ErrConfigCDNMap
 	ErrSteamRoot
-	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
+	ErrServerStartDeclined
 )

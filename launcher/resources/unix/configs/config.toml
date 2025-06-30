@@ -1,0 +1,24 @@
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# This file is meant to be used with all game titles.
+# The default values are commented out for easy configuration.
+
+#Debug = false
+#StoreToAddHost = 'local'
+#StoreToAddCertificate = 'local'
+
+#[RebroadcastBattleServer]
+#Disable = false
+#IPs = []
+# Note that [[RebroadcastBattleServer.Interfaces]] also exists.
+
+#[Server]
+#Mode = ''
+#[Server.Connect]
+#Host = ''
+#[Server.Run]
+#NoStop = false
+#Command = []
+#[Server.Query]
+#Ports = [31978]
+#MulticastGroups = ['239.31.97.8']

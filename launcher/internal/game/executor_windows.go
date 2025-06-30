@@ -4,40 +4,78 @@ import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"golang.org/x/sys/windows"
+	"unsafe"
 )
 
-const appNamePrefix = "Microsoft."
-const appPublisherId = "8wekyb3d8bbwe"
+var (
+	modkernelbase                   = windows.NewLazyDLL("kernelbase.dll")
+	procFindPackagesByPackageFamily = modkernelbase.NewProc("FindPackagesByPackageFamily")
+)
 
-func appNameSuffix(id string) string {
-	switch id {
-	case common.GameAoE1:
+const (
+	PackageFilterHead       uint32 = 0x10
+	ErrorSuccess            uint32 = 0
+	ErrorInsufficientBuffer uint32 = 122
+)
+
+const (
+	appNamePrefix  = "Microsoft."
+	appPublisherId = "8wekyb3d8bbwe"
+)
+
+func appNameSuffix(gameTitle common.GameTitle) string {
+	switch gameTitle {
+	case common.AoE1:
 		return "Darwin"
-	case common.GameAoE2:
+	case common.AoE2:
 		return "MSPhoenix"
-	case common.GameAoE3:
+	case common.AoE3:
 		return "MSGPBoston"
 	default:
 		return ""
 	}
 }
 
-func appName(id string) string {
-	return appNamePrefix + appNameSuffix(id)
+func appName(gameTitle common.GameTitle) string {
+	return appNamePrefix + appNameSuffix(gameTitle)
 }
 
-func isInstalledOnXbox(id string) bool {
-	// TODO: Implement natively
-	return commonExecutor.Options{
-		File:        "powershell",
-		SpecialFile: true,
-		Wait:        true,
-		ExitCode:    true,
-		Args: []string{
-			"-Command",
-			fmt.Sprintf("if ((Get-AppxPackage).Name -eq '%s') { exit 0 } else { exit 1 }", appName(id)),
-		},
-	}.Exec().Success()
+func appFamilyName(gameTitle common.GameTitle) string {
+	return appName(gameTitle) + "_" + appPublisherId
+}
+
+func isInstalledOnXbox(gameTitle common.GameTitle) bool {
+	packageFamilyName := appFamilyName(gameTitle)
+	errLoadDll := modkernelbase.Load()
+	if errLoadDll != nil {
+		return false
+	}
+	if procFindPackagesByPackageFamily.Find() != nil {
+		return false
+	}
+	pfnUTF16, err := windows.UTF16PtrFromString(packageFamilyName)
+	if err != nil {
+		return false
+	}
+	var count uint32
+	var bufferLength uint32
+
+	result, _, _ := procFindPackagesByPackageFamily.Call(
+		uintptr(unsafe.Pointer(pfnUTF16)),
+		uintptr(PackageFilterHead),
+		uintptr(unsafe.Pointer(&count)),
+		uintptr(0),
+		uintptr(unsafe.Pointer(&bufferLength)),
+		uintptr(0),
+		uintptr(0),
+	)
+
+	apiReturnCode := uint32(result)
+	if apiReturnCode == ErrorSuccess || apiReturnCode == ErrorInsufficientBuffer {
+		return count > 0
+	}
+	return false
 }
 
 func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
@@ -48,7 +86,7 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool)
 
 func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	result = commonExecutor.Options{
-		File:        fmt.Sprintf(`shell:appsfolder\%s_%s!App`, appName(exec.gameId), appPublisherId),
+		File:        fmt.Sprintf(`shell:appsfolder\%s!App`, appFamilyName(exec.gameTitle)),
 		Shell:       true,
 		SpecialFile: true,
 	}.Exec()

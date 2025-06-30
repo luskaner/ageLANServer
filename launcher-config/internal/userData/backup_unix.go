@@ -2,8 +2,11 @@
 
 package userData
 
-import "github.com/luskaner/ageLANServer/launcher-common/steam"
+import (
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/launcher-common/steam"
+)
 
-func basePath(gameId string) string {
-	return steam.UserProfilePath(gameId)
+func basePath(gameTitle common.GameTitle) string {
+	return steam.UserProfilePath(gameTitle)
 }

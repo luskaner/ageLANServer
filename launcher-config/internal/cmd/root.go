@@ -13,7 +13,7 @@ var RootCmd = &cobra.Command{
 }
 
 var Version string
-var gameId string
+var gameTitle string
 var hostFilePath string
 var certFilePath string
 

@@ -4,8 +4,7 @@ import "github.com/luskaner/ageLANServer/common"
 
 const (
 	ErrNotAdmin = iota + common.ErrLast
-	ErrIpMapAddTooMany
-	ErrInvalidGame
+	ErrInvalidGameTitle
 	// ErrLast Only used as a marker to where to start
 	ErrLast
 )

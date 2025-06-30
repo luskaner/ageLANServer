@@ -6,25 +6,26 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 	"runtime"
 )
 
 type Config struct {
-	gameId          string
-	serverExe       string
+	gameTitle       common.GameTitle
+	serverPid       int
 	setupCommandRan bool
 	hostFilePath    string
 	certFilePath    string
 }
 
-func (c *Config) SetServerExe(exe string) {
-	c.serverExe = exe
+func (c *Config) SetServerPid(pid int) {
+	c.serverPid = pid
 }
 
-func (c *Config) SetGameId(id string) {
-	c.gameId = id
+func (c *Config) SetGameTitle(gameTitle common.GameTitle) {
+	c.gameTitle = gameTitle
 }
 
 func (c *Config) SetHostFilePath(path string) {
@@ -53,8 +54,12 @@ func (c *Config) RequiresRunningRevertCommand() bool {
 	return c.setupCommandRan && len(c.revertCommand()) > 0
 }
 
-func (c *Config) ServerExe() string {
-	return c.serverExe
+func (c *Config) ServerPid() int {
+	return c.serverPid
+}
+
+func (c *Config) GameTitle() common.GameTitle {
+	return c.gameTitle
 }
 
 func (c *Config) RevertCommand() []string {
@@ -74,31 +79,43 @@ func (c *Config) CertFilePath() string {
 
 func (c *Config) Revert() {
 	c.KillAgent()
-	if serverExe := c.ServerExe(); len(serverExe) > 0 {
-		fmt.Println("Stopping 'server'...")
-		if proc, err := commonProcess.Kill(serverExe); err == nil {
-			fmt.Println("'Server' stopped.")
+	if serverPid := c.ServerPid(); serverPid != 0 {
+		fmt.Print(printer.Gen(
+			printer.Stop,
+			"",
+			printer.T("Stopping "),
+			printer.TS("server", printer.ComponentStyle),
+			printer.T("... "),
+		))
+		if err := commonProcess.KillPid(serverPid); err == nil {
+			printer.PrintSucceeded()
 		} else {
-			fmt.Println("Failed to stop 'server'.")
-			fmt.Println("Error message: " + err.Error())
-			if proc != nil {
-				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
-			}
+			printer.PrintFailedError(err)
 		}
 	}
 	if c.RequiresConfigRevert() {
-		fmt.Println("Cleaning up...")
-		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert); !ok {
-			fmt.Println("Failed to clean up.")
+		printer.PrintSimpln(
+			printer.Clean,
+			"Cleaning up... ",
+		)
+		if ok := launcherCommon.ConfigRevert(c.GameTitle(), false, executor.RunRevert, printer.ConfigRevertPrinter()); !ok {
+			printer.PrintFailed()
+		} else {
+			printer.PrintSimpln(printer.Success, "Cleaned.")
 		}
 	}
 	if c.RequiresRunningRevertCommand() {
+		printer.Println(
+			printer.Execute,
+			printer.T("Running "),
+			printer.TS("RevertCommand", printer.OptionStyle),
+			printer.T("... "),
+		)
 		err := executor.RunRevertCommand()
 		if err != nil {
-			fmt.Println("Failed to run revert command.")
-			fmt.Println("Error message: " + err.Error())
+			printer.PrintFailedError(err)
 		} else {
-			fmt.Println("Ran Revert command.")
+			printer.PrintSucceeded()
 		}
 	}
 }
@@ -110,9 +127,8 @@ func anyProcessExists(names []string) bool {
 
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
-	for gameId := range common.AllGames.Iter() {
-		if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
-			fmt.Println("Some Age game is already running, exit the game and execute the 'launcher' again.")
+	for gameTitle := range common.AllGameTitles.Iter() {
+		if anyProcessExists(commonProcess.GameProcesses(gameTitle, true, xbox)) {
 			return true
 		}
 	}

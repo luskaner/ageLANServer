@@ -5,10 +5,9 @@
 This executable makes and revert configuration changes and is executed by `launcher` or manually:
 
 - Isolated metadata directory (except AoE I).
-- Isolated profiles directory.
-- Hosts file (via `config-admin`).
+- Hosts file (via `config-admin`) or to a custom unprivileged file.
 - Install of a self-signed certificate for the current user (only on Windows) or local (in this case via
-  `config-admin`).
+  `config-admin`) or to a custom unprivileged file.
 
 It is also responsible for managing the lifecycle and communicating with `config-admin-agent`.
 Resides in `bin` subdirectory.
@@ -18,7 +17,8 @@ Resides in `bin` subdirectory.
 CLI is available. You can see the available options with
 `config -h`.
 
-You may run `revert -a -e <game>` (where game is either `age1`, `age2` or `age3`) to revert all changes (forced).
+You may run `revert -a -e <game_title>` (where `game_title` is either `age1`, `age2` or `age3`) to revert all changes (
+forced).
 
 ## Exit Codes
 

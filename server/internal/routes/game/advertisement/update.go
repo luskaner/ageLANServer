@@ -8,9 +8,9 @@ import (
 	"net/http"
 )
 
-func updateReturnError(gameId string, w *http.ResponseWriter) {
+func updateReturnError(gameTitle common.GameTitle, w *http.ResponseWriter) {
 	response := i.A{2}
-	if gameId != common.GameAoE1 {
+	if gameTitle != common.AoE1 {
 		response = append(response, i.A{})
 	}
 	i.JSON(w, response)
@@ -36,13 +36,13 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if gameTitle != common.GameAoE2 {
+		if gameTitle != common.AoE2 {
 			q.PlatformSessionId = adv.UnsafeGetPlatformSessionId()
 			q.Joinable = true
 		}
 		advertisements.UpdateUnsafe(adv, &q)
 
-		if gameTitle == common.GameAoE2 {
+		if gameTitle == common.AoE2 {
 			response = adv.UnsafeEncode(gameTitle)
 		}
 		ok = true

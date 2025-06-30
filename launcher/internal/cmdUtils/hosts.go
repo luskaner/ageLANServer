@@ -3,13 +3,13 @@ package cmdUtils
 import (
 	"encoding/json"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"io"
@@ -70,14 +70,20 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCode int) {
+func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 	var mapCDN bool
 	var mapIP bool
-	ips := mapset.NewThreadUnsafeSet[string]()
-	if !customHostFile {
+	var ipToMap string
+	if store != "tmp" {
 		if requiresMapCDN() {
-			if !canMap {
-				fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
+			if store == "" {
+				printer.Println(
+					printer.Error,
+					printer.TS("CanAddHost", printer.OptionStyle),
+					printer.T(" is "),
+					printer.TS("false", printer.LiteralStyle),
+					printer.T(" but CDN is required to be mapped. You should have added the mapping yourself."),
+				)
 				errorCode = internal.ErrConfigCDNMap
 				return
 			}
@@ -85,15 +91,33 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		}
 		for _, domain := range common.AllHosts() {
 			if !launcherCommon.Matches(ip, domain) {
-				if !canMap {
-					fmt.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
+				if store == "" {
+					printer.Println(
+						printer.Error,
+						printer.TS("Server.Start", printer.OptionStyle),
+						printer.T(" is "),
+						printer.TS("false", printer.LiteralStyle),
+						printer.T(" but "),
+						printer.TS("server", printer.LiteralStyle),
+						printer.T(" does not match "),
+						printer.TS(domain, printer.LiteralStyle),
+						printer.T("."),
+					)
 					errorCode = internal.ErrConfigIpMap
 					return
 				} else {
 					mapIP = true
 				}
 			} else if !server.CheckConnectionFromServer(domain, true) {
-				fmt.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
+				printer.Println(
+					printer.Error,
+					printer.TS("Server.Start", printer.OptionStyle),
+					printer.T(" is "),
+					printer.TS("false", printer.LiteralStyle),
+					printer.T(" and host matches. "),
+					printer.TS(domain, printer.LiteralStyle),
+					printer.T(" must be reachable."),
+				)
 				errorCode = internal.ErrServerUnreachable
 				return
 			}
@@ -102,10 +126,10 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		mapIP = true
 	}
 	if mapIP {
-		ips.Add(ip)
+		ipToMap = ip
 	}
-	if !ips.IsEmpty() || mapCDN {
-		if customHostFile {
+	if ipToMap != "" || mapCDN {
+		if store == "tmp" {
 			hostFile, err := hosts.CreateTemp()
 			if err != nil {
 				return internal.ErrConfigIpMapAdd
@@ -114,35 +138,39 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 				return internal.ErrConfigIpMapAdd
 			}
 			c.SetHostFilePath(hostFile.Name())
-			fmt.Printf("Saving hosts to '%s' file", hostFile.Name())
+			printer.Println(
+				printer.Configuration,
+				printer.T("Storing hosts to temporary file: "),
+				printer.TS(hostFile.Name(), printer.FilePathStyle),
+				printer.T("..."),
+			)
 		} else {
-			fmt.Print("Adding hosts to hosts file")
+			addHostsStyledTexts := []*printer.StyledText{printer.T("Adding hosts to hosts file")}
 			if !commonExecutor.IsAdmin() {
-				fmt.Print(", authorize 'config-admin-agent' if needed")
+				addHostsStyledTexts = append(
+					addHostsStyledTexts,
+					printer.T(", authorize "),
+					printer.TS("config-admin", printer.ComponentStyle),
+					printer.T(" if needed"),
+				)
 			}
+			addHostsStyledTexts = append(addHostsStyledTexts, printer.T("..."))
+			fmt.Print(printer.Gen(printer.Configuration, "", addHostsStyledTexts...))
 		}
-		fmt.Println("...")
-		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true, c.HostFilePath(), ""); !result.Success() {
-			fmt.Println("Failed to add hosts.")
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
+		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIp: ipToMap, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
+			printer.PrintFailedResultError(result)
 			errorCode = internal.ErrConfigIpMapAdd
-		} else if customHostFile {
+		} else if store == "tmp" {
 			cmd.MapCDN = true
 			if parsedIP := net.ParseIP(ip); parsedIP != nil {
-				cmd.MapIPs = append(cmd.MapIPs, parsedIP)
+				cmd.MapIP = parsedIP
 			}
 			mappings := hosts.HostMappings()
-			for hostToCache, ipsToCache := range mappings {
-				for ipToCache := range ipsToCache.Iter() {
-					launcherCommon.CacheMapping(hostToCache, ipToCache)
-				}
+			for hostToCache, ipToCache := range mappings {
+				launcherCommon.CacheMapping(hostToCache, ipToCache)
 			}
 		}
+		printer.PrintSucceeded()
 	}
 	return
 }

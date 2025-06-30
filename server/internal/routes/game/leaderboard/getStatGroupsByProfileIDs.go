@@ -13,7 +13,7 @@ func GetStatGroupsByProfileIDs(w http.ResponseWriter, r *http.Request) {
 		r,
 		r.URL.Query().Get("profileids"),
 		true,
-		models.G(r).Title() != common.GameAoE3,
+		models.G(r).Title() != common.AoE3,
 	)
 	i.JSON(&w, response)
 }

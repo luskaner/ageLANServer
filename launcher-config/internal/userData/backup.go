@@ -15,41 +15,44 @@ type Data struct {
 
 const finalPathPrefix = "Games"
 
-func finalPath(gameId string) string {
+func finalPath(gameTitle common.GameTitle) string {
 	var suffix string
-	switch gameId {
-	case common.GameAoE1:
+	switch gameTitle {
+	case common.AoE1:
 		suffix = filepath.Join(`Age of Empires DE`, `Users`)
-	case common.GameAoE2:
+	case common.AoE2:
 		suffix = `Age of Empires 2 DE`
-	case common.GameAoE3:
+	case common.AoE3:
 		suffix = `Age of Empires 3 DE`
 	}
 	return filepath.Join(finalPathPrefix, suffix)
 }
 
-func (d Data) isolatedPath(gameId string) string {
-	return d.absolutePath(gameId) + `.lan`
+func (d Data) isolatedPath(staticBasePath string, gameTitle common.GameTitle) string {
+	return d.absolutePath(staticBasePath, gameTitle) + `.lan`
 }
 
-func (d Data) originalPath(gameId string) string {
-	return d.absolutePath(gameId) + `.bak`
+func (d Data) originalPath(staticBasePath string, gameTitle common.GameTitle) string {
+	return d.absolutePath(staticBasePath, gameTitle) + `.bak`
 }
 
-func (d Data) absolutePath(gameId string) string {
-	return filepath.Join(path(gameId), d.Path)
+func (d Data) absolutePath(staticBasePath string, gameTitle common.GameTitle) string {
+	return filepath.Join(path(staticBasePath, gameTitle), d.Path)
 }
 
-func path(gameId string) string {
-	return filepath.Join(basePath(gameId), finalPath(gameId))
+func path(staticBasePath string, gameTitle common.GameTitle) string {
+	if staticBasePath == "" {
+		staticBasePath = basePath(gameTitle)
+	}
+	return filepath.Join(staticBasePath, finalPath(gameTitle))
 }
 
-func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok bool) {
+func (d Data) switchPaths(staticBasePath string, gameTitle common.GameTitle, backupPath string, currentPath string) (ok bool) {
 	if _, err := os.Stat(backupPath); err == nil {
 		return
 	}
 
-	absolutePath := d.absolutePath(gameId)
+	absolutePath := d.absolutePath(staticBasePath, gameTitle)
 	var mode os.FileMode
 
 	if _, err := os.Stat(absolutePath); errors.Is(err, fs.ErrNotExist) {
@@ -123,10 +126,10 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 	return true
 }
 
-func (d Data) Backup(gameId string) bool {
-	return d.switchPaths(gameId, d.originalPath(gameId), d.isolatedPath(gameId))
+func (d Data) Backup(staticBasePath string, gameTitle common.GameTitle) bool {
+	return d.switchPaths(staticBasePath, gameTitle, d.originalPath(staticBasePath, gameTitle), d.isolatedPath(staticBasePath, gameTitle))
 }
 
-func (d Data) Restore(gameId string) bool {
-	return d.switchPaths(gameId, d.isolatedPath(gameId), d.originalPath(gameId))
+func (d Data) Restore(staticBasePath string, gameTitle common.GameTitle) bool {
+	return d.switchPaths(staticBasePath, gameTitle, d.isolatedPath(staticBasePath, gameTitle), d.originalPath(staticBasePath, gameTitle))
 }
