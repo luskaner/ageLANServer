@@ -12,7 +12,7 @@ import (
 // GUID Version 4
 var re, _ = regexp.Compile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
 
-func returnError(gameId string, w *http.ResponseWriter) {
+func returnError(gameTitle common.GameTitle, w *http.ResponseWriter) {
 	response := i.A{
 		2,
 		0,
@@ -21,7 +21,7 @@ func returnError(gameId string, w *http.ResponseWriter) {
 		0,
 		0,
 	}
-	if gameId != common.GameAoE1 {
+	if gameTitle != common.AoE1 {
 		response = append(response, 0)
 	}
 
@@ -32,10 +32,10 @@ func returnError(gameId string, w *http.ResponseWriter) {
 		0,
 	)
 
-	if gameId != common.GameAoE2 {
+	if gameTitle != common.AoE2 {
 		response = append(response, "0")
 	}
-	if gameId == common.GameAoE2 {
+	if gameTitle == common.AoE2 {
 		response = append(
 			response,
 			0,
@@ -64,7 +64,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			returnError(gameTitle, &w)
 			return
 		}
-		if gameTitle != common.GameAoE2 {
+		if gameTitle != common.AoE2 {
 			adv.Joinable = true
 		}
 		u, ok := game.Users().GetUserById(adv.HostId)
@@ -95,7 +95,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 				0,
 				0,
 			}
-			if gameTitle != common.GameAoE1 {
+			if gameTitle != common.AoE1 {
 				response = append(response, 0)
 			}
 
@@ -106,10 +106,10 @@ func Host(w http.ResponseWriter, r *http.Request) {
 				0,
 			)
 
-			if gameTitle != common.GameAoE2 {
+			if gameTitle != common.AoE2 {
 				response = append(response, "0")
 			}
-			if gameTitle == common.GameAoE2 {
+			if gameTitle == common.AoE2 {
 				response = append(
 					response,
 					0,

@@ -34,7 +34,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	fmt.Println("Restoring previously backed up metadata")
-	if userData.Metadata(gameId).Restore(windowsUserProfilePath, gameId) {
+	if userData.Metadata(common.GameTitle(gameTitle)).Restore(windowsUserProfilePath, common.GameTitle(gameTitle)) {
 		fmt.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -75,12 +75,12 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		if gameId == common.GameAoE1 {
+		if gameTitle == string(common.AoE1) {
 			BackupMetadata = false
 		}
-		if BackupMetadata && !common.SupportedGames.ContainsOne(gameId) {
-			fmt.Println("Invalid game type")
-			os.Exit(launcherCommon.ErrInvalidGame)
+		if BackupMetadata && !common.SupportedGameTitles.ContainsOne(common.GameTitle(gameTitle)) {
+			fmt.Println("Invalid gameTitle type")
+			os.Exit(launcherCommon.ErrInvalidGameTitle)
 		}
 		var addLocalCertData []byte = nil
 		if certFilePath != "" {
@@ -91,7 +91,7 @@ var setUpCmd = &cobra.Command{
 		} else {
 			addLocalCertData = cmd.AddLocalCertData
 		}
-		fmt.Printf("Setting up configuration for %s...\n", gameId)
+		fmt.Printf("Setting up configuration for %s...\n", gameTitle)
 		isAdmin := executor.IsAdmin()
 		if AddUserCertData != nil {
 			fmt.Println("Adding user certificate, authorize it if needed...")
@@ -111,7 +111,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupMetadata {
 			fmt.Println("Backing up metadata")
-			if userData.Metadata(gameId).Backup(windowsUserProfilePath, gameId) {
+			if userData.Metadata(common.GameTitle(gameTitle)).Backup(windowsUserProfilePath, common.GameTitle(gameTitle)) {
 				fmt.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
@@ -275,7 +275,7 @@ func InitSetUp() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
-	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameId)
+	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameTitle)
 	setUpCmd.Flags().StringVarP(
 		&hostFilePath,
 		"hostFilePath",

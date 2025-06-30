@@ -3,13 +3,14 @@ package cmdUtils
 import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/config/launcher/parse"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
+	"net"
 	"runtime"
 	"strings"
 )
@@ -37,7 +38,7 @@ func (c *Config) KillAgent() bool {
 	return true
 }
 
-func (c *Config) ParseGameArguments(rawArgs []string) (args []string, errorCode int) {
+func (c *Config) ParseGameArguments(rawArgs []string) (args []string) {
 	var values map[string]string = nil
 	if hostFilePath := c.HostFilePath(); hostFilePath != "" {
 		values = map[string]string{
@@ -56,42 +57,25 @@ func (c *Config) ParseGameArguments(rawArgs []string) (args []string, errorCode 
 			values["CertFilePath"] = strings.ReplaceAll(certFilePath, `\`, `\\`)
 		}
 	}
-	var err error
-	args, err = parse.CommandArgs(rawArgs, values)
-	if err != nil {
-		printer.Println(
-			printer.Error,
-			printer.T("Failed to parse "),
-			printer.TS("Client.ExecutableArgs", printer.OptionStyle),
-			printer.T("."),
-		)
-		errorCode = internal.ErrInvalidClientArgs
-	}
+	args = parse.CommandArgs(rawArgs, values)
 	return
 }
 
-func (c *Config) LaunchAgent(executer game.Executor, canBroadcastBattleServer string) (errorCode int) {
-	if canBroadcastBattleServer != "false" {
-		if game.RequiresBattleServerBroadcast() {
-			canBroadcastBattleServer = "true"
-		} else {
-			canBroadcastBattleServer = "false"
-		}
-	}
+func (c *Config) LaunchAgent(executer game.Executor, rebroadcastIPs []net.IP) (errorCode int) {
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
-	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || c.serverPid != 0 || requiresConfigRevert {
+	if len(revertCommand) > 0 || len(rebroadcastIPs) > 0 || c.serverPid != 0 || requiresConfigRevert {
 		agentStyledTexts := []*printer.StyledText{
 			printer.T("Starting "),
 			printer.TS("agent", printer.ComponentStyle),
 		}
-		if canBroadcastBattleServer == "true" {
+		if len(rebroadcastIPs) > 0 {
 			agentStyledTexts = append(agentStyledTexts, printer.T(", authorize it in firewall if needed"))
 		}
 		agentStyledTexts = append(agentStyledTexts, printer.T("... "))
 		fmt.Print(printer.Gen(printer.Execute, "", agentStyledTexts...))
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverPid, canBroadcastBattleServer == "true")
+		result := executor.RunAgent(c.gameTitle, steamProcess, xboxProcess, c.serverPid, rebroadcastIPs)
 		if !result.Success() {
 			printer.PrintFailedResultError(result)
 			return internal.ErrAgentStart
@@ -104,7 +88,7 @@ func (c *Config) LaunchAgent(executer game.Executor, canBroadcastBattleServer st
 
 func (c *Config) LaunchGame(executer game.Executor, customExecutor game.CustomExecutor, clientExecutableArgs []string) (errorCode int) {
 	gameStyledTexts := []*printer.StyledText{
-		printer.T("Starting game"),
+		printer.T("Starting game title"),
 	}
 	if customExecutor.Executable != "" {
 		gameStyledTexts = append(gameStyledTexts, printer.T(" , authorize it if needed"))

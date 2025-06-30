@@ -33,7 +33,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 			fileData.Id,
 			fmt.Sprintf("https://%s/cloudfiles/%s", r.Host, finalPart),
 		}
-		if gameTitle == common.GameAoE2 {
+		if gameTitle == common.AoE2 {
 			description = append(
 				description,
 				finalPart,

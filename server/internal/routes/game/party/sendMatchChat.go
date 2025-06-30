@@ -28,7 +28,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 
 	var toProfileIds []int32
 	game := models.G(r)
-	if game.Title() == common.GameAoE3 {
+	if game.Title() == common.AoE3 {
 		profileIdStr := r.FormValue("to_profile_id")
 		if profileIdStr == "" {
 			i.JSON(&w, i.A{0})

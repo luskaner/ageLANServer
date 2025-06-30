@@ -32,7 +32,7 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 
 func backupMetadata() bool {
 	fmt.Println("Backing up previously restored metadata")
-	if userData.Metadata(gameId).Backup(windowsUserProfilePath, gameId) {
+	if userData.Metadata(common.GameTitle(gameTitle)).Backup(windowsUserProfilePath, common.GameTitle(gameTitle)) {
 		fmt.Println("Successfully backed up metadata")
 		return true
 	} else {
@@ -77,14 +77,14 @@ var revertCmd = &cobra.Command{
 			}
 			RestoreMetadata = true
 		}
-		if gameId == common.GameAoE1 {
+		if gameTitle == string(common.AoE1) {
 			RestoreMetadata = false
 		}
-		if restoredMetadata && !common.SupportedGames.ContainsOne(gameId) {
-			fmt.Println("Invalid game type")
-			os.Exit(launcherCommon.ErrInvalidGame)
+		if restoredMetadata && !common.SupportedGameTitles.ContainsOne(common.GameTitle(gameTitle)) {
+			fmt.Println("Invalid gameTitle type")
+			os.Exit(launcherCommon.ErrInvalidGameTitle)
 		}
-		fmt.Printf("Reverting configuration for %s...\n", gameId)
+		fmt.Printf("Reverting configuration for %s...\n", gameTitle)
 		if RemoveUserCert {
 			fmt.Println("Removing user certificates, authorize it if needed...")
 			if removedUserCerts, _ := wrapper.RemoveUserCerts(); removedUserCerts != nil {
@@ -98,7 +98,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreMetadata {
 			fmt.Println("Restoring metadata")
-			if userData.Metadata(gameId).Restore(windowsUserProfilePath, gameId) {
+			if userData.Metadata(common.GameTitle(gameTitle)).Restore(windowsUserProfilePath, common.GameTitle(gameTitle)) {
 				fmt.Println("Successfully restored metadata")
 				restoredMetadata = true
 			} else {
@@ -226,7 +226,7 @@ func InitRevert() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitRevert(revertCmd)
-	commonCmd.GameVarCommand(revertCmd.Flags(), &gameId)
+	commonCmd.GameVarCommand(revertCmd.Flags(), &gameTitle)
 	revertCmd.Flags().StringVarP(
 		&hostFilePath,
 		"hostFilePath",

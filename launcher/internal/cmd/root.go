@@ -2,17 +2,19 @@ package cmd
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	cfg "github.com/luskaner/ageLANServer/common/config"
+	"github.com/luskaner/ageLANServer/common/config/launcher"
+	"github.com/luskaner/ageLANServer/common/config/launcher/parse"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
@@ -26,169 +28,116 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
-	"slices"
-	"strconv"
 	"strings"
 	"syscall"
 )
 
-const autoValue = "auto"
-const trueValue = "true"
-const falseValue = "false"
-
 var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
+var parameters = launcher.Config{}
+var v = viper.New()
+var lock *pidLock.Lock
 
 var (
-	Version                        string
-	cfgFile                        string
-	gameCfgFile                    string
-	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
-	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
-	rootCmd                        = &cobra.Command{
+	Version  string
+	cfgFiles []string
+	rootCmd  = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
-		Run: func(_ *cobra.Command, _ []string) {
-			lock := &pidLock.Lock{}
-			if err := lock.Lock(); err != nil {
-				printer.Println(
-					printer.Error,
-					printer.T("Failed to lock PID file. Kill process "),
-					printer.TS("launcher", printer.ComponentStyle),
-					printer.T(" if it is running in your task manager."),
-				)
-				printer.PrintSimpln(printer.Debug, err.Error())
-				os.Exit(common.ErrPidLock)
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			if err := launcher.Unmarshal(v, &parameters); err != nil {
+				return err
 			}
+			err, validate := launcher.Validator()
+			if err != nil {
+				return err
+			}
+			if err := validate.Struct(&parameters); err != nil {
+				return err
+			}
+			config.SetGameTitle(parameters.GameTitle)
+			if parameters.Client.Launcher == "path" {
+				parameters.Client.PathCommand[0] = parse.CommandArgs([]string{parameters.Client.PathCommand[0]}, nil)[0]
+			}
+			if parameters.Server.Mode != "connect" && len(parameters.Server.Run.Command) > 0 && parameters.Server.Run.Command[0] != "" {
+				if err = validate.Var(parameters.Server.Run.Command[0], "file"); err != nil {
+					return err
+				}
+			}
+			parameters.SetupCommand = parse.CommandArgs(parameters.SetupCommand, nil)
+			parameters.RevertCommand = parse.CommandArgs(parameters.RevertCommand, nil)
+			lock = &pidLock.Lock{}
+			if err := lock.Lock(); err != nil {
+				return fmt.Errorf("failed to lock PID file: %w", err)
+			}
+			if cmdUtils.GameRunning() {
+				return fmt.Errorf("an age game is already running")
+			}
+			printer.EnableDebug = parameters.Debug
+			return nil
+		},
+		Run: func(_ *cobra.Command, _ []string) {
 			var errorCode = common.ErrSuccess
 			defer func() {
 				_ = lock.Unlock()
 				os.Exit(errorCode)
 			}()
 			isAdmin := commonExecutor.IsAdmin()
-			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
-			if runtime.GOOS != "windows" {
-				canTrustCertificateValues.Remove("user")
-			}
-			if !canTrustCertificateValues.Contains(canTrustCertificate) {
-				printer.PrintInvalidOption("Config.CanTrustCertificate", canTrustCertificate, canTrustCertificateValues.ToSlice()...)
-				errorCode = internal.ErrInvalidCanTrustCertificate
-				return
-			}
-			canBroadcastBattleServer := "false"
-			if runtime.GOOS == "windows" {
-				canBroadcastBattleServer = viper.GetString("Config.CanBroadcastBattleServer")
-				if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
-					printer.PrintInvalidOption("Config.CanBroadcastBattleServer", canBroadcastBattleServer, canBroadcastBattleServerValues.ToSlice()...)
-					errorCode = internal.ErrInvalidCanBroadcastBattleServer
-					return
-				}
-			}
-			serverStart := viper.GetString("Server.Start")
-			if !autoTrueFalseValues.Contains(serverStart) {
-				printer.PrintInvalidOption("Server.Start", serverStart, autoTrueFalseValues.ToSlice()...)
-				errorCode = internal.ErrInvalidServerStart
-				return
-			}
-			serverStop := viper.GetString("Server.Stop")
-			if runtime.GOOS != "windows" && isAdmin {
-				autoTrueFalseValues.Remove(falseValue)
-			}
-			if !autoTrueFalseValues.Contains(serverStop) {
-				printer.PrintInvalidOption("Server.Stop", serverStop, autoTrueFalseValues.ToSlice()...)
-				errorCode = internal.ErrInvalidServerStop
-				return
-			}
-			gameId := viper.GetString("Game")
-			if !common.SupportedGames.ContainsOne(gameId) {
-				printer.PrintInvalidOption("game", gameId, common.SupportedGames.ToSlice()...)
-				errorCode = launcherCommon.ErrInvalidGame
-				return
-			}
-			config.SetGameId(gameId)
-			serverExecutableArgs := viper.GetStringSlice("Server.ExecutableArgs")
-			if !slices.ContainsFunc(serverExecutableArgs, func(s string) bool {
-				return s == "-d" || s == "--id"
-			}) {
-				printer.Println(
-					printer.Error,
-					printer.TS("Server.ExecutableArgs", printer.OptionStyle),
-					printer.T(" must contain "),
-					printer.TS("-d", printer.LiteralStyle),
-					printer.T(" ( or "),
-					printer.TS("--id", printer.LiteralStyle),
-					printer.T(" )."),
+			storeToAddHosts := parameters.StoreToAddHost
+			storeToAddCertificate := parameters.StoreToAddCertificate
+			var rebroadcastIPs []net.IP
+			if runtime.GOOS == "windows" && !parameters.RebroadcastBattleServer.Disable {
+				rebroadcastIPs = game.RebroadcastIPs(
+					parameters.RebroadcastBattleServer.IPs,
+					parameters.RebroadcastBattleServer.Interfaces,
 				)
-				errorCode = internal.ErrInvalidServerArgs
-				return
 			}
-			serverValues := map[string]string{
-				"Game": gameId,
-				"Id":   uuid.NewString(),
-			}
-			serverArgs, err := parse.CommandArgs(viper.GetStringSlice("Server.ExecutableArgs"), serverValues)
-			if err != nil {
-				printer.PrintFailedParseOption("Server.ExecutableArgs", err)
-				errorCode = internal.ErrInvalidServerArgs
-				return
-			}
-			var setupCommand []string
-			setupCommand, err = parse.CommandArgs(viper.GetStringSlice("Config.SetupCommand"), nil)
-			if err != nil {
-				printer.PrintFailedParseOption("Config.SetupCommand", err)
-				errorCode = internal.ErrInvalidSetupCommand
-				return
-			}
-			var revertCommand []string
-			revertCommand, err = parse.CommandArgs(viper.GetStringSlice("Config.RevertCommand"), nil)
-			if err != nil {
-				printer.PrintFailedParseOption("Config.RevertCommand", err)
-				errorCode = internal.ErrInvalidRevertCommand
-				return
-			}
-			canAddHost := viper.GetBool("Config.CanAddHost")
-			clientExecutable := viper.GetString("Client.Executable")
-			var isolateMetadata bool
-			if gameId != common.GameAoE1 {
-				isolateMetadata = viper.GetBool("Config.Isolation.Metadata")
-			}
-			var isolateWindowsUserProfilePath string
-			if runtime.GOOS == "linux" {
-				isolateWindowsUserProfilePathTemp := viper.GetString("Config.Isolation.WindowsUserProfilePath")
-				if isolateWindowsUserProfilePathTemp != "auto" {
-					if windowsIsolateUserProfilePathTempParsed, err := parse.Executable(isolateWindowsUserProfilePathTemp, nil); err == nil {
-						isolateWindowsUserProfilePath = windowsIsolateUserProfilePathTempParsed
-					} else {
-						isolateWindowsUserProfilePath = isolateWindowsUserProfilePathTemp
-					}
-				} else if clientExecutable != "auto" && clientExecutable != "steam" && isolateMetadata {
-					printer.Println(
-						printer.Error,
-						printer.T(`You need to set `),
-						printer.TS("Config.Isolation.WindowsUserProfilePath", printer.OptionStyle),
-						printer.T(` to a path as you are enabling `),
-						printer.TS("Config.Isolation.Metadata", printer.OptionStyle),
-						printer.T(` whilst setting a path for `),
-						printer.TS("Client.Executable", printer.OptionStyle),
-						printer.T(`.`),
-					)
-					errorCode = internal.ErrInvalidIsolationWindowsUserProfilePath
-					return
+			var serverStart string
+			var serverStop string
+			switch parameters.Server.Mode {
+			case "connect":
+				serverStart = "false"
+				serverStop = "false"
+			case "run":
+				serverStart = "true"
+				if parameters.Server.Run.NoStop {
+					serverStop = "false"
+				} else {
+					serverStop = "true"
 				}
 			}
-			serverExecutable := viper.GetString("Server.Executable")
-			serverHost := viper.GetString("Server.Host")
+
+			var isolateMetadata bool
+			if config.GameTitle() != common.AoE1 {
+				isolateMetadata = !parameters.Isolation.NoMetadata
+			}
+			var serverExecutable string
+			if len(parameters.Server.Run.Command) > 0 {
+				serverExecutable = parameters.Server.Run.Command[0]
+			}
+			var serverArgs []string
+			if len(parameters.Server.Run.Command) > 1 {
+				serverArgs = parameters.Server.Run.Command[1:]
+			}
+			serverHost := parameters.Server.Connect.Host
 
 			printer.Print(
 				printer.Search,
 				"",
 				printer.T(`Looking for `),
-				printer.TS(gameId, printer.LiteralStyle),
+				printer.TS(string(config.GameTitle()), printer.LiteralStyle),
 				printer.T(` game... `),
 			)
-			executer := game.MakeExecutor(gameId, clientExecutable)
+			var clientExecutable string
+			if parameters.Client.Launcher == "path" {
+				clientExecutable = parameters.Client.PathCommand[0]
+			}
+			var clientArgs []string
+			if len(parameters.Client.PathCommand) > 1 {
+				clientArgs = parameters.Client.PathCommand[1:]
+			}
+			executer := game.MakeExecutor(config.GameTitle(), parameters.Client.Launcher, clientExecutable)
 			var customExecutor game.CustomExecutor
 			switch executer.(type) {
 			case game.SteamExecutor:
@@ -229,7 +178,7 @@ var (
 				}
 			}
 
-			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
+			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "" || clientExecutable == "steam") {
 				printer.Println(
 					printer.Error,
 					printer.TS(`Steam`, printer.LiteralStyle),
@@ -240,21 +189,6 @@ var (
 				errorCode = internal.ErrSteamRoot
 				return
 			}
-
-			if cmdUtils.GameRunning() {
-				printer.Println(
-					printer.Error,
-					printer.T(`An `),
-					printer.TS(`Age`, printer.LiteralStyle),
-					printer.T(` game is already running, exit the game and execute the `),
-					printer.TS(`launcher`, printer.ComponentStyle),
-					printer.T(` again.`),
-				)
-				errorCode = internal.ErrGameAlreadyRunning
-				return
-			}
-
-			config.SetGameId(gameId)
 
 			defer func() {
 				if r := recover(); r != nil {
@@ -286,15 +220,15 @@ var (
 				errorCode = common.ErrGeneral
 				return
 			}
-			if !launcherCommon.ConfigRevert(gameId, false, executor.RunRevert, printer.ConfigRevertPrinter()) {
+			if !launcherCommon.ConfigRevert(config.GameTitle(), false, executor.RunRevert, printer.ConfigRevertPrinter()) {
 				errorCode = common.ErrGeneral
 				return
 			}
-			if err = executor.RunRevertCommand(); err != nil {
+			if err := executor.RunRevertCommand(); err != nil {
 				printer.Println(
 					printer.Error,
 					printer.T("Failed to run the last execution "),
-					printer.TS("Config.RevertCommand", printer.OptionStyle),
+					printer.TS("RevertCommand", printer.OptionStyle),
 					printer.T("."),
 				)
 				printer.Println(
@@ -303,19 +237,7 @@ var (
 					printer.T(err.Error()),
 				)
 			}
-			if len(revertCommand) > 0 {
-				if err := launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
-					printer.Println(
-						printer.Error,
-						printer.T("Failed to store the "),
-						printer.TS("Config.RevertCommand", printer.OptionStyle),
-					)
-					errorCode = internal.ErrInvalidRevertCommand
-					return
-				}
-			}
-			_, _, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
-			if err == nil {
+			if _, _, err := commonProcess.Process(common.GetExeFileName(false, common.Server)); err == nil {
 				printer.Println(
 					printer.Info,
 					printer.TS("Server", printer.ComponentStyle),
@@ -331,116 +253,54 @@ var (
 				)
 			}
 			// Setup
-			if len(setupCommand) > 0 {
+			if len(parameters.SetupCommand) > 0 {
 				fmt.Print(printer.Gen(
 					printer.Execute,
 					"",
 					printer.T(`Running `),
-					printer.TS("Config.SetupCommand", printer.OptionStyle),
+					printer.TS("SetupCommand", printer.OptionStyle),
 					printer.T(` and waiting for it...`),
 				))
-				result := config.RunSetupCommand(setupCommand)
+				result := config.RunSetupCommand(parameters.SetupCommand)
 				if !result.Success() {
 					printer.PrintFailedResultError(result)
 					errorCode = internal.ErrSetupCommand
 					return
 				} else {
 					printer.PrintSucceeded()
+					if len(parameters.RevertCommand) > 0 {
+						if err := launcherCommon.RevertCommandStore.Store(parameters.RevertCommand); err != nil {
+							printer.Println(
+								printer.Error,
+								printer.T("Failed to store the "),
+								printer.TS("RevertCommand", printer.OptionStyle),
+							)
+							errorCode = internal.ErrInvalidRevertCommand
+							return
+						}
+					}
 				}
 			}
 			serverId := uuid.Nil
-			if serverStart == "auto" {
-				broadcast := !viper.GetBool("Server.Announcement.NoBroadcast")
-				announcePorts := viper.GetIntSlice("Server.Announcement.Ports")
-				portsStr := make([]string, len(announcePorts))
-				for i, portInt := range announcePorts {
-					if portInt < 1_025 || portInt > 65_535 {
-						printer.Println(
-							printer.Error,
-							printer.TS("Server.Start", printer.OptionStyle),
-							printer.T(" is "),
-							printer.TS("auto", printer.LiteralStyle),
-							printer.T(". The"),
-							printer.TS("Server.Announcement.Ports", printer.OptionStyle),
-							printer.T("must be 1025-65535 but got: "),
-							printer.TS(fmt.Sprint(announcePorts), printer.LiteralStyle),
-							printer.T("."),
-						)
-						errorCode = internal.ErrAnnouncementPort
-						return
-					}
-					portsStr[i] = strconv.Itoa(portInt)
-				}
-				if len(announcePorts) == 0 {
-					printer.Println(
-						printer.Error,
-						printer.TS("Server.Start", printer.OptionStyle),
-						printer.T(" is "),
-						printer.TS("auto", printer.LiteralStyle),
-						printer.T(". The"),
-						printer.TS("Server.Announcement.Ports", printer.OptionStyle),
-						printer.T(" must not be empty."),
-					)
-					errorCode = internal.ErrAnnouncementPort
-					return
-				}
-				multicastIPsStr := viper.GetStringSlice("Server.Announcement.MulticastGroups")
-				multicastGroups := make([]net.IP, len(multicastIPsStr))
-				for i, str := range multicastIPsStr {
-					if IP := net.ParseIP(str); IP.To4() != nil && IP.IsMulticast() {
-						multicastGroups[i] = IP
-					} else {
-						printer.Println(
-							printer.Error,
-							printer.TS("Server.Start", printer.OptionStyle),
-							printer.T(" is "),
-							printer.TS("auto", printer.LiteralStyle),
-							printer.T(". Invalid "),
-							printer.TS("Server.Announcement.MulticastGroups", printer.OptionStyle),
-							printer.T(": "),
-							printer.TS(str, printer.LiteralStyle),
-						)
-						errorCode = internal.ErrAnnouncementMulticastGroup
-						return
-					}
-				}
-				if len(multicastGroups) == 0 && !broadcast {
-					printer.Println(
-						printer.Error,
-						printer.TS("Server.Start", printer.OptionStyle),
-						printer.T(" is "),
-						printer.TS("auto", printer.LiteralStyle),
-						printer.T(". The"),
-						printer.TS("Server.Announcement.MulticastGroups", printer.OptionStyle),
-						printer.T(" must not be empty or "),
-						printer.TS("Server.Announcement.NoBroadcast", printer.OptionStyle),
-						printer.T(" must be "),
-						printer.TS("false", printer.LiteralStyle),
-						printer.T("."),
-					)
-					errorCode = internal.ErrAnnouncement
-					return
-				}
-				startServerId, _ := uuid.Parse(serverValues["Id"])
+			if serverStart == "" {
 				var selectedServerIp string
 				errorCode, serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIp(
-					broadcast,
-					gameId,
-					startServerId,
-					multicastGroups,
-					announcePorts,
+					!parameters.Server.Query.NoBroadcast,
+					config.GameTitle(),
+					parameters.Server.Query.MulticastGroups,
+					parameters.Server.Query.Ports,
 				)
 				if errorCode != common.ErrSuccess {
 					return
 				} else if selectedServerIp != "" {
 					serverHost = selectedServerIp
 					serverStart = "false"
-					if serverStop == "auto" && (!isAdmin || runtime.GOOS == "windows") {
+					if serverStop == "" && (!isAdmin || runtime.GOOS == "windows") {
 						serverStop = "false"
 					}
 				} else {
 					serverStart = "true"
-					if serverStop == "auto" {
+					if serverStop == "" {
 						serverStop = "true"
 					}
 				}
@@ -500,7 +360,7 @@ var (
 					errorCode = internal.ErrInvalidServerStart
 					return
 				}
-				if serverIPs, data := server.FilterServerIPs(serverId, gameId, launcherCommon.HostOrIpToIps(serverHost)); data == nil {
+				if serverIPs, data := server.FilterServerIPs(serverId, config.GameTitle(), launcherCommon.HostOrIpToIps(serverHost)); data == nil {
 					printer.Println(
 						printer.Error,
 						printer.TS("Server.Start", printer.OptionStyle),
@@ -516,7 +376,7 @@ var (
 					serverIP = serverIPs[0].Ip
 				}
 			} else {
-				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", serverId, canTrustCertificate != "false")
+				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", serverId, storeToAddCertificate != "false")
 				if errorCode != common.ErrSuccess {
 					return
 				}
@@ -532,28 +392,21 @@ var (
 				errorCode = internal.ErrReadCert
 				return
 			}
-			errorCode = config.MapHosts(serverIP, canAddHost, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
-				return strings.Contains(s, "{HostFilePath}")
-			}))
+			errorCode = config.MapHosts(serverIP, storeToAddHosts)
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.AddCert(serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
-				return strings.Contains(s, "{CertFilePath}")
-			}))
+			errorCode = config.AddCert(serverId, serverCertificate, storeToAddCertificate)
 			if errorCode != common.ErrSuccess {
 				return
 			}
 			var executableArgs []string
-			executableArgs, errorCode = config.ParseGameArguments(viper.GetStringSlice("Client.ExecutableArgs"))
+			executableArgs = config.ParseGameArguments(clientArgs)
+			errorCode = config.IsolateUserData(parameters.Isolation.WindowsUserProfilePath, isolateMetadata)
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.IsolateUserData(isolateWindowsUserProfilePath, isolateMetadata)
-			if errorCode != common.ErrSuccess {
-				return
-			}
-			errorCode = config.LaunchAgent(executer, canBroadcastBattleServer)
+			errorCode = config.LaunchAgent(executer, rebroadcastIPs)
 			if errorCode != common.ErrSuccess {
 				return
 			}
@@ -569,20 +422,24 @@ var (
 )
 
 func Execute() error {
+	launcher.SetDefaults(v)
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().Bool("debug", false, `# Whether to show debug information in the console.`)
-	rootCmd.PersistentFlags().StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
-	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
-	if runtime.GOOS == "windows" {
-		canTrustCertificateStr += `, "user"`
+	rootCmd.PersistentFlags().StringSliceVar(&cfgFiles, "config", []string{}, fmt.Sprintf(`Config files. Default config.toml in %s directories`, strings.Join(configPaths, ", ")))
+	rootCmd.PersistentFlags().Bool("debug", v.GetBool("Debug"), `Whether to show debug information in the console.`)
+	storeToAddHostStr := "Where to add the host entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. 'local' for the system-wide store (needs admin), '' (empty) to not add any hosts and 'tmp' for a temporary file."
+	if runtime.GOOS == "linux" {
+		storeToAddHostStr += ` It follows the Windows format in this case.`
 	}
-	canTrustCertificateStr += ` or local (will require admin privileges). Ignored if 'clientExeArgs' contains '{CertFilePath}'.`
-	rootCmd.PersistentFlags().StringP("canTrustCertificate", "c", "local", canTrustCertificateStr)
+	rootCmd.PersistentFlags().StringP("storeToAddHost", "t", v.GetString("StoreToAddHost"), storeToAddHostStr)
+	storeToAddCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS == "windows" {
-		rootCmd.PersistentFlags().StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
+		storeToAddCertificateStr += `, "user"`
+	}
+	storeToAddCertificateStr += ` or "local" (will require admin privileges).`
+	rootCmd.PersistentFlags().StringP("storeToAddCertificate", "c", v.GetString("StoreToAddCertificate"), storeToAddCertificateStr)
+	if runtime.GOOS == "windows" {
+		rootCmd.PersistentFlags().BoolP("disableRebroadcastBattleServer", "b", v.GetBool("RebroadcastBattleServer.Disable"), `Whether to disable rebroadcasting the BattleServer to select interfaces. If not 'true', all if "Interfaces" and "IPs" are unspecified.`)
 	}
 	var pathNamesInfo string
 	if runtime.GOOS == "windows" {
@@ -591,135 +448,81 @@ func Execute() error {
 	cmd.GameCommand(rootCmd.PersistentFlags())
 	var suffixIsolate string
 	if runtime.GOOS == "linux" {
-		suffixIsolate = " When using a custom launcher 'windowsUserProfilePath' must be set."
+		suffixIsolate = ` When using 'path' in "Client.Launcher" and "Isolation.NoMetadata" is 'false'', "Isolation.WindowsUserProfilePath" must be set.`
 	}
+	rootCmd.PersistentFlags().BoolP("noIsolateMetadata", "m", v.GetBool("Isolation.NoMetadata"), "Do not isolate the metadata cache of the game. Always 'true' in AoE: DE."+suffixIsolate)
+	rootCmd.PersistentFlags().BoolP("serverRunNoStop", "a", v.GetBool("Server.Run.NoStop"), `Do not stop (and show window) if the server is run when the game exists.`)
+	rootCmd.PersistentFlags().UintSliceP("serverQueryPorts", "n", v.Get("Server.Query.Ports").([]uint), `Ports to query for servers. If not including the default port, default configured 'servers' will not get discovered.`)
+	rootCmd.PersistentFlags().IPSliceP("serverQueryMulticastGroups", "g", v.Get("Server.Query.MulticastGroups").([]net.IP), `Multicast Groups to query for servers. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
+	rootCmd.PersistentFlags().Bool("serverQueryNoBroadcast", v.GetBool("Server.Query.NoBroadcast"), `Do not broadcast the query to select network interfaces when querying for servers.`)
+	rootCmd.PersistentFlags().StringP("server", "s", v.GetString("Server.Connect.Host"), `Hostname or IPv4 of the 'server' when 'Server.Mode' is 'connect'.`)
+	rootCmd.PersistentFlags().StringP("serverMode", "r", v.GetString("Server.Mode"), `'connect' for a pre-defined server, 'run' to execute a new server or empty to both query for servers and have the option to 'run'.`)
+	clientExeTip := `The type of game launcher. If not set, it will use Steam`
+	if runtime.GOOS == "windows" {
+		clientExeTip += ` and then the Xbox one if found`
+	}
+	clientExeTip += `. Specify "steam"`
+	if runtime.GOOS == "windows" {
+		clientExeTip += ` or "msstore"`
+	}
+	clientExeTip += ` to use the default launcher, or "path", but then you need to specify "Client.PathCommand".`
 	if runtime.GOOS == "linux" {
-		rootCmd.PersistentFlags().StringP("windowsUserProfilePath", "s", "auto", "Windows User Profile Path. Only relevant when using the 'isolateMetadata' option. Must be set if using a custom launcher.")
+		clientExeTip += ` If using "path", you need to specify "Isolation.WindowsUserProfilePath".`
 	}
-	rootCmd.PersistentFlags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
-	rootCmd.PersistentFlags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
-	rootCmd.PersistentFlags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
-	rootCmd.PersistentFlags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
-	rootCmd.PersistentFlags().StringP("serverStop", "o", "auto", `Stop the 'server' if started, "auto" will stop the 'server' if one was started, "false" (will not stop the 'server' regardless if one was started), "true" (will not stop the 'server' even if it was started).`)
-	rootCmd.PersistentFlags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
-	rootCmd.PersistentFlags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
-	rootCmd.PersistentFlags().Bool("serverAnnounceNoBroadcast", false, `Do not broadcast the query to all capable network interfaces when detecting current servers.`)
-	rootCmd.PersistentFlags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
-	serverExe := common.GetExeFileName(false, common.Server)
-	rootCmd.PersistentFlags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
-	rootCmd.PersistentFlags().StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
-	clientExeTip := `The type of game client or the path. `
-	if runtime.GOOS == "windows" {
-		clientExeTip += `"auto" will use Steam and then the Xbox one if found`
-	}
-	clientExeTip += `. Use a path to the game launcher`
-	if runtime.GOOS == "windows" {
-		clientExeTip += ","
-	} else {
-		clientExeTip += " or"
-	}
-	clientExeTip += ` "steam"`
-	if runtime.GOOS == "windows" {
-		clientExeTip += `or "msstore"`
-	}
-	clientExeTip += " to use the default launcher."
-	if runtime.GOOS == "linux" {
-		clientExeTip += " If using a custom launcher, you need to specify the user profile path if you want isolation."
-	}
-	rootCmd.PersistentFlags().StringP("clientExe", "l", "auto", clientExeTip)
-	rootCmd.PersistentFlags().StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
-	if err := viper.BindPFlag("Config.Debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+	rootCmd.PersistentFlags().StringP("clientLauncher", "l", v.GetString("Client.Launcher"), clientExeTip)
+	if err := v.BindPFlag("GameTitle", rootCmd.PersistentFlags().Lookup(commonCmd.Name)); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.PersistentFlags().Lookup("canAddHost")); err != nil {
+	if err := v.BindPFlag("Debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.CanTrustCertificate", rootCmd.PersistentFlags().Lookup("canTrustCertificate")); err != nil {
+	if err := v.BindPFlag("StoreToAddHost", rootCmd.PersistentFlags().Lookup("storeToAddHost")); err != nil {
+		return err
+	}
+	if err := v.BindPFlag("StoreToAddCertificate", rootCmd.PersistentFlags().Lookup("storeToAddCertificate")); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {
-		if err := viper.BindPFlag("Config.CanBroadcastBattleServer", rootCmd.PersistentFlags().Lookup("canBroadcastBattleServer")); err != nil {
+		if err := v.BindPFlag("RebroadcastBattleServer.Disable", rootCmd.PersistentFlags().Lookup("disableRebroadcastBattleServer")); err != nil {
 			return err
 		}
 	}
-	if runtime.GOOS == "linux" {
-		if err := viper.BindPFlag("Config.Isolation.WindowsUserProfilePath", rootCmd.PersistentFlags().Lookup("windowsUserProfilePath")); err != nil {
-			return err
-		}
-	}
-	if err := viper.BindPFlag("Config.Isolation.Metadata", rootCmd.PersistentFlags().Lookup("isolateMetadata")); err != nil {
+	if err := v.BindPFlag("Isolation.NoMetadata", rootCmd.PersistentFlags().Lookup("noIsolateMetadata")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.SetupCommand", rootCmd.PersistentFlags().Lookup("setupCommand")); err != nil {
+	if err := v.BindPFlag("Server.Run.NoStop", rootCmd.PersistentFlags().Lookup("serverRunNoStop")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.RevertCommand", rootCmd.PersistentFlags().Lookup("revertCommand")); err != nil {
+	if err := v.BindPFlag("Server.Query.Ports", rootCmd.PersistentFlags().Lookup("serverQueryPorts")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Start", rootCmd.PersistentFlags().Lookup("serverStart")); err != nil {
+	if err := v.BindPFlag("Server.Query.MulticastGroups", rootCmd.PersistentFlags().Lookup("serverQueryMulticastGroups")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Stop", rootCmd.PersistentFlags().Lookup("serverStop")); err != nil {
+	if err := v.BindPFlag("Server.Query.NoBroadcast", rootCmd.PersistentFlags().Lookup("serverQueryNoBroadcast")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Announcement.Ports", rootCmd.PersistentFlags().Lookup("serverAnnouncePorts")); err != nil {
+	if err := v.BindPFlag("Server.Connect.Host", rootCmd.PersistentFlags().Lookup("server")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Announcement.MulticastGroups", rootCmd.PersistentFlags().Lookup("serverAnnounceMulticastGroups")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Server.Announcement.NoBroadcast", rootCmd.PersistentFlags().Lookup("serverAnnounceNoBroadcast")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Server.Host", rootCmd.PersistentFlags().Lookup("server")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Server.Executable", rootCmd.PersistentFlags().Lookup("serverPath")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Server.ExecutableArgs", rootCmd.PersistentFlags().Lookup("serverPathArgs")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Client.Executable", rootCmd.PersistentFlags().Lookup("clientExe")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Client.ExecutableArgs", rootCmd.PersistentFlags().Lookup("clientExeArgs")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Game", rootCmd.PersistentFlags().Lookup("game")); err != nil {
+	if err := v.BindPFlag("Server.Mode", rootCmd.PersistentFlags().Lookup("serverMode")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
 }
 
 func initConfig() {
-	for _, configPath := range configPaths {
-		viper.AddConfigPath(configPath)
-	}
-	viper.SetConfigType("toml")
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName("config")
-	}
-	if err := viper.MergeInConfig(); err == nil {
-		printer.Println(
-			printer.Debug,
-			printer.T("Using main config file: "),
-			printer.TS(viper.ConfigFileUsed(), printer.FilePathStyle),
-		)
-	}
-	if gameCfgFile != "" {
-		viper.SetConfigFile(gameCfgFile)
-	} else {
-		viper.SetConfigName("config.game")
-	}
-	if err := viper.MergeInConfig(); err == nil {
-		printer.Println(
-			printer.Debug,
-			printer.T("Using game config file: "),
-			printer.TS(viper.ConfigFileUsed(), printer.FilePathStyle),
-		)
-	}
-	viper.AutomaticEnv()
+	cfg.InitConfig(
+		v,
+		configPaths,
+		cfgFiles,
+		"launcher",
+		func(path string) {
+			printer.Println(
+				printer.Debug,
+				printer.T("Using config file: "),
+				printer.TS(path, printer.FilePathStyle),
+			)
+		},
+	)
 }

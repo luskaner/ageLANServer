@@ -12,7 +12,7 @@ is in maintenance or is eventually shutdown.
 > other [project](https://github.com/luskaner/ageLANServerLauncherCompanion) provides the files and information to
 > download a Steam Emulator and play 100% offline.
 
-**🎮 Supported games:**
+**🎮 Supported game titles:**
 
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
@@ -276,12 +276,12 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 4. *Windows Optional*: Unblock the `.exe` files as
    explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
 5. If not using the Steam or Xbox launcher, **edit the `
-   launcher/resources/config.<game>.toml` file** with a text editor (like Notepad)
+   launcher/resources/config.<game_title>.toml` file** with a text editor (like Notepad)
    and modify
    the `Client.Executable` section to point to the game launcher path.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. **Execute `launcher/launcher_<game>` script**: you will be asked for
+6. **Execute `launcher/launcher_<game_title>` script**: you will be asked for
    admin elevation and
    confirmation of other dialogs as
    needed, you
@@ -308,7 +308,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    from https://github.com/luskaner/ageLANServer/releases.
 2. **Generate the certificate** by simply executing `bin/genCert`.
 3. If needed **edit the [config](server/resources/config/config.toml) file**.
-4. **Run** the `server` binary for all games or the `server_` game-specific script.
+4. **Run** the `server` binary for all games or the `server_` game title specific script.
 
 </details>
 
@@ -317,7 +317,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 
 1. **Download** the proper *launcher* asset from latest stable release
    from https://github.com/luskaner/ageLANServer/releases.
-2. If needed **edit the `launcher/resources/config.<game>.toml` and/or `launcher/resources/config.toml` files**. You
+2. If needed **edit the `launcher/resources/config.<game_title>.toml` and/or `launcher/resources/config.toml` files**.
+   You
    will
    need to edit the
    `Client.Executable` section to point to the game launcher path if using a custom launcher which you will need to use

@@ -13,17 +13,17 @@ type Game struct {
 	AppId string
 }
 
-func NewGame(id string) Game {
-	return Game{AppId: AppId(id)}
+func NewGame(gameTitle common.GameTitle) Game {
+	return Game{AppId: AppId(gameTitle)}
 }
 
-func AppId(id string) string {
-	switch id {
-	case common.GameAoE1:
+func AppId(gameTitle common.GameTitle) string {
+	switch gameTitle {
+	case common.AoE1:
 		return "1017900"
-	case common.GameAoE2:
+	case common.AoE2:
 		return "813780"
-	case common.GameAoE3:
+	case common.AoE3:
 		return "933110"
 	default:
 		return ""

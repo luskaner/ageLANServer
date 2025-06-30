@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -9,7 +10,7 @@ import (
 	"strconv"
 )
 
-func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, gameTitle string, clientLibVersion uint16) {
+func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, gameTitle common.GameTitle, clientLibVersion uint16) {
 	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, gameTitle, clientLibVersion)}
 	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {

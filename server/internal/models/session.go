@@ -13,7 +13,7 @@ type Session struct {
 	expiryTimer      *time.Timer
 	expiryTimerLock  sync.Mutex
 	userId           int32
-	gameId           string
+	game             string
 	messageChan      chan internal.A
 }
 
@@ -42,8 +42,8 @@ func (sess *Session) GetUserId() int32 {
 	return sess.userId
 }
 
-func (sess *Session) GetGameId() string {
-	return sess.gameId
+func (sess *Session) Getgame() string {
+	return sess.game
 }
 
 func (sess *Session) GetClientLibVersion() uint16 {
@@ -95,10 +95,10 @@ func (sess *Session) ResetExpiryTimer() {
 	sess.expiryTimer.Reset(sessionDuration)
 }
 
-func CreateSession(gameId string, userId int32, clientLibVersion uint16) string {
+func CreateSession(game string, userId int32, clientLibVersion uint16) string {
 	session := &Session{
 		userId:           userId,
-		gameId:           gameId,
+		game:             game,
 		clientLibVersion: clientLibVersion,
 		messageChan:      make(chan internal.A, 100),
 	}

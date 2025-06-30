@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 	"os"
@@ -18,29 +19,40 @@ var configFolder = filepath.Join(resourceFolder, "config")
 var responsesFolder = filepath.Join(resourceFolder, "responses")
 var CloudFolder = filepath.Join(responsesFolder, "cloud")
 
-type MainResources struct {
-	keyedFilenames  mapset.Set[string]
-	ChatChannels    map[string]MainChatChannel
-	LoginData       []i.A
-	ArrayFiles      map[string]i.A
-	KeyedFiles      map[string][]byte
-	nameToSignature map[string]string
-	CloudFiles      CloudFiles
+type file struct {
+	path string
 }
 
-func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[string]) {
-	r.ArrayFiles = make(map[string]i.A)
-	r.KeyedFiles = make(map[string][]byte)
+type arrayFile struct {
+	file
+	count int
+}
+
+type MainResources struct {
+	keyedFilenames          mapset.Set[string]
+	signedNonKeyedFilenames mapset.Set[string]
+	ChatChannels            map[string]MainChatChannel
+	LoginData               []i.A
+	arrayFiles              map[string]*arrayFile
+	keyedFiles              map[string]*file
+	nameToSignature         map[string]string
+	CloudFiles              CloudFiles
+}
+
+func (r *MainResources) Initialize(game common.GameTitle, keyedFilenames mapset.Set[string], signedNonKeyedFilenames mapset.Set[string]) {
+	r.arrayFiles = make(map[string]*arrayFile)
+	r.keyedFiles = make(map[string]*file)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
-	r.initializeLogin(gameId)
-	r.initializeChatChannels(gameId)
-	r.initializeResponses(gameId)
-	r.initializeCloud(gameId)
+	r.signedNonKeyedFilenames = signedNonKeyedFilenames
+	r.initializeLogin(game)
+	r.initializeChatChannels(game)
+	r.initializeResponses(game)
+	r.initializeCloud(game)
 }
 
-func (r *MainResources) initializeChatChannels(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "chatChannels.json"))
+func (r *MainResources) initializeChatChannels(game common.GameTitle) {
+	data, err := os.ReadFile(filepath.Join(configFolder, string(game), "chatChannels.json"))
 	if err != nil {
 		return
 	}
@@ -50,8 +62,8 @@ func (r *MainResources) initializeChatChannels(gameId string) {
 	}
 }
 
-func (r *MainResources) initializeLogin(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "login.json"))
+func (r *MainResources) initializeLogin(game common.GameTitle) {
+	data, err := os.ReadFile(filepath.Join(configFolder, string(game), "login.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -62,10 +74,11 @@ func (r *MainResources) initializeLogin(gameId string) {
 	}
 }
 
-func (r *MainResources) initializeResponses(gameId string) {
-	dirEntries, _ := os.ReadDir(filepath.Join(responsesFolder, gameId))
+func (r *MainResources) initializeResponses(game common.GameTitle) {
+	dirEntries, _ := os.ReadDir(filepath.Join(responsesFolder, string(game)))
 	for _, entry := range dirEntries {
-		data, err := os.ReadFile(filepath.Join(responsesFolder, gameId, entry.Name()))
+		fullPath := filepath.Join(responsesFolder, string(game), entry.Name())
+		data, err := os.ReadFile(fullPath)
 		if err != nil {
 			continue
 		}
@@ -76,51 +89,59 @@ func (r *MainResources) initializeResponses(gameId string) {
 		if r.keyedFilenames.ContainsOne(name) {
 			re := regexp.MustCompile(`"dataSignature"\s*:\s*"(.*?)"`)
 			matches := re.FindStringSubmatch(string(data))
-			if len(matches) == 1 {
-				serverSignature := matches[1]
-				r.KeyedFiles[name] = data
-				r.nameToSignature[name] = serverSignature
+			if len(matches) == 2 {
+				r.keyedFiles[name] = &file{path: fullPath}
+				r.nameToSignature[name] = strings.Clone(matches[1])
 			}
 		} else {
 			var result i.A
 			err = json.Unmarshal(data, &result)
 			if err == nil {
-				r.ArrayFiles[name] = result
+				r.arrayFiles[name] = &arrayFile{
+					file: file{
+						path: fullPath,
+					},
+					count: len(result),
+				}
+				if r.signedNonKeyedFilenames.ContainsOne(name) {
+					r.nameToSignature[name] = strings.Clone(result[r.arrayFiles[name].count-1].(string))
+				}
 			}
 		}
 	}
 }
 
-func (r *MainResources) initializeCloud(gameId string) {
-	cloudfiles := BuildCloudfilesIndex(filepath.Join(configFolder, gameId), filepath.Join(CloudFolder, gameId))
+func (r *MainResources) initializeCloud(gameTitle common.GameTitle) {
+	cloudfiles := BuildCloudfilesIndex(filepath.Join(configFolder, string(gameTitle)), filepath.Join(CloudFolder, string(gameTitle)))
 	if cloudfiles != nil {
 		r.CloudFiles = *cloudfiles
 	}
 }
 
-func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool) {
-	var serverSignature string
-	var response any
-	if keyedResponse {
-		response = r.KeyedFiles[name]
-		serverSignature = r.nameToSignature[name]
-	} else {
-		response = r.ArrayFiles[name]
-		arrayResponse := response.(i.A)
-		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
+func (r *MainResources) ReturnArrayFile(name string, w *http.ResponseWriter) {
+	data, _ := os.ReadFile(r.arrayFiles[name].path)
+	i.RawJSON(w, data)
+}
+
+func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request) {
+	serverSignature := r.nameToSignature[name]
+	var f *file
+	var count int
+	var keyedResponse bool
+	if f, keyedResponse = r.keyedFiles[name]; !keyedResponse {
+		arrFile := r.arrayFiles[name]
+		f = &arrFile.file
+		count = arrFile.count
 	}
 	if req.URL.Query().Get("signature") != serverSignature {
-		if keyedResponse {
-			i.RawJSON(w, response.([]byte))
-		} else {
-			i.JSON(w, response)
-		}
+		response, _ := os.ReadFile(f.path)
+		i.RawJSON(w, response)
 		return
 	}
 	if keyedResponse {
 		i.RawJSON(w, []byte(fmt.Sprintf(`{"result":0,"dataSignature":"%s"}`, serverSignature)))
 	} else {
-		emptyArrays := make(i.A, len(response.(i.A))-2)
+		emptyArrays := make(i.A, count-2)
 		ret := i.A{0}
 		ret = append(ret, emptyArrays...)
 		ret = append(ret, serverSignature)

@@ -3,13 +3,14 @@
 package steam
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	"path"
 )
 
-func UserProfilePath(gameId string) string {
+func UserProfilePath(gameTitle common.GameTitle) string {
 	suffix := ConfigPath()
 	if suffix == "" {
 		return ""
 	}
-	return path.Join(suffix, "steamapps", "compatdata", AppId(gameId), "pfx", "drive_c", "users", "steamuser")
+	return path.Join(suffix, "steamapps", "compatdata", AppId(gameTitle), "pfx", "drive_c", "users", "steamuser")
 }

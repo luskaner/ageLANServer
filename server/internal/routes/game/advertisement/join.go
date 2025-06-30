@@ -14,14 +14,14 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
-func joinReturnError(gameTitle string, w http.ResponseWriter) {
+func joinReturnError(gameTitle common.GameTitle, w http.ResponseWriter) {
 	response := i.A{2,
 		"",
 		"",
 		0,
 		0,
 	}
-	if gameTitle != common.GameAoE1 {
+	if gameTitle != common.AoE1 {
 		response = append(response, 0)
 	}
 	response = append(response, i.A{0})
@@ -87,7 +87,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var relayRegion string
-		if gameTitle == common.GameAoE2 {
+		if gameTitle == common.AoE2 {
 			relayRegion = matchingAdv.GetRelayRegion()
 		}
 		response = i.A{
@@ -97,7 +97,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			0,
 			0,
 		}
-		if gameTitle != common.GameAoE1 {
+		if gameTitle != common.AoE1 {
 			response = append(response, 0)
 		}
 		response = append(response, i.A{peer.Encode()})

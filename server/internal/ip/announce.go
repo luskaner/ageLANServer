@@ -11,48 +11,29 @@ import (
 func announcementConnections(ips []net.IP, multicastGroups []net.IP, ports []int) []*net.UDPConn {
 	var connections []*net.UDPConn
 	var multicastIfs []*net.Interface
-	if len(multicastGroups) > 0 {
-		interfaces, err := net.Interfaces()
-		if err == nil {
-			var addrs []net.Addr
-			for _, adapter := range interfaces {
-				addrs, err = adapter.Addrs()
-				if err != nil {
-					continue
-				}
-				for _, addr := range addrs {
-					v, addrOk := addr.(*net.IPNet)
-					if !addrOk {
-						continue
-					}
-					var IP net.IP
-					if IP = v.IP.To4(); IP == nil {
-						continue
-					}
-					if adapter.Flags&net.FlagRunning != 0 && adapter.Flags&net.FlagMulticast != 0 {
-						multicastIfs = append(multicastIfs, &adapter)
-					}
-				}
+	interfaces, err := common.IPv4RunningNetworkInterfaces()
+	if err == nil {
+		for iff := range interfaces {
+			if iff.Flags&net.FlagMulticast != 0 {
+				multicastIfs = append(multicastIfs, iff)
 			}
 		}
 	}
 	for _, port := range ports {
 		for _, ip := range ips {
 			addr := &net.UDPAddr{
-				IP:   ip,
+				IP:   ip.To4(),
 				Port: port,
 			}
 			if conn, err := net.ListenUDP("udp4", addr); err == nil {
-				if len(multicastGroups) > 0 {
-					p := ipv4.NewPacketConn(conn)
-					for _, multicastGroup := range multicastGroups {
-						multicastAddr := &net.UDPAddr{
-							IP:   multicastGroup,
-							Port: port,
-						}
-						for _, multicastIf := range multicastIfs {
-							_ = p.JoinGroup(multicastIf, multicastAddr)
-						}
+				p := ipv4.NewPacketConn(conn)
+				for _, multicastGroup := range multicastGroups {
+					multicastAddr := &net.UDPAddr{
+						IP:   multicastGroup,
+						Port: port,
+					}
+					for _, multicastIf := range multicastIfs {
+						_ = p.JoinGroup(multicastIf, multicastAddr)
 					}
 				}
 				connections = append(connections, conn)
@@ -63,11 +44,7 @@ func announcementConnections(ips []net.IP, multicastGroups []net.IP, ports []int
 }
 
 func Announce(ip net.IP, multicastGroup net.IP, port int) bool {
-	var multicastGroups []net.IP
-	if multicastGroup != nil {
-		multicastGroups = append(multicastGroups, multicastGroup)
-	}
-	connections := announcementConnections([]net.IP{ip}, multicastGroups, []int{port})
+	connections := announcementConnections([]net.IP{ip}, []net.IP{multicastGroup}, []int{port})
 	if len(connections) == 0 {
 		return false
 	}

@@ -37,7 +37,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	relationship.ChangePresence(game.Title(), sess.GetClientLibVersion(), users, u, 0)
-	if game.Title() == common.GameAoE3 {
+	if game.Title() == common.AoE3 {
 		profileInfo := u.GetProfileInfo(false, game.Title(), sess.GetClientLibVersion())
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {

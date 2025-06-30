@@ -1,37 +1,15 @@
-[Config]
-# Executable to run (including arguments) to run first after the "Setting up..." line.
-# The command must return a 0 exit code to continue. If you need to keep it running spawn a new detached process.
-# Note: You may use environment variables.
-SetupCommand = []
-# Executable to run (including arguments) to run after SetupCommand, game has exited and everything has been reverted. It may run before if there is an error.
-# Note: You may use environment variables.
-RevertCommand = []
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# This file is meant to be used with a specific game title.
+# The default values are commented out for easy configuration.
 
-[Config.Isolation]
-# Path to the Windows user profile.
-# 'auto' means that when using 'steam' launcher: {ProtonPath}/steamapps/compatdata/{AppId}/pfx/drive_c/users/steamuser
-# where:
-# * {ProtonPath} is specified in 'dirs' as defined in /launcher-common/steam/steam_linux.go
-# * {AppId} is the 'AppId' of the game as defined in /launcher-common/steam/steam.go
-# Note 1: You may use environment variables.
-# Note 2: You need to set manually the path when using a custom launcher or isolation will be disabled.
-WindowsUserProfilePath = 'auto'
-# If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
-# On AoE I this is always false as it does not store metadata.
-Metadata = true
-
-[Client]
-# Use a path to the game launcher or 'steam' to use the default launcher.
-# Note 1: It is not recommended to use an executable that requires admin rights (but it is supported).
-# Note 2: setting a custom launcher requires setting 'Config.Isolation.WindowsUserProfilePath' to a path.
-# Note 3: You may use environment variables when using a custom path.
-Executable = 'steam'
-# The arguments to pass to the client launcher if it is custom.
-# {HostFilePath} will be replaced by the host file path.
-# If using this variable, 'Config.CanAddHost' setting will be ignored.
-# The host file follows the Windows system format.
-# {CertFilePath} will be replaced by the certificate file path.
-# If using this variable, 'Config.CanTrustCertificate' setting will be ignored.
-# The format is the same as the server stored certificate.
-# Note: You may use environment variables.
-ExecutableArgs = []
+#SetupCommand = []
+#RevertCommand = []
+#
+#[Isolation]
+#WindowsUserProfilePath = ''
+#NoMetadata = false
+#
+#[Client]
+#Launcher = ''
+#PathCommand = []

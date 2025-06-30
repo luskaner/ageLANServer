@@ -13,7 +13,7 @@ func (c *Config) IsolateUserData(windowsUserProfilePath string, metadata bool) (
 		"",
 		"Backing up metadata... ",
 	))
-	if result := executor.RunSetUp(&executor.RunSetUpOptions{Game: c.gameId, WindowsUserProfilePath: windowsUserProfilePath, BackupMetadata: metadata}); !result.Success() {
+	if result := executor.RunSetUp(&executor.RunSetUpOptions{GameTitle: c.gameTitle, WindowsUserProfilePath: windowsUserProfilePath, BackupMetadata: metadata}); !result.Success() {
 		printer.PrintFailedResultError(result)
 		errorCode = internal.ErrMetadataSetup
 	} else {

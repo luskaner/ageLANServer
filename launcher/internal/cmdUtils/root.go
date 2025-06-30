@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	gameId          string
+	gameTitle       common.GameTitle
 	serverPid       int
 	setupCommandRan bool
 	hostFilePath    string
@@ -24,8 +24,8 @@ func (c *Config) SetServerPid(pid int) {
 	c.serverPid = pid
 }
 
-func (c *Config) SetGameId(id string) {
-	c.gameId = id
+func (c *Config) SetGameTitle(gameTitle common.GameTitle) {
+	c.gameTitle = gameTitle
 }
 
 func (c *Config) SetHostFilePath(path string) {
@@ -56,6 +56,10 @@ func (c *Config) RequiresRunningRevertCommand() bool {
 
 func (c *Config) ServerPid() int {
 	return c.serverPid
+}
+
+func (c *Config) GameTitle() common.GameTitle {
+	return c.gameTitle
 }
 
 func (c *Config) RevertCommand() []string {
@@ -94,7 +98,7 @@ func (c *Config) Revert() {
 			printer.Clean,
 			"Cleaning up... ",
 		)
-		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert, printer.ConfigRevertPrinter()); !ok {
+		if ok := launcherCommon.ConfigRevert(c.GameTitle(), false, executor.RunRevert, printer.ConfigRevertPrinter()); !ok {
 			printer.PrintFailed()
 		} else {
 			printer.PrintSimpln(printer.Success, "Cleaned.")
@@ -104,7 +108,7 @@ func (c *Config) Revert() {
 		printer.Println(
 			printer.Execute,
 			printer.T("Running "),
-			printer.TS("Config.RevertCommand", printer.OptionStyle),
+			printer.TS("RevertCommand", printer.OptionStyle),
 			printer.T("... "),
 		)
 		err := executor.RunRevertCommand()
@@ -123,8 +127,8 @@ func anyProcessExists(names []string) bool {
 
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
-	for gameId := range common.AllGames.Iter() {
-		if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
+	for gameTitle := range common.AllGameTitles.Iter() {
+		if anyProcessExists(commonProcess.GameProcesses(gameTitle, true, xbox)) {
 			return true
 		}
 	}

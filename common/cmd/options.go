@@ -7,23 +7,31 @@ import (
 	"strings"
 )
 
-const name = `game`
-const names = name + `s`
+const Name = `gameTitle`
+const Names = Name + `s`
 const shorthand = `e`
-const descriptionStart = `Game type.`
-const descriptionMultipleStart = `Game types.`
+const descriptionStart = `GameTitle title.`
+const descriptionMultipleStart = `GameTitle titles.`
 const descriptionEnd = `are supported.`
 
-func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
+func supportedGameSliceString() []string {
+	slice := make([]string, len(common.SupportedGameTitleSlice))
+	for i, v := range common.SupportedGameTitleSlice {
+		slice[i] = string(v)
+	}
+	return slice
+}
+
+func GameVarCommand(flags *pflag.FlagSet, gameTitle *string) {
 	flags.StringVarP(
-		gameId,
-		name,
+		gameTitle,
+		Name,
 		shorthand,
 		"",
 		fmt.Sprintf(
 			`%s %s %s`,
 			descriptionStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
+			strings.Join(supportedGameSliceString(), ", "),
 			descriptionEnd,
 		),
 	)
@@ -31,13 +39,13 @@ func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
 
 func GameCommand(flags *pflag.FlagSet) {
 	flags.StringP(
-		name,
+		Name,
 		shorthand,
 		"",
 		fmt.Sprintf(
 			`%s %s %s`,
 			descriptionStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
+			strings.Join(supportedGameSliceString(), ", "),
 			descriptionEnd,
 		),
 	)
@@ -45,13 +53,13 @@ func GameCommand(flags *pflag.FlagSet) {
 
 func GamesCommand(flags *pflag.FlagSet) {
 	flags.StringArrayP(
-		names,
+		Names,
 		shorthand,
-		common.SupportedGames.ToSlice(),
+		supportedGameSliceString(),
 		fmt.Sprintf(
 			`%s %s %s`,
 			descriptionMultipleStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
+			strings.Join(supportedGameSliceString(), ", "),
 			descriptionEnd,
 		),
 	)

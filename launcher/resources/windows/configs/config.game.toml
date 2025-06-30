@@ -1,32 +1,14 @@
-[Config]
-# Executable to run (including arguments) to run first after the "Setting up..." line.
-# The command must return a 0 exit code to continue. If you need to keep it running spawn a new detached process.
-# Path names need to use double backslashes within single quotes or be within double quotes.
-# Note: You may use environment variables.
-SetupCommand = []
-# Executable to run (including arguments) to run after SetupCommand, game has exited and everything has been reverted. It may run before if there is an error.
-# Path names need to use double backslashes within single quotes or be within double quotes.
-# Note: You may use environment variables.
-RevertCommand = []
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# This file is meant to be used with a specific game title.
+# The default values are commented out for easy configuration.
 
-[Config.Isolation]
-# If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
-# On AoE I this is always false as it does not store metadata.
-Metadata = true
-
-[Client]
-# The path to the game launcher, if 'auto', the Steam and then the Xbox one will be launched if found
-# Use a path to the game launcher, 'steam' or 'msstore' to use the default launcher.
-# Note 1: It is not recommended to use an executable that requires admin rights (but it is supported).
-# Note 2: You may use environment variables when using a custom path.
-Executable = 'auto'
-# The arguments to pass to the client launcher if it is custom.
-# {HostFilePath} will be replaced by the host file path.
-# If using this variable, 'Config.CanAddHost' setting will be ignored.
-# The host file follows the Windows system format.
-# {CertFilePath} will be replaced by the certificate file path.
-# If using this variable, 'Config.CanTrustCertificate' setting will be ignored.
-# The format is the same as the server stored certificate.
-# Path names need to use double backslashes within single quotes or be within double quotes.
-# Note: You may use environment variables.
-ExecutableArgs = []
+#SetupCommand = []
+#RevertCommand = []
+#
+#[Isolation]
+#NoMetadata = false
+#
+#[Client]
+#Launcher = ''
+#PathCommand = []

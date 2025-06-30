@@ -16,7 +16,7 @@ type request struct {
 	AccountType      string `schema:"accountType"`
 	PlatformUserId   uint64 `schema:"platformUserID"`
 	Alias            string `schema:"alias"`
-	GameId           string `schema:"title"`
+	game             string `schema:"title"`
 	MacAddress       string `schema:"macAddress"`
 	ClientLibVersion uint16 `schema:"clientLibVersion"`
 }
@@ -42,11 +42,11 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		sess.Delete()
 	}
-	sessionId := models.CreateSession(req.GameId, u.GetId(), req.ClientLibVersion)
+	sessionId := models.CreateSession(req.game, u.GetId(), req.ClientLibVersion)
 	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(req.GameId, req.ClientLibVersion, users, u, 1)
-	profileInfo := u.GetProfileInfo(false, req.GameId, req.ClientLibVersion)
-	if title == common.GameAoE3 {
+	relationship.ChangePresence(common.GameTitle(req.game), req.ClientLibVersion, users, u, 1)
+	profileInfo := u.GetProfileInfo(false, common.GameTitle(req.game), req.ClientLibVersion)
+	if title == common.AoE3 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := models.GetSessionByUserId(user)
@@ -62,12 +62,12 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
-	if title == common.GameAoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.GameId, req.ClientLibVersion))
+	if title == common.AoE2 {
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(common.GameTitle(req.game), req.ClientLibVersion))
 	}
 	var unknownProfileInfoList i.A
 	switch title {
-	case common.GameAoE2:
+	case common.AoE2:
 		unknownProfileInfoList = i.A{
 			i.A{2, profileId, 0, "", t2},
 			i.A{39, profileId, 671, "", t2},
@@ -85,7 +85,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 			i.A{172, profileId, 4, "", t2},
 			i.A{173, profileId, 1, "", t2},
 		}
-	case common.GameAoE3:
+	case common.AoE3:
 		unknownProfileInfoList = i.A{
 			i.A{291, u.GetId(), 16, "", t2},
 		}
@@ -93,11 +93,11 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		unknownProfileInfoList = i.A{}
 	}
 	server := i.A{""}
-	if title != common.GameAoE1 {
+	if title != common.AoE1 {
 		server = append(server, "localhost")
 	}
 	server = append(server, "127.0.0.1", 27012, 27112)
-	if title != common.GameAoE1 {
+	if title != common.AoE1 {
 		server = append(server, 27212)
 	}
 	response := i.A{
@@ -121,7 +121,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		nil,
 	}
-	if title == common.GameAoE1 {
+	if title == common.AoE1 {
 		response = append(response, i.A{})
 	}
 	allProfileInfo := i.A{
@@ -135,7 +135,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		nil,
 		1,
 	}
-	if title != common.GameAoE1 {
+	if title != common.AoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
 	response = append(response,

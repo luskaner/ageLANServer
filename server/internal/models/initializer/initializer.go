@@ -9,19 +9,19 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models/age3"
 )
 
-var Games = map[string]models.Game{}
+var GameTitles = map[common.GameTitle]models.Game{}
 
-func InitializeGames(gameIds mapset.Set[string]) {
-	for gameId := range gameIds.Iter() {
+func InitializeGames(gameTitles mapset.Set[common.GameTitle]) {
+	for gameTitle := range gameTitles.Iter() {
 		var game models.Game
-		switch gameId {
-		case common.GameAoE1:
+		switch gameTitle {
+		case common.AoE1:
 			game = age1.CreateGame()
-		case common.GameAoE2:
+		case common.AoE2:
 			game = age2.CreateGame()
-		case common.GameAoE3:
+		case common.AoE3:
 			game = age3.CreateGame()
 		}
-		Games[gameId] = game
+		GameTitles[gameTitle] = game
 	}
 }

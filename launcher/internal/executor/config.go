@@ -13,7 +13,7 @@ import (
 )
 
 type RunSetUpOptions struct {
-	Game                   string
+	GameTitle              common.GameTitle
 	HostFilePath           string
 	MapIp                  string
 	MapCDN                 bool
@@ -31,7 +31,7 @@ func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlags
 		stopAgent = true
 	}
 	return &launcherCommon.RevertFlagsOptions{
-		Game:                   options.Game,
+		GameTitle:              options.GameTitle,
 		HostFilePath:           options.HostFilePath,
 		UnmapIP:                options.MapIp != "",
 		UnmapCDN:               options.MapCDN,
@@ -50,9 +50,9 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 	reloadHostMappings := false
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if options.Game != "" {
+	if options.GameTitle != "" {
 		args = append(args, "-e")
-		args = append(args, options.Game)
+		args = append(args, string(options.GameTitle))
 	}
 	if !executor.IsAdmin() {
 		args = append(args, "-g")

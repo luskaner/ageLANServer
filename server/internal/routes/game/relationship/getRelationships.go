@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-func Relationships(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {
+func Relationships(gameTitle common.GameTitle, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {
 	profileInfo := users.GetProfileInfo(true, func(u *models.MainUser) bool {
 		return u != user && u.GetPresence() > 0
 	}, gameTitle, clientLibVersion)
 	friends := profileInfo
 	lastConnection := profileInfo
-	if gameTitle == common.GameAoE3 {
+	if gameTitle == common.AoE3 {
 		lastConnection = []i.A{}
 	} else {
 		friends = []i.A{}

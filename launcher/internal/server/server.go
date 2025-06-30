@@ -11,6 +11,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
+	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"golang.org/x/net/ipv4"
 	"io"
 	"net"
@@ -33,8 +34,17 @@ type MesuredIpAddress struct {
 	Latency time.Duration
 }
 
-func StartServer(gameId string, id uuid.UUID, stop string, executablePath string, args []string) (result *commonExecutor.Result, ip string) {
-	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: stop != "true", Pid: true}.Exec()
+func StartServer(gameTitle common.GameTitle, id uuid.UUID, stop string, executablePath string, args []string) (result *commonExecutor.Result, ip string) {
+	env := make(map[string]string)
+	env[executor.EnvKey(common.Server, "gameTitles")] = string(gameTitle)
+	env[executor.EnvKey(common.Server, "id")] = id.String()
+	result = commonExecutor.Options{
+		File:       executablePath,
+		Args:       args,
+		ShowWindow: stop != "true",
+		Pid:        true,
+		Env:        env,
+	}.Exec()
 	if result.Success() {
 		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String())
 		timeout := time.After(time.Duration(localIPs.Cardinality()) * 3 * time.Second)
@@ -44,7 +54,7 @@ func StartServer(gameId string, id uuid.UUID, stop string, executablePath string
 			case <-timeout:
 				break loop
 			default:
-				if ips, data := FilterServerIPs(id, gameId, localIPs); data != nil {
+				if ips, data := FilterServerIPs(id, gameTitle, localIPs); data != nil {
 					ip = ips[0].Ip
 					return
 				}
@@ -91,20 +101,20 @@ func ResolveExecutablePath() string {
 	return ""
 }
 
-func LanServerHost(id uuid.UUID, gameId string, host string, insecureSkipVerify bool) (ok bool) {
+func LanServerHost(id uuid.UUID, gameTitle common.GameTitle, host string, insecureSkipVerify bool) (ok bool) {
 	ips := launcherCommon.HostOrIpToIps(host)
 	if ips.IsEmpty() {
 		return
 	}
 	for ip := range ips.Iter() {
-		if ok, _, _ = LanServerIP(id, gameId, ip, host, insecureSkipVerify); !ok {
+		if ok, _, _ = LanServerIP(id, gameTitle, ip, host, insecureSkipVerify); !ok {
 			return
 		}
 	}
 	return true
 }
 
-func LanServerIP(id uuid.UUID, gameId string, ip string, serverName string, insecureSkipVerify bool) (ok bool, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
+func LanServerIP(id uuid.UUID, gameTitle common.GameTitle, ip string, serverName string, insecureSkipVerify bool) (ok bool, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
 	if id == uuid.Nil {
 		return
 	}
@@ -145,16 +155,16 @@ func LanServerIP(id uuid.UUID, gameId string, ip string, serverName string, inse
 	if err = json.NewDecoder(resp.Body).Decode(data); err != nil {
 		return
 	}
-	if !slices.Contains(data.GameIds, gameId) {
+	if !slices.Contains(data.GameTitles, string(gameTitle)) {
 		return
 	}
 	ok = true
 	return
 }
 
-func FilterServerIPs(id uuid.UUID, gameId string, possibleIps mapset.Set[string]) (measuredIpAddresses []MesuredIpAddress, data *AnnounceMessageDataSupportedLatest) {
+func FilterServerIPs(id uuid.UUID, gameTitle common.GameTitle, possibleIps mapset.Set[string]) (measuredIpAddresses []MesuredIpAddress, data *AnnounceMessageDataSupportedLatest) {
 	for curIp := range possibleIps.Iter() {
-		if ok, latency, tmpData := LanServerIP(id, gameId, curIp, curIp, true); ok {
+		if ok, latency, tmpData := LanServerIP(id, gameTitle, curIp, curIp, true); ok {
 			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
 				Ip:      curIp,
 				Latency: latency,
@@ -170,7 +180,7 @@ func FilterServerIPs(id uuid.UUID, gameId string, possibleIps mapset.Set[string]
 	return
 }
 
-func QueryServers(ctx context.Context, multicastIPs []net.IP, ports []int, broadcast bool, servers map[uuid.UUID]*AnnounceMessage) {
+func QueryServers(ctx context.Context, multicastIPs []net.IP, ports []uint, broadcast bool, servers map[uuid.UUID]*AnnounceMessage) {
 	sourceToTargetAddrs := sourceToTargetUDPAddrs(multicastIPs, ports, broadcast)
 	if len(sourceToTargetAddrs) == 0 {
 		return
@@ -274,66 +284,42 @@ func QueryServers(ctx context.Context, multicastIPs []net.IP, ports []int, broad
 	<-ctx.Done()
 }
 
-func sourceToTargetUDPAddrs(multicastGroups []net.IP, targetPorts []int, broadcast bool) (mapping map[*net.UDPAddr][]*net.UDPAddr) {
-	mapping = make(map[*net.UDPAddr][]*net.UDPAddr)
-	interfaces, err := net.Interfaces()
-
+func sourceToTargetUDPAddrs(multicastGroups []net.IP, targetPorts []uint, broadcast bool) (mapping map[*net.UDPAddr][]*net.UDPAddr) {
+	interfaces, err := common.IPv4RunningNetworkInterfaces()
 	if err != nil {
-		return
+		return nil
 	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-
-		if i.Flags&net.FlagRunning == 0 {
-			continue
-		}
-
-		addrs, err = i.Addrs()
-		if err != nil {
-			return
-		}
-
-		for _, addr := range addrs {
-			var currentIP net.IP
-			v, ok := addr.(*net.IPNet)
-			if !ok {
-				continue
-			}
-
-			currentIP = v.IP
-			currentIPv4 := currentIP.To4()
-			if currentIPv4 == nil {
-				continue
-			}
+	mapping = make(map[*net.UDPAddr][]*net.UDPAddr)
+	for iff, iffIps := range interfaces {
+		for _, n := range iffIps {
 			sourceAddr := &net.UDPAddr{
-				IP: currentIPv4,
+				IP: n.IP.To4(),
 			}
 			mapping[sourceAddr] = make([]*net.UDPAddr, 0)
-			if broadcast && i.Flags&net.FlagBroadcast != 0 {
+			if broadcast && iff.Flags&net.FlagBroadcast != 0 {
 				for _, port := range targetPorts {
 					mapping[sourceAddr] = append(mapping[sourceAddr], &net.UDPAddr{
-						IP:   common.CalculateBroadcastIp(currentIPv4, v.Mask),
-						Port: port,
+						IP:   common.CalculateBroadcastIp(sourceAddr.IP, n.Mask),
+						Port: int(port),
 					})
 				}
 			} else {
 				for _, port := range targetPorts {
 					mapping[sourceAddr] = append(mapping[sourceAddr], &net.UDPAddr{
-						IP:   currentIPv4,
-						Port: port,
+						IP:   sourceAddr.IP,
+						Port: int(port),
 					})
 				}
 			}
 
-			if len(multicastGroups) > 0 && i.Flags&net.FlagMulticast != 0 {
+			if len(multicastGroups) > 0 && iff.Flags&net.FlagMulticast != 0 {
 				for _, multicastGroup := range multicastGroups {
 					for _, port := range targetPorts {
 						mapping[sourceAddr] = append(
 							mapping[sourceAddr],
 							&net.UDPAddr{
 								IP:   multicastGroup,
-								Port: port,
+								Port: int(port),
 							},
 						)
 					}

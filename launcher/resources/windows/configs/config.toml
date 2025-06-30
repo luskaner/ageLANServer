@@ -1,58 +1,24 @@
-[Config]
-# Whether to show debug information in the console.
-Debug = false
-# Whether or not to add a local dns entry if it's needed to connect to the server with the official domain.
-# Including to avoid receiving that it's on maintenance.
-# If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
-# Note: Will require admin privileges.
-CanAddHost = true
-# Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store via other means.
-# local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent.
-# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
-CanTrustCertificate = 'local'
-# Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'.
-CanBroadcastBattleServer = 'auto'
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# This file is meant to be used with all game titles.
+# The default values are commented out for easy configuration.
 
-[Server]
-# Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
-# 'auto' depend on the Announce setting in the server config being true to find servers.
-Start = 'auto'
-# The process to start the server, if 'auto', it will be try to execute the server binary in this directory order:
-# 1. './server/'
-# 2. '../'
-# 3. '../server/'
-# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
-# Note: You may use environment variables when using a custom path.
-Executable = 'auto'
-# The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
-# {Game} will be replaced by the game name. Default, only start the server for the given name to ensure compatibility.
-# {Id} will be replaced with a known random id.
-# Used to check we connect to the right server. It is mandatory to set this option when starting a new server.
-# Path names need to use double backslashes within single quotes or be within double quotes.
-# Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '-d', '{Id}']
-# The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
-# The host may be a DNS name or IPv4 IP. 0.0.0.0 means every local interface IP.
-# Recommended to use an IP.
-# Only servers v1.9.0 or higher are supported (recommended to use the same version as the launcher).
-# Note: See the server config to set the interface to bind to.
-Host = '0.0.0.0'
-# Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
-Stop = 'auto'
+#Debug = false
+#StoreToAddHost = 'local'
+#StoreToAddCertificate = 'local'
 
-# This section only applies if Server.Start = auto
-# Enabled if NoBroadcast = false or MulticastGroups is not empty. Required if Start = 'auto'.
-[Server.Announcement]
-# Ports (1025 - 65535) to use. If not including the default port, default configured servers will not get discovered.
-Ports = [31978]
-# Multicast group adresses to join. Leave empty to disable multicast.
-# If not including the default group, default configured servers will not get discovered via Multicast.
-# Only IPv4 is supported.
-MulticastGroups = []
-# Do not broadcast the query to all capable network interfaces when querying servers.
-# The broadcast is done on every capable interface.
-# Might be necessary to set to false for some servers that do not respond to multicasts.
-NoBroadcast = false
+#[RebroadcastBattleServer]
+#Disable = false
+#IPs = []
+# Note that [[RebroadcastBattleServer.Interfaces]] also exists.
+
+#[Server]
+#Mode = ''
+#[Server.Connect]
+#Host = ''
+#[Server.Run]
+#NoStop = false
+#Command = []
+#[Server.Query]
+#Ports = [31978]
+#MulticastGroups = ['239.31.97.8']

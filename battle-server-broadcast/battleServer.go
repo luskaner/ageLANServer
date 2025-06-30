@@ -1,4 +1,4 @@
-package battle_server_broadcast
+package battleServerBroadcast
 
 import (
 	"bytes"

@@ -6,5 +6,5 @@ import (
 )
 
 func GetItemDefinitionsJson(w http.ResponseWriter, r *http.Request) {
-	models.G(r).Resources().ReturnSignedAsset("itemDefinitions.json", &w, r, true)
+	models.G(r).Resources().ReturnSignedAsset("itemDefinitions.json", &w, r)
 }

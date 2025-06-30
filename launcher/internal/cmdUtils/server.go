@@ -12,11 +12,9 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"net"
-	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -36,10 +34,10 @@ func (s *processedServer) Option() huh.Option[uuid.UUID] {
 	}
 }
 
-func processedServers(gameId string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
+func processedServers(gameTitle common.GameTitle, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
 	var processed []*processedServer
 	for serverId, data := range servers {
-		measuredIPs, internalData := server.FilterServerIPs(serverId, gameId, data.Ips)
+		measuredIPs, internalData := server.FilterServerIPs(serverId, gameTitle, data.Ips)
 		if internalData == nil {
 			continue
 		}
@@ -124,8 +122,8 @@ func listenServerProgressUI(ctx context.Context, cancel context.CancelFunc) {
 		Run()
 }
 
-func DiscoverServersAndSelectBestIp(broadcast bool, gameId string, startServerId uuid.UUID, multicastIPs []net.IP, ports []int) (errorCode int, id uuid.UUID, ip string) {
-	id = startServerId
+func DiscoverServersAndSelectBestIp(broadcast bool, gameTitle common.GameTitle, multicastIPs []net.IP, ports []uint) (errorCode int, id uuid.UUID, ip string) {
+	id = uuid.New()
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
 	ctx, cancel := context.WithTimeout(context.Background(), server.AnnounceQuery)
 	go listenServerProgressUI(ctx, cancel)
@@ -141,7 +139,7 @@ func DiscoverServersAndSelectBestIp(broadcast bool, gameId string, startServerId
 				Context(serverCtx).
 				Run()
 		}()
-		procServers := processedServers(gameId, servers)
+		procServers := processedServers(gameTitle, servers)
 		serverCancel()
 		if spinnerError != nil {
 			return
@@ -211,8 +209,7 @@ func DiscoverServersAndSelectBestIp(broadcast bool, gameId string, startServerId
 
 func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID, canTrustCertificate bool) (errorCode int, ip string) {
 	var serverExecutablePath string
-	var err error
-	if executable == "auto" {
+	if executable == "" {
 		printer.Print(
 			printer.Search,
 			"",
@@ -235,26 +232,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 				printer.TS(serverExecutablePath, printer.FilePathStyle),
 			)
 		}
-	} else if serverExecutablePath, err = parse.Executable(executable, nil); err != nil {
-		printer.Println(
-			printer.Error,
-			printer.T(`Could not parse the `),
-			printer.TS("Server.Executable", printer.OptionStyle),
-			printer.T(`.`),
-		)
-		errorCode = internal.ErrServerExecutable
-		return
-	} else if f, err := os.Stat(serverExecutablePath); err != nil || f.IsDir() {
-		printer.Println(
-			printer.Error,
-			printer.T(`Could not find the `),
-			printer.TS("Server.Executable", printer.OptionStyle),
-			printer.T(`.`),
-		)
-		errorCode = internal.ErrServerExecutable
-		return
 	}
-
 	if exists, certificateFolder, cert := common.CertificatePair(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) {
 		if !canTrustCertificate {
 			printer.Println(
@@ -263,7 +241,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 				printer.T(" is "),
 				printer.TS("true", printer.OptionStyle),
 				printer.T(" but "),
-				printer.TS("Config.CanTrustCertificate", printer.OptionStyle),
+				printer.TS("CanTrustCertificate", printer.OptionStyle),
 				printer.T(" is "),
 				printer.TS("false", printer.OptionStyle),
 				printer.T("."),
@@ -312,7 +290,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 		stopStr = "false"
 	}
 	var result *commonExecutor.Result
-	result, ip = server.StartServer(c.gameId, serverId, stopStr, serverExecutablePath, args)
+	result, ip = server.StartServer(c.gameTitle, serverId, stopStr, serverExecutablePath, args)
 	if result.Success() {
 		printer.PrintSucceeded()
 		if stop {

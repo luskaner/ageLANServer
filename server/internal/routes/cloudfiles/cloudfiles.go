@@ -41,7 +41,7 @@ func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0")
 		w.Header().Set("x-ms-request-id", fmt.Sprintf("%d", time.Now().Unix()))
 		w.Header().Set("x-ms-version", file.Version)
-		if models.G(r).Title() != common.GameAoE3 {
+		if models.G(r).Title() != common.AoE3 {
 			w.Header().Set("x-ms-meta-filename", filename)
 			w.Header().Set("x-ms-meta-ContentLength", lengthStr)
 		}

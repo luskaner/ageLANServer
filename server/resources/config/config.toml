@@ -1,26 +1,19 @@
-# The hosts/IPs the server will bind to. Only IPv4 is supported.
-# *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
-Hosts = ['0.0.0.0']
+# Configuration format: https://toml.io
+# Read the CONFIGURATION.md file for more information.
+# The default values are commented out for easy configuration.
 
-# Whether to log the requests to the console (stdout) or not (files)
-LogToConsole = false
+#GameTitles = ['age1', 'age2', 'age3']
+#GeneratePlatformUserId = false
 
-# Whether to generate the Platform User Id. *ONLY* recommended if using two or more users
-# are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
-GeneratePlatformUserId = false
+#[Listen]
+#Hosts = ['0.0.0.0']
+# Note that [[Listen.Interfaces]] also exists.
 
-# Games that the server will accept. "age1" (AoE DE), "age2" (AoE II DE) and "age3" (AoE III DE) are supported.
-# If the launcher starts the server, by default, it will only start the server for the given game to ensure compatibility.
-Games = ['age1', 'age2', 'age3']
+#[Announcement]
+#Disabled = false
+#Port = 31978
+#MulticastGroup = '239.31.97.8'
 
-[Announcement]
-
-# Whether to listen to server requests. When disabled, the launcher will not automatically detect it.
-# The addresses will be the same as the 'Hosts' setting.
-Enabled = true
-# Port (1025 - 65535) to listen to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
-Port = 31978
-# Announce multicast group adresses to join.
-# If changed, the launchers will need to specify the address in Server.Announcement.MulticastGroups to receive multicasts.
-# Leave empty to only respond to broadcast (or unicast) requests.
-MulticastGroup = '239.31.97.8'
+#[Logging]
+#Enabled = false
+#Console = false

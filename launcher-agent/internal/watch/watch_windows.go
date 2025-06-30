@@ -4,6 +4,8 @@ import (
 	"github.com/luskaner/ageLANServer/battle-server-broadcast"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"golang.org/x/sys/windows"
+	"net"
+	"slices"
 	"time"
 )
 
@@ -28,15 +30,25 @@ func waitForProcess(PID uint32) bool {
 	return true
 }
 
-func rebroadcastBattleServer(exitCode *int, port int) {
-	mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()
+func rebroadcastBattleServer(exitCode *int, rebroadcastIPs []net.IP, port int) {
+	mostPriority, restInterfaces, err := battleServerBroadcast.RetrieveBsInterfaceAddresses()
 	if err == nil && mostPriority != nil && len(restInterfaces) > 0 {
-		if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
-			go func() {
-				_ = battle_server_broadcast.CloneAnnouncements(mostPriority, restInterfaces, port)
-			}()
-		} else {
-			*exitCode = internal.ErrBattleServerTimeOutStart
+		var selectedInterfaces []*net.IPNet
+		for _, iff := range restInterfaces {
+			if slices.ContainsFunc(rebroadcastIPs, func(ip net.IP) bool {
+				return ip.Equal(iff.IP)
+			}) {
+				selectedInterfaces = append(selectedInterfaces, iff)
+			}
+		}
+		if len(selectedInterfaces) > 0 {
+			if len(waitUntilAnyProcessExist([]string{"BattleServer.exe"})) > 0 {
+				go func() {
+					_ = battleServerBroadcast.CloneAnnouncements(mostPriority, selectedInterfaces, port)
+				}()
+			} else {
+				*exitCode = internal.ErrBattleServerTimeOutStart
+			}
 		}
 	}
 }

@@ -14,7 +14,7 @@ import (
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
 type RevertFlagsOptions struct {
-	Game                   string
+	GameTitle              common.GameTitle
 	HostFilePath           string
 	UnmapIP                bool
 	UnmapCDN               bool
@@ -29,9 +29,9 @@ type RevertFlagsOptions struct {
 
 func RevertFlags(options *RevertFlagsOptions) []string {
 	args := make([]string, 0)
-	if options.Game != "" {
+	if options.GameTitle != "" {
 		args = append(args, "-e")
-		args = append(args, options.Game)
+		args = append(args, string(options.GameTitle))
 	}
 	if options.StopAgent {
 		args = append(args, "-g")
@@ -87,7 +87,7 @@ func stubConfigRevertPrinter() *ConfigRevertPrinter {
 }
 
 func ConfigRevert(
-	gameId string,
+	gameTitle common.GameTitle,
 	binCannotElevate bool,
 	runRevertFn func(flags []string, bin bool) (result *exec.Result),
 	printer *ConfigRevertPrinter,
@@ -105,7 +105,7 @@ func ConfigRevert(
 	}
 	allRevertFlags := func(stopAgent bool) []string {
 		return RevertFlags(&RevertFlagsOptions{
-			Game:            gameId,
+			GameTitle:       gameTitle,
 			UnmapIP:         true,
 			UnmapCDN:        true,
 			RemoveUserCert:  runtime.GOOS == "windows",

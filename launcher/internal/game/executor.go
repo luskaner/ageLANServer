@@ -1,9 +1,9 @@
 package game
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher-common/steam"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/parse"
 	"os"
 )
 
@@ -13,7 +13,7 @@ type Executor interface {
 }
 
 type baseExecutor struct {
-	gameId string
+	gameTitle common.GameTitle
 }
 
 type SteamExecutor struct {
@@ -27,7 +27,7 @@ type CustomExecutor struct {
 }
 
 func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
-	return startUri(steam.NewGame(exec.gameId).OpenUri())
+	return startUri(steam.NewGame(exec.gameTitle).OpenUri())
 }
 
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
@@ -63,48 +63,45 @@ func isInstalledCustom(executable string) bool {
 	return true
 }
 
-func steamExecutor(gameId string) (ok bool, executor Executor) {
-	steamGame := steam.NewGame(gameId)
+func steamExecutor(gameTitle common.GameTitle) (ok bool, executor Executor) {
+	steamGame := steam.NewGame(gameTitle)
 	if steamGame.GameInstalled() {
 		ok = true
-		executor = SteamExecutor{baseExecutor{gameId: gameId}}
+		executor = SteamExecutor{baseExecutor{gameTitle: gameTitle}}
 	}
 	return
 }
 
-func xboxExecutor(gameId string) (ok bool, executor Executor) {
-	if isInstalledOnXbox(gameId) {
+func xboxExecutor(gameTitle common.GameTitle) (ok bool, executor Executor) {
+	if isInstalledOnXbox(gameTitle) {
 		ok = true
-		executor = XboxExecutor{baseExecutor{gameId: gameId}}
+		executor = XboxExecutor{baseExecutor{gameTitle: gameTitle}}
 	}
 	return
 }
 
-func MakeExecutor(gameId string, executable string) Executor {
-	if executable != "auto" {
-		switch executable {
+func MakeExecutor(gameTitle common.GameTitle, launcher string, executable string) Executor {
+	if launcher != "" {
+		switch launcher {
 		case "steam":
-			if ok, executor := steamExecutor(gameId); ok {
+			if ok, executor := steamExecutor(gameTitle); ok {
 				return executor
 			}
 		case "msstore":
-			if ok, executor := xboxExecutor(gameId); ok {
+			if ok, executor := xboxExecutor(gameTitle); ok {
 				return executor
 			}
-		default:
-			if executableParsed, err := parse.Executable(executable, nil); err == nil {
-				executable = executableParsed
-			}
+		case "path":
 			if isInstalledCustom(executable) {
 				return CustomExecutor{Executable: executable}
 			}
 		}
 		return nil
 	}
-	if ok, executor := steamExecutor(gameId); ok {
+	if ok, executor := steamExecutor(gameTitle); ok {
 		return executor
 	}
-	if ok, executor := xboxExecutor(gameId); ok {
+	if ok, executor := xboxExecutor(gameTitle); ok {
 		return executor
 	}
 	return nil

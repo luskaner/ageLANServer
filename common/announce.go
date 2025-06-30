@@ -1,6 +1,7 @@
 package common
 
 const AnnouncePort = 31978
+const AnnounceMulticastGroup = "239.31.97.8"
 const AnnounceHeader = Name
 const IdHeader = "X-Id"
 const VersionHeader = "X-Version"
@@ -25,7 +26,7 @@ type AnnounceMessageData000 struct {
 // AnnounceMessageData001 adds the games supported as not only age2 is supported
 // v1.5.X - v1.8.X
 type AnnounceMessageData001 struct {
-	GameIds []string
+	GameTitles []string
 }
 
 // AnnounceMessageData002 adds the version of the server so the launcher can better determine compatibility

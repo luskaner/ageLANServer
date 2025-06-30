@@ -3,6 +3,7 @@ package exec
 import (
 	"fmt"
 	"golang.org/x/sys/windows"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -49,6 +50,33 @@ func (options Options) exec() (result *Result) {
 			verb = "open"
 		}
 
+		if len(options.Env) > 0 {
+			current := environ()
+			var revertMethods []func()
+			var err error
+			for k, v := range options.Env {
+				existing, ok := current[k]
+				if !ok || existing != v {
+					if err = os.Setenv(k, v); err != nil {
+						break
+					}
+					if ok {
+						revertMethods = append(revertMethods, func() {
+							_ = os.Setenv(k, existing)
+						})
+					} else {
+						revertMethods = append(revertMethods, func() {
+							_ = os.Unsetenv(k)
+						})
+					}
+				}
+			}
+			defer func() {
+				for _, revert := range revertMethods {
+					revert()
+				}
+			}()
+		}
 		if options.Wait || options.Pid || options.ExitCode {
 			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, options.File, !options.UseWorkingPath, options.Pid, showWindowInt, options.Args...)
 			result.Err = err

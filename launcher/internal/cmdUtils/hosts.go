@@ -70,16 +70,16 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCode int) {
+func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 	var mapCDN bool
 	var mapIP bool
 	var ipToMap string
-	if !customHostFile {
+	if store != "tmp" {
 		if requiresMapCDN() {
-			if !canMap {
+			if store == "" {
 				printer.Println(
 					printer.Error,
-					printer.TS("Config.CanAddHost", printer.OptionStyle),
+					printer.TS("CanAddHost", printer.OptionStyle),
 					printer.T(" is "),
 					printer.TS("false", printer.LiteralStyle),
 					printer.T(" but CDN is required to be mapped. You should have added the mapping yourself."),
@@ -91,7 +91,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		}
 		for _, domain := range common.AllHosts() {
 			if !launcherCommon.Matches(ip, domain) {
-				if !canMap {
+				if store == "" {
 					printer.Println(
 						printer.Error,
 						printer.TS("Server.Start", printer.OptionStyle),
@@ -129,7 +129,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		ipToMap = ip
 	}
 	if ipToMap != "" || mapCDN {
-		if customHostFile {
+		if store == "tmp" {
 			hostFile, err := hosts.CreateTemp()
 			if err != nil {
 				return internal.ErrConfigIpMapAdd
@@ -160,7 +160,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIp: ipToMap, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
 			printer.PrintFailedResultError(result)
 			errorCode = internal.ErrConfigIpMapAdd
-		} else if customHostFile {
+		} else if store == "tmp" {
 			cmd.MapCDN = true
 			if parsedIP := net.ParseIP(ip); parsedIP != nil {
 				cmd.MapIP = parsedIP

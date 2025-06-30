@@ -6,13 +6,12 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
-	"github.com/spf13/viper"
 	"net/http"
 	"strings"
 )
 
-var gamePathHandlers = map[string]map[string]map[string]http.HandlerFunc{
-	common.GameAoE3: {
+var gamePathHandlers = map[common.GameTitle]map[string]map[string]http.HandlerFunc{
+	common.AoE3: {
 		"/game/leaderboard/setAvatarStatValues": {
 			http.MethodPost: age3.SetAvatarStatValues,
 		},
@@ -27,27 +26,26 @@ var ignoredPaths = map[string]bool{
 	"/game/news/getNews":           true,
 }
 
-func GameMiddleware(next http.Handler) http.Handler {
+func GameMiddleware(gameSet mapset.Set[common.GameTitle], next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !ignoredPaths[r.URL.Path] {
-			gameId := r.URL.Query().Get("title")
-			if gameId == "" && r.Method == http.MethodPost {
+			game := r.URL.Query().Get("title")
+			if game == "" && r.Method == http.MethodPost {
 				if err := r.ParseForm(); err == nil {
-					gameId = r.Form.Get("title")
+					game = r.Form.Get("title")
 				}
 			}
-			if gameId == "" && !strings.HasPrefix(r.URL.Path, "/cloudfiles/game/") {
+			if game == "" && !strings.HasPrefix(r.URL.Path, "/cloudfiles/game/") {
 				session := Session(r)
-				gameId = session.GetGameId()
+				game = session.Getgame()
 			}
-			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
-			if !gameSet.ContainsOne(gameId) {
+			if !gameSet.ContainsOne(common.GameTitle(game)) {
 				http.Error(w, "Unavailable game type", http.StatusBadRequest)
 				return
 			}
-			ctx := context.WithValue(r.Context(), "game", initializer.Games[gameId])
+			ctx := context.WithValue(r.Context(), "game", initializer.GameTitles[common.GameTitle(game)])
 			req := r.WithContext(ctx)
-			if gameHandlers, ok := gamePathHandlers[gameId]; ok {
+			if gameHandlers, ok := gamePathHandlers[common.GameTitle(game)]; ok {
 				var pathHandlers map[string]http.HandlerFunc
 				if pathHandlers, ok = gameHandlers[r.URL.Path]; ok {
 					var handler http.HandlerFunc

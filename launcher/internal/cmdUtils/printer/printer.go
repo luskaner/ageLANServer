@@ -5,10 +5,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"github.com/spf13/viper"
 	"strconv"
 	"strings"
 )
+
+var EnableDebug bool
 
 const (
 	Error         = "❌"
@@ -84,7 +85,7 @@ func generatePrefix(level string, prefix string) string {
 }
 
 func Gen[T StyledTextOrText](level string, prefix string, styledTexts ...T) string {
-	if level == Debug && !viper.GetBool("Config.Debug") {
+	if level == Debug && !EnableDebug {
 		return ""
 	}
 	finalPrefix := generatePrefix(level, prefix)
