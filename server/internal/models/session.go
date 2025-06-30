@@ -42,7 +42,7 @@ func (sess *Session) GetUserId() int32 {
 	return sess.userId
 }
 
-func (sess *Session) Getgame() string {
+func (sess *Session) Game() string {
 	return sess.game
 }
 

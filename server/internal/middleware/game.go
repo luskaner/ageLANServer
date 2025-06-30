@@ -37,7 +37,7 @@ func GameMiddleware(gameSet mapset.Set[common.GameTitle], next http.Handler) htt
 			}
 			if game == "" && !strings.HasPrefix(r.URL.Path, "/cloudfiles/game/") {
 				session := Session(r)
-				game = session.Getgame()
+				game = session.Game()
 			}
 			if !gameSet.ContainsOne(common.GameTitle(game)) {
 				http.Error(w, "Unavailable game type", http.StatusBadRequest)

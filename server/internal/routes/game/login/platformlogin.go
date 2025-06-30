@@ -16,7 +16,7 @@ type request struct {
 	AccountType      string `schema:"accountType"`
 	PlatformUserId   uint64 `schema:"platformUserID"`
 	Alias            string `schema:"alias"`
-	game             string `schema:"title"`
+	Game             string `schema:"title"`
 	MacAddress       string `schema:"macAddress"`
 	ClientLibVersion uint16 `schema:"clientLibVersion"`
 }
@@ -42,10 +42,10 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		sess.Delete()
 	}
-	sessionId := models.CreateSession(req.game, u.GetId(), req.ClientLibVersion)
+	sessionId := models.CreateSession(req.Game, u.GetId(), req.ClientLibVersion)
 	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(common.GameTitle(req.game), req.ClientLibVersion, users, u, 1)
-	profileInfo := u.GetProfileInfo(false, common.GameTitle(req.game), req.ClientLibVersion)
+	relationship.ChangePresence(common.GameTitle(req.Game), req.ClientLibVersion, users, u, 1)
+	profileInfo := u.GetProfileInfo(false, common.GameTitle(req.Game), req.ClientLibVersion)
 	if title == common.AoE3 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
@@ -63,7 +63,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title == common.AoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(common.GameTitle(req.game), req.ClientLibVersion))
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(common.GameTitle(req.Game), req.ClientLibVersion))
 	}
 	var unknownProfileInfoList i.A
 	switch title {
