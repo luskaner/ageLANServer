@@ -80,5 +80,5 @@ gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-mvdan.cc/sh/v3 v3.11.0 h1:q5h+XMDRfUGUedCqFFsjoFjrhwf2Mvtt1rkMvVz0blw=
-mvdan.cc/sh/v3 v3.11.0/go.mod h1:LRM+1NjoYCzuq/WZ6y44x14YNAI0NK7FLPeQSaFagGg=
+mvdan.cc/sh/v3 v3.12.0 h1:ejKUR7ONP5bb+UGHGEG/k9V5+pRVIyD+LsZz7o8KHrI=
+mvdan.cc/sh/v3 v3.12.0/go.mod h1:Se6Cj17eYSn+sNooLZiEUnNNmNxg0imoYlTu4CyaGyg=
