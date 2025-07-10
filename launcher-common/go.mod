@@ -9,7 +9,7 @@ require (
 	github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/sys v0.34.0
-	golang.org/x/term v0.32.0
+	golang.org/x/term v0.33.0
 	mvdan.cc/sh/v3 v3.12.0
 )
 
