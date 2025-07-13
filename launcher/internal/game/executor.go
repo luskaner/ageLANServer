@@ -38,8 +38,8 @@ func (exec CustomExecutor) execute(args []string, admin bool) (result *commonExe
 	options := commonExecutor.Options{File: exec.Executable, Args: args}
 	if admin {
 		options.AsAdmin = true
-		options.ShowWindow = true
 	}
+	options.ShowWindow = true
 	result = options.Exec()
 	return
 }
