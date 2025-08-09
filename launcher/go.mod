@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	golang.org/x/net v0.42.0
-	golang.org/x/sys v0.34.0
+	golang.org/x/sys v0.35.0
 	mvdan.cc/sh/v3 v3.12.0
 )
 
