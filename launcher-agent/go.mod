@@ -4,14 +4,5 @@ go 1.24.0
 
 require (
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
-	github.com/luskaner/ageLANServer/common v0.0.0-20250713220403-d0399bd566eb
-	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250713220403-d0399bd566eb
 	golang.org/x/sys v0.35.0
-)
-
-require (
-	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
-	github.com/hairyhenderson/go-which v0.2.2 // indirect
-	golang.org/x/term v0.34.0 // indirect
-	mvdan.cc/sh/v3 v3.12.0 // indirect
 )

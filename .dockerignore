@@ -4,6 +4,7 @@ battle-server-broadcast
 build
 launcher*/
 server/resources/unix
+server/resources/windows
 .dockerignore
 .gitignore
 .env*
