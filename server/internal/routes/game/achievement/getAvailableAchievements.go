@@ -6,5 +6,5 @@ import (
 )
 
 func GetAvailableAchievements(w http.ResponseWriter, r *http.Request) {
-	models.G(r).Resources().ReturnSignedAsset("achievements.json", &w, r, false)
+	models.G(r).Resources().ReturnSignedAsset("achievements.json", &w, r)
 }

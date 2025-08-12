@@ -6,20 +6,8 @@ import (
 	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 )
-
-var hostRegExp = regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s+(?P<host>\S+)`)
-
-func host(line string) string {
-	uncommentedLine := launcherCommonHosts.LineWithoutComment(line)
-	matches := hostRegExp.FindStringSubmatch(uncommentedLine)
-	if matches == nil {
-		return ""
-	}
-	return matches[1]
-}
 
 func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File) {
 	err, f = launcherCommonHosts.OpenHostsFile(Path())
@@ -31,9 +19,14 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line = scanner.Text()
-		lineHost := host(line)
-		if hosts.ContainsOne(lineHost) {
-			existingHosts.Add(lineHost)
+		ok, parsedLine := launcherCommonHosts.Parse(line)
+		if !ok {
+			continue
+		}
+		for _, lineHost := range parsedLine.Hosts() {
+			if hosts.ContainsAny(lineHost) {
+				existingHosts.Add(lineHost)
+			}
 		}
 	}
 	if err = scanner.Err(); err != nil {
@@ -75,17 +68,21 @@ func RemoveHosts(hosts mapset.Set[string]) error {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line = scanner.Text()
-			addLine := false
-			if !strings.HasSuffix(line, launcherCommonHosts.HostEndMarking) {
-				addLine = true
-			} else {
-				lineHost := host(line)
-				if !existingHosts.ContainsOne(lineHost) {
-					addLine = true
+			ok, parsedLine := launcherCommonHosts.Parse(line)
+			lineToAdd := line
+			if ok {
+				if parsedLine.Own() {
+					lineHosts := mapset.NewThreadUnsafeSet[string](parsedLine.Hosts()...)
+					retainHosts := lineHosts.Intersect(existingHosts)
+					if retainHosts.IsEmpty() {
+						lineToAdd = ""
+					} else if !retainHosts.Equal(lineHosts) {
+						lineToAdd = launcherCommonHosts.NewLine(parsedLine.IPAddr(), retainHosts.ToSlice()).String()
+					}
 				}
 			}
-			if addLine {
-				lines = append(lines, line)
+			if lineToAdd != "" {
+				lines = append(lines, lineToAdd)
 			}
 		}
 

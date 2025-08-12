@@ -4,6 +4,7 @@ package watch
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"time"
 )
@@ -18,4 +19,4 @@ func waitForProcess(pid uint32) bool {
 	}
 }
 
-func rebroadcastBattleServer(_ *int, _ int) {}
+func rebroadcastBattleServer(_ *int, _ []net.IP, _ int) {}

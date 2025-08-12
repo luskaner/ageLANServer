@@ -1,21 +1,25 @@
 package executor
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"net/netip"
 	"strconv"
+	"strings"
 )
 
-func RunAgent(game string, steamProcess bool, xboxProcess bool, serverExe string, broadCastBattleServer bool) (result *exec.Result) {
-	if serverExe == "" {
-		serverExe = "-"
+func RunAgent(gameTitle common.GameTitle, steamProcess bool, xboxProcess bool, serverPid int, rebroadcastIPAddrs mapset.Set[netip.Addr]) (result *exec.Result) {
+	rebroadcastIPsStr := make([]string, rebroadcastIPAddrs.Cardinality())
+	for i, ipAddr := range rebroadcastIPAddrs.ToSlice() {
+		rebroadcastIPsStr[i] = ipAddr.String()
 	}
 	args := []string{
 		strconv.FormatBool(steamProcess),
 		strconv.FormatBool(xboxProcess),
-		serverExe,
-		strconv.FormatBool(broadCastBattleServer),
-		game,
+		strconv.FormatInt(int64(serverPid), 10),
+		strings.Join(rebroadcastIPsStr, ","),
+		string(gameTitle),
 	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherAgent), Pid: true, Args: args}.Exec()
 	return

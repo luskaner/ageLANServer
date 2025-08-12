@@ -2,23 +2,21 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	"mvdan.cc/sh/v3/shell"
-	"regexp"
-	"runtime"
+	"os"
 	"strings"
 )
 
-var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)
-
-func ParseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
+func insertValues(cmdArgs string, values map[string]string) string {
 	for key, value := range values {
 		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
 	}
-	if runtime.GOOS == "windows" {
-		cmdArgs = reWinToLinVar.ReplaceAllString(cmdArgs, `$$$1`)
+	return cmdArgs
+}
+
+func CommandArgs(args []string, values map[string]string) (argsTransformed []string) {
+	argsTransformed = make([]string, len(args))
+	for i := range args {
+		argsTransformed[i] = os.ExpandEnv(insertValues(args[i], values))
 	}
-	args, err = shell.Fields(cmdArgs, nil)
 	return
 }

@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+const maxHostsPerLine = 9
+
 var Lock *windows.Overlapped
 
 func LockFile(file *os.File) (err error) {

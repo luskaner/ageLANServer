@@ -5,17 +5,15 @@ import (
 	"encoding/base64"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"net"
+	"net/netip"
 )
 
-func RunSetUp(IPs []net.IP, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
+func RunSetUp(IpAddr netip.Addr, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if IPs != nil {
-		for _, ip := range IPs {
-			args = append(args, "-i")
-			args = append(args, ip.String())
-		}
+	if IpAddr.IsValid() {
+		args = append(args, "-i")
+		args = append(args, IpAddr.String())
 	}
 	if certificate != nil {
 		args = append(args, "-l")
@@ -28,11 +26,11 @@ func RunSetUp(IPs []net.IP, certificate *x509.Certificate, CDN bool) (result *ex
 	return
 }
 
-func RunRevert(IPs bool, certificate bool, CDN bool, failfast bool) (result *exec.Result) {
+func RunRevert(IP bool, certificate bool, CDN bool, failfast bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "revert")
 	if failfast {
-		if IPs {
+		if IP {
 			args = append(args, "-i")
 		}
 		if certificate {

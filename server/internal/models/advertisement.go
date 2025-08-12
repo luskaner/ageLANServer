@@ -336,7 +336,7 @@ func (adv *MainAdvertisement) EncodePeers() []i.A {
 }
 
 // UnsafeEncode requires advertisement read lock
-func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
+func (adv *MainAdvertisement) UnsafeEncode(gameTitle common.GameTitle) i.A {
 	var visible uint8
 	if adv.visible {
 		visible = 1
@@ -366,7 +366,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 		adv.platformSessionId,
 		"0",
 	}
-	if gameId == common.GameAoE2 {
+	if gameTitle == common.AoE2 {
 		response = append(
 			response,
 			"",
@@ -380,7 +380,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 		started,
 		adv.description,
 	)
-	if gameId == common.GameAoE2 {
+	if gameTitle == common.AoE2 {
 		response = append(response, adv.description)
 	}
 	response = append(
@@ -402,7 +402,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 		startTime,
 		adv.relayRegion,
 	)
-	if gameId != common.GameAoE1 {
+	if gameTitle != common.AoE1 {
 		response = append(response, nil)
 	}
 	return response
@@ -418,7 +418,7 @@ func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainA
 	return nil
 }
 
-func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
+func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameTitle common.GameTitle, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
 	var res []i.A
 	for adv := range advs.store.Values() {
 		advId := adv.GetId()
@@ -427,12 +427,12 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, p
 				advs.locks.RLock(advId)
 				defer advs.locks.RUnlock(advId)
 				if matches(adv) {
-					res = append(res, adv.UnsafeEncode(gameId))
+					res = append(res, adv.UnsafeEncode(gameTitle))
 				}
 			}()
 		} else {
 			advs.WithReadLock(adv.GetId(), func() {
-				res = append(res, adv.UnsafeEncode(gameId))
+				res = append(res, adv.UnsafeEncode(gameTitle))
 			})
 		}
 	}

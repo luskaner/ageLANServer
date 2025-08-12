@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 )
 
-func Metadata(gameId string) Data {
-	var path string
-	switch gameId {
-	case common.GameAoE2:
-		path = "metadata"
-	case common.GameAoE3:
-		path = filepath.Join("Common", "RLink")
+func Metadata(gameTitle common.GameTitle) Data {
+	var p string
+	switch gameTitle {
+	case common.AoE2:
+		p = "metadata"
+	case common.AoE3:
+		p = filepath.Join("Common", "RLink")
 	}
-	return Data{Path: path}
+	return Data{Path: p}
 }

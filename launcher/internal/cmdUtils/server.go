@@ -1,191 +1,288 @@
 package cmdUtils
 
 import (
+	"context"
 	"fmt"
+	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/huh/spinner"
+	"github.com/charmbracelet/lipgloss"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
-	"net"
+	"net/netip"
+	"slices"
 	"sort"
 	"strings"
+	"time"
 )
 
-func SelectBestServerIp(ips []string) (ok bool, ip string) {
-	var successIps []net.IP
+type processedServer struct {
+	server.MesuredIpAddress
+	id          uuid.UUID
+	description string
+}
 
-	for _, curIp := range ips {
-		if server.LanServer(curIp, true) {
-			parsedIp := net.ParseIP(curIp)
-			if parsedIp.IsLoopback() {
-				return true, curIp
-			}
-			successIps = append(successIps, parsedIp.To4())
-		}
+func (s *processedServer) Option() huh.Option[uuid.UUID] {
+	return huh.Option[uuid.UUID]{
+		Key:   s.description,
+		Value: s.id,
 	}
+}
 
-	countSuccessIps := len(successIps)
-	if countSuccessIps == 0 {
-		return
-	}
-
-	ok = true
-	ip = successIps[0].String()
-	interfaces, err := net.Interfaces()
-
-	if err != nil {
-		return
-	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-		addrs, err = i.Addrs()
-		if err != nil {
+func processedServers(gameTitle common.GameTitle, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
+	var processed []*processedServer
+	for serverId, data := range servers {
+		measuredIPs, internalData := server.FilterServerIPs(serverId, "", gameTitle, data.IpAddrs)
+		if internalData == nil {
 			continue
 		}
-		for _, addr := range addrs {
-			v, addrOk := addr.(*net.IPNet)
-			if !addrOk {
-				continue
-			}
-
-			for _, curIp := range successIps {
-				if v.Contains(curIp) {
-					ip = curIp.String()
-					return
+		bestAddress := measuredIPs[0]
+		var bestHostsSlice []string
+		bestHosts := launcherCommon.IpAddrToAddrs(bestAddress.IpAddr)
+		var alternativeIpSlice []string
+		var alternativeHostsSlice []string
+		alternativeHosts := mapset.NewThreadUnsafeSet[string]()
+		for _, alternativeAddress := range measuredIPs[1:] {
+			alternativeHosts.Append(launcherCommon.IpAddrToAddrs(alternativeAddress.IpAddr).Difference(bestHosts).ToSlice()...)
+			alternativeIpSlice = append(alternativeIpSlice, alternativeAddress.IpAddr.String())
+		}
+		sort.Strings(alternativeIpSlice)
+		if !alternativeHosts.IsEmpty() {
+			alternativeHostsSlice = alternativeHosts.ToSlice()
+			sort.Strings(alternativeHostsSlice)
+		}
+		if !bestHosts.IsEmpty() {
+			bestHostsSlice = bestHosts.ToSlice()
+			sort.Strings(bestHostsSlice)
+		}
+		description := lipgloss.NewStyle().Bold(true).Render(bestAddress.IpAddr.String())
+		if len(alternativeIpSlice) > 1 {
+			description += ", "
+			description += strings.Join(alternativeIpSlice, ", ")
+		}
+		if len(bestHostsSlice) > 0 || len(alternativeHostsSlice) > 0 {
+			description += " ("
+			for i, host := range bestHostsSlice {
+				if i > 0 {
+					description += ", "
 				}
+				description += lipgloss.NewStyle().Bold(true).Render(host)
+			}
+			if len(alternativeHostsSlice) > 0 {
+				if len(bestHostsSlice) > 0 {
+					description += ", "
+				}
+				description += strings.Join(alternativeHostsSlice, ", ")
+			}
+			description += ")"
+		}
+		description += printer.Gen("", "", printer.TS(" | ", printer.SeparatorStyle)) + printer.Gen(
+			printer.Speed,
+			"",
+			printer.TS(
+				fmt.Sprintf("%d ms", bestAddress.Latency.Truncate(time.Millisecond).Milliseconds()),
+				printer.LiteralStyle,
+			),
+		)
+		description += printer.Gen("", "", printer.TS(" | ", printer.SeparatorStyle)) + "📦 " + internalData.Version
+		processed = append(processed, &processedServer{
+			id:               serverId,
+			MesuredIpAddress: bestAddress,
+			description:      description,
+		})
+	}
+	slices.SortStableFunc(processed, func(a, b *processedServer) int {
+		return int(a.Latency - b.Latency)
+	})
+	return processed
+}
+
+func listenServerProgressUI(ctx context.Context, cancel context.CancelFunc) {
+	defer cancel()
+	_ = spinner.New().
+		Style(lipgloss.NewStyle()).
+		TitleStyle(lipgloss.NewStyle()).
+		Title(
+			printer.Gen(
+				"",
+				"",
+				printer.T("Querying "),
+				printer.TS("server", printer.ComponentStyle),
+				printer.T("s, you might need to allow the "),
+				printer.TS("launcher", printer.ComponentStyle),
+				printer.T(" in the firewall..."),
+			),
+		).
+		Context(ctx).
+		Run()
+}
+
+func DiscoverServersAndSelectBestIpAddr(gameTitle common.GameTitle, multicastGroupsIPv4 mapset.Set[netip.Addr], targetPortsIPv4 mapset.Set[uint16], multicastGroupsIPv6 mapset.Set[netip.Addr], targetPortsIPv6 mapset.Set[uint16], broadcastIPv4 bool, ipProtocol *common.IPProtocol) (errorCode int, id uuid.UUID, ipAddr netip.Addr) {
+	id = uuid.New()
+	servers := make(map[uuid.UUID]*server.AnnounceMessage)
+	ctx, cancel := context.WithTimeout(context.Background(), server.AnnounceQuery)
+	go listenServerProgressUI(ctx, cancel)
+	server.QueryServers(ctx, multicastGroupsIPv4, targetPortsIPv4, multicastGroupsIPv6, targetPortsIPv6, broadcastIPv4, servers, ipProtocol)
+	if len(servers) > 0 {
+		serverCtx, serverCancel := context.WithCancel(context.Background())
+		var spinnerError error
+		go func() {
+			spinnerError = spinner.New().
+				Style(lipgloss.NewStyle()).
+				TitleStyle(lipgloss.NewStyle()).
+				Title("Processing server results...").
+				Context(serverCtx).
+				Run()
+		}()
+		procServers := processedServers(gameTitle, servers)
+		serverCancel()
+		if spinnerError != nil {
+			return
+		}
+		if len(procServers) == 1 {
+			confirm := true
+			if err := huh.NewConfirm().
+				Description(procServers[0].description).
+				Title("A single server was found, connect to it?").
+				Affirmative("Connect").
+				Negative("Host instead").
+				Value(&confirm).
+				WithTheme(huh.ThemeBase()).
+				Run(); err == nil {
+				if confirm {
+					ipAddr = procServers[0].IpAddr
+					id = procServers[0].id
+				}
+			} else {
+				errorCode = internal.ErrServerStart
+			}
+		} else {
+			serverOptions := make([]huh.Option[uuid.UUID], len(procServers))
+			serverIdToIpAddr := make(map[uuid.UUID]netip.Addr, len(procServers))
+			for i, procServer := range procServers {
+				serverOptions[i] = procServer.Option()
+				serverIdToIpAddr[procServer.id] = procServer.IpAddr
+			}
+			serverOptions = append(serverOptions, huh.Option[uuid.UUID]{
+				Key:   "Host a server",
+				Value: uuid.Nil,
+			})
+			id = serverOptions[0].Value
+			selectable := huh.NewSelect[uuid.UUID]().
+				Title("Select a server:").
+				Options(
+					serverOptions...,
+				).
+				Value(&id).
+				WithTheme(huh.ThemeBase())
+			if err := selectable.Run(); err == nil {
+				if id != uuid.Nil {
+					ipAddr = serverIdToIpAddr[id]
+				}
+			} else {
+				errorCode = internal.ErrServerStart
 			}
 		}
+	} else {
+		confirm := true
+		if err := huh.NewConfirm().
+			Title("No server was found, host instead?").
+			Affirmative("Host").
+			Negative("Exit").
+			Value(&confirm).
+			WithTheme(huh.ThemeBase()).
+			Run(); err == nil {
+			if !confirm {
+				errorCode = internal.ErrServerStartDeclined
+			}
+		} else {
+			errorCode = internal.ErrServerStart
+		}
 	}
-
 	return
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []net.IP, ports []int) (errorCode int, ip string) {
-	errorCode = common.ErrSuccess
-	servers := server.LanServersAnnounced(multicastIPs, ports)
-	if servers == nil {
-		fmt.Println("Could not listen to 'server' announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
-		errorCode = internal.ErrListenServerAnnouncements
-	}
-	if servers != nil && len(servers) > 0 {
-		var ok bool
-		var serverTags []string
-		var serversStr [][]string
-		announcedNewerVersion := false
-		announcedOlderVersion := false
-		for _, data := range servers {
-			if data.Version >= common.AnnounceVersion1 {
-				announceData := data.Data.(common.AnnounceMessageData001)
-				gameIdSet := mapset.NewThreadUnsafeSet[string](announceData.GameIds...)
-				if !gameIdSet.ContainsOne(gameId) {
-					continue
-				}
-			}
-			ips := data.Ips.ToSlice()
-			sort.Strings(ips)
-			hosts := mapset.NewThreadUnsafeSet[string]()
-			for _, foundIp := range ips {
-				hosts.Append(launcherCommon.IpToHosts(foundIp).ToSlice()...)
-			}
-			ipsStr := strings.Join(ips, ", ")
-			hostsStr := ""
-			suffix := ""
-			if !hosts.IsEmpty() {
-				hostsSlice := hosts.ToSlice()
-				sort.Strings(hostsSlice)
-				hostsStr = strings.Join(hostsSlice, ", ")
-			}
-			suffix = fmt.Sprintf("- v. %d", data.Version)
-			if data.Version > common.AnnounceVersionLatest {
-				announcedNewerVersion = true
-			} else if data.Version < common.AnnounceVersionLatest {
-				announcedOlderVersion = true
-			}
-			var strVars []interface{}
-			strVars = append(strVars, ipsStr)
-			format := "%s"
-			if len(hostsStr) > 0 {
-				format += " (%s)"
-				strVars = append(strVars, hostsStr)
-			}
-			format += " %s"
-			strVars = append(strVars, suffix)
-			serverTags = append(serverTags, fmt.Sprintf(format, strVars...))
-			serversStr = append(serversStr, ips)
-		}
-		if announcedNewerVersion {
-			fmt.Println("Found at least a 'server' with a newer version than this 'launcher'. This 'launcher' should be upgraded.")
-		}
-		if announcedOlderVersion {
-			fmt.Println("Found at least a 'server' with an older version than this 'launcher'. The 'server'(s) should be upgraded.")
-		}
-		if len(serversStr) == 0 {
+func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID, canTrustCertificate bool) (errorCode int, ipAddr netip.Addr) {
+	var serverExecutablePath string
+	if executable == "" {
+		printer.Print(
+			printer.Search,
+			"",
+			printer.T(`Looking for `),
+			printer.TS("server", printer.ComponentStyle),
+			printer.T(`... `),
+		)
+		serverExecutablePath = server.ResolveExecutablePath()
+		if serverExecutablePath == "" {
+			printer.PrintSimpln(
+				printer.Error,
+				`not found.`,
+			)
+			errorCode = internal.ErrServerExecutable
 			return
 		} else {
-			var option int
-			for {
-				fmt.Println("Found the following 'server's:")
-				for i := range serversStr {
-					fmt.Printf("%d. %s\n", i+1, serverTags[i])
-				}
-				fmt.Printf("Enter the number of the 'server' (1-%d): ", len(serversStr))
-				_, err := fmt.Scan(&option)
-				if err != nil || option < 1 || option > len(serversStr) {
-					fmt.Println("Invalid (or error reading) option. Please enter a number from the list.")
-					continue
-				}
-				ips := serversStr[option-1]
-				ok, ip = SelectBestServerIp(ips)
-				if ok {
-					break
-				} else {
-					fmt.Println(fmt.Sprintf("'Server' #%d is not reachable. Check the client can connect to it on TCP port 443 (HTTPS).", option))
-					fmt.Println("Please enter the same (to retry) or another number from the list")
-				}
-			}
+			printer.Println(
+				printer.Success,
+				printer.T(`found at: `),
+				printer.TS(serverExecutablePath, printer.FilePathStyle),
+			)
 		}
 	}
-	return
-}
-
-func (c *Config) StartServer(executable string, args []string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
-	serverExecutablePath := server.GetExecutablePath(executable)
-	if serverExecutablePath == "" {
-		fmt.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
-		errorCode = internal.ErrServerExecutable
-		return
-	}
-	if executable != serverExecutablePath {
-		fmt.Println("Found 'server' executable path:", serverExecutablePath)
-	}
-
 	if exists, certificateFolder, cert := common.CertificatePair(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) {
 		if !canTrustCertificate {
-			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			printer.Println(
+				printer.Error,
+				printer.TS("Server.Mode", printer.ComponentStyle),
+				printer.T(" resolved to "),
+				printer.TS("run", printer.OptionStyle),
+				printer.T(" but "),
+				printer.TS("CanTrustCertificate", printer.OptionStyle),
+				printer.T(" is "),
+				printer.TS("false", printer.OptionStyle),
+				printer.T("."),
+				printer.T(" Certificate pair is missing or soon to be expired."),
+			)
 			errorCode = internal.ErrServerCertMissingExpired
 			return
 		}
 		if certificateFolder == "" {
-			fmt.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
+			printer.Println(
+				printer.Error,
+				printer.T("Cannot find "),
+				printer.TS("certificates", printer.FilePathStyle),
+				printer.T(" folder of the "),
+				printer.TS("server", printer.ComponentStyle),
+				printer.T("."),
+			)
 			errorCode = internal.ErrServerCertDirectory
 			return
 		}
 		if result := server.GenerateCertificatePair(certificateFolder); !result.Success() {
-			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
+			printer.Println(
+				printer.Error,
+				printer.T("Failed to generate certificate pair for the "),
+				printer.TS("server", printer.ComponentStyle),
+				printer.T("."),
+			)
+			printer.PrintFailedResultError(result)
 			errorCode = internal.ErrServerCertCreate
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
 			return
 		}
 	}
-	fmt.Println("Starting 'server', authorize it in firewall if needed...")
+	fmt.Print(
+		printer.Gen(
+			printer.Execute,
+			"",
+			printer.T("Starting "),
+			printer.TS("server", printer.ComponentStyle),
+			printer.T(", authorize it in firewall if needed... "),
+		),
+	)
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -193,26 +290,15 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 		stopStr = "false"
 	}
 	var result *commonExecutor.Result
-	var serverExe string
-	result, serverExe, ip = server.StartServer(stopStr, executable, args, SelectBestServerIp)
+	result, ipAddr = server.StartServer(c.gameTitle, serverId, stopStr, serverExecutablePath, args, c.IPProtocol())
 	if result.Success() {
-		fmt.Println("'Server' started.")
+		printer.PrintSucceeded()
 		if stop {
-			c.SetServerExe(serverExe)
+			c.SetServerPid(result.Pid)
 		}
 	} else {
-		fmt.Println("Could not start 'server'.")
+		printer.PrintFailedResultError(result)
 		errorCode = internal.ErrServerStart
-		if result != nil {
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
-		} else {
-			fmt.Println("Try running the 'server' manually.")
-		}
 	}
 	return
 }

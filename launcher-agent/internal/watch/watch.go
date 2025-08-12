@@ -4,7 +4,8 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"net"
 	"time"
 )
 
@@ -21,30 +22,30 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool, exitCode *int) {
+func Watch(gameTitle common.GameTitle, steamProcess bool, xboxProcess bool, serverPid int, rebroadcastIPs []net.IP, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	defer func() {
-		_ = launcher_common.RunRevertCommand()
+		_ = launcherCommon.RunRevertCommand()
 	}()
 	defer func() {
-		launcher_common.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameTitle, true, nil, nil)
 	}()
-	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
+	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameTitle, steamProcess, xboxProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
-		if serverExe != "-" {
-			_, _ = commonProcess.Kill(serverExe)
+		if serverPid != 0 {
+			_ = commonProcess.KillPid(serverPid)
 		}
 		return
 	}
-	if broadcastBattleServer {
+	if len(rebroadcastIPs) > 0 {
 		var port int
-		if gameId == common.GameAoE1 {
+		if gameTitle == common.AoE1 {
 			port = 8888
 		} else {
 			port = 9999
 		}
-		rebroadcastBattleServer(exitCode, port)
+		rebroadcastBattleServer(exitCode, rebroadcastIPs, port)
 	}
 	var PID uint32
 	for _, p := range processes {
@@ -52,8 +53,8 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		break
 	}
 	if waitForProcess(PID) {
-		if serverExe != "-" {
-			if _, err := commonProcess.Kill(serverExe); err != nil {
+		if serverPid != 0 {
+			if err := commonProcess.KillPid(serverPid); err != nil {
 				*exitCode = internal.ErrFailedStopServer
 			}
 		}

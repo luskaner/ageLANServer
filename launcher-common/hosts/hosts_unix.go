@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+const maxHostsPerLine = 256
+
 var Lock *unix.Flock_t
 
 func LockFile(file *os.File) (err error) {

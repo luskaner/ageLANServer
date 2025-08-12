@@ -6,23 +6,24 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type Game struct {
 	AppId string
 }
 
-func NewGame(id string) Game {
-	return Game{AppId: AppId(id)}
+func NewGame(gameTitle common.GameTitle) Game {
+	return Game{AppId: AppId(gameTitle)}
 }
 
-func AppId(id string) string {
-	switch id {
-	case common.GameAoE1:
+func AppId(gameTitle common.GameTitle) string {
+	switch gameTitle {
+	case common.AoE1:
 		return "1017900"
-	case common.GameAoE2:
+	case common.AoE2:
 		return "813780"
-	case common.GameAoE3:
+	case common.AoE3:
 		return "933110"
 	default:
 		return ""
@@ -56,17 +57,14 @@ func (g Game) GameInstalled() bool {
 		return false
 	}
 	var folderMap map[string]interface{}
+	var stat os.FileInfo
 	for _, folder := range libraryFolders {
 		folderMap, ok = folder.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		var apps map[string]interface{}
-		apps, ok = folderMap["apps"].(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if _, exists := apps[g.AppId]; exists {
+		libraryPath := folderMap["path"].(string)
+		if stat, err = os.Stat(filepath.Join(libraryPath, "steamapps", fmt.Sprintf("appmanifest_%s.acf", g.AppId))); err == nil && !stat.IsDir() {
 			return true
 		}
 	}

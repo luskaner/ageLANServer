@@ -2,66 +2,43 @@ package cmdUtils
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
+	"net/netip"
 	"runtime"
 	"strings"
 )
 
-func (c *Config) KillAgent() {
+func (c *Config) KillAgent() bool {
 	agent := common.GetExeFileName(false, common.LauncherAgent)
 	proc, err := commonProcess.Kill(agent)
 	if proc != nil {
-		fmt.Println("Killing 'agent'...")
+		fmt.Print(
+			printer.Gen(
+				printer.Stop,
+				"",
+				printer.T("Stopping "),
+				printer.TS("agent", printer.ComponentStyle),
+				printer.T("... "),
+			),
+		)
 		if err != nil {
-			fmt.Println("Failed to kill it: ", err, ", try using the task manager.")
-			return
+			printer.PrintFailedError(err)
+			return false
+		} else {
+			printer.PrintSucceeded()
 		}
 	}
+	return true
 }
 
-func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.CustomExecutor, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
-	if canBroadcastBattleServer != "false" {
-		if game.RequiresBattleServerBroadcast() {
-			canBroadcastBattleServer = "true"
-		} else {
-			canBroadcastBattleServer = "false"
-		}
-	}
-	revertCommand := c.RevertCommand()
-	requiresConfigRevert := c.RequiresConfigRevert()
-	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || len(c.serverExe) > 0 || requiresConfigRevert {
-		fmt.Print("Starting 'agent'")
-		if canBroadcastBattleServer == "true" {
-			fmt.Print(", authorize it in firewall if needed")
-		}
-		fmt.Println("...")
-		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true")
-		if !result.Success() {
-			fmt.Println("Failed to start 'agent'.")
-			errorCode = internal.ErrAgentStart
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
-			return
-		} else {
-			fmt.Println("'Agent' started.")
-		}
-	}
-	fmt.Print("Starting game")
-	if customExecutor.Executable != "" {
-		fmt.Print(", authorize it if needed")
-	}
-	fmt.Println("...")
-	var result *commonExecutor.Result
+func (c *Config) ParseGameArguments(rawArgs []string) (args []string) {
 	var values map[string]string = nil
 	if hostFilePath := c.HostFilePath(); hostFilePath != "" {
 		values = map[string]string{
@@ -80,29 +57,56 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 			values["CertFilePath"] = strings.ReplaceAll(certFilePath, `\`, `\\`)
 		}
 	}
-	args, err := ParseCommandArgs("Client.ExecutableArgs", values)
-	if err != nil {
-		fmt.Println("Failed to parse client executable arguments")
-		errorCode = internal.ErrInvalidClientArgs
-		return
-	}
+	args = CommandArgs(rawArgs, values)
+	return
+}
 
-	if result = executer.Execute(args); !result.Success() && result.Err != nil {
+func (c *Config) LaunchAgent(executer game.Executor, rebroadcastIPAddrs mapset.Set[netip.Addr]) (errorCode int) {
+	revertCommand := c.RevertCommand()
+	requiresConfigRevert := c.RequiresConfigRevert()
+	if len(revertCommand) > 0 || !rebroadcastIPAddrs.IsEmpty() || c.serverPid != 0 || requiresConfigRevert {
+		agentStyledTexts := []*printer.StyledText{
+			printer.T("Starting "),
+			printer.TS("agent", printer.ComponentStyle),
+		}
+		if !rebroadcastIPAddrs.IsEmpty() {
+			agentStyledTexts = append(agentStyledTexts, printer.T(", authorize it in firewall if needed"))
+		}
+		agentStyledTexts = append(agentStyledTexts, printer.T("... "))
+		fmt.Print(printer.Gen(printer.Execute, "", agentStyledTexts...))
+		steamProcess, xboxProcess := executer.GameProcesses()
+		result := executor.RunAgent(c.gameTitle, steamProcess, xboxProcess, c.serverPid, rebroadcastIPAddrs)
+		if !result.Success() {
+			printer.PrintFailedResultError(result)
+			return internal.ErrAgentStart
+		} else {
+			printer.PrintSucceeded()
+		}
+	}
+	return
+}
+
+func (c *Config) LaunchGame(executer game.Executor, customExecutor game.CustomExecutor, clientExecutableArgs []string) (errorCode int) {
+	gameStyledTexts := []*printer.StyledText{
+		printer.T("Starting game title"),
+	}
+	if customExecutor.Executable != "" {
+		gameStyledTexts = append(gameStyledTexts, printer.T(" , authorize it if needed"))
+	}
+	gameStyledTexts = append(gameStyledTexts, printer.T("... "))
+	fmt.Print(printer.Gen(printer.Execute, "", gameStyledTexts...))
+	var result *commonExecutor.Result
+	if result = executer.Execute(clientExecutableArgs); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
-			if canTrustCertificate == "user" {
-				fmt.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config/option setting 'CanTrustCertificate' to 'local'.")
-			}
-			result = customExecutor.ExecuteElevated(args)
+			result = customExecutor.ExecuteElevated(clientExecutableArgs)
 		}
 	}
 	if !result.Success() {
 		errorCode = internal.ErrGameLauncherStart
-		if result.Err != nil {
-			fmt.Println("Game failed to start. Error message: " + result.Err.Error())
-		}
+		printer.PrintResultError(result)
 		c.KillAgent()
 	} else {
-		fmt.Println("Game started.")
+		printer.PrintSucceeded()
 	}
 	return
 }

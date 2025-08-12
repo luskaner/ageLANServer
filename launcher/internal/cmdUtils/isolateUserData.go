@@ -2,33 +2,22 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"strings"
 )
 
-func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
-	if metadata || profiles {
-		var isolateItems []string
-		if metadata {
-			isolateItems = append(isolateItems, "metadata")
-		}
-		if profiles {
-			isolateItems = append(isolateItems, "profiles")
-		}
-		fmt.Println("Backing up " + strings.Join(isolateItems, " and ") + ".")
-		if result := executor.RunSetUp(c.gameId, nil, nil, nil, metadata, profiles, false, false, "", ""); !result.Success() {
-			isolateMsg := "Failed to backup "
-			fmt.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
-			errorCode = internal.ErrMetadataProfilesSetup
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
-		}
+func (c *Config) IsolateUserData(windowsUserProfilePath string, metadata bool) (errorCode int) {
+	fmt.Print(printer.Gen(
+		printer.Configuration,
+		"",
+		"Backing up metadata... ",
+	))
+	if result := executor.RunSetUp(&executor.RunSetUpOptions{GameTitle: c.gameTitle, WindowsUserProfilePath: windowsUserProfilePath, BackupMetadata: metadata}); !result.Success() {
+		printer.PrintFailedResultError(result)
+		errorCode = internal.ErrMetadataSetup
+	} else {
+		printer.PrintSucceeded()
 	}
 	return
 }

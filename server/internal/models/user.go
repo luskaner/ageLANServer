@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/spf13/viper"
 	"hash/fnv"
 	"math/rand/v2"
 	"net"
@@ -76,8 +75,8 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) *MainUser {
-	if viper.GetBool("GeneratePlatformUserId") {
+func (users *MainUsers) GetOrCreateUser(gameTitle common.GameTitle, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) *MainUser {
+	if i.GeneratePlatformUserId {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
 		if err == nil {
@@ -107,7 +106,7 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remote
 	identifier := getPlatformPath(isXbox, platformUserId)
 	var profileMetadata string
 	var profileUIntFlag1 uint8
-	if gameId == common.GameAoE3 {
+	if gameTitle == common.AoE3 {
 		profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		profileUIntFlag1 = 1
 	}
@@ -144,11 +143,11 @@ func (users *MainUsers) GetUserIds() func(func(int32) bool) {
 	}
 }
 
-func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool, gameId string, clientLibVersion uint16) []i.A {
+func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool, gameTitle common.GameTitle, clientLibVersion uint16) []i.A {
 	var presenceData = make([]i.A, 0)
 	for u := range users.store.Values() {
 		if matches(u) {
-			presenceData = append(presenceData, u.GetProfileInfo(includePresence, gameId, clientLibVersion))
+			presenceData = append(presenceData, u.GetProfileInfo(includePresence, gameTitle, clientLibVersion))
 		}
 	}
 	return presenceData
@@ -205,7 +204,7 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i.A {
+func (u *MainUser) GetExtraProfileInfo(gameTitle common.GameTitle, clientLibVersion uint16) i.A {
 	info := i.A{
 		u.statId,
 		0,
@@ -226,13 +225,13 @@ func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i
 		0,
 		0,
 	}
-	if gameId == common.GameAoE2 && clientLibVersion >= 190 {
+	if gameTitle == common.AoE2 && clientLibVersion >= 190 {
 		info = append(info, 0, 0)
 	}
 	return info
 }
 
-func (u *MainUser) GetProfileInfo(includePresence bool, gameId string, clientLibVersion uint16) i.A {
+func (u *MainUser) GetProfileInfo(includePresence bool, gameTitle common.GameTitle, clientLibVersion uint16) i.A {
 	var randomTimeDiff int64
 	i.WithRng(func(rand *rand.Rand) {
 		randomTimeDiff = rand.Int64N(300-50+1) + 50
@@ -244,7 +243,7 @@ func (u *MainUser) GetProfileInfo(includePresence bool, gameId string, clientLib
 		u.GetProfileMetadata(),
 		u.GetAlias(),
 	}
-	if gameId == common.GameAoE2 && clientLibVersion >= 190 {
+	if gameTitle == common.AoE2 && clientLibVersion >= 190 {
 		profileInfo = append(profileInfo, u.GetAlias())
 	}
 	profileInfo = append(

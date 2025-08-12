@@ -62,6 +62,7 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 		return int(entry.ProcessID) == pid
 	}, true)
 	if len(entries) == 0 {
+		err = os.ErrNotExist
 		proc = nil
 	} else if err != nil {
 		proc = &os.Process{Pid: pid}
