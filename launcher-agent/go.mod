@@ -6,7 +6,7 @@ require (
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250713220403-d0399bd566eb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250713220403-d0399bd566eb
-	golang.org/x/sys v0.34.0
+	golang.org/x/sys v0.35.0
 )
 
 require (
