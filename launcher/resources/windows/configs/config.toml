@@ -4,21 +4,40 @@
 # The default values are commented out for easy configuration.
 
 #Debug = false
-#StoreToAddHost = 'local'
-#StoreToAddCertificate = 'local'
+StoreToAddHost = 'local'
+StoreToAddCertificate = 'local'
 
-#[RebroadcastBattleServer]
-#Disable = false
-#IPs = []
-# Note that [[RebroadcastBattleServer.Interfaces]] also exists.
+[Server.Query.IPv4]
+Ports = [31978, 31979, 31980]
+MulticastGroups = ['239.31.97.8', '239.31.97.7']
+DisableBroadcast = true
 
-#[Server]
-#Mode = ''
-#[Server.Connect]
-#Host = ''
-#[Server.Run]
-#NoStop = false
-#Command = []
-#[Server.Query]
-#Ports = [31978]
-#MulticastGroups = ['239.31.97.8']
+[Server.Query.IPv6]
+Ports = [31981, 31982, 31983]
+MulticastGroups = ['ff15::', 'ff15::1']
+DisableLinkLocal = true
+
+[Server]
+Mode = 'run'
+IPProtocol = 'v4'
+
+[Server.Connect]
+Host = 'localhost'
+
+[Client]
+GameTitle = 'age3'
+Launcher = 'steam'
+[Client.Isolation]
+NoMetadata = true
+
+[Client.RebroadcastBattleServer]
+Disable = false
+IPAddrs = ['127.0.0.1', '192.168.1.1']
+# Note that
+[[Client.RebroadcastBattleServer.Interfaces]]
+Regex = true
+Value = '.*'
+
+[[Client.RebroadcastBattleServer.Interfaces]]
+Regex = false
+Value = 'Ethernet 2'

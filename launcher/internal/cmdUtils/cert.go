@@ -15,16 +15,16 @@ import (
 	"runtime"
 )
 
-func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate, store string) (errorCode int) {
+func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate, store common.LauncherUserStore) (errorCode int) {
 	hosts := common.AllHosts()
 	var addCert bool
 	if store == "tmp" {
 		addCert = true
 	} else {
 		for _, host := range hosts {
-			if !server.CheckConnectionFromServer(host, false) {
+			if !server.CheckConnectionFromServer(host, c.IPProtocol(), false) {
 				if store != "" {
-					cert := server.ReadCertificateFromServer(host)
+					cert := server.ReadCertificateFromServer(host, c.IPProtocol())
 					if cert == nil {
 						printer.Println(
 							printer.Error,
@@ -51,7 +51,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 					styledTexts := []*printer.StyledText{
 						printer.TS(host, printer.LiteralStyle),
 						printer.T(" must have been trusted manually. If you want it automatically, set "),
-						printer.TS("CanTrustCertificate", printer.LiteralStyle),
+						printer.TS("StoreToAddCertificate", printer.LiteralStyle),
 						printer.TS("local", printer.LiteralStyle),
 					}
 					if runtime.GOOS == "windows" {
@@ -69,7 +69,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 					errorCode = internal.ErrConfigCert
 					return
 				}
-			} else if cert := server.ReadCertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
+			} else if cert := server.ReadCertificateFromServer(host, c.IPProtocol()); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 				printer.Println(
 					printer.Error,
 					printer.T("The certificate for "),
@@ -80,7 +80,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 				)
 				errorCode = internal.ErrCertMismatch
 				return
-			} else if !server.LanServerHost(serverId, c.gameTitle, host, false) {
+			} else if !server.LanServerHost(serverId, c.gameTitle, host, false, c.IPProtocol()) {
 				printer.Println(
 					printer.Error,
 					printer.T("Something went wrong, "),
@@ -123,7 +123,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 			printer.T("Adding "),
 			printer.TS("server", printer.ComponentStyle),
 			printer.T(" certificate to "),
-			printer.TS(store, printer.LiteralStyle),
+			printer.TS(string(store), printer.LiteralStyle),
 			printer.T(" store"),
 		)
 		if store == "user" {
@@ -158,7 +158,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 	}
 	if store != "tmp" {
 		for _, host := range hosts {
-			if !server.CheckConnectionFromServer(host, false) {
+			if !server.CheckConnectionFromServer(host, c.IPProtocol(), false) {
 				printer.Println(
 					printer.Error,
 					printer.TS(host, printer.LiteralStyle),
@@ -166,7 +166,7 @@ func (c *Config) AddCert(serverId uuid.UUID, serverCertificate *x509.Certificate
 				)
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServerHost(serverId, c.gameTitle, host, false) {
+			} else if !server.LanServerHost(serverId, c.gameTitle, host, false, c.IPProtocol()) {
 				printer.Println(
 					printer.Error,
 					printer.T("Something went wrong, "),

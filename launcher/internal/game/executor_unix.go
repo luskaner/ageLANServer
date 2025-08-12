@@ -3,11 +3,12 @@
 package game
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 )
 
 // XboxExecutor is not supported on non-Windows platforms
-func isInstalledOnXbox(_ string) bool {
+func isInstalledOnXbox(_ common.GameTitle) bool {
 	return false
 }
 func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {

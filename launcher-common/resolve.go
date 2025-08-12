@@ -4,137 +4,155 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"net"
+	"net/netip"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var cacheTime = 1 * time.Minute
-var failedIpToHosts map[string]time.Time
-var failedHostToIps map[string]time.Time
-var ipToHosts map[string]mapset.Set[string]
-var hostToIps map[string]mapset.Set[string]
+var failedIpAddrToAddrs map[netip.Addr]time.Time
+var failedAddrToIpAddrs map[string]time.Time
+var ipAddrsToAddrs map[netip.Addr]mapset.Set[string]
+var addrToIpAddrs map[string]mapset.Set[netip.Addr]
 
 func init() {
 	ClearCache()
 }
 
-func ipToDnsName(ip string) []string {
-	names, err := net.LookupAddr(ip)
+func addrToDnsName(addr string) mapset.Set[string] {
+	names, err := net.LookupAddr(addr)
 	if err != nil {
 		return nil
 	}
-	return names
+	return mapset.NewThreadUnsafeSet(names...)
 }
 
-func cachedHostToIps(host string) (bool, mapset.Set[string]) {
+func cachedAddrToIpAddrs(addr string) (bool, mapset.Set[netip.Addr]) {
 	var cached bool
-	var result mapset.Set[string]
-	var cachedIps mapset.Set[string]
-	hostToLower := strings.ToLower(host)
-	if cachedIps, cached = hostToIps[hostToLower]; cached {
-		result = cachedIps
-	} else if failedTime, ok := failedHostToIps[hostToLower]; ok && time.Since(failedTime) < cacheTime {
+	var result mapset.Set[netip.Addr]
+	var cachedIpAddrs mapset.Set[netip.Addr]
+	hostToLower := strings.ToLower(addr)
+	if cachedIpAddrs, cached = addrToIpAddrs[hostToLower]; cached {
+		result = cachedIpAddrs
+	} else if failedTime, ok := failedAddrToIpAddrs[hostToLower]; ok && time.Since(failedTime) < cacheTime {
 		cached = true
 	}
 	return cached, result
 }
 
-func cachedIpToHosts(ip string) (bool, mapset.Set[string]) {
+func cachedIpAddrToAddrs(ipAddr netip.Addr) (bool, mapset.Set[string]) {
 	var cached bool
 	var result mapset.Set[string]
-	var cachedHosts mapset.Set[string]
-	if cachedHosts, cached = ipToHosts[ip]; cached {
-		result = cachedHosts
-	} else if failedTime, ok := failedIpToHosts[ip]; ok && time.Since(failedTime) < cacheTime {
+	var cachedAddrs mapset.Set[string]
+	if cachedAddrs, cached = ipAddrsToAddrs[ipAddr]; cached {
+		result = cachedAddrs
+	} else if failedTime, ok := failedIpAddrToAddrs[ipAddr]; ok && time.Since(failedTime) < cacheTime {
 		cached = true
 	}
 	return cached, result
 }
 
-func CacheMapping(host string, ip string) {
-	hostToLower := strings.ToLower(host)
-	if _, exists := hostToIps[hostToLower]; !exists {
-		hostToIps[hostToLower] = mapset.NewThreadUnsafeSet[string]()
+func CacheMapping(addr string, ipAddr netip.Addr) {
+	addrToLower := strings.ToLower(addr)
+	if _, exists := addrToIpAddrs[addrToLower]; !exists {
+		addrToIpAddrs[addrToLower] = mapset.NewThreadUnsafeSet[netip.Addr]()
 	}
-	hostToIps[hostToLower].Add(ip)
-	if _, exists := ipToHosts[ip]; !exists {
-		ipToHosts[ip] = mapset.NewThreadUnsafeSet[string]()
+	addrToIpAddrs[addrToLower].Add(ipAddr)
+	if _, exists := ipAddrsToAddrs[ipAddr]; !exists {
+		ipAddrsToAddrs[ipAddr] = mapset.NewThreadUnsafeSet[string]()
 	}
-	ipToHosts[ip].Add(host)
-	if _, exists := failedIpToHosts[ip]; exists {
-		delete(failedIpToHosts, ip)
+	ipAddrsToAddrs[ipAddr].Add(addr)
+	if _, exists := failedIpAddrToAddrs[ipAddr]; exists {
+		delete(failedIpAddrToAddrs, ipAddr)
 	}
-	if _, exists := failedHostToIps[hostToLower]; exists {
-		delete(failedHostToIps, hostToLower)
+	if _, exists := failedAddrToIpAddrs[addrToLower]; exists {
+		delete(failedAddrToIpAddrs, addrToLower)
 	}
 }
 
 func ClearCache() {
-	failedIpToHosts = make(map[string]time.Time)
-	failedHostToIps = make(map[string]time.Time)
-	ipToHosts = make(map[string]mapset.Set[string])
-	hostToIps = make(map[string]mapset.Set[string])
+	failedIpAddrToAddrs = make(map[netip.Addr]time.Time)
+	failedAddrToIpAddrs = make(map[string]time.Time)
+	ipAddrsToAddrs = make(map[netip.Addr]mapset.Set[string])
+	addrToIpAddrs = make(map[string]mapset.Set[netip.Addr])
 }
 
-func HostOrIpToIps(host string) mapset.Set[string] {
-	if ip := net.ParseIP(host); ip != nil {
-		var ips = mapset.NewThreadUnsafeSet[string]()
-		if ip.To4() != nil {
-			if ip.IsUnspecified() {
-				ips.Append(ResolveUnspecifiedIps()...)
-			} else {
-				ips.Add(ip.String())
-			}
+func filterAddrs(ipAddrs mapset.Set[netip.Addr], IPv4 bool, IPv6 bool) mapset.Set[netip.Addr] {
+	filtered := mapset.NewThreadUnsafeSet[netip.Addr]()
+	for ipAddr := range ipAddrs.Iter() {
+		if (IPv4 && ipAddr.Is4()) || (IPv6 && ipAddr.Is6()) {
+			filtered.Add(ipAddr)
 		}
-		return ips
-	} else {
-		cached, cachedIps := cachedHostToIps(host)
-		if cached {
-			return cachedIps.Clone()
-		}
-		ips := mapset.NewThreadUnsafeSet[string]()
-		ipsFromDns := common.HostToIps(host)
-		if ipsFromDns != nil {
-			for _, ipRaw := range ipsFromDns {
-				ipStr := ipRaw.String()
-				ips.Add(ipStr)
-				CacheMapping(host, ipStr)
-			}
-		}
-		return ips
 	}
+	return filtered
 }
 
-func ResolveUnspecifiedIps() (ips []string) {
-	interfaces, err := common.IPv4RunningNetworkInterfaces()
+func AddrToIpAddrs(addr string, IPv4 bool, IPv6 bool) mapset.Set[netip.Addr] {
+	ipAddrs := mapset.NewThreadUnsafeSet[netip.Addr]()
+	if ipAddr, err := netip.ParseAddr(addr); err == nil {
+		isIPv4 := ipAddr.Is4()
+		if (IPv4 && isIPv4) || (IPv6 && !isIPv4) {
+			if ipAddr.IsUnspecified() {
+				ipAddrs = ipAddrs.Union(ResolveUnspecifiedIpAddrs(isIPv4))
+			} else {
+				ipAddrs.Add(ipAddr)
+			}
+		}
+	} else {
+		cached, cachedIpAddrs := cachedAddrToIpAddrs(addr)
+		if cached {
+			ipAddrs = cachedIpAddrs.Clone()
+		} else {
+			ipsFromDns := common.AddrOrIPAddrToIPAddrs(addr, false, true, true)
+			if len(ipsFromDns) > 0 {
+				for _, ipAddr := range ipsFromDns {
+					CacheMapping(addr, ipAddr)
+				}
+			}
+		}
+	}
+	return filterAddrs(ipAddrs, IPv4, IPv6)
+}
+
+func ResolveUnspecifiedIpAddrs(IPv4 bool) (addrs mapset.Set[netip.Addr]) {
+	addrs = mapset.NewThreadUnsafeSet[netip.Addr]()
+	interfaces, err := common.RunningNetworkInterfaces(IPv4, !IPv4, false)
 	if err != nil {
 		return
 	}
-	for _, iffIps := range interfaces {
+	for iff, iffIps := range interfaces {
 		for _, n := range iffIps {
-			ips = append(ips, n.IP.String())
+			addr, ok := netip.AddrFromSlice(n.IP)
+			if !ok {
+				continue
+			}
+			if addr.Is6() && addr.IsLinkLocalMulticast() {
+				addr = addr.WithZone(strconv.Itoa(iff.Index))
+			}
+			addrs.Add(addr)
 		}
 	}
 	return
 }
 
-func Matches(addr1 string, addr2 string) bool {
-	addr2Ips := HostOrIpToIps(addr2)
-	addr1Ips := HostOrIpToIps(addr1)
-	return addr2Ips.Intersect(addr1Ips).Cardinality() > 0
+func Matches(addr1 string, addr2 string, IPv4 bool, IPv6 bool) bool {
+	addr2IpAddrs := AddrToIpAddrs(addr2, IPv4, IPv6)
+	addr1IpAddrs := AddrToIpAddrs(addr1, IPv4, IPv6)
+	return !addr2IpAddrs.Intersect(addr1IpAddrs).IsEmpty()
 }
 
-func IpToHosts(ip string) mapset.Set[string] {
-	cached, cachedHosts := cachedIpToHosts(ip)
+func IpAddrToAddrs(ipAddr netip.Addr) mapset.Set[string] {
+	cached, cachedHosts := cachedIpAddrToAddrs(ipAddr)
 	if cached {
 		return cachedHosts
 	}
 	hosts := mapset.NewThreadUnsafeSet[string]()
-	hostsFromDns := ipToDnsName(ip)
-	if hostsFromDns != nil {
-		for _, hostStr := range hostsFromDns {
+	hostsFromDns := addrToDnsName(ipAddr.String())
+	if !hostsFromDns.IsEmpty() {
+		for hostStr := range hostsFromDns.Iter() {
 			hosts.Add(hostStr)
-			CacheMapping(hostStr, ip)
+			CacheMapping(hostStr, ipAddr)
 		}
 	}
 	return hosts

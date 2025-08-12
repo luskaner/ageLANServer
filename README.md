@@ -112,12 +112,8 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- **Windows**:
-    - 10 (no S edition/mode).
-    - (Storage) Server 2016.
-    - 10 IoT (no Arm32).
-    - Server IoT 2019.
-- **Linux**: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
+- **Windows**: 10 (or equivalent).
+- **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
@@ -130,7 +126,7 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.23.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.24.
 
 </details>
 
@@ -139,9 +135,9 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - **Windows** (no S edition/mode):
     - **10** on x86-64 (recommended).
     - **11** on ARM.
-- **Linux**:
-    - Kernel 2.6.23 on x86-64 (recommended).
-    - Kernel 3.1 on ARM64.
+- **Linux** with kernel 3.2:
+    - x86-64 (recommended).
+    - ARM64.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
@@ -191,12 +187,12 @@ supported operating systems.
         * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
         * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
     * Linux:
-        * Kernel 3.1 on **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
-        * Kernel 2.6.23 on **ARM32**:
+        * **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
+        * **ARM32**:
             * ARMv5 (armel): ...\_server\_*A.B.C*_linux_arm-5.tar.gz
             * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz
-        * Kernel 2.6.23 on **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
-        * Kernel 2.6.23 on **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
+        * **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
+        * **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
     * macOS - Big Sur (v11): ...\_server\_*A.B.C*_mac.tar.gz
 
 </details>

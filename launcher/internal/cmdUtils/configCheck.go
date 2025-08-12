@@ -6,11 +6,11 @@ import (
 	"github.com/likexian/doh"
 	"github.com/likexian/doh/dns"
 	"github.com/luskaner/ageLANServer/common"
-	"net"
+	"net/netip"
 	"time"
 )
 
-func hostToIps(host string) []net.IP {
+func hostToIps(host string, IPv4 bool, IPv6 bool) mapset.Set[netip.Addr] {
 	client := doh.Use()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -18,30 +18,24 @@ func hostToIps(host string) []net.IP {
 	if err != nil {
 		return nil
 	}
-	validIps := make([]net.IP, 0)
+	validIpAddrs := mapset.NewThreadUnsafeSet[netip.Addr]()
 	for _, answer := range rsp.Answer {
-		if ip := net.ParseIP(answer.Data); ip != nil {
-			if ipv4 := ip.To4(); ipv4 != nil {
-				validIps = append(validIps, ip)
+		if ipAddr, err := netip.ParseAddr(answer.Data); err == nil {
+			if (IPv4 && ipAddr.Is4()) || (IPv6 && ipAddr.Is6()) {
+				validIpAddrs.Add(ipAddr)
 			}
 		}
 	}
-	return validIps
+	return validIpAddrs
 }
 
-func InternalExternalDnsMismatch() mapset.Set[string] {
+func InternalExternalDnsMismatch(IPv4 bool, IPv6 bool) mapset.Set[string] {
 	hosts := mapset.NewThreadUnsafeSet[string]()
-	ipSliceToStringSet := func(ips []net.IP) mapset.Set[string] {
-		set := mapset.NewThreadUnsafeSetWithSize[string](len(ips))
-		for _, ip := range ips {
-			set.Add(ip.String())
-		}
-		return set
-	}
 	for _, host := range common.AllHosts() {
-		externalMapping := ipSliceToStringSet(hostToIps(host))
-		internalMapping := ipSliceToStringSet(common.HostToIps(host))
-		if !internalMapping.Equal(externalMapping) {
+		internalMapping := mapset.NewThreadUnsafeSet(
+			common.AddrOrIPAddrToIPAddrs(host, false, IPv4, IPv6)...,
+		)
+		if !hostToIps(host, IPv4, IPv6).Equal(internalMapping) {
 			hosts.Add(host)
 		}
 	}

@@ -1,7 +1,9 @@
 package common
 
-const AnnouncePort = 31978
-const AnnounceMulticastGroup = "239.31.97.8"
+const AnnouncePortIPv4 = 31978
+const AnnouncePortIPv6 = 31979
+const AnnounceMulticastGroupIPv4 = "239.31.97.8"
+const AnnounceMulticastGroupIPv6 = "FF05::EF1F:6108"
 const AnnounceHeader = Name
 const IdHeader = "X-Id"
 const VersionHeader = "X-Version"

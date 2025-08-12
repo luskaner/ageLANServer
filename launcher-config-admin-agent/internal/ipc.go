@@ -72,7 +72,7 @@ func handleSetUp(decoder *gob.Decoder) int {
 	if err := decoder.Decode(&msg); err != nil {
 		return ErrDecode
 	}
-	if msg.IP != nil && mappedIp {
+	if msg.IPAddr.IsValid() && mappedIp {
 		return ErrIpAlreadyMapped
 	}
 	if msg.CDN && mappedCdn {
@@ -89,9 +89,9 @@ func handleSetUp(decoder *gob.Decoder) int {
 			return ErrCertInvalid
 		}
 	}
-	result := executor.RunSetUp(msg.IP, cert, msg.CDN)
+	result := executor.RunSetUp(msg.IPAddr, cert, msg.CDN)
 	if result.Success() {
-		mappedIp = mappedIp || msg.IP != nil
+		mappedIp = mappedIp || msg.IPAddr.IsValid()
 		mappedCdn = mappedCdn || msg.CDN
 		addedCert = addedCert || cert != nil
 	}
@@ -103,7 +103,7 @@ func handleRevert(decoder *gob.Decoder) int {
 	if err := decoder.Decode(&msg); err != nil {
 		return ErrDecode
 	}
-	revertIp := msg.IP && mappedIp
+	revertIp := msg.IPAddr && mappedIp
 	revertCert := msg.Certificate && addedCert
 	revertCdn := msg.CDN && mappedCdn
 	if !revertIp && !revertCert && !revertCdn {

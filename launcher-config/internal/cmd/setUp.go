@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -15,6 +14,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
+	"net/netip"
 	"os"
 	"os/signal"
 	"runtime"
@@ -34,7 +34,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	fmt.Println("Restoring previously backed up metadata")
-	if userData.Metadata(common.GameTitle(gameTitle)).Restore(windowsUserProfilePath, common.GameTitle(gameTitle)) {
+	if userData.Metadata(gameTitle).Restore(windowsUserProfilePath, gameTitle) {
 		fmt.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -75,10 +75,10 @@ var setUpCmd = &cobra.Command{
 				os.Exit(common.ErrSignal)
 			}
 		}()
-		if gameTitle == string(common.AoE1) {
+		if gameTitle == common.AoE1 {
 			BackupMetadata = false
 		}
-		if BackupMetadata && !common.SupportedGameTitles.ContainsOne(common.GameTitle(gameTitle)) {
+		if BackupMetadata && !common.SupportedGameTitles.ContainsOne(gameTitle) {
 			fmt.Println("Invalid gameTitle type")
 			os.Exit(launcherCommon.ErrInvalidGameTitle)
 		}
@@ -111,7 +111,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if BackupMetadata {
 			fmt.Println("Backing up metadata")
-			if userData.Metadata(common.GameTitle(gameTitle)).Backup(windowsUserProfilePath, common.GameTitle(gameTitle)) {
+			if userData.Metadata(gameTitle).Backup(windowsUserProfilePath, gameTitle) {
 				fmt.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
@@ -125,11 +125,11 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		var hostToMap string
+		var ipAddrToMap netip.Addr
 		if hostFilePath == "" {
-			hostToMap = cmd.MapIP.String()
+			ipAddrToMap = cmd.MapIPAddrValue.Addr
 		} else {
-			if cmd.MapCDN || cmd.MapIP != nil {
+			if cmd.MapCDN || cmd.MapIPAddrValue.Addr.IsValid() {
 				if ok, _ := hosts.AddHosts(hostFilePath, hosts.WindowsLineEnding, nil); ok {
 					fmt.Println("Successfully added host mappings")
 				} else {
@@ -177,7 +177,7 @@ var setUpCmd = &cobra.Command{
 				os.Exit(errorCode)
 			}
 		}
-		if addLocalCertData != nil || hostToMap != "" || cmd.MapCDN {
+		if addLocalCertData != nil || ipAddrToMap.IsValid() || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -207,7 +207,7 @@ var setUpCmd = &cobra.Command{
 				}
 				fmt.Println("...")
 			}
-			err, exitCode := internal.RunSetUp(hostToMap, addLocalCertData, cmd.MapCDN)
+			err, exitCode := internal.RunSetUp(ipAddrToMap, addLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")
@@ -275,7 +275,7 @@ func InitSetUp() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
-	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameTitle)
+	cmd.GameVarCommand(setUpCmd.Flags(), &gameTitle)
 	setUpCmd.Flags().StringVarP(
 		&hostFilePath,
 		"hostFilePath",

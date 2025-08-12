@@ -2,15 +2,15 @@ package cmdUtils
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/config/launcher/parse"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
-	"net"
+	"net/netip"
 	"runtime"
 	"strings"
 )
@@ -57,25 +57,25 @@ func (c *Config) ParseGameArguments(rawArgs []string) (args []string) {
 			values["CertFilePath"] = strings.ReplaceAll(certFilePath, `\`, `\\`)
 		}
 	}
-	args = parse.CommandArgs(rawArgs, values)
+	args = CommandArgs(rawArgs, values)
 	return
 }
 
-func (c *Config) LaunchAgent(executer game.Executor, rebroadcastIPs []net.IP) (errorCode int) {
+func (c *Config) LaunchAgent(executer game.Executor, rebroadcastIPAddrs mapset.Set[netip.Addr]) (errorCode int) {
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
-	if len(revertCommand) > 0 || len(rebroadcastIPs) > 0 || c.serverPid != 0 || requiresConfigRevert {
+	if len(revertCommand) > 0 || !rebroadcastIPAddrs.IsEmpty() || c.serverPid != 0 || requiresConfigRevert {
 		agentStyledTexts := []*printer.StyledText{
 			printer.T("Starting "),
 			printer.TS("agent", printer.ComponentStyle),
 		}
-		if len(rebroadcastIPs) > 0 {
+		if !rebroadcastIPAddrs.IsEmpty() {
 			agentStyledTexts = append(agentStyledTexts, printer.T(", authorize it in firewall if needed"))
 		}
 		agentStyledTexts = append(agentStyledTexts, printer.T("... "))
 		fmt.Print(printer.Gen(printer.Execute, "", agentStyledTexts...))
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameTitle, steamProcess, xboxProcess, c.serverPid, rebroadcastIPs)
+		result := executor.RunAgent(c.gameTitle, steamProcess, xboxProcess, c.serverPid, rebroadcastIPAddrs)
 		if !result.Success() {
 			printer.PrintFailedResultError(result)
 			return internal.ErrAgentStart

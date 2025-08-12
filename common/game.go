@@ -1,6 +1,9 @@
 package common
 
-import mapset "github.com/deckarep/golang-set/v2"
+import (
+	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
+)
 
 type GameTitle string
 
@@ -16,7 +19,33 @@ const (
 
 var SupportedGameTitleSlice = []GameTitle{AoE1, AoE2, AoE3}
 var SupportedGameTitles = mapset.NewThreadUnsafeSet[GameTitle](SupportedGameTitleSlice...)
-var AllGameTitles = SupportedGameTitles.Union(mapset.NewThreadUnsafeSet[GameTitle](AoE4, AoM))
+var AllGameTitles = SupportedGameTitles.Union(mapset.NewThreadUnsafeSet(AoE4, AoM))
+
+func CheckGameTitleValue(val string) (gameTitle GameTitle, err error) {
+	gameTitle = GameTitle(val)
+	if !SupportedGameTitles.Contains(gameTitle) {
+		err = fmt.Errorf("invalid game title: %s", gameTitle)
+	}
+	return
+}
+
+func (g *GameTitle) Set(val string) error {
+	var gameTitle GameTitle
+	var err error
+	if gameTitle, err = CheckGameTitleValue(val); err != nil {
+		return err
+	}
+	*g = gameTitle
+	return nil
+}
+
+func (g *GameTitle) Type() string {
+	return "gameTitle"
+}
+
+func (g *GameTitle) String() string {
+	return string(*g)
+}
 
 func (g *GameTitle) Description() string {
 	switch *g {
@@ -33,4 +62,8 @@ func (g *GameTitle) Description() string {
 	default:
 		return string(*g)
 	}
+}
+
+func (g *GameTitle) UnmarshalText(text []byte) error {
+	return g.Set(string(text))
 }

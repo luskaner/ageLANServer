@@ -20,20 +20,33 @@ func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
 	}
 }
 
-func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	ip, ok := launcherCommon.HostOrIpToIps(host).Pop()
-	if !ok {
-		ip = host
-	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify))
-	if err != nil {
+func connectToServer(host string, IPProtocol *common.IPProtocol, insecureSkipVerify bool) *tls.Conn {
+	ipAddrs := launcherCommon.AddrToIpAddrs(host, IPProtocol.IPv4(), IPProtocol.IPv6())
+	if ipAddrs.IsEmpty() {
 		return nil
 	}
-	return conn
+	for ipAddr := range ipAddrs.Iter() {
+		network := "tcp"
+		if *IPProtocol != common.IPvDual {
+			if ipAddr.Is4() {
+				network += "4"
+			} else {
+				network += "6"
+			}
+		}
+		conn, err := tls.Dial(
+			network,
+			net.JoinHostPort(ipAddr.String(), "https"), TlsConfig(host, insecureSkipVerify),
+		)
+		if err == nil {
+			return conn
+		}
+	}
+	return nil
 }
 
-func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
-	conn := connectToServer(host, insecureSkipVerify)
+func CheckConnectionFromServer(host string, IPProtocol *common.IPProtocol, insecureSkipVerify bool) bool {
+	conn := connectToServer(host, IPProtocol, insecureSkipVerify)
 	if conn == nil {
 		return false
 	}
@@ -43,8 +56,8 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 	return conn != nil
 }
 
-func ReadCertificateFromServer(host string) *x509.Certificate {
-	conn := connectToServer(host, true)
+func ReadCertificateFromServer(host string, IPProtocol *common.IPProtocol) *x509.Certificate {
+	conn := connectToServer(host, IPProtocol, true)
 	if conn == nil {
 		return nil
 	}

@@ -4,19 +4,17 @@ import (
 	"fmt"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/spf13/cobra"
-	"net"
 )
 
-var MapIP net.IP
+var MapIPAddrValue NetIPAddrValue
 var AddLocalCertData []byte
 var MapCDN bool
 
 func InitSetUp(cmd *cobra.Command) {
-	cmd.Flags().IPVarP(
-		&MapIP,
+	cmd.Flags().VarP(
+		&MapIPAddrValue,
 		"ip",
 		"i",
-		nil,
 		"IP to resolve in local DNS server",
 	)
 	cmd.Flags().BoolVarP(

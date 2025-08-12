@@ -6,7 +6,6 @@ import (
 
 const (
 	ErrInvalidServerStart = iota + launcherCommon.ErrLast
-	ErrInvalidServerHost
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
 	ErrServerExecutable
@@ -27,7 +26,6 @@ const (
 	ErrInvalidRevertCommand
 	ErrSetupCommand
 	ErrConfigCDNMap
-	ErrSteamRoot
 	ErrCertMismatch
 	ErrServerStartDeclined
 )

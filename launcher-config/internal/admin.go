@@ -10,6 +10,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
+	"net/netip"
 	"time"
 )
 
@@ -17,11 +18,10 @@ var ipc net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
-func RunSetUp(mapIp string, addCertData []byte, mapCDN bool) (err error, exitCode int) {
+func RunSetUp(mapIpAddr netip.Addr, addCertData []byte, mapCDN bool) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
-	ip := net.ParseIP(mapIp)
 	if ipc != nil {
-		return runSetUpAgent(ip, addCertData, mapCDN)
+		return runSetUpAgent(mapIpAddr, addCertData, mapCDN)
 	} else {
 		var certificate *x509.Certificate
 		if addCertData != nil {
@@ -31,7 +31,7 @@ func RunSetUp(mapIp string, addCertData []byte, mapCDN bool) (err error, exitCod
 				return
 			}
 		}
-		result := executor.RunSetUp(ip, certificate, mapCDN)
+		result := executor.RunSetUp(mapIpAddr, certificate, mapCDN)
 		err, exitCode = result.Err, result.ExitCode
 	}
 	return
@@ -113,7 +113,7 @@ func runRevertAgent(unmapIP bool, removeCert bool, unmapCDN bool) (err error, ex
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IP: unmapIP, Certificate: removeCert, CDN: unmapCDN}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IPAddr: unmapIP, Certificate: removeCert, CDN: unmapCDN}); err != nil {
 		return
 	}
 
@@ -124,7 +124,7 @@ func runRevertAgent(unmapIP bool, removeCert bool, unmapCDN bool) (err error, ex
 	return
 }
 
-func runSetUpAgent(mapIp net.IP, certificate []byte, mapCDN bool) (err error, exitCode int) {
+func runSetUpAgent(mapIpAddr netip.Addr, certificate []byte, mapCDN bool) (err error, exitCode int) {
 	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetup); err != nil {
 		return
 	}
@@ -133,7 +133,7 @@ func runSetUpAgent(mapIp net.IP, certificate []byte, mapCDN bool) (err error, ex
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{IP: mapIp, Certificate: certificate, CDN: mapCDN}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{IPAddr: mapIpAddr, Certificate: certificate, CDN: mapCDN}); err != nil {
 		return
 	}
 

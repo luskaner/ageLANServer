@@ -2,7 +2,7 @@ package launcher_common
 
 import (
 	"github.com/luskaner/ageLANServer/common"
-	"net"
+	"net/netip"
 )
 
 const ConfigAdminIpcRevert byte = 0
@@ -13,12 +13,12 @@ const configAdminIpcName = common.Name + `-launcher-config-admin-agent`
 type (
 	ConfigAdminIpcSetupCommand struct {
 		CDN         bool
-		IP          net.IP
+		IPAddr      netip.Addr
 		Certificate []byte
 	}
 	ConfigAdminIpcRevertCommand struct {
 		CDN         bool
-		IP          bool
+		IPAddr      bool
 		Certificate bool
 	}
 )

@@ -13,8 +13,8 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"io"
-	"net"
 	"net/http"
+	"net/netip"
 	"time"
 )
 
@@ -70,18 +70,18 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(ip string, store string) (errorCode int) {
+func (c *Config) MapHosts(ipAddr netip.Addr, store common.LauncherStore) (errorCode int) {
 	var mapCDN bool
 	var mapIP bool
-	var ipToMap string
+	var ipAddrToMap netip.Addr
 	if store != "tmp" {
 		if requiresMapCDN() {
 			if store == "" {
 				printer.Println(
 					printer.Error,
-					printer.TS("CanAddHost", printer.OptionStyle),
+					printer.TS("StoreToAddHost", printer.OptionStyle),
 					printer.T(" is "),
-					printer.TS("false", printer.LiteralStyle),
+					printer.TS("''", printer.LiteralStyle),
 					printer.T(" but CDN is required to be mapped. You should have added the mapping yourself."),
 				)
 				errorCode = internal.ErrConfigCDNMap
@@ -90,13 +90,13 @@ func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 			mapCDN = true
 		}
 		for _, domain := range common.AllHosts() {
-			if !launcherCommon.Matches(ip, domain) {
+			if !launcherCommon.Matches(ipAddr.String(), domain, c.IPProtocol().IPv4(), c.IPProtocol().IPv6()) {
 				if store == "" {
 					printer.Println(
 						printer.Error,
-						printer.TS("Server.Start", printer.OptionStyle),
+						printer.TS("StoreToAddHost", printer.OptionStyle),
 						printer.T(" is "),
-						printer.TS("false", printer.LiteralStyle),
+						printer.TS("''", printer.LiteralStyle),
 						printer.T(" but "),
 						printer.TS("server", printer.LiteralStyle),
 						printer.T(" does not match "),
@@ -108,13 +108,10 @@ func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 				} else {
 					mapIP = true
 				}
-			} else if !server.CheckConnectionFromServer(domain, true) {
+			} else if !server.CheckConnectionFromServer(domain, c.IPProtocol(), true) {
 				printer.Println(
 					printer.Error,
-					printer.TS("Server.Start", printer.OptionStyle),
-					printer.T(" is "),
-					printer.TS("false", printer.LiteralStyle),
-					printer.T(" and host matches. "),
+					printer.T("Host matches. "),
 					printer.TS(domain, printer.LiteralStyle),
 					printer.T(" must be reachable."),
 				)
@@ -126,9 +123,9 @@ func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 		mapIP = true
 	}
 	if mapIP {
-		ipToMap = ip
+		ipAddrToMap = ipAddr
 	}
-	if ipToMap != "" || mapCDN {
+	if ipAddrToMap.IsValid() || mapCDN {
 		if store == "tmp" {
 			hostFile, err := hosts.CreateTemp()
 			if err != nil {
@@ -157,15 +154,15 @@ func (c *Config) MapHosts(ip string, store string) (errorCode int) {
 			addHostsStyledTexts = append(addHostsStyledTexts, printer.T("..."))
 			fmt.Print(printer.Gen(printer.Configuration, "", addHostsStyledTexts...))
 		}
-		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIp: ipToMap, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
+		if result := executor.RunSetUp(&executor.RunSetUpOptions{HostFilePath: c.hostFilePath, MapIp: ipAddrToMap, MapCDN: mapCDN, ExitAgentOnError: true}); !result.Success() {
 			printer.PrintFailedResultError(result)
 			errorCode = internal.ErrConfigIpMapAdd
 		} else if store == "tmp" {
 			cmd.MapCDN = true
-			if parsedIP := net.ParseIP(ip); parsedIP != nil {
-				cmd.MapIP = parsedIP
+			if ipAddr.IsValid() {
+				cmd.MapIPAddrValue.Addr = ipAddr
 			}
-			mappings := hosts.HostMappings()
+			mappings := hosts.Mappings()
 			for hostToCache, ipToCache := range mappings {
 				launcherCommon.CacheMapping(hostToCache, ipToCache)
 			}

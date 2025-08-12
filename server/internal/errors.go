@@ -11,4 +11,5 @@ const (
 	ErrCreateLogsDir
 	ErrCreateLogFile
 	ErrStartServer
+	ErrQueryServer
 )

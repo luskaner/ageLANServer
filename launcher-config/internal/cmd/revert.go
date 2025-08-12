@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -32,7 +31,7 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 
 func backupMetadata() bool {
 	fmt.Println("Backing up previously restored metadata")
-	if userData.Metadata(common.GameTitle(gameTitle)).Backup(windowsUserProfilePath, common.GameTitle(gameTitle)) {
+	if userData.Metadata(gameTitle).Backup(windowsUserProfilePath, gameTitle) {
 		fmt.Println("Successfully backed up metadata")
 		return true
 	} else {
@@ -77,10 +76,10 @@ var revertCmd = &cobra.Command{
 			}
 			RestoreMetadata = true
 		}
-		if gameTitle == string(common.AoE1) {
+		if gameTitle == common.AoE1 {
 			RestoreMetadata = false
 		}
-		if restoredMetadata && !common.SupportedGameTitles.ContainsOne(common.GameTitle(gameTitle)) {
+		if restoredMetadata && !common.SupportedGameTitles.ContainsOne(gameTitle) {
 			fmt.Println("Invalid gameTitle type")
 			os.Exit(launcherCommon.ErrInvalidGameTitle)
 		}
@@ -98,7 +97,7 @@ var revertCmd = &cobra.Command{
 		}
 		if RestoreMetadata {
 			fmt.Println("Restoring metadata")
-			if userData.Metadata(common.GameTitle(gameTitle)).Restore(windowsUserProfilePath, common.GameTitle(gameTitle)) {
+			if userData.Metadata(gameTitle).Restore(windowsUserProfilePath, gameTitle) {
 				fmt.Println("Successfully restored metadata")
 				restoredMetadata = true
 			} else {
@@ -226,7 +225,7 @@ func InitRevert() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitRevert(revertCmd)
-	commonCmd.GameVarCommand(revertCmd.Flags(), &gameTitle)
+	cmd.GameVarCommand(revertCmd.Flags(), &gameTitle)
 	revertCmd.Flags().StringVarP(
 		&hostFilePath,
 		"hostFilePath",

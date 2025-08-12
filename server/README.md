@@ -9,12 +9,8 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- Windows:
-    - 10 (no S edition/mode).
-    - (Storage) Server 2016.
-    - 10 IoT (no Arm32).
-    - Server IoT 2019.
-- Linux: kernel 2.6.32 (see [here](https://go.dev/wiki/Linux) for more details).
+- Windows: 10 (or equivalent).
+- Linux: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
@@ -27,7 +23,7 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.23.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.24.
 
 </details>
 

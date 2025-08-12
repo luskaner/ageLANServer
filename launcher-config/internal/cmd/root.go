@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -13,7 +14,7 @@ var RootCmd = &cobra.Command{
 }
 
 var Version string
-var gameTitle string
+var gameTitle common.GameTitle
 var hostFilePath string
 var certFilePath string
 

@@ -673,10 +673,10 @@ universal_binaries:
     replace: true
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
-signs:
-  - artifacts: checksum
-    cmd: gpg2
-    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
+#signs:
+#  - artifacts: checksum
+#    cmd: gpg2
+#    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
 release:
   draft: true
   replace_existing_draft: false

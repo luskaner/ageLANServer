@@ -1,10 +1,10 @@
 module github.com/luskaner/ageLANServer/server-genCert
 
-go 1.23.0
+go 1.24.0
 
 require github.com/spf13/cobra v1.9.1
 
-require github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb
+require github.com/luskaner/ageLANServer/common v0.0.0-20250713220403-d0399bd566eb
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect

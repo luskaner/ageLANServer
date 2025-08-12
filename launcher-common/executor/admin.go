@@ -5,15 +5,15 @@ import (
 	"encoding/base64"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"net"
+	"net/netip"
 )
 
-func RunSetUp(IP net.IP, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
+func RunSetUp(IpAddr netip.Addr, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup")
-	if IP != nil {
+	if IpAddr.IsValid() {
 		args = append(args, "-i")
-		args = append(args, IP.String())
+		args = append(args, IpAddr.String())
 	}
 	if certificate != nil {
 		args = append(args, "-l")

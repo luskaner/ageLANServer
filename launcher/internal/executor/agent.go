@@ -1,17 +1,18 @@
 package executor
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 )
 
-func RunAgent(gameTitle common.GameTitle, steamProcess bool, xboxProcess bool, serverPid int, rebroadcastIPs []net.IP) (result *exec.Result) {
-	rebroadcastIPsStr := make([]string, len(rebroadcastIPs))
-	for i, ip := range rebroadcastIPs {
-		rebroadcastIPsStr[i] = ip.String()
+func RunAgent(gameTitle common.GameTitle, steamProcess bool, xboxProcess bool, serverPid int, rebroadcastIPAddrs mapset.Set[netip.Addr]) (result *exec.Result) {
+	rebroadcastIPsStr := make([]string, rebroadcastIPAddrs.Cardinality())
+	for i, ipAddr := range rebroadcastIPAddrs.ToSlice() {
+		rebroadcastIPsStr[i] = ipAddr.String()
 	}
 	args := []string{
 		strconv.FormatBool(steamProcess),

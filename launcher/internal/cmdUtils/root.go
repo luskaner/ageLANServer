@@ -2,6 +2,7 @@ package cmdUtils
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -18,6 +19,11 @@ type Config struct {
 	setupCommandRan bool
 	hostFilePath    string
 	certFilePath    string
+	ipProtocol      common.IPProtocol
+}
+
+func (c *Config) SetIPProtocol(ipProtocol common.IPProtocol) {
+	c.ipProtocol = ipProtocol
 }
 
 func (c *Config) SetServerPid(pid int) {
@@ -41,6 +47,10 @@ func (c *Config) RequiresConfigRevert() bool {
 		return true
 	}
 	return false
+}
+
+func (c *Config) IPProtocol() *common.IPProtocol {
+	return &c.ipProtocol
 }
 
 func (c *Config) revertCommand() []string {
@@ -125,14 +135,15 @@ func anyProcessExists(names []string) bool {
 	return len(processes) > 0
 }
 
-func GameRunning() bool {
+func GamesRunning() mapset.Set[common.GameTitle] {
+	games := mapset.NewThreadUnsafeSet[common.GameTitle]()
 	xbox := runtime.GOOS == "windows"
 	for gameTitle := range common.AllGameTitles.Iter() {
 		if anyProcessExists(commonProcess.GameProcesses(gameTitle, true, xbox)) {
-			return true
+			games.Add(gameTitle)
 		}
 	}
-	return false
+	return games
 }
 
 func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {

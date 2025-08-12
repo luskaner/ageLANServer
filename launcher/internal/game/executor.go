@@ -80,18 +80,18 @@ func xboxExecutor(gameTitle common.GameTitle) (ok bool, executor Executor) {
 	return
 }
 
-func MakeExecutor(gameTitle common.GameTitle, launcher string, executable string) Executor {
-	if launcher != "" {
+func MakeExecutor(gameTitle common.GameTitle, launcher common.ClientLauncher, executable string) Executor {
+	if launcher != common.ClientLauncherSteamOrMSStore {
 		switch launcher {
-		case "steam":
+		case common.ClientLauncherSteam:
 			if ok, executor := steamExecutor(gameTitle); ok {
 				return executor
 			}
-		case "msstore":
+		case common.ClientLauncherMSStore:
 			if ok, executor := xboxExecutor(gameTitle); ok {
 				return executor
 			}
-		case "path":
+		case common.ClientLauncherPath:
 			if isInstalledCustom(executable) {
 				return CustomExecutor{Executable: executable}
 			}

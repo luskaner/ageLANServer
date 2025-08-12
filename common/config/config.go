@@ -22,7 +22,7 @@ func InitConfig(v *viper.Viper, paths []string, files []string, envPrefixSuffix 
 	}
 	if v.ConfigFileUsed() == "" {
 		v.SetConfigName("config")
-		if err := viper.ReadInConfig(); err == nil {
+		if err := v.ReadInConfig(); err == nil {
 			printerFn(v.ConfigFileUsed())
 		}
 	}

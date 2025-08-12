@@ -9,13 +9,14 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/printer"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
+	"net/netip"
 	"slices"
 )
 
 type RunSetUpOptions struct {
 	GameTitle              common.GameTitle
 	HostFilePath           string
-	MapIp                  string
+	MapIp                  netip.Addr
 	MapCDN                 bool
 	CertFilePath           string
 	AddUserCertData        []byte
@@ -33,7 +34,7 @@ func (options *RunSetUpOptions) revertFlagsOptions() *launcherCommon.RevertFlags
 	return &launcherCommon.RevertFlagsOptions{
 		GameTitle:              options.GameTitle,
 		HostFilePath:           options.HostFilePath,
-		UnmapIP:                options.MapIp != "",
+		UnmapIP:                options.MapIp.IsValid(),
 		UnmapCDN:               options.MapCDN,
 		CertFilePath:           options.CertFilePath,
 		RemoveUserCert:         options.AddUserCertData != nil,
@@ -60,9 +61,9 @@ func RunSetUp(options *RunSetUpOptions) (result *exec.Result) {
 			args = append(args, "-r")
 		}
 	}
-	if options.MapIp != "" {
+	if options.MapIp.IsValid() {
 		args = append(args, "-i")
-		args = append(args, options.MapIp)
+		args = append(args, options.MapIp.String())
 		reloadHostMappings = true
 	}
 	if options.AddLocalCertData != nil {

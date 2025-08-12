@@ -5,11 +5,8 @@ import (
 	"errors"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	cfg "github.com/luskaner/ageLANServer/common/config"
 	"github.com/luskaner/ageLANServer/common/config/server"
 	"github.com/luskaner/ageLANServer/common/config/shared"
@@ -25,11 +22,13 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -49,6 +48,21 @@ var (
 			if err := server.Unmarshal(v, &parameters); err != nil {
 				return err
 			}
+			if parameters.Network.Listen.Hosts.Values.IsEmpty() {
+				if parameters.Network.IPProtocol != common.IPvDual && parameters.Network.IPProtocol.IPv4() {
+					parameters.Network.Listen.Hosts.Values.Add(netip.IPv4Unspecified().String())
+				}
+				if parameters.Network.IPProtocol.IPv6() {
+					parameters.Network.Listen.Hosts.Values.Add(netip.IPv6Unspecified().String())
+				}
+			}
+			if parameters.Network.Listen.Port == 0 {
+				if parameters.Network.Listen.DisableHttps {
+					parameters.Network.Listen.Port = 80
+				} else {
+					parameters.Network.Listen.Port = 443
+				}
+			}
 			err, validate := server.Validator()
 			if err != nil {
 				return err
@@ -56,35 +70,56 @@ var (
 			if err := validate.Struct(&parameters); err != nil {
 				return err
 			}
-			internal.Id, _ = uuid.Parse(parameters.Id)
+			internal.Id = parameters.Id
 			internal.GeneratePlatformUserId = parameters.GeneratePlatformUserId
 			return nil
 		},
 		Run: func(cmd *cobra.Command, _ []string) {
 			fmt.Printf("GameTitles: %v\n", parameters.GameTitles)
+			if parameters.Network.IPProtocol.IPv6() {
+				fmt.Println("There might be issues with IPv6.")
+			}
+			if !parameters.Network.Listen.Hosts.Values.IsEmpty() && !parameters.Network.Listen.Interfaces.IsEmpty() {
+				fmt.Println("Setting both 'Network.Listen.Hosts.Values' and 'Network.Listen.Interfaces' is not supported, only the 'Hosts.Values' will be used for binding.")
+			}
+			if parameters.Network.Listen.DisableHttps {
+				fmt.Println("Will only listen on HTTP, you will require an HTTPS frontend with some kind of redirection to make it work.")
+			} else if parameters.Network.Listen.Port != 443 {
+				fmt.Println("Not listening on the default HTTPS port, you will require some kind of port redirection to make it work.")
+			}
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
 					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
 				}
 			}
-			var hostAddrs []net.IP
-			if len(parameters.Listen.Hosts) > 0 {
-				if hostAddrs = ip.ResolveHosts(parameters.Listen.Hosts); len(hostAddrs) == 0 {
+			var ipAddrs mapset.Set[netip.Addr]
+			if !parameters.Network.Listen.Hosts.Values.IsEmpty() {
+				if ipAddrs = ip.ResolveHosts(
+					parameters.Network.Listen.Hosts.Values,
+					parameters.Network.Listen.Hosts.UseOnlyFirstResolvedIP,
+					parameters.Network.IPProtocol.IPv4(),
+					parameters.Network.IPProtocol.IPv6(),
+				); ipAddrs.IsEmpty() {
 					fmt.Println("Failed to resolve hosts.")
 					os.Exit(internal.ErrResolveHost)
 				}
+			} else if !parameters.Network.Listen.Interfaces.IsEmpty() {
+				if ipAddrs = shared.FilterNetworks(
+					nil,
+					parameters.Network.Listen.Interfaces,
+					parameters.Network.IPProtocol.IPv4(),
+					parameters.Network.IPProtocol.IPv6(),
+					false,
+				); ipAddrs.IsEmpty() {
+					fmt.Println("No addresses to bind to.")
+					os.Exit(internal.ErrNoAddrs)
+				}
 			}
-			var addrs []net.IP
-			if addrs = shared.FilterNetworks(nil, hostAddrs, parameters.Listen.Interfaces, true); len(addrs) == 0 {
-				fmt.Println("No addresses to bind to.")
-				os.Exit(internal.ErrNoAddrs)
-			}
-			gameTitleSet := mapset.NewSet[common.GameTitle](parameters.GameTitles...)
 			mux := http.NewServeMux()
-			initializer.InitializeGames(gameTitleSet)
-			routes.Initialize(mux, gameTitleSet)
-			gameMux := middleware.GameMiddleware(gameTitleSet, mux)
+			initializer.InitializeGames(parameters.GameTitles)
+			routes.Initialize(mux, parameters.GameTitles)
+			gameMux := middleware.GameMiddleware(parameters.GameTitles, mux)
 			sessionMux := middleware.SessionMiddleware(gameMux)
 			handler := sessionMux
 			if parameters.Logging.Enabled {
@@ -108,22 +143,30 @@ var (
 				}
 				handler = handlers.LoggingHandler(writer, sessionMux)
 			}
-			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
-			if certificatePairFolder == "" {
-				fmt.Println("Failed to determine certificate pair folder")
-				os.Exit(internal.ErrCertDirectory)
+			var serve func(ln *net.Listener, s *http.Server) error
+			if !parameters.Network.Listen.DisableHttps {
+				certificatePairFolder := common.CertificatePairFolder(os.Args[0])
+				if certificatePairFolder == "" {
+					fmt.Println("Failed to determine certificate pair folder")
+					os.Exit(internal.ErrCertDirectory)
+				}
+				certFile := filepath.Join(certificatePairFolder, common.Cert)
+				keyFile := filepath.Join(certificatePairFolder, common.Key)
+				serve = func(ln *net.Listener, s *http.Server) error {
+					return s.ServeTLS(*ln, certFile, keyFile)
+				}
+			} else {
+				serve = func(ln *net.Listener, s *http.Server) error {
+					return s.Serve(*ln)
+				}
 			}
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-			certFile := filepath.Join(certificatePairFolder, common.Cert)
-			keyFile := filepath.Join(certificatePairFolder, common.Key)
 			var servers []*http.Server
 			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
-			var multicastIP net.IP
-			var announcePort int
-			gameTitles := make([]string, len(parameters.GameTitles))
-			for i, gameTitle := range parameters.GameTitles {
-				gameTitles[i] = string(gameTitle)
+			var gameTitles []string
+			for gameTitle := range parameters.GameTitles.Iter() {
+				gameTitles = append(gameTitles, string(gameTitle))
 			}
 			internal.AnnounceMessageData = internal.AnnounceMessageDataLatest{
 				AnnounceMessageData001: common.AnnounceMessageData001{
@@ -131,38 +174,83 @@ var (
 				},
 				Version: Version,
 			}
-			if !parameters.Announcement.Disabled {
-				announcePort = int(parameters.Announcement.Port)
-				multicastIP = parameters.Announcement.MulticastGroup
-			}
 			fmt.Println("ID:", parameters.Id)
 			if parameters.GeneratePlatformUserId {
 				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
-			for _, addr := range addrs {
+			for ipAddr := range ipAddrs.Iter() {
 				server := &http.Server{
-					Addr:        addr.String() + ":443",
+					Addr:        net.JoinHostPort(ipAddr.String(), strconv.Itoa(int(parameters.Network.Listen.Port))),
 					Handler:     handler,
 					ErrorLog:    customLogger,
 					IdleTimeout: time.Second * 20,
 				}
-
+				network := "tcp"
+				var isIPv4, isIPv6 bool
+				if ipAddr.Is4() {
+					isIPv4 = true
+					if parameters.Network.IPProtocol != common.IPvDual {
+						network += "4"
+					}
+				} else {
+					isIPv6 = true
+					if parameters.Network.IPProtocol != common.IPvDual {
+						network += "6"
+					}
+				}
 				fmt.Println("Listening on " + server.Addr)
-				go func() {
-					if announcePort != 0 {
-						if ip.Announce(
-							net.ParseIP(addr.String()),
-							multicastIP,
-							announcePort,
-						) {
-							fmt.Printf("Responding to discovery requests on port %d (including using Multicast on group %s)\n", announcePort, multicastIP)
-						} else {
-							fmt.Println("Failed to respond to discovery requests on port ", announcePort)
+				ln, err := net.Listen(network, server.Addr)
+				if err != nil {
+					fmt.Println("Failed to listen.")
+					fmt.Println(err)
+					os.Exit(internal.ErrStartServer)
+				}
+				var queryConnections []*net.UDPConn
+				if !parameters.Network.Announcement.Disabled {
+					if isIPv4 {
+						if err, queryConnections = ip.QueryConnections(
+							ipAddr,
+							mapset.NewThreadUnsafeSet[netip.Addr](parameters.Network.Announcement.IPv4.MulticastGroup),
+							int(parameters.Network.Announcement.IPv4.Port),
+							true,
+							parameters.Network.IPProtocol == common.IPvDual,
+						); err != nil {
+							fmt.Println("Failed to get query connections.")
+							fmt.Println(err)
+							os.Exit(internal.ErrQueryServer)
+						}
+					} else if isIPv6 {
+						multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr](
+							parameters.Network.Announcement.IPv6.MulticastGroup,
+						)
+						if !parameters.Network.Announcement.IPv6.DisableLinkLocal {
+							multicastGroups.Add(netip.IPv6LinkLocalAllNodes())
+						}
+						if err, queryConnections = ip.QueryConnections(
+							ipAddr,
+							multicastGroups,
+							int(parameters.Network.Announcement.IPv6.Port),
+							false,
+							parameters.Network.IPProtocol == common.IPvDual,
+						); err != nil {
+							fmt.Println("Failed to get query connections.")
+							fmt.Println(err)
+							os.Exit(internal.ErrQueryServer)
 						}
 					}
-					err := server.ListenAndServeTLS(certFile, keyFile)
-					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						fmt.Println("Failed to start 'server'")
+				}
+				if len(queryConnections) > 0 {
+					for _, conn := range queryConnections {
+						fmt.Printf(
+							"Listening for query connections on %s\n",
+							conn.LocalAddr(),
+						)
+					}
+					ip.ListenQueryConnections(queryConnections)
+				}
+				go func() {
+					if err = serve(&ln, server); err != nil && !errors.Is(err, http.ErrServerClosed) {
+						fmt.Println("Failed to serve.")
 						fmt.Println(err)
 						os.Exit(internal.ErrStartServer)
 					}
@@ -172,17 +260,17 @@ var (
 
 			<-stop
 
-			fmt.Println("'Servers' are shutting down...")
+			fmt.Println("Servers are shutting down...")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
 			for _, server := range servers {
 				if err := server.Shutdown(ctx); err != nil {
-					fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
+					fmt.Printf("Server %s forced to shutdown: %v\n", server.Addr, err)
 				}
 
-				fmt.Println("'Server'", server.Addr, "stopped")
+				fmt.Println("Server", server.Addr, "stopped")
 			}
 		},
 	}
@@ -193,11 +281,13 @@ func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringSliceVar(&cfgFiles, "config", []string{}, fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.PersistentFlags().BoolP("noAnnounce", "a", v.GetBool("Announcement.Disabled"), "Disable responding to discovery queries in LAN. This will make 'launcher's unable to discover it.")
-	rootCmd.PersistentFlags().UintP("announcePort", "p", v.GetUint("Announcement.Port"), "Port to respond discovery requests to. If changed, the 'launcher's will need to specify the port.")
-	rootCmd.PersistentFlags().IPP("announceMulticastGroup", "i", v.Get("Announcement.MulticastGroup").(net.IP), "Multicast group to respond discovery requests to.")
-	cmd.GamesCommand(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().StringArrayP("host", "n", v.GetStringSlice("Listen.Hosts"), "The host the 'server' will bind to. Can be set multiple times.")
+	rootCmd.PersistentFlags().BoolP("noAnnounce", "a", v.GetBool("Network.Announcement.Disabled"), "Disable responding to discovery queries in LAN. This will make 'launcher's unable to discover it.")
+	rootCmd.PersistentFlags().String("ipProtocol", v.GetString("Network.IPProtocol"), "IP versions of the server. 'v4' for IPv4, 'v6' for IPv6, 'v4+v6' for separate IPv4 and IPv6 support and '' (empty) for dual stack support.")
+	var gameTitles GameTitleValues
+	GamesCommand(rootCmd.PersistentFlags(), &gameTitles)
+	rootCmd.PersistentFlags().Bool("noHttps", v.GetBool("Network.Listen.DisableHttps"), "Use HTTP instead of HTTPS.")
+	rootCmd.PersistentFlags().String("port", v.GetString("Network.Listen.Port"), "The port the 'server' will listen to.")
+	rootCmd.PersistentFlags().StringArrayP("host", "n", []string{}, "The host the 'server' will bind to. Can be set multiple times.")
 	rootCmd.PersistentFlags().BoolP("log", "o", v.GetBool("Logging.Enabled"), "Log requests.")
 	rootCmd.PersistentFlags().BoolP("logToConsole", "l", v.GetBool("Logging.Console"), "Log the requests to the terminal (stdout) instead of a file. Depends on 'Logging.Enabled' being 'true'.")
 	rootCmd.PersistentFlags().BoolP("generatePlatformUserId", "g", v.GetBool("GeneratePlatformUserId"), "Generate the Platform User Id to avoid issues with users sharing the same.")
@@ -205,19 +295,22 @@ func Execute() error {
 	if err := v.BindPFlag("Id", rootCmd.PersistentFlags().Lookup("id")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Announcement.Disabled", rootCmd.PersistentFlags().Lookup("noAnnounce")); err != nil {
+	if err := v.BindPFlag("Network.IPProtocol", rootCmd.PersistentFlags().Lookup("ipProtocol")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Announcement.Port", rootCmd.PersistentFlags().Lookup("announcePort")); err != nil {
+	if err := v.BindPFlag("Network.Announcement.Disabled", rootCmd.PersistentFlags().Lookup("noAnnounce")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Announcement.MulticastGroup", rootCmd.PersistentFlags().Lookup("announceMulticastGroup")); err != nil {
+	if err := v.BindPFlag("Network.Listen.Port", rootCmd.PersistentFlags().Lookup("port")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Listen.Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
+	if err := v.BindPFlag("Network.Listen.DisableHttps", rootCmd.PersistentFlags().Lookup("noHttps")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("GameTitles", rootCmd.PersistentFlags().Lookup(commonCmd.Names)); err != nil {
+	if err := v.BindPFlag("Network.Listen.Hosts.Values", rootCmd.PersistentFlags().Lookup("host")); err != nil {
+		return err
+	}
+	if err := v.BindPFlag("GameTitles", rootCmd.PersistentFlags().Lookup(Names)); err != nil {
 		return err
 	}
 	if err := v.BindPFlag("Logging.Console", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {
