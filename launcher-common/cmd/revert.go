@@ -15,7 +15,7 @@ func InitRevert(cmd *cobra.Command) {
 		"ip",
 		"i",
 		false,
-		"Remove the IPAddr mappings from the local DNS server",
+		"Remove the IP mappings from the local DNS server",
 	)
 	cmd.Flags().BoolVarP(
 		&UnmapCDN,

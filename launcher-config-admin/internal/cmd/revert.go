@@ -67,9 +67,9 @@ var revertCmd = &cobra.Command{
 			if cmd.UnmapCDN {
 				hsts.Add(launcherCommon.CDNDomain)
 			}
-			fmt.Println("Removing IPAddr mappings")
+			fmt.Println("Removing IP mappings")
 			if err := hosts.RemoveHosts(hsts); err == nil {
-				fmt.Println("Successfully removed IPAddr mappings")
+				fmt.Println("Successfully removed IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapRemove
 				if !cmd.RemoveAll {
@@ -79,7 +79,7 @@ var revertCmd = &cobra.Command{
 						}
 					}
 				}
-				fmt.Println("Failed to remove IPAddr mappings")
+				fmt.Println("Failed to remove IP mappings")
 				if !cmd.RemoveAll {
 					os.Exit(errorCode)
 				}

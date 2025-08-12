@@ -57,9 +57,9 @@ var setUpCmd = &cobra.Command{
 			}
 		}
 		if cmd.MapIPAddrValue.Addr.IsValid() || cmd.MapCDN {
-			fmt.Println("Adding IPAddr mappings")
+			fmt.Println("Adding IP mappings")
 			if ok, _ := launcherCommonHosts.AddHosts(hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
-				fmt.Println("Successfully added IPAddr mappings")
+				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd
 				if trustedCertificate {
@@ -67,7 +67,7 @@ var setUpCmd = &cobra.Command{
 						errorCode = internal.ErrIpMapAddRevert
 					}
 				}
-				fmt.Println("Failed to add IPAddr mappings")
+				fmt.Println("Failed to add IP mappings")
 				os.Exit(errorCode)
 			}
 		}
