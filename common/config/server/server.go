@@ -1,13 +1,14 @@
 package server
 
 import (
+	"net/netip"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/config/shared"
 	"github.com/spf13/viper"
-	"net/netip"
 )
 
 type Network struct {

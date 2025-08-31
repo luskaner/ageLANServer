@@ -1,7 +1,5 @@
 # Server
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/server)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/server)
-
 The server module represents the core of the LAN Server. It is a simple web server that listens to the game's
 API requests. The server reimplements the minimum required API surface to allow the game to work in LAN mode.
 
@@ -9,7 +7,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- Windows: 10 (or equivalent).
+- Windows: 10 (or equivalent, not Arm32).
 - Linux: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - macOS: Big Sur (v11).
 

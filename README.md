@@ -110,14 +110,12 @@ is in maintenance or is eventually shutdown.
 
 ### Server
 
-#### Stable
-
-- **Windows**: 10 (or equivalent).
+- **Windows**: 10 (or equivalent, not Arm32).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Big Sur (v11).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
-system.
+system and configuration.
 
 <details>
 <summary>Experimental</summary>
@@ -132,14 +130,15 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Launcher
 
-- **Windows** (no S edition/mode):
-    - **10** on x86-64 (recommended).
-    - **11** on ARM.
-- **Linux** with kernel 3.2:
+- Windows without S edition/mode (recommended):
+    - 10 on x86-64 (recommended).
+    - 11 on ARM.
+- Linux with kernel 3.2:
     - x86-64 (recommended).
     - ARM64.
 
-**Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
+**Note: If you allow (and is needed) to handle the hosts file, local certificate, or an elevated custom game launcher,
+it will
 require admin rights elevation.**
 
 ### Client
@@ -157,7 +156,7 @@ require admin rights elevation.**
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
   Windows*). Recommended a late 2023 version or later.
 
-*Note: An up-to-date (or slightly older) version is highly recommended as there are known issues with older versions.*
+*Note: An up-to-date (or slightly older) version is highly recommended, as there are known issues with older versions.*
 
 ## Binaries
 
@@ -197,7 +196,7 @@ supported operating systems.
 
 </details>
 
-*Note: If you are using Antivirus it may flag one or more executables as virus, this is a **false positive***.
+*Note: If you are using Antivirus it might flag one or more executables as virus, this is a **false positive***.
 
 ### Verification
 
@@ -300,8 +299,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 <details>
     <summary>Server instructions</summary>
 
-1. **Download** the proper *server* asset from latest stable release
-   from https://github.com/luskaner/ageLANServer/releases.
+1. **Download** the proper *server* asset from latest
+   stable [release](https://github.com/luskaner/ageLANServer/releases).
 2. **Generate the certificate** by simply executing `bin/genCert`.
 3. If needed **edit the [config](server/resources/config/config.toml) file**.
 4. **Run** the `server` binary for all games or the `server_` game title specific script.
@@ -311,8 +310,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 <details>
     <summary>Launcher instructions</summary>
 
-1. **Download** the proper *launcher* asset from latest stable release
-   from https://github.com/luskaner/ageLANServer/releases.
+1. **Download** the proper *launcher* asset from latest
+   stable [release](https://github.com/luskaner/ageLANServer/releases).
 2. If needed **edit the `launcher/resources/config.<game_title>.toml` and/or `launcher/resources/config.toml` files**.
    You
    will

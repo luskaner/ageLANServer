@@ -1,13 +1,11 @@
 # Launcher
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher)
-
 The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
 system and reverting that configuration upon exit.
 
 ## Minimum system Requirements
 
-- Windows (no S edition/mode):
+- Windows without S edition/mode (recommended):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
 - Linux with kernel 3.2:
