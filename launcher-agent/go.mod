@@ -1,12 +1,12 @@
 module github.com/luskaner/ageLANServer/launcher-agent
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250517201605-76715e6a0d9c
-	golang.org/x/sys v0.35.0
+	golang.org/x/sys v0.36.0
 )
 
 require (
