@@ -100,6 +100,10 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 
+## Starting and configuring Online-like Battle Servers
+
+See [Battle Servers](./BattleServers.md) for information.
+
 ## Command Line
 
 CLI is available with similar options as the configuration. You can see the available options with

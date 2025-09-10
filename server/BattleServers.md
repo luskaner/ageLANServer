@@ -7,16 +7,16 @@ as long as the server is configured properly.
 
 ## Should I use `LAN` or `Online-like` Battle Server?
 
-| Feature               | LAN                     | Online-like        |
-|-----------------------|-------------------------|--------------------|
-| Execution             | Automatic for each game | Manual (host)      |
-| Discovery             | Automatic for each game | Manual (server)    |
-| Battle Server limit   | 1 for game              | None               |
-| Latency               | Very Low                | Low                |
-| Observing             | Player observing only   | Full support       |
-| Internet              | Not required            | Not required       |
-| Configurable          | No                      | Yes, like ports... |
-| Can only host in self | Yes                     | No                 |
+| Feature               | LAN                                               | Online-like        |
+|-----------------------|---------------------------------------------------|--------------------|
+| Execution             | $\color{Green}{\textsf{Automatic for each game}}$ | Manual (host)      |
+| Discovery             | Automatic for each game                           | Manual (server)    |
+| Battle Server limit   | 1 for game                                        | None               |
+| Latency               | Very Low                                          | Low                |
+| Observing             | Player observing only                             | Full support       |
+| Internet              | Not required                                      | Not required       |
+| Configurable          | No                                                | Yes, like ports... |
+| Can only host in self | Yes                                               | No                 |
 
 The LAN Battle Server is the easiest to use, but it has limitations. The Online-like Battle Server is more complex to
 use, but it has more features and is more flexible.
@@ -185,7 +185,7 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30004
     OutOfBandPort = 30005
     ```
-    * AoE III: DE
+    * AoE III: DE:
     ```toml
     [[Games.age3.BattleServers]]
     Region = 'local'
@@ -194,6 +194,3 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30007
     OutOfBandPort = 30008
     ```
-
-
-

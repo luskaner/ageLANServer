@@ -111,7 +111,8 @@ func (battleSrvs *MainBattleServers) NewLANBattleServer(region string) *MainBatt
 
 func (battleSrvs *MainBattleServers) NewBattleServer(region string) *MainBattleServer {
 	return &MainBattleServer{
-		Region:     region,
-		hasOobPort: battleSrvs.haveOobPort,
+		Region:           region,
+		hasOobPort:       battleSrvs.haveOobPort,
+		battleServerName: battleSrvs.battleServerName,
 	}
 }
