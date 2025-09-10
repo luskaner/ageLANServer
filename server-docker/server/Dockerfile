@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Compile
-FROM golang:1.23-alpine3.21 AS compiler
+FROM golang:1.24-alpine3.22 AS compiler
 WORKDIR /app
 COPY server-docker/server/go.work.template go.work
 COPY common common
@@ -11,7 +11,7 @@ RUN cp -r server/resources build/resources && rm -rf build/resources/windows && 
 RUN mkdir -p build/resources/certificates
 RUN go build -ldflags="-s -w" -o build/server ./server
 # Compress
-FROM alpine:3.21 AS compressor
+FROM alpine:3.22 AS compressor
 RUN apk add --no-cache upx
 WORKDIR /app
 COPY --from=compiler /app/build/server .

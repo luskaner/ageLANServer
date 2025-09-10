@@ -7,12 +7,12 @@ system and reverting that configuration upon exit.
 
 ## Minimum system Requirements
 
-- Windows (no S edition/mode):
+- Windows without S edition/mode (recommended):
     - 10 on x86-64 (recommended).
     - 11 on ARM.
-- Linux:
-    - Kernel 2.6.23 on x86-64 (recommended).
-    - Kernel 3.1 on ARM64.
+- Linux with kernel 3.2:
+    - x86-64 (recommended).
+    - ARM64.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
