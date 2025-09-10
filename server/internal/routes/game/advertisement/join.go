@@ -60,14 +60,14 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	advertisements.WithReadLock(matchingAdv.GetId(), func() {
-		if !matchingAdv.UnsafeGetJoinable() &&
-			matchingAdv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum &&
-			matchingAdv.UnsafeGetDataChecksum() != q.DataChecksum &&
-			matchingAdv.UnsafeGetModDllFile() != q.ModDllFile &&
-			matchingAdv.UnsafeGetModDllChecksum() != q.ModDllChecksum &&
-			matchingAdv.UnsafeGetModName() != q.ModName &&
-			matchingAdv.UnsafeGetModVersion() != q.ModVersion &&
-			matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags &&
+		if !matchingAdv.UnsafeGetJoinable() ||
+			matchingAdv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum ||
+			matchingAdv.UnsafeGetDataChecksum() != q.DataChecksum ||
+			matchingAdv.UnsafeGetModDllFile() != q.ModDllFile ||
+			matchingAdv.UnsafeGetModDllChecksum() != q.ModDllChecksum ||
+			matchingAdv.UnsafeGetModName() != q.ModName ||
+			matchingAdv.UnsafeGetModVersion() != q.ModVersion ||
+			matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags ||
 			matchingAdv.UnsafeGetPasswordValue() != q.Password {
 			joinReturnError(battleServers, w)
 			return
