@@ -193,3 +193,15 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30007
     OutOfBandPort = 30008
     ```
+7. Start the game as you normally would and then:
+    * AoE: DE: Click on "Multiplayer" then on "Create Game", you may select the "Region", "local", or leave as default.
+      Players can
+      join matches by clicking on "Multiplayer" and then on "Lobby Browser".
+    * AoE II: DE: Click on "Multiplayer" then on "Host Game", you may select the "Server", "Local" or leave as default.
+      Players can join matches by clicking on "Multiplayer" and then on "Find Custom Game" (Lobby Browser) or by being
+      invited.
+      Players can observe games by going to "Multiplayer" then "Find Custom Game" and finally "Spectate Games".
+    * AoE III: DE: Click on "Multiplayer" (make sure the that "Online" is selected at top right) and then on "Host a
+      Casual Game", you may select the "Region", "local", or leave as default. Players can join games by going to "
+      Multiplayer" then "Browse Games" and, observe games by enabling here "Spectator Mode".
+
