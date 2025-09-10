@@ -1,18 +1,16 @@
 go 1.23.0
 
 use (
-    battle-server-broadcast
+	battle-server-broadcast
+	common
+	launcher
 	launcher-agent
+	launcher-common
 	launcher-config
 	launcher-config-admin
 	launcher-config-admin-agent
-	common
-	server-genCert
-	launcher
-	launcher-common
 	server
+	server-genCert
 )
 
-replace github.com/luskaner/ageLANServer/common v0.0.0-20250517021020-c4ce88f802fb => ./common
-replace github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250517201605-76715e6a0d9c => ./launcher-common
 replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast

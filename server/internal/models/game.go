@@ -3,6 +3,7 @@ package models
 import "net/http"
 
 type Game interface {
+	BattleServers() *MainBattleServers
 	Resources() *MainResources
 	Users() *MainUsers
 	Advertisements() *MainAdvertisements

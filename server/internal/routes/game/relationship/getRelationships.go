@@ -1,11 +1,12 @@
 package relationship
 
 import (
+	"net/http"
+
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
 )
 
 func Relationships(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {

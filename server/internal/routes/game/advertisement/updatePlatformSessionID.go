@@ -1,13 +1,10 @@
 package advertisement
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 )
 
-func UpdatePlatformSessionID(w http.ResponseWriter, _ *http.Request) {
-	// Unknown what's used for
-	i.JSON(&w,
-		i.A{0},
-	)
+func UpdatePlatformSessionID(w http.ResponseWriter, r *http.Request) {
+	// TODO: Use "onlinePlatform" - STEAM... ?
+	updatePlatformID(&w, r, "platformSessionID")
 }

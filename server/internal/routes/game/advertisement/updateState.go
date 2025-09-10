@@ -1,13 +1,14 @@
 package advertisement
 
 import (
+	"iter"
+	"net/http"
+	"strconv"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"iter"
-	"net/http"
-	"strconv"
 )
 
 func UpdateState(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +27,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
 	advertisements := game.Advertisements()
+	battleServers := game.BattleServers()
 	advId := int32(advId64)
 	var ok bool
 	var peersLen int
@@ -42,7 +44,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		adv.UnsafeUpdateState(int8(state))
 		if adv.UnsafeGetState() == 1 {
 			peersLen, peers = adv.GetPeers().Iter()
-			advEncoded = adv.UnsafeEncode(gameTitle)
+			advEncoded = adv.UnsafeEncode(gameTitle, battleServers)
 			advStartTime = adv.UnsafeGetStartTime()
 		}
 		ok = true

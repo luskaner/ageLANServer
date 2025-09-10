@@ -1,67 +1,83 @@
 package advertisement
 
 import (
+	"net/http"
+
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"net/http"
-	"regexp"
 )
 
-// GUID Version 4
-var re, _ = regexp.Compile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
-
-func returnError(gameId string, w *http.ResponseWriter) {
-	response := i.A{
+func returnError(battleServers *models.MainBattleServers, gameId string, w *http.ResponseWriter) {
+	battleServer := battleServers.NewBattleServer("")
+	response := encodeHostResponse(
+		gameId,
 		2,
 		0,
-		"authtoken",
+		battleServer,
 		"",
-		0,
-		0,
-	}
-	if gameId != common.GameAoE1 {
-		response = append(response, 0)
-	}
+		[]i.A{},
+		"0",
+		"",
+	)
+	i.JSON(w, response)
+}
 
+func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServer *models.MainBattleServer, relayRegion string, encodedPeers []i.A, metadata string, description string) i.A {
+	response := i.A{
+		errorCode,
+		advId,
+		"authtoken",
+	}
+	response = append(response, battleServer.EncodeAdvertisement()...)
 	response = append(
 		response,
-		"",
-		i.A{},
+		relayRegion,
+		encodedPeers,
 		0,
 	)
-
-	if gameId != common.GameAoE2 {
-		response = append(response, "0")
-	}
-	if gameId == common.GameAoE2 {
+	switch gameTitle {
+	case common.GameAoE1:
+		response = append(response, metadata)
+	case common.GameAoE2:
 		response = append(
 			response,
 			0,
 			nil,
 			nil,
-			"0",
-			"",
+			metadata,
+			description,
 		)
+	default:
+		response = append(response, "0")
 	}
-	i.JSON(w, response)
+	return response
 }
 
 func Host(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
-
-	// Only LAN servers are allowed and need the GUID to store it
-	if !re.MatchString(r.PostFormValue("relayRegion")) {
-		returnError(gameTitle, &w)
-		return
+	battleServers := game.BattleServers()
+	region := r.PostFormValue("relayRegion")
+	battleServer := battleServers.NewBattleServer(region)
+	if !battleServer.LAN() {
+		var ok bool
+		if battleServer, ok = game.BattleServers().Get(region); !ok {
+			returnError(battleServers, gameTitle, &w)
+			return
+		}
 	}
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
+		// Disallow Quickmatch on AoE1
+		if battleServer.IPv4 != "" && gameTitle == common.GameAoE1 && adv.Description == "SESSION_MATCH_KEY" {
+			returnError(battleServers, gameTitle, &w)
+			return
+		}
 		if adv.Id != -1 {
-			returnError(gameTitle, &w)
+			returnError(battleServers, gameTitle, &w)
 			return
 		}
 		if gameTitle != common.GameAoE2 {
@@ -69,7 +85,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		}
 		u, ok := game.Users().GetUserById(adv.HostId)
 		if !ok {
-			returnError(gameTitle, &w)
+			returnError(battleServers, gameTitle, &w)
 			return
 		}
 		advertisements := game.Advertisements()
@@ -80,52 +96,33 @@ func Host(w http.ResponseWriter, r *http.Request) {
 				advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
 			})
 		}
-		storedAdv := advertisements.Store(&adv)
+		storedAdv := advertisements.Store(
+			&adv,
+			!battleServer.LAN(),
+		)
 		var response i.A
 		advertisements.WithWriteLock(storedAdv.GetId(), func() {
 			if advertisements.UnsafeNewPeer(storedAdv.GetId(), storedAdv.GetIp(), u.GetId(), u.GetStatId(), adv.Race, adv.Team) == nil {
 				ok = false
 				return
 			}
-			response = i.A{
+			response = encodeHostResponse(
+				gameTitle,
 				0,
 				storedAdv.GetId(),
-				"authtoken",
-				"",
-				0,
-				0,
-			}
-			if gameTitle != common.GameAoE1 {
-				response = append(response, 0)
-			}
-
-			response = append(
-				response,
+				battleServer,
 				storedAdv.GetRelayRegion(),
 				storedAdv.EncodePeers(),
-				0,
+				storedAdv.GetMetadata(),
+				storedAdv.UnsafeGetDescription(),
 			)
-
-			if gameTitle != common.GameAoE2 {
-				response = append(response, "0")
-			}
-			if gameTitle == common.GameAoE2 {
-				response = append(
-					response,
-					0,
-					nil,
-					nil,
-					"0",
-					storedAdv.UnsafeGetDescription(),
-				)
-			}
 		})
 		if ok {
 			i.JSON(&w, response)
 		} else {
-			returnError(gameTitle, &w)
+			returnError(battleServers, gameTitle, &w)
 		}
 	} else {
-		returnError(gameTitle, &w)
+		returnError(battleServers, gameTitle, &w)
 	}
 }

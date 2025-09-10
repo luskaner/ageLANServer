@@ -101,6 +101,10 @@ func (m *SafeMap[K, V]) Values() iter.Seq[V] {
 	}
 }
 
+func (m *SafeMap[K, V]) Len() int {
+	return len(m.ro.Load().(map[K]V))
+}
+
 type SafeSet[V comparable] struct {
 	safeMap *SafeMap[V, any]
 }
@@ -122,6 +126,13 @@ func (s *SafeSet[V]) Store(value V) bool {
 		return false
 	})
 	return !exists
+}
+
+func (s *SafeSet[V]) Len() int {
+	if s == nil {
+		return 0
+	}
+	return s.safeMap.Len()
 }
 
 type ReadOnlyOrderedMap[K comparable, V any] struct {

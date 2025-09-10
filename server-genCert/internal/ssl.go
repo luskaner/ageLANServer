@@ -6,11 +6,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/luskaner/ageLANServer/common"
 	"math/big"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func GenerateCertificatePair(folder string) bool {

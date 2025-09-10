@@ -3,6 +3,18 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"net"
+	"net/netip"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"runtime/debug"
+	"slices"
+	"strconv"
+	"strings"
+	"syscall"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
@@ -17,17 +29,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"net"
-	"net/netip"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"runtime"
-	"runtime/debug"
-	"slices"
-	"strconv"
-	"strings"
-	"syscall"
 )
 
 const autoValue = "auto"
@@ -46,7 +47,7 @@ var (
 	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE 1, AoE 2 and AoE 3 (all DE) to connect to the local LAN 'server'",
+		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, and AoM: RT to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}

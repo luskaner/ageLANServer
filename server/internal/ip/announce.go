@@ -5,12 +5,13 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/ipv4"
-	"net"
-	"time"
 )
 
 func Announce(listenIP net.IP, multicastIP net.IP, targetBroadcastPort int, broadcast bool, multicast bool) {
@@ -60,7 +61,7 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	var messageBuff bytes.Buffer
 	enc := gob.NewEncoder(&messageBuff)
 	err := enc.Encode(common.AnnounceMessageData001{
-		GameIds: viper.GetStringSlice("Games"),
+		GameIds: viper.GetStringSlice("Games.Enabled"),
 	})
 	if err != nil {
 		fmt.Println("Error encoding message data.")

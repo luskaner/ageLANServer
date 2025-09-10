@@ -1,12 +1,12 @@
 package advertisement
 
 import (
-	"github.com/luskaner/ageLANServer/common"
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"net/http"
 )
 
 type JoinRequest struct {
@@ -14,33 +14,36 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
-func joinReturnError(gameTitle string, w http.ResponseWriter) {
-	response := i.A{2,
-		"",
-		"",
-		0,
-		0,
-	}
-	if gameTitle != common.GameAoE1 {
-		response = append(response, 0)
-	}
-	response = append(response, i.A{0})
+func joinReturnError(battleServers *models.MainBattleServers, w http.ResponseWriter) {
+	battleServer := battleServers.NewBattleServer("")
+	response := encodeJoinResponse(2, "", battleServer, i.A{})
 	i.JSON(&w, response)
+}
+
+func encodeJoinResponse(errorCode int, ip string, battleServer *models.MainBattleServer, peerEncoded i.A) i.A {
+	response := i.A{
+		errorCode,
+		ip,
+		battleServer.IPv4,
+	}
+	response = append(response, battleServer.EncodePorts()...)
+	response = append(response, i.A{peerEncoded})
+	return response
 }
 
 func Join(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
-	gameTitle := game.Title()
+	battleServers := game.BattleServers()
 	var q JoinRequest
 	if err := i.Bind(r, &q); err != nil {
-		joinReturnError(gameTitle, w)
+		joinReturnError(battleServers, w)
 		return
 	}
 	sess := middleware.Session(r)
 
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
-		joinReturnError(gameTitle, w)
+		joinReturnError(battleServers, w)
 		return
 	}
 	advertisements := game.Advertisements()
@@ -51,27 +54,25 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
 		})
 	}
-
-	matchingAdv := advertisements.UnsafeFirstAdvertisement(func(adv *models.MainAdvertisement) bool {
-		var matches bool
-		advertisements.WithReadLock(adv.GetId(), func() {
-			matches = adv.GetId() == q.Id &&
-				adv.UnsafeGetJoinable() &&
-				adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
-				adv.UnsafeGetDataChecksum() == q.DataChecksum &&
-				adv.UnsafeGetModDllFile() == q.ModDllFile &&
-				adv.UnsafeGetModDllChecksum() == q.ModDllChecksum &&
-				adv.UnsafeGetModName() == q.ModName &&
-				adv.UnsafeGetModVersion() == q.ModVersion &&
-				adv.UnsafeGetVersionFlags() == q.VersionFlags &&
-				adv.UnsafeGetPasswordValue() == q.Password
-		})
-		return matches
-	})
-	if matchingAdv == nil {
-		joinReturnError(gameTitle, w)
+	matchingAdv, foundAdv := advertisements.GetAdvertisement(q.Id)
+	if !foundAdv {
+		joinReturnError(battleServers, w)
 		return
 	}
+	advertisements.WithReadLock(matchingAdv.GetId(), func() {
+		if !matchingAdv.UnsafeGetJoinable() &&
+			matchingAdv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum &&
+			matchingAdv.UnsafeGetDataChecksum() != q.DataChecksum &&
+			matchingAdv.UnsafeGetModDllFile() != q.ModDllFile &&
+			matchingAdv.UnsafeGetModDllChecksum() != q.ModDllChecksum &&
+			matchingAdv.UnsafeGetModName() != q.ModName &&
+			matchingAdv.UnsafeGetModVersion() != q.ModVersion &&
+			matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags &&
+			matchingAdv.UnsafeGetPasswordValue() != q.Password {
+			joinReturnError(battleServers, w)
+			return
+		}
+	})
 	var response i.A
 	advertisements.WithWriteLock(matchingAdv.GetId(), func() {
 		peer := advertisements.UnsafeNewPeer(
@@ -86,25 +87,20 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			ok = false
 			return
 		}
-		var relayRegion string
-		if gameTitle == common.GameAoE2 {
-			relayRegion = matchingAdv.GetRelayRegion()
+		battleServer, battleServerExists := battleServers.Get(matchingAdv.GetRelayRegion())
+		if !battleServerExists {
+			battleServer = battleServers.NewLANBattleServer("")
 		}
-		response = i.A{
+		response = encodeJoinResponse(
 			0,
 			matchingAdv.GetIp(),
-			relayRegion,
-			0,
-			0,
-		}
-		if gameTitle != common.GameAoE1 {
-			response = append(response, 0)
-		}
-		response = append(response, i.A{peer.Encode()})
+			battleServer,
+			peer.Encode(),
+		)
 	})
 	if ok {
 		i.JSON(&w, response)
 	} else {
-		joinReturnError(gameTitle, w)
+		joinReturnError(battleServers, w)
 	}
 }

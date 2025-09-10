@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"context"
+	"net/http"
+	"strings"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
 	"github.com/spf13/viper"
-	"net/http"
-	"strings"
 )
 
 var gamePathHandlers = map[string]map[string]map[string]http.HandlerFunc{
@@ -39,7 +40,7 @@ func GameMiddleware(next http.Handler) http.Handler {
 				session := Session(r)
 				gameId = session.GetGameId()
 			}
-			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
+			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games.Enabled")...)
 			if !gameSet.ContainsOne(gameId) {
 				http.Error(w, "Unavailable game type", http.StatusBadRequest)
 				return

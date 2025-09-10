@@ -1,9 +1,10 @@
 package achievement
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
-	"net/http"
 )
 
 func GetAchievements(w http.ResponseWriter, r *http.Request) {
