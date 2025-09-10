@@ -7,16 +7,15 @@ as long as the server is configured properly.
 
 ## Should I use `LAN` or `Online-like` Battle Server?
 
-| Feature               | LAN                                               | Online-like        |
-|-----------------------|---------------------------------------------------|--------------------|
-| Execution             | $\color{Green}{\textsf{Automatic for each game}}$ | Manual (host)      |
-| Discovery             | Automatic for each game                           | Manual (server)    |
-| Battle Server limit   | 1 for game                                        | None               |
-| Latency               | Very Low                                          | Low                |
-| Observing             | Player observing only                             | Full support       |
-| Internet              | Not required                                      | Not required       |
-| Configurable          | No                                                | Yes, like ports... |
-| Can only host in self | Yes                                               | No                 |
+| Feature               | LAN                                              | Online-like                                       |
+|-----------------------|--------------------------------------------------|---------------------------------------------------|
+| Execution             | $\color{Green}{\textsf{Automatic (game)}}$       | $\color{Yellow}{\textsf{Manual (Host)}}$          |
+| Discovery             | $\color{Green}{\textsf{Automatic (game)}}$       | $\color{Yellow}{\textsf{Manual (Server)}}$        |
+| Battle Server limit   | $\color{Yellow}{\textsf{1 per game}}$            | $\color{Green}{\textsf{None}}$                    |
+| Latency               | $\color{Green}{\textsf{1-10ms}}$                 | $\color{Yellow}{\textsf{10-20ms}}$                |
+| Observing             | $\color{Orange}{\textsf{Player observing only}}$ | $\color{Green}{\textsf{Full support}}$            | |
+| Configurable          | $\color{Red}{\textsf{No}}$                       | $\color{Green}{\textsf{Yes, like ports..., etc}}$ |
+| Can only host in self | $\color{Yellow}{\textsf{Yes}}$                   | $\color{Green}{\textsf{No}}$                      |
 
 The LAN Battle Server is the easiest to use, but it has limitations. The Online-like Battle Server is more complex to
 use, but it has more features and is more flexible.
