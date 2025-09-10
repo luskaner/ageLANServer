@@ -4,19 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/gorilla/handlers"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/pidLock"
-	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/ip"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
-	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
-	"github.com/luskaner/ageLANServer/server/internal/routes"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"io"
 	"log"
 	"net"
@@ -30,6 +17,20 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/gorilla/handlers"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/ip"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
+	"github.com/luskaner/ageLANServer/server/internal/routes"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var configPaths = []string{path.Join("resources", "config"), "."}
@@ -39,7 +40,7 @@ var (
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service for LAN features in AoE: DE, AoE 2:DE and AoE 3:DE.",
+		Short: "server is a service for LAN features in AoE: DE, AoE 2: DE and AoE 3: DE.",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
@@ -50,7 +51,7 @@ var (
 			if viper.GetBool("GeneratePlatformUserId") {
 				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
-			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games")...)
+			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games.Enabled")...)
 			if gameSet.IsEmpty() {
 				fmt.Println("No games specified")
 				_ = lock.Unlock()
@@ -208,7 +209,7 @@ func Execute() error {
 	if err := viper.BindPFlag("Hosts", rootCmd.PersistentFlags().Lookup("host")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Games", rootCmd.PersistentFlags().Lookup("games")); err != nil {
+	if err := viper.BindPFlag("Games.Enabled", rootCmd.PersistentFlags().Lookup("games")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("LogToConsole", rootCmd.PersistentFlags().Lookup("logToConsole")); err != nil {

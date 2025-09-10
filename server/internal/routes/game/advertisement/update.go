@@ -1,11 +1,12 @@
 package advertisement
 
 import (
+	"net/http"
+
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"net/http"
 )
 
 func updateReturnError(gameId string, w *http.ResponseWriter) {
@@ -25,8 +26,8 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		updateReturnError(gameTitle, &w)
 		return
 	}
-
-	advertisements := models.G(r).Advertisements()
+	advertisements := game.Advertisements()
+	battleServers := game.BattleServers()
 	var response i.A
 	var ok bool
 	advertisements.WithWriteLock(q.Id, func() {
@@ -37,13 +38,15 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if gameTitle != common.GameAoE2 {
-			q.PlatformSessionId = adv.UnsafeGetPlatformSessionId()
 			q.Joinable = true
 		}
 		advertisements.UpdateUnsafe(adv, &q)
+		if gameTitle != common.GameAoE2 {
+			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
+		}
 
 		if gameTitle == common.GameAoE2 {
-			response = adv.UnsafeEncode(gameTitle)
+			response = adv.UnsafeEncode(gameTitle, battleServers)
 		}
 		ok = true
 	})

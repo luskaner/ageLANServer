@@ -1,31 +1,40 @@
 package advertisement
 
 import (
+	"iter"
+	"net/http"
+	"strconv"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"iter"
-	"net/http"
 )
 
 type request struct {
-	PlatformSessionId uint64 `schema:"platformlobbyID"`
-	MatchID           int32  `schema:"matchID"`
+	MatchID int32 `schema:"matchID"`
 }
 
-func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
+func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 	var req request
 	if err := i.Bind(r, &req); err != nil {
-		i.JSON(&w, i.A{2})
+		i.JSON(w, i.A{2})
 		return
 	}
 
 	game := models.G(r)
 	advertisements := game.Advertisements()
+	//gameTitle := game.Title()
 	var currentUserId int32
 	var peersId iter.Seq[int32]
 	var ok bool
+	var metadata string
+	idValue, err := strconv.ParseInt(r.PostFormValue(idKey), 10, 64)
+	if err != nil {
+		i.JSON(w, i.A{2})
+		return
+	}
+	idValueUint := uint64(idValue)
 	advertisements.WithWriteLock(req.MatchID, func() {
 		var adv *models.MainAdvertisement
 		adv, ok = advertisements.GetAdvertisement(req.MatchID)
@@ -40,20 +49,20 @@ func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		adv.UnsafeUpdatePlatformSessionId(req.PlatformSessionId)
-
+		adv.UnsafeUpdatePlatformSessionId(idValueUint)
+		metadata = adv.GetMetadata()
 		_, peersId = peers.Keys()
 		ok = true
 	})
 	if !ok {
-		i.JSON(&w, i.A{2})
+		i.JSON(w, i.A{2})
 		return
 	}
-	message := i.A{req.MatchID, "0", req.PlatformSessionId}
+	message := i.A{req.MatchID, metadata, idValueUint}
 	for peerId := range peersId {
-		if currentUserId == peerId {
+		/*if gameTitle != common.GameAoE1 && currentUserId == peerId {
 			continue
-		}
+		}*/
 		if currentSess, ok := models.GetSessionByUserId(peerId); ok {
 			wss.SendOrStoreMessage(
 				currentSess,
@@ -63,7 +72,11 @@ func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	i.JSON(&w,
+	i.JSON(w,
 		i.A{0},
 	)
+}
+
+func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
+	updatePlatformID(&w, r, "platformlobbyID")
 }

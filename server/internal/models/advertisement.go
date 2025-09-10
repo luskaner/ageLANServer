@@ -2,11 +2,13 @@ package models
 
 import (
 	"fmt"
+	"math/rand/v2"
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"math/rand/v2"
-	"time"
 )
 
 type ModDll struct {
@@ -18,6 +20,7 @@ type Observers struct {
 	enabled  bool
 	delay    uint32
 	password string
+	userIds  *i.SafeSet[int32]
 }
 
 type Password struct {
@@ -55,18 +58,25 @@ type MainAdvertisement struct {
 	state             int8
 	startTime         int64
 	peers             *i.SafeOrderedMap[int32, *MainPeer]
+	metadata          string
 }
 
 type MainAdvertisements struct {
-	store *i.SafeMap[int32, *MainAdvertisement]
-	locks *i.KeyRWMutex[int32]
-	users *MainUsers
+	store         *i.SafeOrderedMap[int32, *MainAdvertisement]
+	locks         *i.KeyRWMutex[int32]
+	users         *MainUsers
+	battleServers *MainBattleServers
 }
 
-func (advs *MainAdvertisements) Initialize(users *MainUsers) {
-	advs.store = i.NewSafeMap[int32, *MainAdvertisement]()
+func (advs *MainAdvertisements) Initialize(users *MainUsers, battleServers *MainBattleServers) {
+	advs.store = i.NewSafeOrderedMap[int32, *MainAdvertisement]()
 	advs.locks = i.NewKeyRWMutex[int32]()
 	advs.users = users
+	advs.battleServers = battleServers
+}
+
+func (adv *MainAdvertisement) GetMetadata() string {
+	return adv.metadata
 }
 
 // UnsafeGetModDllChecksum requires advertisement read lock
@@ -165,16 +175,29 @@ func (adv *MainAdvertisement) UnsafeGetObserversDelay() uint32 {
 	return adv.observers.delay
 }
 
+// UnsafeGetObserversEnabled requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetObserversEnabled() bool {
+	return adv.observers.enabled
+}
+
 func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, *MainPeer] {
 	return adv.peers
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) *MainAdvertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool) *MainAdvertisement {
 	adv := &MainAdvertisement{}
 	i.WithRng(func(rand *rand.Rand) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
 	})
 	adv.relayRegion = advFrom.RelayRegion
+	if generateMetadata {
+		adv.metadata = fmt.Sprintf(
+			`{"templateName":"GameSession","name":"%s","scid":"00000000-0000-0000-0000-000068a451d4"}`,
+			uuid.New().String(),
+		)
+	} else {
+		adv.metadata = "0"
+	}
 	adv.hostId = advFrom.HostId
 	adv.party = advFrom.Party
 	adv.race = advFrom.Race
@@ -203,7 +226,6 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 		MaxPlayers:        advFrom.MaxPlayers,
 		Options:           advFrom.Options,
 		SlotInfo:          advFrom.SlotInfo,
-		PlatformSessionId: advFrom.PlatformSessionId,
 		State:             advFrom.State,
 	})
 	exists := true
@@ -212,7 +234,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest) 
 		i.WithRng(func(rand *rand.Rand) {
 			adv.id = rand.Int32()
 		})
-		storedAdv, exists = advs.store.Store(adv.id, adv, func(_ *MainAdvertisement) bool {
+		exists, storedAdv = advs.store.Store(adv.id, adv, func(_ *MainAdvertisement) bool {
 			return false
 		})
 	}
@@ -267,7 +289,6 @@ func (advs *MainAdvertisements) UpdateUnsafe(adv *MainAdvertisement, advFrom *sh
 	adv.maxPlayers = advFrom.MaxPlayers
 	adv.options = advFrom.Options
 	adv.slotInfo = advFrom.SlotInfo
-	adv.platformSessionId = advFrom.PlatformSessionId
 	adv.UnsafeUpdateState(advFrom.State)
 }
 
@@ -316,12 +337,21 @@ func (adv *MainAdvertisement) UnsafeUpdateState(state int8) {
 		adv.startTime = time.Now().UTC().Unix()
 		adv.visible = false
 		adv.joinable = false
+		adv.observers.userIds = i.NewSafeSet[int32]()
 	}
 }
 
 // UnsafeUpdatePlatformSessionId requires advertisement write lock
 func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(sessionId uint64) {
 	adv.platformSessionId = sessionId
+}
+
+func (adv *MainAdvertisement) StartObserving(userId int32) {
+	adv.observers.userIds.Store(userId)
+}
+
+func (adv *MainAdvertisement) StopObserving(userId int32) {
+	adv.observers.userIds.Delete(userId)
 }
 
 func (adv *MainAdvertisement) EncodePeers() []i.A {
@@ -336,7 +366,7 @@ func (adv *MainAdvertisement) EncodePeers() []i.A {
 }
 
 // UnsafeEncode requires advertisement read lock
-func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
+func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBattleServers) i.A {
 	var visible uint8
 	if adv.visible {
 		visible = 1
@@ -364,24 +394,30 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 	response := i.A{
 		adv.id,
 		adv.platformSessionId,
-		"0",
 	}
 	if gameId == common.GameAoE2 {
 		response = append(
 			response,
-			"",
-			"",
 			"0",
+			"",
+			"",
 		)
 	}
 	response = append(
 		response,
+		adv.GetMetadata(),
 		adv.hostId,
 		started,
 		adv.description,
 	)
 	if gameId == common.GameAoE2 {
 		response = append(response, adv.description)
+	}
+	lan := 1
+	var battleServer *MainBattleServer
+	var battleServerExists bool
+	if battleServer, battleServerExists = battleServers.Get(adv.relayRegion); battleServerExists {
+		lan = 0
 	}
 	response = append(
 		response,
@@ -393,16 +429,18 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 		adv.slotInfo,
 		adv.matchType,
 		adv.EncodePeers(),
+		adv.observers.userIds.Len(),
 		0,
 		0,
-		0,
-		adv.UnsafeGetObserversDelay(),
+		adv.observers.delay,
 		1,
-		1,
+		lan,
 		startTime,
 		adv.relayRegion,
 	)
-	if gameId != common.GameAoE1 {
+	if battleServerExists {
+		battleServer.AppendName(&response)
+	} else {
 		response = append(response, nil)
 	}
 	return response
@@ -410,7 +448,8 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string) i.A {
 
 // UnsafeFirstAdvertisement requires advertisement read lock unless only safe advertisement properties are checked
 func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainAdvertisement) bool) *MainAdvertisement {
-	for adv := range advs.store.Values() {
+	_, iter := advs.store.Values()
+	for adv := range iter {
 		if matches(adv) {
 			return adv
 		}
@@ -418,25 +457,36 @@ func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainA
 	return nil
 }
 
-func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
+func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
 	var res []i.A
-	for adv := range advs.store.Values() {
+	_, iter := advs.store.Values()
+	for adv := range iter {
 		advId := adv.GetId()
 		if preMatchesLocking {
 			func() {
 				advs.locks.RLock(advId)
 				defer advs.locks.RUnlock(advId)
 				if matches(adv) {
-					res = append(res, adv.UnsafeEncode(gameId))
+					res = append(res, adv.UnsafeEncode(gameId, advs.battleServers))
 				}
 			}()
 		} else {
 			advs.WithReadLock(adv.GetId(), func() {
-				res = append(res, adv.UnsafeEncode(gameId))
+				res = append(res, adv.UnsafeEncode(gameId, advs.battleServers))
 			})
 		}
 	}
-	return res
+	if offset >= len(res) {
+		return []i.A{}
+	}
+	if length == 0 {
+		length = len(res)
+	}
+	end := length + offset
+	if end > len(res) {
+		end = len(res)
+	}
+	return res[offset:end]
 }
 
 func (advs *MainAdvertisements) GetUserAdvertisement(userId int32) *MainAdvertisement {

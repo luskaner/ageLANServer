@@ -38,31 +38,31 @@ type AdvertisementUpdateRequest struct {
 	MaxPlayers        uint8  `schema:"maxplayers"`
 	Options           string `schema:"options"`
 	SlotInfo          string `schema:"slotinfo"`
-	PlatformSessionId uint64 `schema:"psnSessionID"`
+	PsnSessionId      uint64 `schema:"psnSessionID"`
 	State             int8   `schema:"state"`
 }
 
 type AdvertisementHostRequest struct {
 	AdvertisementBaseRequest
-	Description       string `schema:"description"`
-	AutomatchPollId   int32  `schema:"automatchPoll_id"`
-	RelayRegion       string `schema:"relayRegion"`
-	MapName           string `schema:"mapname"`
-	HostId            int32  `schema:"hostid"`
-	Observable        bool   `schema:"isObservable"`
-	ObserverDelay     uint32 `schema:"observerDelay"`
-	ObserverPassword  string `schema:"observerPassword"`
-	Password          string `schema:"password"`
-	Passworded        bool   `schema:"passworded"`
-	ModDllFile        string `schema:"moddllfile"`
-	ModDllChecksum    int32  `schema:"moddllchecksum"`
-	Visible           bool   `schema:"visible"`
-	StatGroup         int32  `schema:"statgroup"`
-	Joinable          bool   `schema:"joinable"`
-	MatchType         uint8  `schema:"matchtype"`
-	MaxPlayers        uint8  `schema:"maxplayers"`
-	Options           string `schema:"options"`
-	SlotInfo          string `schema:"slotinfo"`
-	PlatformSessionId uint64 `schema:"psnSessionID"`
-	State             int8   `schema:"state"`
+	Description      string `schema:"description"`
+	AutomatchPollId  int32  `schema:"automatchPoll_id"`
+	RelayRegion      string `schema:"relayRegion"`
+	MapName          string `schema:"mapname"`
+	HostId           int32  `schema:"hostid"`
+	Observable       bool   `schema:"isObservable"`
+	ObserverDelay    uint32 `schema:"observerDelay"`
+	ObserverPassword string `schema:"observerPassword"`
+	Password         string `schema:"password"`
+	Passworded       bool   `schema:"passworded"`
+	ModDllFile       string `schema:"moddllfile"`
+	ModDllChecksum   int32  `schema:"moddllchecksum"`
+	Visible          bool   `schema:"visible"`
+	StatGroup        int32  `schema:"statgroup"`
+	Joinable         bool   `schema:"joinable"`
+	MatchType        uint8  `schema:"matchtype"`
+	MaxPlayers       uint8  `schema:"maxplayers"`
+	Options          string `schema:"options"`
+	SlotInfo         string `schema:"slotinfo"`
+	PsnSessionId     uint64 `schema:"psnSessionID"`
+	State            int8   `schema:"state"`
 }

@@ -2,12 +2,13 @@ package cloudfiles
 
 import (
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func Cloudfiles(w http.ResponseWriter, r *http.Request) {

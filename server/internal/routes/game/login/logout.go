@@ -1,6 +1,9 @@
 package login
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
@@ -8,8 +11,6 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/chat"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
-	"time"
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {

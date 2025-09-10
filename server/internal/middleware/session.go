@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"context"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strings"
+
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 var anonymousPaths = map[string]bool{

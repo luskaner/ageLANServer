@@ -3,15 +3,16 @@ package models
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/spf13/viper"
 	"hash/fnv"
 	"math/rand/v2"
 	"net"
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/spf13/viper"
 )
 
 type MainUser struct {

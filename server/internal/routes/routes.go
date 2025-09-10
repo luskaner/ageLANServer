@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/server/internal/routes/cloudfiles"
@@ -23,7 +25,6 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/msstore"
 	"github.com/luskaner/ageLANServer/server/internal/routes/test"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
 )
 
 type Group struct {
@@ -167,6 +168,10 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	}
 
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)
+	if gameSet.ContainsAny(common.GameAoE2, common.GameAoE3) {
+		advertisementGroup.HandleFunc("POST", "/startObserving", advertisement.StartObserving)
+		advertisementGroup.HandleFunc("POST", "/stopObserving", advertisement.StopObserving)
+	}
 
 	chatGroup := gameGroup.Subgroup("/chat")
 	if gameSet.ContainsAny(common.GameAoE1, common.GameAoE3) {
