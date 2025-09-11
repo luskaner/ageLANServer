@@ -1,7 +1,5 @@
 # Launcher Config
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher-config)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher-config)
-
 This executable makes and revert configuration changes and is executed by `launcher` or manually:
 
 - Isolated metadata directory (except AoE I).

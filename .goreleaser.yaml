@@ -471,8 +471,6 @@ archives:
         dst: docs/LICENSE.txt
       - src: README.md
         dst: docs/README.txt
-      - src: BattleServers.md
-        dst: docs/BattleServers.txt
     formats: zip
   - id: server_linux_tar_xz
     ids: [ server_64_arm_linux, server-genCert_64_arm_linux ]
@@ -502,8 +500,6 @@ archives:
         dst: docs/LICENSE
       - src: README.md
         dst: docs/README
-      - src: BattleServers.md
-        dst: BattleServers
     formats: tar.xz
   - id: server_linux_tar_gz
     ids: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
@@ -540,8 +536,6 @@ archives:
         dst: docs/LICENSE
       - src: README.md
         dst: docs/README
-      - src: BattleServers.md
-        dst: docs/BattleServers
   - id: server_macos
     ids: [ server_64_macos, server-genCert_64_macos ]
     name_template: >-
@@ -572,8 +566,6 @@ archives:
         dst: docs/LICENSE
       - src: README.md
         dst: docs/README
-      - src: BattleServers.md
-        dst: BattleServers
   - id: launcher_windows_amd64
     ids:
       - launcher_windows_amd64

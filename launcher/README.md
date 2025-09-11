@@ -1,7 +1,5 @@
 # Launcher
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/luskaner/ageLANServer/launcher)](https://goreportcard.com/report/github.com/luskaner/ageLANServer/launcher)
-
 The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
 system and reverting that configuration upon exit.
 
