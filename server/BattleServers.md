@@ -70,15 +70,15 @@ generated and that you are located in the battle server directory using the `Pow
 
 #### AoE: DE
 
-`& ".\BattleServer.exe" -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 25 -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
 #### AoE II: DE
 
-`& ".\BattleServer.exe" -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 125 -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
 #### AoE III: DE
 
-`& ".\BattleServer.exe" -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
 ## Configuring the Server
 
@@ -153,15 +153,15 @@ Replace the placeholders with the actual paths.
 5. Time to run the `BattleServer.exe`, run one or more of the following commands depending on the game you want to;
     * AoE: DE:
    ```
-   & ".\BattleServer.exe" -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem" 
+   & ".\BattleServer.exe" -simulationPeriod 25 -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem" 
    ```
     * AoE II: DE:
     ```
-    & ".\BattleServer.exe" -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
+    & ".\BattleServer.exe" -simulationPeriod 125 -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
     * AoE III: DE
     ```
-    & ".\BattleServer.exe" -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
+    & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
 6. Open `<server>/resources/config.toml` and add the corresponding configuration inside `[Games]` for the game you are
    running the
