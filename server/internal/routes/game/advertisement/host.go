@@ -40,7 +40,7 @@ func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServ
 	switch gameTitle {
 	case common.GameAoE1:
 		response = append(response, metadata)
-	case common.GameAoE2:
+	case common.GameAoE2, common.GameAoM:
 		response = append(
 			response,
 			0,
