@@ -12,5 +12,5 @@ const (
 	GameAoM = "athens"
 )
 
-var SupportedGames = mapset.NewThreadUnsafeSet[string](GameAoE1, GameAoE2, GameAoE3)
-var AllGames = SupportedGames.Union(mapset.NewThreadUnsafeSet[string](GameAoE4, GameAoM))
+var SupportedGames = mapset.NewThreadUnsafeSet[string](GameAoE1, GameAoE2, GameAoE3, GameAoM)
+var AllGames = SupportedGames.Union(mapset.NewThreadUnsafeSet[string](GameAoE4))
