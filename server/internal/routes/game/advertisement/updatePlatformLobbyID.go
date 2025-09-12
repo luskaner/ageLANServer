@@ -24,7 +24,6 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 
 	game := models.G(r)
 	advertisements := game.Advertisements()
-	//gameTitle := game.Title()
 	var currentUserId int32
 	var peersId iter.Seq[int32]
 	var ok bool
