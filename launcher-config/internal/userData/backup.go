@@ -2,11 +2,12 @@ package userData
 
 import (
 	"errors"
-	"github.com/luskaner/ageLANServer/common"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 type Data struct {
@@ -24,6 +25,8 @@ func finalPath(gameId string) string {
 		suffix = `Age of Empires 2 DE`
 	case common.GameAoE3:
 		suffix = `Age of Empires 3 DE`
+	case common.GameAoM:
+		suffix = `Age of Mythology Retold`
 	}
 	return filepath.Join(finalPathPrefix, suffix)
 }

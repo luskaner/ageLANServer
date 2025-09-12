@@ -1,8 +1,9 @@
 package userData
 
 import (
-	"github.com/luskaner/ageLANServer/common"
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func Metadata(gameId string) Data {
@@ -12,6 +13,8 @@ func Metadata(gameId string) Data {
 		path = "metadata"
 	case common.GameAoE3:
 		path = filepath.Join("Common", "RLink")
+	case common.GameAoM:
+		path = filepath.Join("temp", "RLink")
 	}
 	return Data{Path: path}
 }

@@ -2,10 +2,11 @@ package steam
 
 import (
 	"fmt"
-	"github.com/andygrunwald/vdf"
-	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path"
+
+	"github.com/andygrunwald/vdf"
+	"github.com/luskaner/ageLANServer/common"
 )
 
 type Game struct {
@@ -24,6 +25,8 @@ func AppId(id string) string {
 		return "813780"
 	case common.GameAoE3:
 		return "933110"
+	case common.GameAoM:
+		return "1934680"
 	default:
 		return ""
 	}
