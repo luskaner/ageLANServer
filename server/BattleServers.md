@@ -184,7 +184,6 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30004
     OutOfBandPort = 30005
     ```
-    * AoE III: DE:
     ```toml
     [[Games.age3.BattleServers]]
     Region = 'local'
@@ -204,4 +203,6 @@ Replace the placeholders with the actual paths.
     * AoE III: DE: Click on "Multiplayer" (make sure the that "Online" is selected at top right) and then on "Host a
       Casual Game", you may select the "Region", "local", or leave as default. Players can join games by going to "
       Multiplayer" then "Browse Games" and, observe games by enabling here "Spectator Mode".
+
+
 

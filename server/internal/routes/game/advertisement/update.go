@@ -37,15 +37,15 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if gameTitle != common.GameAoE2 {
+		if gameTitle != common.GameAoE2 && gameTitle != common.GameAoM {
 			q.Joinable = true
 		}
 		advertisements.UpdateUnsafe(adv, &q)
-		if gameTitle != common.GameAoE2 {
+		if gameTitle != common.GameAoE2 && gameTitle != common.GameAoM {
 			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
 		}
 
-		if gameTitle == common.GameAoE2 {
+		if gameTitle == common.GameAoE2 || gameTitle == common.GameAoM {
 			response = adv.UnsafeEncode(gameTitle, battleServers)
 		}
 		ok = true

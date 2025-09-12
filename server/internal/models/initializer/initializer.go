@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models/age1"
 	"github.com/luskaner/ageLANServer/server/internal/models/age2"
 	"github.com/luskaner/ageLANServer/server/internal/models/age3"
+	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 )
 
 var Games = map[string]models.Game{}
@@ -21,6 +22,8 @@ func InitializeGames(gameIds mapset.Set[string]) {
 			game = age2.CreateGame()
 		case common.GameAoE3:
 			game = age3.CreateGame()
+		case common.GameAoM:
+			game = athens.CreateGame()
 		}
 		Games[gameId] = game
 	}
