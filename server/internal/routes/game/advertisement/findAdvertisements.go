@@ -59,7 +59,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 		}
 		return !isPeer &&
 			(tagsCheck == nil || tagsCheck(adv)) &&
-			adv.UnsafeGetJoinable() != ongoing || adv.UnsafeGetVisible() != ongoing &&
+			(adv.UnsafeGetJoinable() != ongoing || adv.UnsafeGetVisible() != ongoing) &&
 			adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
 			adv.UnsafeGetDataChecksum() == q.DataChecksum &&
 			adv.UnsafeGetMatchType() == q.MatchType &&
