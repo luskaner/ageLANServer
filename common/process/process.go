@@ -2,13 +2,14 @@ package process
 
 import (
 	"errors"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func steamProcess(gameId string) string {
@@ -77,7 +78,15 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	return
 }
 
-func KillProc(pidPath string, proc *os.Process) (err error) {
+func KillPidProc(pidPath string, proc *os.Process) (err error) {
+	err = KillProc(proc)
+	if err != nil {
+		return
+	}
+	return os.Remove(pidPath)
+}
+
+func KillProc(proc *os.Process) (err error) {
 	err = proc.Kill()
 	if err != nil {
 		return
@@ -100,7 +109,6 @@ func KillProc(pidPath string, proc *os.Process) (err error) {
 				return
 			}
 		}
-		err = os.Remove(pidPath)
 		return
 	}
 }
@@ -111,7 +119,7 @@ func Kill(exe string) (proc *os.Process, err error) {
 	if err != nil {
 		return
 	}
-	err = KillProc(pidPath, proc)
+	err = KillPidProc(pidPath, proc)
 	return
 }
 

@@ -2,26 +2,15 @@ package hosts
 
 import (
 	"bufio"
-	mapset "github.com/deckarep/golang-set/v2"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"io"
 	"os"
-	"regexp"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
 )
 
-var hostRegExp = regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s+(?P<host>\S+)`)
-
-func host(line string) string {
-	uncommentedLine := launcherCommonHosts.LineWithoutComment(line)
-	matches := hostRegExp.FindStringSubmatch(uncommentedLine)
-	if matches == nil {
-		return ""
-	}
-	return matches[1]
-}
-
-func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset.Set[string], f *os.File) {
+func getExistingHosts() (err error, existingHosts mapset.Set[string], f *os.File) {
 	err, f = launcherCommonHosts.OpenHostsFile(Path())
 	if err != nil {
 		return
@@ -31,8 +20,11 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line = scanner.Text()
-		lineHost := host(line)
-		if hosts.ContainsOne(lineHost) {
+		ok, parsedLine := launcherCommonHosts.Parse(line)
+		if !ok || !parsedLine.Own() {
+			continue
+		}
+		for _, lineHost := range parsedLine.Hosts() {
 			existingHosts.Add(lineHost)
 		}
 	}
@@ -43,8 +35,8 @@ func getExistingHosts(hosts mapset.Set[string]) (err error, existingHosts mapset
 	return
 }
 
-func RemoveHosts(hosts mapset.Set[string]) error {
-	err, existingHosts, hostsFile := getExistingHosts(hosts)
+func RemoveHosts() error {
+	err, existingHosts, hostsFile := getExistingHosts()
 	if err != nil {
 		return err
 	}
@@ -75,17 +67,13 @@ func RemoveHosts(hosts mapset.Set[string]) error {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line = scanner.Text()
-			addLine := false
-			if !strings.HasSuffix(line, launcherCommonHosts.HostEndMarking) {
-				addLine = true
-			} else {
-				lineHost := host(line)
-				if !existingHosts.ContainsOne(lineHost) {
-					addLine = true
-				}
+			ok, parsedLine := launcherCommonHosts.Parse(line)
+			lineToAdd := line
+			if ok && parsedLine.Own() {
+				lineToAdd = ""
 			}
-			if addLine {
-				lines = append(lines, line)
+			if lineToAdd != "" {
+				lines = append(lines, lineToAdd)
 			}
 		}
 

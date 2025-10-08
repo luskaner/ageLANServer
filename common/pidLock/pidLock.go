@@ -1,9 +1,10 @@
 package pidLock
 
 import (
-	"github.com/luskaner/ageLANServer/common/process"
 	"os"
 	"strconv"
+
+	"github.com/luskaner/ageLANServer/common/process"
 )
 
 type lock interface {

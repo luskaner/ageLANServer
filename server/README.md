@@ -94,9 +94,24 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 
+#### Age of Mythology: Retold
+
+- [`Achievements`](resources/responses/athens/achievements.json): List of achievements.
+- [`Leaderboards`](resources/responses/athens/leaderboards.json): List of leaderboards.
+- [`Challenges`](resources/responses/athens/challenges.json): List of challenges.
+- [`Presence Data`](resources/responses/athens/presenceData.json): Presence data. Basically if a player is online,
+  offline
+  or
+  away. Also includes the screen the player is in
+- [`Item Definitions`](resources/responses/athens/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
+  other items.
+- [`Item Bundle Items`](resources/responses/athens/itemBundleItems.json): Grouping of items into bundles.
+
 ## Starting and configuring Online-like Battle Servers
 
-See [Battle Servers](./BattleServers.md) for information.
+See [Battle Servers](./BattleServers.md) for how to set up and start manually-configured Online-like Battle-servers.
+See [Battle Server Manager](../battle-server-manager) for how to do so automatically.
 
 ## Command Line
 
@@ -116,4 +131,4 @@ See [Docker](../server-docker) for information.
 ## Exit Codes
 
 * [Base codes](../common/errors.go).
-* [Server codes](internal/errors.go).
+* [Own codes](internal/errors.go).

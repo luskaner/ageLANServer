@@ -1,5 +1,9 @@
 package shared
 
+type AdvertisementId struct {
+	AdvertisementId int32 `schema:"advertisementid"`
+}
+
 type AdvertisementBaseRequest struct {
 	Id                int32  `schema:"advertisementid"`
 	AppBinaryChecksum int32  `schema:"appbinarychecksum"`

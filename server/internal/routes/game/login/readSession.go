@@ -3,10 +3,11 @@ package login
 import (
 	"encoding/json"
 	"fmt"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"net/http"
 	"strconv"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/middleware"
 )
 
 func returnData(w http.ResponseWriter, messageId uint, messages []i.A) {
@@ -29,7 +30,7 @@ func ReadSession(w http.ResponseWriter, r *http.Request) {
 		returnError(w)
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	messageId, messages := sess.WaitForMessages(uint(ackIdUint))
 	returnData(w, messageId, messages)
 }

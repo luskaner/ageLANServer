@@ -10,10 +10,10 @@ tasks:
       - powershell Copy-Item -Path "server/resources/*" -Destination "build/server/resources" -Recurse -ErrorAction Ignore -Force
       - go build -o build/server/bin/genCert.exe ./server-genCert
   prepare-launcher:
-    platforms: [ windows ]
     deps:
       - prepare-server-base
       - :build-config-all
+      - prepare-battle-server-manager-base
     cmds:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
@@ -23,3 +23,9 @@ tasks:
   prepare-server-genCert:
     cmds:
       - powershell New-Item -ItemType Directory -ErrorAction Ignore -Force -Path build/server/resources
+  prepare-battle-server-manager-base:
+    deps:
+      - :build-battle-server-manager
+    cmds:
+      - powershell New-Item -ItemType Directory -Force -Path build/battle-server-manager/resources -ErrorAction Ignore
+      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.game.toml -ErrorAction Ignore -Force

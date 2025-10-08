@@ -1,11 +1,12 @@
 package watch
 
 import (
+	"time"
+
 	"github.com/luskaner/ageLANServer/common"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
-	"time"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 )
 
 var processWaitInterval = 1 * time.Second
@@ -21,20 +22,35 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool, exitCode *int) {
+func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
+	battleServerExe string, battleServerRegion string, exitCode *int) {
 	*exitCode = common.ErrSuccess
+	if serverExe != "-" {
+		defer func() {
+			if _, err := commonProcess.Kill(serverExe); err != nil {
+				if *exitCode == common.ErrSuccess {
+					*exitCode = internal.ErrFailedStopServer
+				}
+			}
+			if battleServerExe != "-" && battleServerRegion != "-" {
+				newExitCode := launcherCommon.RemoveBattleServerRegion(
+					battleServerExe, gameId, battleServerRegion,
+				).ExitCode
+				if *exitCode == common.ErrSuccess {
+					*exitCode = newExitCode
+				}
+			}
+		}()
+	}
 	defer func() {
-		_ = launcher_common.RunRevertCommand()
+		_ = launcherCommon.RunRevertCommand()
 	}()
 	defer func() {
-		launcher_common.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameId, true, nil)
 	}()
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {
 		*exitCode = internal.ErrGameTimeoutStart
-		if serverExe != "-" {
-			_, _ = commonProcess.Kill(serverExe)
-		}
 		return
 	}
 	if broadcastBattleServer {
@@ -51,13 +67,7 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		PID = p
 		break
 	}
-	if waitForProcess(PID) {
-		if serverExe != "-" {
-			if _, err := commonProcess.Kill(serverExe); err != nil {
-				*exitCode = internal.ErrFailedStopServer
-			}
-		}
-	} else {
+	if !waitForProcess(PID) {
 		*exitCode = internal.ErrFailedWaitForProcess
 	}
 }

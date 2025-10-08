@@ -2,10 +2,11 @@ package age3
 
 import (
 	"encoding/json"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"time"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {

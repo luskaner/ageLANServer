@@ -7,18 +7,19 @@ import (
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
 
-func joinReturnStartObservingError(battleServers *models.MainBattleServers, w http.ResponseWriter) {
+func joinReturnStartObservingError(battleServers *models.MainBattleServers, r *http.Request, w http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
-	response := encodeStartObservingResponse(2, battleServer, i.A{}, i.A{}, 0)
+	response := encodeStartObservingResponse(2, battleServer, r, i.A{}, i.A{}, 0)
 	i.JSON(&w, response)
 }
 
-func encodeStartObservingResponse(errorCode int, battleServer *models.MainBattleServer, userIdsInt i.A, userIdsStr i.A, startTime int64) i.A {
+func encodeStartObservingResponse(errorCode int, battleServer *models.MainBattleServer, r *http.Request, userIdsInt i.A, userIdsStr i.A, startTime int64) i.A {
 	response := i.A{
 		errorCode,
-		battleServer.IPv4,
+		battleServer.ResolveIPv4(r),
 	}
 	response = append(response, battleServer.EncodePorts()...)
 	response = append(response, userIdsInt, startTime, userIdsStr)
@@ -30,23 +31,21 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 	battleServers := game.BattleServers()
 	var q searchQuery
 	if err := i.Bind(r, &q); err != nil {
-		joinReturnStartObservingError(battleServers, w)
+		joinReturnStartObservingError(battleServers, r, w)
 		return
 	}
-	advId := r.PostFormValue("advertisementid")
-	advIdInt64, err := strconv.ParseInt(advId, 10, 32)
-	if err != nil {
-		joinReturnStartObservingError(battleServers, w)
+	var a shared.AdvertisementId
+	if err := i.Bind(r, &a); err != nil {
+		joinReturnStartObservingError(battleServers, r, w)
 		return
 	}
-	advIdInt := int32(advIdInt64)
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	advertisements := game.Advertisements()
 
-	adv, foundAdv := advertisements.GetAdvertisement(advIdInt)
+	adv, foundAdv := advertisements.GetAdvertisement(a.AdvertisementId)
 	if !foundAdv {
-		joinReturnStartObservingError(battleServers, w)
+		joinReturnStartObservingError(battleServers, r, w)
 		return
 	}
 	advertisements.WithReadLock(adv.GetId(), func() {
@@ -66,7 +65,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 			adv.UnsafeGetVersionFlags() != q.VersionFlags &&
 			!adv.UnsafeGetObserversEnabled() &&
 			!matchesBattleServer {
-			joinReturnStartObservingError(battleServers, w)
+			joinReturnStartObservingError(battleServers, r, w)
 			return
 		}
 	})
@@ -74,7 +73,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 	advertisements.WithReadLock(adv.GetId(), func() {
 		battleServer, battleServerExists := game.BattleServers().Get(adv.GetRelayRegion())
 		if !battleServerExists {
-			joinReturnStartObservingError(battleServers, w)
+			joinReturnStartObservingError(battleServers, r, w)
 			return
 		}
 		peers := adv.GetPeers()
@@ -90,6 +89,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 		response = encodeStartObservingResponse(
 			0,
 			battleServer,
+			r,
 			userIdsInt,
 			userIdsStr,
 			adv.UnsafeGetStartTime(),

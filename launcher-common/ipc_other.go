@@ -4,9 +4,9 @@ package launcher_common
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 )
 
 func ConfigAdminIpcPath() string {
-	return path.Join(os.TempDir(), configAdminIpcName)
+	return filepath.Join(os.TempDir(), configAdminIpcName)
 }

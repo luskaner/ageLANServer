@@ -1,8 +1,9 @@
 package challenge
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 func UpdateProgress(w http.ResponseWriter, _ *http.Request) {

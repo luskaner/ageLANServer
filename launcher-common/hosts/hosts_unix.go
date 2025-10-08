@@ -3,11 +3,15 @@
 package hosts
 
 import (
-	"golang.org/x/sys/unix"
+	"math"
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 var Lock *unix.Flock_t
+
+const maxHostsPerLine = math.MaxInt32 - 1
 
 func LockFile(file *os.File) (err error) {
 	Lock = &unix.Flock_t{

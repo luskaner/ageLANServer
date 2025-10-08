@@ -1,10 +1,11 @@
 package userData
 
 import (
-	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 var profiles []Data

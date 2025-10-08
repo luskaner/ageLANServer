@@ -2,10 +2,11 @@ package account
 
 import (
 	"encoding/json"
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
 )
 
 func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,7 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	gameTitle := game.Title()
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	profileInfo := game.Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		_, ok := platformIdsMap[currentUser.GetPlatformUserID()]
 		return ok

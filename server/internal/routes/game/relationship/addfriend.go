@@ -1,11 +1,12 @@
 package relationship
 
 import (
+	"net/http"
+	"strconv"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
-	"strconv"
 )
 
 func Addfriend(w http.ResponseWriter, r *http.Request) {
@@ -22,5 +23,5 @@ func Addfriend(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	i.JSON(&w, i.A{2, u.GetProfileInfo(false, game.Title(), middleware.Session(r).GetClientLibVersion())})
+	i.JSON(&w, i.A{2, u.GetProfileInfo(false, game.Title(), middleware.SessionOrPanic(r).GetClientLibVersion())})
 }

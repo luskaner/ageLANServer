@@ -7,20 +7,18 @@ import (
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
+	challengeShared "github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
+type updateStateRequest struct {
+	AdvertisementId int32 `schema:"advertisementid"`
+	State           int8  `schema:"state"`
+}
+
 func UpdateState(w http.ResponseWriter, r *http.Request) {
-	stateStr := r.PostFormValue("state")
-	state, err := strconv.ParseInt(stateStr, 10, 8)
-	if err != nil {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	advStr := r.PostFormValue("advertisementid")
-	advId64, err := strconv.ParseInt(advStr, 10, 32)
-	if err != nil {
+	var q updateStateRequest
+	if err := i.Bind(r, &q); err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
@@ -28,20 +26,19 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 	gameTitle := game.Title()
 	advertisements := game.Advertisements()
 	battleServers := game.BattleServers()
-	advId := int32(advId64)
 	var ok bool
 	var peersLen int
 	var peers iter.Seq2[int32, *models.MainPeer]
 	var advStartTime int64
 	var advEncoded i.A
-	advertisements.WithWriteLock(advId, func() {
+	advertisements.WithWriteLock(q.AdvertisementId, func() {
 		var adv *models.MainAdvertisement
-		adv, ok = game.Advertisements().GetAdvertisement(advId)
+		adv, ok = game.Advertisements().GetAdvertisement(q.AdvertisementId)
 		if !ok {
 			i.JSON(&w, i.A{2})
 			return
 		}
-		adv.UnsafeUpdateState(int8(state))
+		adv.UnsafeUpdateState(q.State)
 		if adv.UnsafeGetState() == 1 {
 			peersLen, peers = adv.GetPeers().Iter()
 			advEncoded = adv.UnsafeEncode(gameTitle, battleServers)
@@ -67,7 +64,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 			userIdStr[j] = i.A{userIdSingleStr, i.A{}}
 			peerMutable := peer.GetMutable()
 			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peerMutable.Race))}
-			challengeProgress[j] = i.A{userIdSingleStr, shared.GetChallengeProgressData()}
+			challengeProgress[j] = i.A{userIdSingleStr, challengeShared.GetChallengeProgressData()}
 			sessions[j] = sess
 			j++
 		}

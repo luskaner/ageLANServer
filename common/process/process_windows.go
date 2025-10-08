@@ -1,10 +1,11 @@
 package process
 
 import (
-	"golang.org/x/sys/windows"
 	"os"
 	"slices"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 func ProcessesPID(names []string) map[string]uint32 {

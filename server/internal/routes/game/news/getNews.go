@@ -1,8 +1,9 @@
 package news
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 func GetNews(w http.ResponseWriter, _ *http.Request) {

@@ -6,7 +6,6 @@ import (
 
 var RemoveLocalCert bool
 var UnmapIPs bool
-var UnmapCDN bool
 var RemoveAll bool
 
 func InitRevert(cmd *cobra.Command) {
@@ -16,13 +15,6 @@ func InitRevert(cmd *cobra.Command) {
 		"i",
 		false,
 		"Remove the IP mappings from the local DNS server",
-	)
-	cmd.Flags().BoolVarP(
-		&UnmapCDN,
-		"CDN",
-		"c",
-		false,
-		"Remove the CDN mappings from the local DNS server",
 	)
 	cmd.Flags().BoolVarP(
 		&RemoveLocalCert,

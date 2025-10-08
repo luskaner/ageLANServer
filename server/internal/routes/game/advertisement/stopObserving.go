@@ -2,28 +2,27 @@ package advertisement
 
 import (
 	"net/http"
-	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
 
 func StopObserving(w http.ResponseWriter, r *http.Request) {
-	advId := r.PostFormValue("advertisementid")
-	advIdInt64, err := strconv.ParseInt(advId, 10, 32)
-	if err != nil {
+	var a shared.AdvertisementId
+	if err := i.Bind(r, &a); err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	game := models.G(r)
 	advertisements := game.Advertisements()
-	adv, found := advertisements.GetAdvertisement(int32(advIdInt64))
+	adv, found := advertisements.GetAdvertisement(a.AdvertisementId)
 	if !found {
 		i.JSON(&w, i.A{0})
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	adv.StopObserving(sess.GetUserId())
 	i.JSON(&w, i.A{0})
 }

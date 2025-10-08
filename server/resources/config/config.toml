@@ -5,20 +5,20 @@ Hosts = ['0.0.0.0']
 # Whether to log the requests to the console (stdout) or not (files)
 LogToConsole = false
 
-# Whether to generate the Platform User Id. *ONLY* recommended if using two or more users
+# Whether to generate the Platform User Id. *ONLY* as a last resort if multiple users
 # are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
 GeneratePlatformUserId = false
 
 [Games]
-# Games that the server will accept and their Battle Servers.
-# "age1" (AoE: DE), "age2" (AoE II: DE) and "age3" (AoE III: DE).
-Enabled = ["age1", "age2", "age3"]
+# Games that the server will accept.
+# "age1" (AoE: DE), "age2" (AoE II: DE), "age3" (AoE III: DE) and "athens" (AoM: RT).
+Enabled = ["age1", "age2", "age3", "athens"]
 
 # CONFIGURING BATTLE SERVERS
 # See the complete information in BattleServers.md
 [Announcement]
 
-# Whether to announce the server. When disabled, the launcher will not automatically detect it.
+# Whether to announce the server in LAN. When disabled, the launcher will not automatically detect it.
 Enabled = true
 # Whether to announce the server using Multicast. More efficient but less compatible than Broadcast.
 Multicast = true

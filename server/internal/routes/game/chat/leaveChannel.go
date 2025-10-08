@@ -1,12 +1,13 @@
 package chat
 
 import (
+	"net/http"
+	"strconv"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
-	"strconv"
 )
 
 func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, gameTitle string, clientLibVersion uint16) {
@@ -43,7 +44,7 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	users := game.Users()
 	user, ok := users.GetUserById(sess.GetUserId())
 	if !ok || !chatChannel.RemoveUser(user) {

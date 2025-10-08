@@ -2,37 +2,28 @@ package cmdUtils
 
 import (
 	"fmt"
+	"runtime"
+
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
-	"runtime"
 )
 
 type Config struct {
-	gameId          string
-	serverExe       string
-	setupCommandRan bool
-	hostFilePath    string
-	certFilePath    string
+	gameId             string
+	serverExe          string
+	setupCommandRan    bool
+	hostFilePath       string
+	certFilePath       string
+	battleServerRegion string
+	battleServerExe    string
 }
 
-func (c *Config) SetServerExe(exe string) {
-	c.serverExe = exe
-}
-
-func (c *Config) SetGameId(id string) {
-	c.gameId = id
-}
-
-func (c *Config) SetHostFilePath(path string) {
-	c.hostFilePath = path
-}
-
-func (c *Config) SetCertFilePath(path string) {
-	c.certFilePath = path
+func (c *Config) SetGameId(gameId string) {
+	c.gameId = gameId
 }
 
 func (c *Config) RequiresConfigRevert() bool {
@@ -53,10 +44,6 @@ func (c *Config) RequiresRunningRevertCommand() bool {
 	return c.setupCommandRan && len(c.revertCommand()) > 0
 }
 
-func (c *Config) ServerExe() string {
-	return c.serverExe
-}
-
 func (c *Config) RevertCommand() []string {
 	if c.setupCommandRan {
 		return c.revertCommand()
@@ -64,25 +51,32 @@ func (c *Config) RevertCommand() []string {
 	return []string{}
 }
 
-func (c *Config) HostFilePath() string {
-	return c.hostFilePath
-}
-
-func (c *Config) CertFilePath() string {
-	return c.certFilePath
-}
-
 func (c *Config) Revert() {
 	c.KillAgent()
-	if serverExe := c.ServerExe(); len(serverExe) > 0 {
+	if c.serverExe != "" {
 		fmt.Println("Stopping 'server'...")
-		if proc, err := commonProcess.Kill(serverExe); err == nil {
+		if proc, err := commonProcess.Kill(c.serverExe); err == nil {
 			fmt.Println("'Server' stopped.")
 		} else {
 			fmt.Println("Failed to stop 'server'.")
 			fmt.Println("Error message: " + err.Error())
 			if proc != nil {
 				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
+			}
+		}
+		if c.battleServerRegion != "" && c.battleServerExe != "" {
+			fmt.Println("Stopping battle server via 'battle-server-manager'...")
+			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion); result.Success() {
+				fmt.Println("Battle-server stopped (or was already).")
+			} else {
+				fmt.Println("Failed to stop the battle-server.")
+				if result.Err != nil {
+					fmt.Println("Error message: " + result.Err.Error())
+				}
+				if result.ExitCode != common.ErrSuccess {
+					fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				}
+				fmt.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
 			}
 		}
 	}
@@ -133,6 +127,6 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		Args:           args,
 	}.Exec()
 	certStore.ReloadSystemCertificates()
-	launcherCommon.ClearCache()
+	common.ClearCache()
 	return
 }

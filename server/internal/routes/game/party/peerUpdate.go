@@ -1,11 +1,12 @@
 package party
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/party/shared"
-	"net/http"
 )
 
 func PeerUpdate(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +16,7 @@ func PeerUpdate(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	game := models.G(r)
 	gameUsers := game.Users()
 	advertisements := game.Advertisements()

@@ -23,3 +23,9 @@ tasks:
   prepare-server-genCert:
     cmds:
       - mkdir -p build/server/resources
+  prepare-battle-server-manager-base:
+    deps:
+      - :build-battle-server-manager
+    cmds:
+      - mkdir -p build/battle-server-manager/resources
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.game.toml

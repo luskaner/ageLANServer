@@ -2,43 +2,10 @@ package game
 
 import (
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game/appx"
 )
-
-const appNamePrefix = "Microsoft."
-const appPublisherId = "8wekyb3d8bbwe"
-
-func appNameSuffix(id string) string {
-	switch id {
-	case common.GameAoE1:
-		return "Darwin"
-	case common.GameAoE2:
-		return "MSPhoenix"
-	case common.GameAoE3:
-		return "MSGPBoston"
-	default:
-		return ""
-	}
-}
-
-func appName(id string) string {
-	return appNamePrefix + appNameSuffix(id)
-}
-
-func isInstalledOnXbox(id string) bool {
-	// TODO: Implement natively
-	return commonExecutor.Options{
-		File:        "powershell",
-		SpecialFile: true,
-		Wait:        true,
-		ExitCode:    true,
-		Args: []string{
-			"-Command",
-			fmt.Sprintf("if ((Get-AppxPackage).Name -eq '%s') { exit 0 } else { exit 1 }", appName(id)),
-		},
-	}.Exec().Success()
-}
 
 func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true
@@ -48,11 +15,15 @@ func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool)
 
 func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	result = commonExecutor.Options{
-		File:        fmt.Sprintf(`shell:appsfolder\%s_%s!App`, appName(exec.gameId), appPublisherId),
+		File:        fmt.Sprintf(`shell:appsfolder\%s!App`, appx.FamilyName(exec.gameId)),
 		Shell:       true,
 		SpecialFile: true,
 	}.Exec()
 	return
+}
+
+func (exec XboxExecutor) GamePath() string {
+	return exec.gamePath
 }
 
 func (exec XboxExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {

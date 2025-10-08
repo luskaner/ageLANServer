@@ -3,9 +3,10 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"math/rand/v2"
 	"time"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 const expiry = time.Minute * 5

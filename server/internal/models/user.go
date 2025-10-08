@@ -227,7 +227,7 @@ func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i
 		0,
 		0,
 	}
-	if gameId == common.GameAoE2 && clientLibVersion >= 190 {
+	if (gameId == common.GameAoE2 || gameId == common.GameAoM) && clientLibVersion >= 190 {
 		info = append(info, 0, 0)
 	}
 	return info
@@ -245,7 +245,7 @@ func (u *MainUser) GetProfileInfo(includePresence bool, gameId string, clientLib
 		u.GetProfileMetadata(),
 		u.GetAlias(),
 	}
-	if gameId == common.GameAoE2 && clientLibVersion >= 190 {
+	if (gameId == common.GameAoE2 || gameId == common.GameAoM) && clientLibVersion >= 190 {
 		profileInfo = append(profileInfo, u.GetAlias())
 	}
 	profileInfo = append(

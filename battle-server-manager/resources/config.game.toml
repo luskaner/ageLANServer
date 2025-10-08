@@ -1,0 +1,72 @@
+# Internal ID to show in the server list selector in games that do not support 'Name'.
+# Must be unique within regions or names (case insensitive).
+# If 'auto', it will use the same as the Name.
+# Argument: -region
+Region = 'auto'
+# Name to show in the server list selector in supported games. Must be unique.
+# Must be unique within regions or names (case insensitive).
+# If 'auto', it will use the first unused 'Server', 'Server (1)', 'Server (2)', etc.
+# Argument: -name
+Name = 'auto'
+# Host, IPv4 or 'auto'.
+# If using a host, it will use the first resolved non-loopback IP address. 'auto' will let the server use the same
+# IP address the user uses to connect to the server.
+# Recommended: leave to 'auto'.
+# Note: This only applies to the server.
+Host = 'auto'
+[Executable]
+# Path to 'BattleServer.exe' executable.
+# If 'auto' it will try to find it using Steam and then Xbox (Windows-only).
+# AoM: RT: will search for AoE II: DE executable instead, as the one included does not work.
+# Note: You may use environment variables.
+Path = 'auto'
+# Extra arguments to pass to the corresponding 'BattleServer.exe' executable.
+# You must not pass these arguments as they are already passed by default:
+# -webSocketPort (Ports.WebSocket)
+# -simulationPeriod
+# -relaybroadcastPort
+# -region (Region)
+# -name (Name)
+# -bsPort (Ports.Bs)
+# -outOfBandPort (Ports.OutOfBand) [except AoE: DE]
+# -sslKey (SSL.KeyFile)
+# -sslCert (SSL.CertFile)
+# Windows: Path names need to use double backslashes within single quotes or be within double quotes.
+# Note: You may use environment variables.
+ExtraArgs = []
+
+# Ports to listen to.
+# If 0, the first non privileged ports not listening to 0.0.0.0 will be used.
+# Recommended: set static ones if you need to configure these elsewhere.
+[Ports]
+# Initial port
+# Argument: -bsPort
+Bs = 0
+# extra Websocket port.
+# Argument: -webSocketPort
+WebSocket = 0
+# Mainly Observer port (Ignored for AoE: DE).
+# Argument: -outOfBandPort
+OutOfBand = 0
+
+# SSL files to use.
+# If 'auto' if 'auto', it will be try to execute the server binary in this directory order:
+# 1. './server/resources/certificates/'
+# 2. '../serverresources/certificates/'
+# 3. '../../server/resources/certificates/'
+[SSL]
+Auto = true
+# Path to the SSL certificate file to use.
+# If 'Auto' is true, this is ignored, otherwise:
+# AoM: Path to cert.pem
+# Other games: Path to selfsigned_cert.pem
+# Argument: -sslCert
+# Note: You may use environment variables.
+CertFile = ''
+# Path to the SSL key file to use.
+# If 'Auto' is true, this is ignored, otherwise:
+# AoM: Path to key.pem
+# Other games: Path to selfsigned_key.pem
+# Argument: -sslKey
+# Note: You may use environment variables.
+KeyFile = ''

@@ -2,14 +2,15 @@ package cmdUtils
 
 import (
 	"fmt"
+	"runtime"
+	"strings"
+
 	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
-	"runtime"
-	"strings"
 )
 
 func (c *Config) KillAgent() {
@@ -41,7 +42,15 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		}
 		fmt.Println("...")
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(c.gameId, steamProcess, xboxProcess, c.serverExe, canBroadcastBattleServer == "true")
+		result := executor.RunAgent(
+			c.gameId,
+			steamProcess,
+			xboxProcess,
+			c.serverExe,
+			canBroadcastBattleServer == "true",
+			c.battleServerExe,
+			c.battleServerRegion,
+		)
 		if !result.Success() {
 			fmt.Println("Failed to start 'agent'.")
 			errorCode = internal.ErrAgentStart
@@ -63,21 +72,21 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 	fmt.Println("...")
 	var result *commonExecutor.Result
 	var values map[string]string = nil
-	if hostFilePath := c.HostFilePath(); hostFilePath != "" {
+	if c.hostFilePath != "" {
 		values = map[string]string{
-			"HostFilePath": hostFilePath,
+			"HostFilePath": c.hostFilePath,
 		}
 		if runtime.GOOS == "windows" {
-			values["HostFilePath"] = strings.ReplaceAll(hostFilePath, `\`, `\\`)
+			values["HostFilePath"] = strings.ReplaceAll(c.hostFilePath, `\`, `\\`)
 		}
 	}
-	if certFilePath := c.CertFilePath(); certFilePath != "" {
+	if c.certFilePath != "" {
 		if values == nil {
 			values = make(map[string]string)
 		}
-		values["CertFilePath"] = certFilePath
+		values["CertFilePath"] = c.certFilePath
 		if runtime.GOOS == "windows" {
-			values["CertFilePath"] = strings.ReplaceAll(certFilePath, `\`, `\\`)
+			values["CertFilePath"] = strings.ReplaceAll(c.certFilePath, `\`, `\\`)
 		}
 	}
 	args, err := ParseCommandArgs("Client.ExecutableArgs", values)

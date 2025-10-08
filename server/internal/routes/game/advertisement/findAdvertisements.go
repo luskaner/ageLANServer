@@ -1,11 +1,12 @@
 package advertisement
 
 import (
+	"net/http"
+
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-
-	"net/http"
 )
 
 type searchQuery struct {
@@ -32,11 +33,20 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 	}
 	game := models.G(r)
 	title := game.Title()
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	var battleServers *models.MainBattleServers
 	if len(lanRegions) == 0 {
 		battleServers = game.BattleServers()
+	}
+	var tagsCheck func(*models.MainAdvertisement) bool
+	if battleServers != nil && (title == common.GameAoE2 || title == common.GameAoM) {
+		ok, numericTags, stringTags := parseTags(r)
+		if ok {
+			tagsCheck = func(adv *models.MainAdvertisement) bool {
+				return adv.UnsafeMatchesTags(numericTags, stringTags)
+			}
+		}
 	}
 	advs := game.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv *models.MainAdvertisement) bool {
 		peers := adv.GetPeers()
@@ -47,9 +57,9 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 		} else {
 			_, matchesBattleServer = battleServers.Get(adv.GetRelayRegion())
 		}
-		return adv.UnsafeGetJoinable() != ongoing &&
-			!isPeer &&
-			adv.UnsafeGetVisible() != ongoing &&
+		return !isPeer &&
+			(tagsCheck == nil || tagsCheck(adv)) &&
+			adv.UnsafeGetJoinable() != ongoing || adv.UnsafeGetVisible() != ongoing &&
 			adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
 			adv.UnsafeGetDataChecksum() == q.DataChecksum &&
 			adv.UnsafeGetMatchType() == q.MatchType &&

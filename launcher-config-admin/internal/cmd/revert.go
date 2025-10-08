@@ -3,17 +3,16 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/luskaner/ageLANServer/common"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 	"github.com/spf13/cobra"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func trustCertificates(certificates []*x509.Certificate) bool {
@@ -57,18 +56,9 @@ var revertCmd = &cobra.Command{
 				}
 			}
 		}
-		if cmd.UnmapCDN || cmd.UnmapIPs {
-			hsts := mapset.NewThreadUnsafeSet[string]()
-			if cmd.UnmapIPs {
-				for _, host := range common.AllHosts() {
-					hsts.Add(host)
-				}
-			}
-			if cmd.UnmapCDN {
-				hsts.Add(launcherCommon.CDNDomain)
-			}
+		if cmd.UnmapIPs {
 			fmt.Println("Removing IP mappings")
-			if err := hosts.RemoveHosts(hsts); err == nil {
+			if err := hosts.RemoveHosts(); err == nil {
 				fmt.Println("Successfully removed IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapRemove

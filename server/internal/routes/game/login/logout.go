@@ -14,7 +14,7 @@ import (
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	advertisements := game.Advertisements()

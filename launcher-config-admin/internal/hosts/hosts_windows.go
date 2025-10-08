@@ -1,10 +1,11 @@
 package hosts
 
 import (
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"os"
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 )
 
 const LineEnding = hosts.WindowsLineEnding

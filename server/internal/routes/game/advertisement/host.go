@@ -9,13 +9,14 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
 
-func returnError(battleServers *models.MainBattleServers, gameId string, w *http.ResponseWriter) {
+func returnError(battleServers *models.MainBattleServers, gameId string, r *http.Request, w *http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
 	response := encodeHostResponse(
 		gameId,
 		2,
 		0,
 		battleServer,
+		r,
 		"",
 		[]i.A{},
 		"0",
@@ -24,13 +25,13 @@ func returnError(battleServers *models.MainBattleServers, gameId string, w *http
 	i.JSON(w, response)
 }
 
-func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServer *models.MainBattleServer, relayRegion string, encodedPeers []i.A, metadata string, description string) i.A {
+func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServer *models.MainBattleServer, r *http.Request, relayRegion string, encodedPeers []i.A, metadata string, description string) i.A {
 	response := i.A{
 		errorCode,
 		advId,
 		"authtoken",
 	}
-	response = append(response, battleServer.EncodeAdvertisement()...)
+	response = append(response, battleServer.EncodeAdvertisement(r)...)
 	response = append(
 		response,
 		relayRegion,
@@ -64,20 +65,20 @@ func Host(w http.ResponseWriter, r *http.Request) {
 	if !battleServer.LAN() {
 		var ok bool
 		if battleServer, ok = game.BattleServers().Get(region); !ok {
-			returnError(battleServers, gameTitle, &w)
+			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
 	}
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
-		// Disallow Quickmatch on AoE1
-		if battleServer.IPv4 != "" && gameTitle == common.GameAoE1 && adv.Description == "SESSION_MATCH_KEY" {
-			returnError(battleServers, gameTitle, &w)
+		// Disallow Matchmaking as it is not implemented
+		if adv.Description == "SESSION_MATCH_KEY" {
+			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
 		if adv.Id != -1 {
-			returnError(battleServers, gameTitle, &w)
+			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
 		if gameTitle != common.GameAoE2 {
@@ -85,7 +86,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		}
 		u, ok := game.Users().GetUserById(adv.HostId)
 		if !ok {
-			returnError(battleServers, gameTitle, &w)
+			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
 		advertisements := game.Advertisements()
@@ -99,6 +100,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		storedAdv := advertisements.Store(
 			&adv,
 			!battleServer.LAN(),
+			gameTitle == common.GameAoM,
 		)
 		var response i.A
 		advertisements.WithWriteLock(storedAdv.GetId(), func() {
@@ -111,6 +113,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 				0,
 				storedAdv.GetId(),
 				battleServer,
+				r,
 				storedAdv.GetRelayRegion(),
 				storedAdv.EncodePeers(),
 				storedAdv.GetMetadata(),
@@ -120,9 +123,9 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			i.JSON(&w, response)
 		} else {
-			returnError(battleServers, gameTitle, &w)
+			returnError(battleServers, gameTitle, r, &w)
 		}
 	} else {
-		returnError(battleServers, gameTitle, &w)
+		returnError(battleServers, gameTitle, r, &w)
 	}
 }

@@ -11,4 +11,4 @@ CLI is available and you can see the available options with
 ## Exit Codes
 
 * [Base codes](../common/errors.go).
-* [Server genCert codes](internal/errors.go).
+* [Own codes](internal/errors.go).

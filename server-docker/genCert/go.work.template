@@ -4,5 +4,3 @@ use (
 	common
 	server-genCert
 )
-
-replace github.com/luskaner/ageLANServer/common v0.0.0-20241103192537-0cefe8543e50 => ./common

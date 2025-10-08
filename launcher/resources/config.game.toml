@@ -11,9 +11,10 @@ RevertCommand = []
 
 [Client]
 # The path to the game launcher, if 'auto', the Steam and then the Xbox (Windows-only) one will be launched if found
-# Use a path to the game launcher, 'steam' or 'msstore' (Windows-only) to use the default launcher.
+# Use a path to the game launcher, 'steam' or 'msstore' (non AoM: RT and Windows-only) to use the default launcher.
 # Note: It is not recommended to use an executable that requires admin rights (but it is supported).
 # Linux Note: setting a custom launcher will make 'Config.IsolateMetadata' and 'Config.IsolateProfiles' act as 'false.
+# Note 2: You may use environment variables.
 Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
 # {HostFilePath} will be replaced by the host file path.
@@ -25,3 +26,9 @@ Executable = 'auto'
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = []
+# The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam' or 'msstore' it will be detected automatically.
+# If 'Executable' is a custom launcher, this is required to be set. Otherwise, this will be ignored.
+# Used to find the game certificate certificate store, file "cacert.pem".
+# Required that the game path can be found in all games except AoE I: DE.
+# Note: You may use environment variables.
+Path = 'auto'

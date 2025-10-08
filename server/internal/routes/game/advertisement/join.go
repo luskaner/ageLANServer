@@ -14,17 +14,17 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
-func joinReturnError(battleServers *models.MainBattleServers, w http.ResponseWriter) {
+func joinReturnError(battleServers *models.MainBattleServers, r *http.Request, w http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
-	response := encodeJoinResponse(2, "", battleServer, i.A{})
+	response := encodeJoinResponse(2, "", battleServer, r, i.A{})
 	i.JSON(&w, response)
 }
 
-func encodeJoinResponse(errorCode int, ip string, battleServer *models.MainBattleServer, peerEncoded i.A) i.A {
+func encodeJoinResponse(errorCode int, ip string, battleServer *models.MainBattleServer, r *http.Request, peerEncoded i.A) i.A {
 	response := i.A{
 		errorCode,
 		ip,
-		battleServer.IPv4,
+		battleServer.ResolveIPv4(r),
 	}
 	response = append(response, battleServer.EncodePorts()...)
 	response = append(response, i.A{peerEncoded})
@@ -36,14 +36,14 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	battleServers := game.BattleServers()
 	var q JoinRequest
 	if err := i.Bind(r, &q); err != nil {
-		joinReturnError(battleServers, w)
+		joinReturnError(battleServers, r, w)
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
-		joinReturnError(battleServers, w)
+		joinReturnError(battleServers, r, w)
 		return
 	}
 	advertisements := game.Advertisements()
@@ -56,7 +56,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	}
 	matchingAdv, foundAdv := advertisements.GetAdvertisement(q.Id)
 	if !foundAdv {
-		joinReturnError(battleServers, w)
+		joinReturnError(battleServers, r, w)
 		return
 	}
 	advertisements.WithReadLock(matchingAdv.GetId(), func() {
@@ -69,7 +69,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			matchingAdv.UnsafeGetModVersion() != q.ModVersion ||
 			matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags ||
 			matchingAdv.UnsafeGetPasswordValue() != q.Password {
-			joinReturnError(battleServers, w)
+			joinReturnError(battleServers, r, w)
 			return
 		}
 	})
@@ -95,12 +95,13 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			0,
 			matchingAdv.GetIp(),
 			battleServer,
+			r,
 			peer.Encode(),
 		)
 	})
 	if ok {
 		i.JSON(&w, response)
 	} else {
-		joinReturnError(battleServers, w)
+		joinReturnError(battleServers, r, w)
 	}
 }

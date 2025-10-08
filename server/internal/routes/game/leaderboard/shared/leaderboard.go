@@ -2,10 +2,11 @@ package shared
 
 import (
 	"encoding/json"
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
 )
 
 func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeExtraProfileInfo bool) i.A {
@@ -19,7 +20,7 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	game := models.G(r)
 	gameTitle := game.Title()
 	users := game.Users()
-	clientLibVersion := middleware.Session(r).GetClientLibVersion()
+	clientLibVersion := middleware.SessionOrPanic(r).GetClientLibVersion()
 	for _, id := range ids {
 		var u *models.MainUser
 		var ok bool

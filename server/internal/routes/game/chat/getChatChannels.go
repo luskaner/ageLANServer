@@ -1,9 +1,10 @@
 package chat
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
 )
 
 func GetChatChannels(w http.ResponseWriter, r *http.Request) {

@@ -3,14 +3,13 @@ package internal
 import (
 	"crypto/x509"
 	"encoding/gob"
+	"net"
+
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
-	"net"
-	"slices"
 )
 
-var mappedCdn = false
 var mappedIps = false
 var addedCert = false
 
@@ -53,22 +52,7 @@ func handleClient(c net.Conn) (exit bool) {
 }
 
 func checkCertificateValidity(cert *x509.Certificate) bool {
-	if cert == nil {
-		return false
-	}
-	hosts := common.AllHosts()
-	if cert.Subject.CommonName != common.Name {
-		return false
-	}
-
-	if !slices.Equal(cert.DNSNames, hosts) {
-		return false
-	}
-	return true
-}
-
-func checkIps(ips []net.IP) bool {
-	return len(ips) < 10
+	return cert != nil
 }
 
 func handleSetUp(decoder *gob.Decoder) int {
@@ -76,14 +60,8 @@ func handleSetUp(decoder *gob.Decoder) int {
 	if err := decoder.Decode(&msg); err != nil {
 		return ErrDecode
 	}
-	if len(msg.IPs) > 0 && mappedIps {
+	if len(msg.IP) > 0 && mappedIps {
 		return ErrIpsAlreadyMapped
-	}
-	if msg.CDN && mappedCdn {
-		return ErrCDNAlreadyMapped
-	}
-	if !checkIps(msg.IPs) {
-		return ErrIpsInvalid
 	}
 	var cert *x509.Certificate
 	if msg.Certificate != nil {
@@ -96,10 +74,9 @@ func handleSetUp(decoder *gob.Decoder) int {
 			return ErrCertInvalid
 		}
 	}
-	result := executor.RunSetUp(msg.IPs, cert, msg.CDN)
+	result := executor.RunSetUp(msg.GameId, msg.IP, cert, msg.CDN)
 	if result.Success() {
-		mappedIps = mappedIps || len(msg.IPs) > 0
-		mappedCdn = mappedCdn || msg.CDN
+		mappedIps = mappedIps || len(msg.IP) > 0
 		addedCert = addedCert || cert != nil
 	}
 	return result.ExitCode
@@ -112,13 +89,11 @@ func handleRevert(decoder *gob.Decoder) int {
 	}
 	revertIps := msg.IPs && mappedIps
 	revertCert := msg.Certificate && addedCert
-	revertCdn := msg.CDN && mappedCdn
-	if !revertIps && !revertCert && !revertCdn {
+	if !revertIps && !revertCert {
 		return common.ErrSuccess
 	}
-	result := executor.RunRevert(revertIps, revertCert, revertCdn, true)
+	result := executor.RunRevert(revertIps, revertCert, true)
 	if result.Success() {
-		mappedCdn = mappedCdn && !revertCdn
 		mappedIps = mappedIps && !revertIps
 		addedCert = addedCert && !revertCert
 	}

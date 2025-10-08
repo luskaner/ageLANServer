@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"crypto/x509"
 	"fmt"
+	"os"
+
 	"github.com/luskaner/ageLANServer/common"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
-	"os"
 )
 
-func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
-	hosts := common.AllHosts()
+func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
+	hosts := common.AllHosts(gameId)
 	var addCert bool
 	if customCertFile {
 		addCert = true
@@ -21,7 +22,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		for _, host := range hosts {
 			if !server.CheckConnectionFromServer(host, false) {
 				if canAdd != "false" {
-					cert := server.ReadCertificateFromServer(host)
+					cert := server.ReadCACertificateFromServer(host, gameId)
 					if cert == nil {
 						fmt.Println("Failed to read certificate from " + host + ".")
 						errorCode = internal.ErrReadCert
@@ -37,7 +38,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 					errorCode = internal.ErrConfigCert
 					return
 				}
-			} else if cert := server.ReadCertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
+			} else if cert := server.ReadCACertificateFromServer(host, gameId); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 				fmt.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
 				errorCode = internal.ErrCertMismatch
 				return
@@ -62,7 +63,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		if err = certFile.Close(); err != nil {
 			return internal.ErrConfigCertAdd
 		}
-		c.SetCertFilePath(certFile.Name())
+		c.certFilePath = certFile.Name()
 		addLocalCertData = serverCertificate.Raw
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
 	} else {
@@ -70,7 +71,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 		if canAdd == "user" {
 			certMsg += ", accept the dialog"
 		} else {
-			if !launcher_common.ConfigAdminAgentRunning(false) {
+			if !launcherCommon.ConfigAdminAgentRunning(false) {
 				certMsg += `, authorize 'config-admin-agent' if needed`
 			}
 		}
@@ -82,7 +83,7 @@ func (c *Config) AddCert(serverCertificate *x509.Certificate, canAdd string, cus
 	}
 	certMsg += "..."
 	fmt.Println(certMsg)
-	if result := executor.RunSetUp("", nil, addUserCertData, addLocalCertData, false, false, false, false, "", c.CertFilePath()); !result.Success() {
+	if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, ""); !result.Success() {
 		if customCertFile {
 			fmt.Println("Failed to save certificate to file")
 		} else {

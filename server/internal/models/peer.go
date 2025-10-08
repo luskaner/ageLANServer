@@ -1,8 +1,9 @@
 package models
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"sync/atomic"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 type MainPeerMutable struct {

@@ -2,11 +2,12 @@ package cmdUtils
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	"mvdan.cc/sh/v3/shell"
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/spf13/viper"
+	"mvdan.cc/sh/v3/shell"
 )
 
 var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)

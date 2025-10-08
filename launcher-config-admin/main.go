@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/cmd"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/parentCheck"
-	"os"
 )
 
 const version = "development"

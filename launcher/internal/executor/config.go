@@ -3,16 +3,17 @@ package executor
 import (
 	"encoding/base64"
 	"fmt"
+	"slices"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
-	"slices"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
@@ -44,6 +45,10 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "-u")
 		args = append(args, base64.StdEncoding.EncodeToString(addUserCertData))
 	}
+	if addGameCertData != nil {
+		args = append(args, "-s")
+		args = append(args, base64.StdEncoding.EncodeToString(addGameCertData))
+	}
 	if backupMetadata {
 		args = append(args, "-m")
 	}
@@ -62,12 +67,16 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "-t")
 		args = append(args, certFilePath)
 	}
+	if gamePath != "" {
+		args = append(args, "--gamePath")
+		args = append(args, gamePath)
+	}
 	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
 	if reloadSystemCertificates {
 		certStore.ReloadSystemCertificates()
 	}
 	if reloadHostMappings {
-		launcherCommon.ClearCache()
+		common.ClearCache()
 	}
 	if result.Success() {
 		revertArgs := launcherCommon.RevertFlags(
@@ -75,11 +84,13 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 			mapIps != nil && mapIps.Cardinality() > 0,
 			addUserCertData != nil,
 			addLocalCertData != nil,
+			addGameCertData != nil,
 			backupMetadata,
 			backupProfiles,
 			mapCDN,
 			hostFilePath,
 			certFilePath,
+			gamePath,
 			launcherCommon.RequiresStopConfigAgent(args),
 			true,
 		)
@@ -101,7 +112,7 @@ func RunRevert(flags []string, bin bool) (result *exec.Result) {
 		certStore.ReloadSystemCertificates()
 	}
 	if slices.Contains(flags, "-a") || slices.Contains(flags, "-i") || slices.Contains(flags, "-c") {
-		launcherCommon.ClearCache()
+		common.ClearCache()
 	}
 	return
 }

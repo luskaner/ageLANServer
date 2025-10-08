@@ -1,9 +1,10 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher-common/steam"
-	"os"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game/appx"
+	"github.com/luskaner/ageLANServer/common/game/steam"
 )
 
 type Executor interface {
@@ -17,9 +18,11 @@ type baseExecutor struct {
 
 type SteamExecutor struct {
 	baseExecutor
+	libraryFolder string
 }
 type XboxExecutor struct {
 	baseExecutor
+	gamePath string
 }
 type CustomExecutor struct {
 	Executable string
@@ -32,6 +35,10 @@ func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true
 	return
+}
+
+func (exec SteamExecutor) GamePath() string {
+	return steam.NewGame(exec.gameId).Path(exec.libraryFolder)
 }
 
 func (exec CustomExecutor) execute(args []string, admin bool) (result *commonExecutor.Result) {
@@ -54,27 +61,21 @@ func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecuto
 	return
 }
 
-func isInstalledCustom(executable string) bool {
-	info, err := os.Stat(executable)
-	if err != nil || os.IsNotExist(err) || info.IsDir() {
-		return false
-	}
-	return true
-}
-
 func steamExecutor(gameId string) (ok bool, executor Executor) {
 	steamGame := steam.NewGame(gameId)
-	if steamGame.GameInstalled() {
+	if libraryFolder := steamGame.LibraryFolder(); libraryFolder != "" {
 		ok = true
-		executor = SteamExecutor{baseExecutor{gameId: gameId}}
+		executor = SteamExecutor{baseExecutor{gameId: gameId}, libraryFolder}
 	}
 	return
 }
 
 func xboxExecutor(gameId string) (ok bool, executor Executor) {
-	if isInstalledOnXbox(gameId) {
-		ok = true
-		executor = XboxExecutor{baseExecutor{gameId: gameId}}
+	if gameId != common.GameAoM {
+		var gameLocation string
+		if ok, gameLocation = appx.GameInstallLocation(gameId); ok {
+			executor = XboxExecutor{baseExecutor{gameId: gameId}, gameLocation}
+		}
 	}
 	return
 }
@@ -91,9 +92,7 @@ func MakeExecutor(gameId string, executable string) Executor {
 				return executor
 			}
 		default:
-			if isInstalledCustom(executable) {
-				return CustomExecutor{Executable: executable}
-			}
+			return CustomExecutor{Executable: executable}
 		}
 		return nil
 	}

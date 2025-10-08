@@ -2,7 +2,8 @@ package cmdUtils
 
 import (
 	"errors"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"golang.org/x/sys/windows"
 )
 

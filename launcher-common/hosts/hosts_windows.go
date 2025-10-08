@@ -1,9 +1,12 @@
 package hosts
 
 import (
-	"golang.org/x/sys/windows"
 	"os"
+
+	"golang.org/x/sys/windows"
 )
+
+const maxHostsPerLine = 9
 
 var Lock *windows.Overlapped
 

@@ -2,13 +2,14 @@ package wss
 
 import (
 	"errors"
-	"github.com/gorilla/websocket"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 type connectionWrapper struct {
@@ -160,6 +161,7 @@ func sendMessage(sessionId string, message i.A) bool {
 func SendOrStoreMessage(session *models.Session, action string, message i.A) {
 	finalMessage := i.A{0, action, session.GetUserId(), message}
 	go func(session *models.Session, finalMessage i.A) {
+		// FIXME: games that use WSS send in readSession AND WSS what's first.
 		if ok := sendMessage(session.GetId(), finalMessage); !ok {
 			session.AddMessage(finalMessage)
 		}

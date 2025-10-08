@@ -94,7 +94,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		unknownProfileInfoList = i.A{}
 	}
 	battleServers := game.BattleServers()
-	servers := battleServers.Encode()
+	servers := battleServers.Encode(r)
 	if len(servers) == 0 {
 		server := battleServers.NewBattleServer("")
 		server.IPv4 = "127.0.0.1"
@@ -104,7 +104,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 			server.Name = "localhost"
 			server.OutOfBandPort = 27212
 		}
-		servers = append(servers, server.EncodeLogin())
+		servers = append(servers, server.EncodeLogin(r))
 	}
 	response := i.A{
 		0,

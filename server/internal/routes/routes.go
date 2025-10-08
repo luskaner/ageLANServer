@@ -5,6 +5,11 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models/apiAgeOfEmpires"
+	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
+	apiAgeOfEmpires2 "github.com/luskaner/ageLANServer/server/internal/routes/apiAgeOfEmpires"
+	"github.com/luskaner/ageLANServer/server/internal/routes/apiAgeOfEmpires/textmoderation"
+	cacertPem "github.com/luskaner/ageLANServer/server/internal/routes/cacert.pem"
 	"github.com/luskaner/ageLANServer/server/internal/routes/cloudfiles"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/account"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/achievement"
@@ -21,8 +26,14 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/login"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/news"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/party"
+	"github.com/luskaner/ageLANServer/server/internal/routes/game/playerreport"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
 	"github.com/luskaner/ageLANServer/server/internal/routes/msstore"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Event"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Inventory"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/MultiplayerServer"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Party"
 	"github.com/luskaner/ageLANServer/server/internal/routes/test"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -52,6 +63,14 @@ func (g *Group) HandleFunc(method string, path string, handler http.HandlerFunc)
 	g.mux.HandleFunc(method+" "+g.fullPath()+path, handler)
 }
 
+func (g *Group) Handle(method string, path string, handler http.Handler) {
+	g.mux.Handle(method+" "+g.fullPath()+path, handler)
+}
+
+func (g *Group) HandlePath(path string, handler http.Handler) {
+	g.mux.Handle(g.fullPath()+path, handler)
+}
+
 func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	baseGroup := Group{
 		path: "",
@@ -74,9 +93,11 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	communityEventGroup.HandleFunc("GET", "/getAvailableCommunityEvents", communityEvent.GetAvailableCommunityEvents)
 
 	challengeGroup := gameGroup.Subgroup("/challenge")
-	// TODO: Check if it applies to AoM
 	if gameSet.ContainsOne(common.GameAoE3) {
 		challengeGroup.HandleFunc("POST", "/updateProgress", challenge.UpdateProgress)
+	}
+	if gameSet.ContainsOne(common.GameAoM) {
+		challengeGroup.HandleFunc("POST", "/updateProgressBatched", challenge.UpdateProgressBatched)
 	}
 	ChallengeGroup := gameGroup.Subgroup("/Challenge")
 	if gameSet.ContainsOne(common.GameAoE3) {
@@ -101,8 +122,7 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	accountGroup.HandleFunc("POST", "/FindProfilesByPlatformID", account.FindProfilesByPlatformID)
 	accountGroup.HandleFunc("GET", "/FindProfiles", account.FindProfiles)
 	accountGroup.HandleFunc("GET", "/getProfileName", account.GetProfileName)
-	// TODO: Check if it applies to AoM
-	if gameSet.ContainsOne(common.GameAoE3) {
+	if gameSet.ContainsAny(common.GameAoE3, common.GameAoM) {
 		accountGroup.HandleFunc("GET", "/getProfileProperty", account.GetProfileProperty)
 	}
 
@@ -118,7 +138,6 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	LeaderboardGroup.HandleFunc("GET", "/getStatGroupsByProfileIDs", leaderboard.GetStatGroupsByProfileIDs)
 	LeaderboardGroup.HandleFunc("GET", "/getStatsForLeaderboardByProfileName", leaderboard.GetStatsForLeaderboardByProfileName)
 	LeaderboardGroup.HandleFunc("GET", "/getPartyStat", leaderboard.GetPartyStat)
-	// TODO: Check if it applies to AoM
 	if gameSet.ContainsOne(common.GameAoE3) {
 		LeaderboardGroup.HandleFunc("GET", "/getAvatarStatLeaderBoard", leaderboard.GetAvatarStatLeaderBoard)
 	}
@@ -139,11 +158,13 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	achievementGroup.HandleFunc("POST", "/syncStats", achievement.SyncStats)
 
 	advertisementGroup := gameGroup.Subgroup("/advertisement")
-	if gameSet.ContainsOne(common.GameAoE2) {
+	if gameSet.ContainsAny(common.GameAoE2, common.GameAoM) {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformSessionID", advertisement.UpdatePlatformSessionID)
 	}
 	advertisementGroup.HandleFunc("POST", "/join", advertisement.Join)
-	advertisementGroup.HandleFunc("POST", "/updateTags", advertisement.UpdateTags)
+	if gameSet.ContainsAny(common.GameAoE2, common.GameAoM) {
+		advertisementGroup.HandleFunc("POST", "/updateTags", advertisement.UpdateTags)
+	}
 	advertisementGroup.HandleFunc("POST", "/update", advertisement.Update)
 	advertisementGroup.HandleFunc("POST", "/leave", advertisement.Leave)
 	advertisementGroup.HandleFunc("POST", "/host", advertisement.Host)
@@ -153,7 +174,6 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	if gameSet.ContainsOne(common.GameAoE2) {
 		advertisementGroup.HandleFunc("GET", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
 	}
-	// TODO: Check if it applies to AoM
 	if gameSet.ContainsAny(common.GameAoE1, common.GameAoE3) {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformLobbyID", advertisement.UpdatePlatformLobbyID)
 	}
@@ -172,7 +192,7 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	}
 
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)
-	// TODO: Check if it applies to AoM
+
 	if gameSet.ContainsAny(common.GameAoE2, common.GameAoE3, common.GameAoM) {
 		advertisementGroup.HandleFunc("POST", "/startObserving", advertisement.StartObserving)
 		advertisementGroup.HandleFunc("POST", "/stopObserving", advertisement.StopObserving)
@@ -195,9 +215,14 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	if gameSet.ContainsOne(common.GameAoE3) {
 		chatGroup.HandleFunc("POST", "/sendText", chat.SendText)
 	}
-	// TODO: Check if it applies to AoM
 	if gameSet.ContainsOne(common.GameAoE3) {
 		chatGroup.HandleFunc("POST", "/sendWhisper", chat.SendWhisper)
+	}
+	if gameSet.ContainsOne(common.GameAoM) {
+		chatGroup.HandleFunc("POST", "/sendWhispers", chat.SendWhisper)
+	}
+	if gameSet.ContainsOne(common.GameAoM) {
+		chatGroup.HandleFunc("POST", "/deleteOfflineMessage", chat.DeleteOfflineMessage)
 	}
 
 	relationshipGroup := gameGroup.Subgroup("/relationship")
@@ -225,6 +250,14 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	partyGroup.HandleFunc("POST", "/reportMatch", party.ReportMatch)
 	partyGroup.HandleFunc("POST", "/finalizeReplayUpload", party.FinalizeReplayUpload)
 	partyGroup.HandleFunc("POST", "/updateHost", party.UpdateHost)
+	if gameSet.ContainsOne(common.GameAoM) {
+		partyGroup.HandleFunc("POST", "/createOrReportSinglePlayer", party.CreateOrReportSinglePlayer)
+	}
+	playerReportGroup := gameGroup.Subgroup("/playerreport")
+	// TODO: Check if it applies to AoE I/AoE III
+	if gameSet.ContainsAny(common.GameAoE2, common.GameAoM) {
+		playerReportGroup.HandleFunc("POST", "/reportUser", playerreport.ReportUser)
+	}
 
 	invitationGroup := gameGroup.Subgroup("/invitation")
 	invitationGroup.HandleFunc("POST", "/extendInvitation", invitation.ExtendInvitation)
@@ -232,10 +265,10 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 	invitationGroup.HandleFunc("POST", "/replyToInvitation", invitation.ReplyToInvitation)
 
 	cloudGroup := gameGroup.Subgroup("/cloud")
-	// TODO: Check if it applies to AoM
 	if gameSet.ContainsOne(common.GameAoE3) {
 		cloudGroup.HandleFunc("POST", "/getFileURL", cloud.GetFileURL)
 	}
+	// TODO: Enable to AoM if/when it gets cloud support
 	if gameSet.ContainsOne(common.GameAoE2) {
 		cloudGroup.HandleFunc("GET", "/getFileURL", cloud.GetFileURL)
 	}
@@ -247,11 +280,44 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 
 	// Used for the launcher
 	baseGroup.HandleFunc("GET", "/test", test.Test)
-	if gameSet.ContainsAny(common.GameAoE2, common.GameAoM) {
-		baseGroup.HandleFunc("GET", "/wss/", wss.Handle)
-	}
-	// TODO: Check if it applies to AoM
+	baseGroup.HandleFunc("GET", "/cacert.pem", cacertPem.CacertPem)
+
+	baseGroup.HandleFunc("GET", "/wss/", wss.Handle)
+	// TODO: Enable to AoM if/when it gets cloud support
 	if gameSet.ContainsAny(common.GameAoE2, common.GameAoE3) {
 		baseGroup.HandleFunc("GET", "/cloudfiles/", cloudfiles.Cloudfiles)
+	}
+
+	if gameSet.ContainsOne(common.GameAoM) {
+		playfabGroup := baseGroup.Subgroup(playfab.Prefix)
+
+		playfabClientGroup := playfabGroup.Subgroup("/Client")
+		playfabClientGroup.HandleFunc("POST", "/GetPlayerCombinedInfo", Client.GetPlayerCombinedInfo)
+		playfabClientGroup.HandleFunc("POST", "/GetTime", Client.GetTime)
+		playfabClientGroup.HandleFunc("POST", "/GetTitleData", Client.GetTitleData)
+		playfabClientGroup.HandleFunc("POST", "/GetUserReadOnlyData", Client.GetUserReadOnlyData)
+		playfabClientGroup.HandleFunc("POST", "/LoginWithSteam", Client.LoginWithSteam)
+		playfabClientGroup.HandleFunc("POST", "/UpdateUserTitleDisplayName", Client.UpdateUserTitleDisplayName)
+
+		playfabEventGroup := playfabGroup.Subgroup("/Event")
+		playfabEventGroup.HandleFunc("POST", "/WriteTelemetryEvents", Event.WriteTelemetryEvents)
+
+		playfabInventoryGroup := playfabGroup.Subgroup("/Inventory")
+		playfabInventoryGroup.HandleFunc("POST", "/GetInventoryItems", Inventory.GetInventoryItems)
+
+		playfabMultiplayerServerGroup := playfabGroup.Subgroup("/MultiplayerServer")
+		playfabMultiplayerServerGroup.HandleFunc("POST", "/GetCognitiveServicesToken", MultiplayerServer.GetCognitiveServicesToken)
+		playfabMultiplayerServerGroup.HandleFunc("POST", "/ListPartyQosServers", MultiplayerServer.ListPartyQosServers)
+
+		playfabPartyGroup := playfabGroup.Subgroup("/Party")
+		playfabPartyGroup.HandleFunc("POST", "/RequestParty", Party.RequestParty)
+	}
+
+	if gameSet.ContainsOne(common.GameAoM) {
+		apiAgeOfEmpiresGroup := baseGroup.Subgroup(apiAgeOfEmpires.Prefix)
+		apiAgeOfEmpiresGroup.HandleFunc("POST", "/textmoderation", textmoderation.TextModeration)
+		if proxy := apiAgeOfEmpires2.Root(); proxy != nil {
+			apiAgeOfEmpiresGroup.HandlePath("/", proxy)
+		}
 	}
 }

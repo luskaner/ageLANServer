@@ -1,8 +1,9 @@
 package item
 
 import (
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
+
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func GetItemBundleItemsJson(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package party
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -29,7 +30,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 
 	var toProfileIds []int32
 	game := models.G(r)
-	if game.Title() == common.GameAoE3 || game.Title() == common.GameAoM {
+	if game.Title() == common.GameAoE3 {
 		profileIdStr := r.FormValue("to_profile_id")
 		if profileIdStr == "" {
 			i.JSON(&w, i.A{0})
@@ -55,20 +56,22 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	peers := adv.GetPeers()
 
 	// Only peers within the match can send messages
-	// What about AI?
 	if _, ok = peers.Load(currentUserId); !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
 
 	users := game.Users()
-
+	if game.Title() == common.GameAoM {
+		toProfileIds = slices.DeleteFunc(toProfileIds, func(id int32) bool { return id == currentUserId })
+	}
 	receivers := make([]*models.MainUser, len(toProfileIds))
+
 	for j, profileId := range toProfileIds {
 		receivers[j], ok = users.GetUserById(profileId)
 		if !ok {

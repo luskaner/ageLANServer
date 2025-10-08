@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/spf13/pflag"
-	"strings"
 )
 
 const name = `game`
@@ -43,16 +44,30 @@ func GameCommand(flags *pflag.FlagSet) {
 	)
 }
 
+func gamesDescription() string {
+	return fmt.Sprintf(
+		`%s %s %s`,
+		descriptionMultipleStart,
+		strings.Join(common.SupportedGames.ToSlice(), ", "),
+		descriptionEnd,
+	)
+}
+
+func GamesVarCommand(flags *pflag.FlagSet, gameIds *[]string) {
+	flags.StringArrayVarP(
+		gameIds,
+		names,
+		shorthand,
+		common.SupportedGames.ToSlice(),
+		gamesDescription(),
+	)
+}
+
 func GamesCommand(flags *pflag.FlagSet) {
 	flags.StringArrayP(
 		names,
 		shorthand,
 		common.SupportedGames.ToSlice(),
-		fmt.Sprintf(
-			`%s %s %s`,
-			descriptionMultipleStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
-			descriptionEnd,
-		),
+		gamesDescription(),
 	)
 }

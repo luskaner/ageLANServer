@@ -17,6 +17,7 @@ is in maintenance or is eventually shutdown.
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
+* **Age of Mythology: Retold** ([currently]() only the *Steam* version).
 
 ## ⚙️Features
 
@@ -31,17 +32,25 @@ is in maintenance or is eventually shutdown.
 > See more details
 > in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
 
-### Age of Empires II: Definitive Edition and Age of Empires III: Definitive Edition
+### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition and Age of Mythology: Retold
 
 <details>
 <summary>List of features</summary>
 
 - 👁️ Observing (including *CapturAge* for *AoE II: DE*).
-- 🧑‍🤝‍🧑 Co-Op Campaigns.
-- 🔄 Rematch.
 - 📩 Lobby invite.
 - 🔗 Share lobby link.
 - 🔍 Player Search.
+
+</details>
+
+### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition
+
+<details>
+<summary>List of features</summary>
+
+- 🧑‍🤝‍🧑 Co-Op Campaigns.
+- 🔄 Rematch.
 
 </details>
 
@@ -55,7 +64,16 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-### Limitations
+### Age of Mythology: Retold
+
+<details>
+<summary>List of features</summary>
+
+- 🗣️ Whispering.
+
+</details>
+
+### General limitations
 
 <details>
 <summary>List of limitations</summary>
@@ -75,17 +93,29 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
+#### Age of Mythology: Retold
+
+<details>
+<summary>List of limitations</summary>
+
+- ⚠️ **Friend list** will instead show all online users as if they were friends.
+- ⚠️ ***Arena of Gods* modes** (*Story*, *Challenge* and *Daily Celestial Challenge*)
+  are [currently](https://github.com/luskaner/ageLANServer/issues?q=is%3Aissue%20arena%20of%20gods) not supported.
+
+</details>
+
 ## Unimplemented features
 
 <details>
 <summary>List of unimplemented features</summary>
 
-- ❌ **Matchmaking**: does not make sense having an ephimeral server with limited users, use the official server for
+- ❌ **Matchmaking**: does not make sense having a likely ephimeral server with limited users, use the official server
+  for
   that.
 - ❌ **Achievements**: only the official server should be able to. Meeting the requirements of an achievement during a
   match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
   for more details).
-- ❌ Changing **player profile icon**: the default will always be used.
+- ❌ Changing **player profile icon**: the default, or empty, will always be used.
 - ❌ **Leaderboards**: will appear empty.
 - ❌ **Player stats**: will appear empty.
 - ❌ **Clans**: all players are outside clans. Browsing clan will appear empty and creating one will always result in
@@ -121,7 +151,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 </details>
 
-### Launcher
+### Launcher and Battle Server Manager
 
 - Windows without S edition/mode (recommended):
     - 10 on x86-64 (recommended).
@@ -130,7 +160,8 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
     - x86-64 (recommended).
     - ARM64.
 
-**Note: If you allow (and is needed) to handle the hosts file, local certificate, or an elevated custom game launcher,
+**Note for launcher: If you allow (and is needed) to handle the hosts file, local certificate, or an elevated custom
+game launcher,
 it will require admin rights elevation.**
 
 ### Client
@@ -147,6 +178,8 @@ it will require admin rights elevation.**
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
   Windows*). Recommended a late 2023 version or later.
+- Age of Mythology: Retold
+  on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
 *Note: An up-to-date (or slightly older) version is highly recommended as there are known issues with older versions.*
 
@@ -172,6 +205,13 @@ supported operating systems.
     * Linux:
         * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
+* Battle Server Manager:
+    * Windows:
+        * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win_x86-64.zip
+        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win_arm64.tar.xz
+    * Linux:
+        * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.xz
+        * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
         * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
@@ -245,6 +285,7 @@ play.
     - Redirect the game's API requests to the LAN server.
     - Redirect the game CDN so it does not detect the official game status.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
+- (except AoE I) Add a certificate to the game's store to allow the game to connect to the LAN server.
 - (Optional) Run custom configuration commands to setup/revert the configuration.
 - (Windows Optional) Re-broadcast the battle server through other network interfaces apart from the most priority one.
 - Automatically find and start the game.
@@ -264,22 +305,22 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
 5. If not using the Steam or Xbox launcher, **edit the `launcher/resources/config.<game_title>.toml` file** with a text
    editor (like Notepad)
-   and modify the `Client.Executable` section to point to the game launcher path.
+   and modify the `Client.Executable` section to point to the game launcher path. In this case, you also need to modify
+   `Client.Path` to point to the game's directory.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. **Execute `launcher/launcher_<game_title>` script**: you will be asked for admin elevation and
+6. **Execute `launcher/start_<game_title>` script**: you will be asked for admin elevation and
    confirmation of other dialogs as needed, you will also need to allow the connections via the Microsoft Defender
    Firewall or any other.
 7. **Repeat the above steps for every PC** you want to play in LAN with by running the *launcher*, the first PC to
    launch it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
-8. In the game, when hosting a new lobby, just make sure to set the server to **Use Local Lan Server** (AoE II),
-   select **LAN** before creating the Lobby (*AoE III*) or select the "LAN" menu option (*AoE I*). In *AoE I/II*,
-   setting it to public visibility is recommended.
+8. In the game, just host a new lobby via the Multiplayer section. Setting it to public visibility is recommended.
 9. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
-   and sending an invite as needed. You can share the link to join the lobby automatically (only works if already
+   and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
+   works if already
    in-game).
 
-## Separate server and launcher execution
+## Standalone execution
 
 <details>
     <summary>Server instructions</summary>
@@ -288,7 +329,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    stable [release](https://github.com/luskaner/ageLANServer/releases).
 2. **Generate the certificate** by simply executing `bin/genCert`.
 3. If needed **edit the [config](server/resources/config/config.toml) file**.
-4. **Run** the `server` binary for all games or the `server_` game title specific script.
+4. **Run** the `server` binary for all games or the `start_` game title specific script.
 
 </details>
 
@@ -301,9 +342,17 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    You will need to edit the `Client.Executable` section to point to the game launcher path if using a custom launcher
    which you will need to use
    a custom launcher for 100% offline play.
-3. **Run** the `launcher_...` script.
+3. **Run** the `start_...` script.
 
 *Note: If you have any issues run the `bin/config revert -a`.*
+
+<details>
+    <summary>Battle Server Manager instructions</summary>
+
+1. **Download** the proper *battle-server-manager* asset from latest
+   stable [release](https://github.com/luskaner/ageLANServer/releases).
+2. If needed **edit the `battle-server-manager/resources/config.<game_title>.toml`**.
+3. **Run** the `start_...` script.
 
 </details>
 

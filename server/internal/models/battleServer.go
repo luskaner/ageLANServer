@@ -1,23 +1,21 @@
 package models
 
 import (
+	"fmt"
+	"iter"
+	"net"
+	"net/http"
+
 	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/battleServerConfig"
 	"github.com/luskaner/ageLANServer/server/internal"
 )
 
 type MainBattleServer struct {
-	// Only used for common.GameAoE2
-	Name string
-	// Cannot be an UUID as it can be confused for a LAN one.
-	Region string
-	IPv4   string
-	BsPort uint16
-	// Used for all except common.GameAoE1
-	OutOfBandPort    uint16
-	WebSocketPort    uint16
-	lan              *bool
-	hasOobPort       bool
-	battleServerName string
+	battleServerConfig.BaseConfig `mapstructure:",squash"`
+	lan                           *bool
+	hasOobPort                    bool
+	battleServerName              string
 }
 
 func (battleServer *MainBattleServer) LAN() bool {
@@ -41,12 +39,12 @@ func (battleServer *MainBattleServer) AppendName(encoded *internal.A) {
 	}
 }
 
-func (battleServer *MainBattleServer) EncodeLogin() internal.A {
+func (battleServer *MainBattleServer) EncodeLogin(r *http.Request) internal.A {
 	encoded := internal.A{
 		battleServer.Region,
 	}
 	battleServer.AppendName(&encoded)
-	encoded = append(encoded, battleServer.IPv4)
+	encoded = append(encoded, battleServer.ResolveIPv4(r))
 	encoded = append(encoded, battleServer.EncodePorts()...)
 	return encoded
 }
@@ -60,12 +58,33 @@ func (battleServer *MainBattleServer) EncodePorts() internal.A {
 	return encoded
 }
 
-func (battleServer *MainBattleServer) EncodeAdvertisement() internal.A {
+func (battleServer *MainBattleServer) EncodeAdvertisement(r *http.Request) internal.A {
 	encoded := internal.A{
-		battleServer.IPv4,
+		battleServer.ResolveIPv4(r),
 	}
 	encoded = append(encoded, battleServer.EncodePorts()...)
 	return encoded
+}
+
+func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) string {
+	if battleServer.IPv4 == "auto" {
+		addr, _ := r.Context().Value(http.LocalAddrContextKey).(net.Addr)
+		ip, _, _ := net.SplitHostPort(addr.String())
+		return ip
+	}
+	return battleServer.IPv4
+}
+
+func (battleServer *MainBattleServer) String() string {
+	str := fmt.Sprintf(
+		"Region: %s (Name: %s), IPv4: %s, Ports: ",
+		battleServer.Region,
+		battleServer.Name,
+		battleServer.IPv4,
+	)
+	ports := battleServer.EncodePorts()
+	str += fmt.Sprintf("%v", ports)
+	return str
 }
 
 type MainBattleServers struct {
@@ -88,11 +107,15 @@ func (battleSrvs *MainBattleServers) Initialize(battleServers []MainBattleServer
 	battleSrvs.store = internal.NewReadOnlyOrderedMap[string, *MainBattleServer](keyOrder, mapping)
 }
 
-func (battleSrvs *MainBattleServers) Encode() internal.A {
+func (battleSrvs *MainBattleServers) Iter() iter.Seq2[string, *MainBattleServer] {
+	return battleSrvs.store.Iter()
+}
+
+func (battleSrvs *MainBattleServers) Encode(r *http.Request) internal.A {
 	encoded := make(internal.A, battleSrvs.store.Len())
 	i := 0
 	for _, bs := range battleSrvs.store.Iter() {
-		encoded[i] = bs.EncodeLogin()
+		encoded[i] = bs.EncodeLogin(r)
 		i++
 	}
 	return encoded
@@ -111,7 +134,9 @@ func (battleSrvs *MainBattleServers) NewLANBattleServer(region string) *MainBatt
 
 func (battleSrvs *MainBattleServers) NewBattleServer(region string) *MainBattleServer {
 	return &MainBattleServer{
-		Region:           region,
+		BaseConfig: battleServerConfig.BaseConfig{
+			Region: region,
+		},
 		hasOobPort:       battleSrvs.haveOobPort,
 		battleServerName: battleSrvs.battleServerName,
 	}

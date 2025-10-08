@@ -28,6 +28,11 @@ type Password struct {
 	enabled bool
 }
 
+type Tags struct {
+	integer map[string]int32
+	text    map[string]string
+}
+
 type MainAdvertisement struct {
 	id                int32
 	ip                string
@@ -59,6 +64,16 @@ type MainAdvertisement struct {
 	startTime         int64
 	peers             *i.SafeOrderedMap[int32, *MainPeer]
 	metadata          string
+	tags              Tags
+}
+
+func containsFilter[M ~map[K]V, K, V comparable](filter M, tags M) bool {
+	for fk, fv := range filter {
+		if tv, ok := tags[fk]; !ok || fv != tv {
+			return false
+		}
+	}
+	return true
 }
 
 type MainAdvertisements struct {
@@ -184,16 +199,23 @@ func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, *MainPeer] {
 	return adv.peers
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool) *MainAdvertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) *MainAdvertisement {
 	adv := &MainAdvertisement{}
 	i.WithRng(func(rand *rand.Rand) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
 	})
 	adv.relayRegion = advFrom.RelayRegion
 	if generateMetadata {
+		var scidEnd string
+		if alternateScid {
+			scidEnd = "00006fe8b971"
+		} else {
+			scidEnd = "000068a451d4"
+		}
 		adv.metadata = fmt.Sprintf(
-			`{"templateName":"GameSession","name":"%s","scid":"00000000-0000-0000-0000-000068a451d4"}`,
+			`{"templateName":"GameSession","name":"%s","scid":"00000000-0000-0000-0000-%s"}`,
 			uuid.New().String(),
+			scidEnd,
 		)
 	} else {
 		adv.metadata = "0"
@@ -203,6 +225,8 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 	adv.race = advFrom.Race
 	adv.team = advFrom.Team
 	adv.statGroup = advFrom.StatGroup
+	adv.tags.text = make(map[string]string)
+	adv.tags.integer = make(map[string]int32)
 	adv.peers = i.NewSafeOrderedMap[int32, *MainPeer]()
 	advs.UpdateUnsafe(adv, &shared.AdvertisementUpdateRequest{
 		AppBinaryChecksum: advFrom.AppBinaryChecksum,
@@ -267,7 +291,6 @@ func (advs *MainAdvertisements) WithWriteLock(id int32, action func()) {
 
 // UpdateUnsafe is safe only if adv has not been stored yet
 func (advs *MainAdvertisements) UpdateUnsafe(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
-	adv.hostId = advFrom.HostId
 	adv.automatchPollId = advFrom.AutomatchPollId
 	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
 	adv.mapName = advFrom.MapName
@@ -363,6 +386,17 @@ func (adv *MainAdvertisement) EncodePeers() []i.A {
 		j++
 	}
 	return encodedPeers
+}
+
+// UnsafeUpdateTags requires advertisement write lock
+func (adv *MainAdvertisement) UnsafeUpdateTags(integer map[string]int32, text map[string]string) {
+	adv.tags.integer = integer
+	adv.tags.text = text
+}
+
+// UnsafeMatchesTags requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeMatchesTags(integer map[string]int32, text map[string]string) bool {
+	return containsFilter(integer, adv.tags.integer) && containsFilter(text, adv.tags.text)
 }
 
 // UnsafeEncode requires advertisement read lock

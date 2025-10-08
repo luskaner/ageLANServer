@@ -4,7 +4,6 @@ import (
 	"github.com/luskaner/ageLANServer/battle-server-broadcast"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"golang.org/x/sys/windows"
-	"time"
 )
 
 func waitForProcess(PID uint32) bool {
@@ -19,13 +18,8 @@ func waitForProcess(PID uint32) bool {
 	}(handle)
 
 	var event uint32
-	event, err = windows.WaitForSingleObject(handle, uint32((5 * time.Minute).Milliseconds()))
-
-	if err != nil || event == uint32(windows.WAIT_TIMEOUT) {
-		return false
-	}
-
-	return true
+	event, err = windows.WaitForSingleObject(handle, windows.INFINITE)
+	return err == nil && event == uint32(windows.WAIT_OBJECT_0)
 }
 
 func rebroadcastBattleServer(exitCode *int, port int) {

@@ -11,7 +11,7 @@ CanAddHost = true
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
 # Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'. This is only necessary in Windows, on the rest of systems it is always 'false'.
+# Either 'auto' or 'false'. This is only necessary in Windows when not running AoM, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
 # On AoE I this is always false as it does not store metadata.
@@ -28,8 +28,9 @@ IsolateProfiles = false
 Start = 'auto'
 # The process to start the server, if 'auto', it will be try to execute the server binary in this directory order:
 # 1. './server/'
-# 2. '../'
-# 3. '../server/'
+# 2. '../server/'
+# 3. '../../server/'
+# Note: You may use environment variables.
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
@@ -42,6 +43,7 @@ ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
 # Note: See the server config to set the interface to bind to.
 Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
+# This will also stop the Battle Server is one was started with the Battle Server Manager.
 Stop = 'auto'
 # Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
 AnnouncePorts = [31978]
@@ -49,3 +51,25 @@ AnnouncePorts = [31978]
 # If not including the default group, default configured servers will not get discovered via Multicast.
 # Only IPv4 is supported.
 AnnounceMulticastGroups = ['239.31.97.8']
+
+# This section only applies if starting the server.
+[Server.BattleServerManager]
+# When to use the manager to start a new Battle Server running the manager; accepted values:
+# 'required': Only for games that require it to work (AoM: RT).
+# 'true'.
+# 'false'.
+# Note: by default the manager will only start a new instance if one is not already running for the given game.
+Run = 'false'
+# The process to start the battle-server-manager,
+# if 'auto', it will be try to execute the server binary in this directory order:
+# 1. './battle-server-manager/'
+# 2. '../'
+# 3. '../battle-server-manager/'
+# Note: You may use environment variables.
+Executable = 'auto'
+# The arguments to pass to the Battle Server Manager executable if starting it.
+# Execute the manager help flag for available arguments.
+# {Game} will be replaced by the game name.
+# By default, it will also hide the BattleServer.exe window (apart from the manager itself).
+# Note: You may use environment variables.
+ExecutableArgs = ['-e', '{Game}', '-r']
