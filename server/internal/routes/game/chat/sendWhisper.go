@@ -23,7 +23,7 @@ func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
-	text := r.Form.Get("message")
+	text := r.FormValue("message")
 	if text == "" {
 		whisperResult(&w, gameTitle, 2)
 		return
@@ -31,7 +31,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 
 	var targetUserIds []int32
 	if gameTitle == common.GameAoM {
-		targetUserIdsStr := r.Form.Get("recipientIDs")
+		targetUserIdsStr := r.FormValue("recipientIDs")
 		if targetUserIdsStr == "" {
 			whisperResult(&w, gameTitle, 2)
 			return
@@ -42,7 +42,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		targetUserIdStr := r.Form.Get("recipientID")
+		targetUserIdStr := r.FormValue("recipientID")
 		if targetUserIdStr == "" {
 			whisperResult(&w, gameTitle, 2)
 			return

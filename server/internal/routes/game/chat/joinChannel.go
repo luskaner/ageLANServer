@@ -12,7 +12,7 @@ import (
 
 func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	// FIXME: Channels might show duplicate users (including the count)
-	chatChannelIdStr := r.Form.Get("chatroomID")
+	chatChannelIdStr := r.FormValue("chatroomID")
 	if chatChannelIdStr == "" {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return

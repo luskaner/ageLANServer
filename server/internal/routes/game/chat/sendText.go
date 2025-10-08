@@ -11,12 +11,12 @@ import (
 )
 
 func SendText(w http.ResponseWriter, r *http.Request) {
-	text := r.Form.Get("message")
+	text := r.FormValue("message")
 	if text == "" {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	chatChannelIdStr := r.Form.Get("chatroomID")
+	chatChannelIdStr := r.FormValue("chatroomID")
 	if chatChannelIdStr == "" {
 		i.JSON(&w, i.A{2})
 		return

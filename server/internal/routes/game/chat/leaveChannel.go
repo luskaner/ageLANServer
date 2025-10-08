@@ -28,7 +28,7 @@ func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChan
 }
 
 func LeaveChannel(w http.ResponseWriter, r *http.Request) {
-	chatChannelIdStr := r.Form.Get("chatroomID")
+	chatChannelIdStr := r.FormValue("chatroomID")
 	if chatChannelIdStr == "" {
 		i.JSON(&w, i.A{2})
 		return
