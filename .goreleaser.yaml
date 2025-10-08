@@ -328,6 +328,7 @@ archives:
       - launcher-config_full_windows_amd64
       - launcher-config-admin_full_windows_amd64
       - launcher-config-admin-agent_full_windows_amd64
+      - battle-server-manager_windows_amd64
     name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win_x86-64"
     files:
       - src: LICENSE
@@ -401,6 +402,7 @@ archives:
       - launcher-config_full_windows_arm64
       - launcher-config-admin_full_windows_arm64
       - launcher-config-admin-agent_full_windows_arm64
+      - battle-server-manager_windows_arm64
     name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win_arm64"
     files:
       - src: LICENSE
