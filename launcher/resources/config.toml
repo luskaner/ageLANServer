@@ -59,7 +59,7 @@ AnnounceMulticastGroups = ['239.31.97.8']
 # 'true'.
 # 'false'.
 # Note: by default the manager will only start a new instance if one is not already running for the given game.
-Run = 'false'
+Run = 'true'
 # The process to start the battle-server-manager,
 # if 'auto', it will be try to execute the server binary in this directory order:
 # 1. './battle-server-manager/'
