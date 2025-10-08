@@ -24,6 +24,7 @@ Depending on the module you want to debug, you will need to run the correspondin
     - config: ```task build-config-admin-agent```
     - config-admin-agent: ```task build-config-admin```
     - agent: ```task build-config-all```
+- battle-server-manager: ```task debug:prepare-battle-server-manager```
 
 ### Build
 

@@ -1,10 +1,13 @@
 # Age LAN Server
 
-Age LAN Server is a web server (with its launcher) that allows you to play multiplayer lobbies without having an
+Age LAN Server (formerly *AoE 2 DE LAN Server*) is a web server (with its launcher) that allows you to play multiplayer
+lobbies without having an
 internet
-connection **to the game server**  ensuring the game LAN functionality is still available even if the official
+connection **to the game server**  ensuring the game multiplayer functionality is still available even if the official
 server
 is in maintenance or is eventually shutdown.
+
+*Note: It is not strictly limited to LAN only.*
 
 > [!IMPORTANT]
 > You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being
@@ -17,7 +20,8 @@ is in maintenance or is eventually shutdown.
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
-* **Age of Mythology: Retold** ([currently]() only the *Steam* version).
+* **Age of Mythology: Retold** ([currently](https://github.com/luskaner/ageLANServer/issues/245) only the *Steam*
+  version).
 
 ## ⚙️Features
 
