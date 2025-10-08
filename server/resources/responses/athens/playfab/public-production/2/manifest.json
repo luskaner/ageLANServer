@@ -1,0 +1,12 @@
+{
+  "CurrentSeason": "Season0",
+  "Seasons": [
+    {
+      "SeasonId": "Season0",
+      "Path": "seasons/season0.json"
+    }
+  ],
+  "DailySkirmishPlusPath": "daily_skirmish_plus.json",
+  "FeatureFlagsPath": "feature_flags.json",
+  "KnownBlessingsPath": "known_blessings.json"
+}

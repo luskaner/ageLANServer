@@ -1,0 +1,3587 @@
+{
+  "DataFormatVersion": 0,
+  "Id": "UploaderPrototypeTestSeason",
+  "Title": "STR_AOTG_SEASON_0_TITLE",
+  "Subtitle": "",
+  "StartDateUtc": 1,
+  "EndDateUtc": 1730679300,
+  "Labyrinths": [
+    {
+      "Id": "L0",
+      "Title": "",
+      "Pages": [
+        {
+          "Id": "L0P0",
+          "Title": "Beta Page 1",
+          "Missions": [
+            {
+              "Id": "L0P0C10M1",
+              "Title": "STR_AOTG_S0L0P0C10M1_TITLE",
+              "Predecessors": [
+                "L0P0C9M1",
+                "L0P0C9M2",
+                "L0P0C9M3"
+              ],
+              "PositionX": 1625,
+              "PositionY": 375,
+              "Visualization": "Boss",
+              "Map": "AotG/S0L0P0C10M1.mythscn",
+              "Size": "Giant",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Ultra",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_KronosUnique_5"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/alfheim.png",
+              "MapPreviewImage": "resources/atlantean/static_color/major_gods/kronos_icon.png"
+            },
+            {
+              "Id": "L0P0C1M1",
+              "Title": "STR_AOTG_S0L0P0C1M1_TITLE",
+              "Predecessors": [],
+              "PositionX": 50,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "AotG/S0L0P0C1M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexNoop",
+                  "ArenaEffectName": "TimeVortexNoop",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "RemnantsNoop",
+                  "ArenaEffectName": "RemnantsNoop",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 1
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 1
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroAreaDamage_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/highland.png",
+              "MapPreviewImage": "resources/atlantean/static_color/major_gods/gaia_icon.png"
+            },
+            {
+              "Id": "L0P0C2M1",
+              "Title": "STR_AOTG_S0L0P0C2M1_TITLE",
+              "Predecessors": [
+                "L0P0C1M1"
+              ],
+              "PositionX": 225,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "AotG/S0L0P0C2M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsNoop",
+                  "ArenaEffectName": "RemnantsNoop",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 1
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 1
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_VillagerCostLess_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/watering_hole.png",
+              "MapPreviewImage": "resources/egyptian/static_color/major_gods/ra_icon.png"
+            },
+            {
+              "Id": "L0P0C3M1",
+              "Title": "STR_AOTG_S0L0P0C3M1_TITLE",
+              "Predecessors": [
+                "L0P0C2M1"
+              ],
+              "PositionX": 400,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "AotG/S0L0P0C3M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI",
+                  "Civ": "Loki",
+                  "Team": 1
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI",
+                  "Civ": "Loki",
+                  "Team": 1
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroesMoveFaster_0"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessFavor_0"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanDamage_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/kerlaugar.png",
+              "MapPreviewImage": "resources/norse/static_color/major_gods/loki_icon.png"
+            },
+            {
+              "Id": "L0P0C4M1",
+              "Title": "STR_AOTG_S0L0P0C4M1_TITLE",
+              "Predecessors": [
+                "L0P0C3M1"
+              ],
+              "PositionX": 575,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "AotG/S0L0P0C4M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SERVANTKRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GaiaUnique_5"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/alfheim.png",
+              "MapPreviewImage": "resources/atlantean/static_color/minor_gods/prometheus_icon.png"
+            },
+            {
+              "Id": "L0P0C5M1",
+              "Title": "STR_AOTG_S0L0P0C5M1_TITLE",
+              "Predecessors": [
+                "L0P0C4M1"
+              ],
+              "PositionX": 750,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "acropolis",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SERVANTKRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_KastorsRetinue_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/acropolis-sqr.png"
+            },
+            {
+              "Id": "L0P0C6M1",
+              "Title": "STR_AOTG_S0L0P0C6M1_TITLE",
+              "Predecessors": [
+                "L0P0C5M1"
+              ],
+              "PositionX": 925,
+              "PositionY": 205,
+              "Visualization": "Regular",
+              "Map": "black_sea",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DEF",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DEF",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanLifesteal_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/black_sea-sqr.png"
+            },
+            {
+              "Id": "L0P0C6M2",
+              "Title": "STR_AOTG_S0L0P0C6M2_TITLE",
+              "Predecessors": [
+                "L0P0C5M1"
+              ],
+              "PositionX": 925,
+              "PositionY": 545,
+              "Visualization": "Regular",
+              "Map": "blue_lagoon",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_HADES",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_CORRUPTED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythHitpoints_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/blue_lagoon-sqr.png"
+            },
+            {
+              "Id": "L0P0C7M1",
+              "Title": "STR_AOTG_S0L0P0C7M1_TITLE",
+              "Predecessors": [
+                "L0P0C6M1"
+              ],
+              "PositionX": 1100,
+              "PositionY": 175,
+              "Visualization": "Regular",
+              "Map": "ironwood",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_DECEIVED",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythDeathExplode_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/ironwood-sqr.png"
+            },
+            {
+              "Id": "L0P0C7M2",
+              "Title": "STR_AOTG_S0L0P0C7M2_TITLE",
+              "Predecessors": [
+                "L0P0C6M1",
+                "L0P0C6M2"
+              ],
+              "PositionX": 1100,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "mirkwood",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_DEF",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_CORRUPTED",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerAbilityRecharge_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+            },
+            {
+              "Id": "L0P0C7M3",
+              "Title": "STR_AOTG_S0L0P0C7M3_TITLE",
+              "Predecessors": [
+                "L0P0C6M2"
+              ],
+              "PositionX": 1175,
+              "PositionY": 575,
+              "Visualization": "Regular",
+              "Map": "marsh",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SERVANTKRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_DECEIVED",
+                  "Civ": "Zeus",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_CORRUPTED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SERVANTKRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroAreaDamage_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/marsh-sqr.png"
+            },
+            {
+              "Id": "L0P0C8M1",
+              "Title": "STR_AOTG_S0L0P0C8M1_TITLE",
+              "Predecessors": [
+                "L0P0C7M1",
+                "L0P0C7M2"
+              ],
+              "PositionX": 1275,
+              "PositionY": 175,
+              "Visualization": "Regular",
+              "Map": "gold_rush",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Deathmatch",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DEF",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DEF",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GatherBoost_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/gold_rush-sqr.png"
+            },
+            {
+              "Id": "L0P0C8M2",
+              "Title": "STR_AOTG_S0L0P0C8M2_TITLE",
+              "Predecessors": [
+                "L0P0C7M2",
+                "L0P0C7M3"
+              ],
+              "PositionX": 1275,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "gold_rush",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_AGG",
+                  "Civ": "Thor",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_AGG",
+                  "Civ": "Thor",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanTrainFaster_0"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerCostLess_0"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/gold_rush-sqr.png"
+            },
+            {
+              "Id": "L0P0C9M1",
+              "Title": "STR_AOTG_S0L0P0C9M1_TITLE",
+              "Predecessors": [
+                "L0P0C8M1",
+                "L0P0C8M2"
+              ],
+              "PositionX": 1450,
+              "PositionY": 175,
+              "Visualization": "Regular",
+              "Map": "elysium",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_AGG",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_CORRUPTED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_CORRUPTED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroesMoveFaster_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/elysium-sqr.png"
+            },
+            {
+              "Id": "L0P0C9M2",
+              "Title": "STR_AOTG_S0L0P0C9M2_TITLE",
+              "Predecessors": [
+                "L0P0C8M2",
+                "L0P0C8M1"
+              ],
+              "PositionX": 1450,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "mount_olympus",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 3,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_SET_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanLifesteal_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/mount_olympus-sqr.png"
+            },
+            {
+              "Id": "L0P0C9M3",
+              "Title": "STR_AOTG_S0L0P0C9M3_TITLE",
+              "Predecessors": [
+                "L0P0C7M3"
+              ],
+              "PositionX": 1375,
+              "PositionY": 575,
+              "Visualization": "Regular",
+              "Map": "mount_olympus",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "TimeVortexD0",
+                  "ArenaEffectName": "TimeVortexD0",
+                  "Title": "STR_AOTG_RULE_TIME_VORTEX",
+                  "Description": "STR_AOTG_RULE_TIME_VORTEX_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/kronos_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/kronos_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD0",
+                  "ArenaEffectName": "AIPersonalitiesD0",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA_DEF",
+                  "Civ": "Gaia",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_GAIA_DEF",
+                  "Civ": "Gaia",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SERVANTKRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroAreaDamage_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/mount_olympus-sqr.png"
+            }
+          ]
+        },
+        {
+          "Id": "L0P1",
+          "Title": "Beta Page 2",
+          "Missions": [
+            {
+              "Id": "L0P1C10M1",
+              "Title": "STR_AOTG_S0L0P1C10M1_TITLE",
+              "Predecessors": [
+                "L0P1C9M1",
+                "L0P1C9M2"
+              ],
+              "PositionX": 1625,
+              "PositionY": 375,
+              "Visualization": "Boss",
+              "Map": "AotG/S0L0P1C10M1.mythscn",
+              "Size": "Giant",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Ultra",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD9",
+                  "ArenaEffectName": "SeasonsD9",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_NidhoggSpawn_5"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/midgard.png",
+              "MapPreviewImage": "resources/norse/static_color/major_gods/loki_icon.png"
+            },
+            {
+              "Id": "L0P1C1M1",
+              "Title": "STR_AOTG_S0L0P1C1M1_TITLE",
+              "Predecessors": [
+                "L0P0C10M1"
+              ],
+              "PositionX": 50,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "AotG/S0L0P1C1M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "GAIA",
+                  "Civ": "Gaia",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_CHAMPIONFREYR",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_CHAMPIONFREYR",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanDamage_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/anatolia.png",
+              "MapPreviewImage": "resources/maps/previews/anatolia-sqr.png"
+            },
+            {
+              "Id": "L0P1C2M1",
+              "Title": "STR_AOTG_S0L0P1C2M1_TITLE",
+              "Predecessors": [
+                "L0P1C1M1"
+              ],
+              "PositionX": 225,
+              "PositionY": 275,
+              "Visualization": "Regular",
+              "Map": "mirkwood",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerCostLess_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+            },
+            {
+              "Id": "L0P1C2M2",
+              "Title": "STR_AOTG_S0L0P1C2M2_TITLE",
+              "Predecessors": [
+                "L0P1C1M1"
+              ],
+              "PositionX": 225,
+              "PositionY": 475,
+              "Visualization": "Regular",
+              "Map": "mirkwood",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_HADES",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DECEIVED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_DECEIVED",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanDamage_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+            },
+            {
+              "Id": "L0P1C3M1",
+              "Title": "STR_AOTG_S0L0P1C3M1_TITLE",
+              "Predecessors": [
+                "L0P1C2M1"
+              ],
+              "PositionX": 400,
+              "PositionY": 175,
+              "Visualization": "Regular",
+              "Map": "land_unknown",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 2
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 2
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythHitpoints_1"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GatherBoost_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/land_unknown-sqr.png"
+            },
+            {
+              "Id": "L0P1C3M2",
+              "Title": "STR_AOTG_S0L0P1C3M2_TITLE",
+              "Predecessors": [
+                "L0P1C2M1",
+                "L0P1C2M2"
+              ],
+              "PositionX": 400,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "land_unknown",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 3,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanLifesteal_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/land_unknown-sqr.png"
+            },
+            {
+              "Id": "L0P1C3M3",
+              "Title": "STR_AOTG_S0L0P1C3M3_TITLE",
+              "Predecessors": [
+                "L0P1C2M2"
+              ],
+              "PositionX": 400,
+              "PositionY": 575,
+              "Visualization": "Regular",
+              "Map": "land_unknown",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_AGG",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_DECEIVED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_DECEIVED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DECEIVED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HeroesMoveFaster_2"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanTrainFaster_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/land_unknown-sqr.png"
+            },
+            {
+              "Id": "L0P1C4M1",
+              "Title": "STR_AOTG_S0L0P1C4M3_TITLE",
+              "Predecessors": [
+                "L0P1C3M2",
+                "L0P1C3M1"
+              ],
+              "PositionX": 575,
+              "PositionY": 275,
+              "Visualization": "Regular",
+              "Map": "muspellheim",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 3,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_KastorsRetinue_1"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessFavor_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/muspellheim-sqr.png"
+            },
+            {
+              "Id": "L0P1C4M2",
+              "Title": "STR_AOTG_S0L0P1C4M4_TITLE",
+              "Predecessors": [
+                "L0P1C3M2",
+                "L0P1C3M3"
+              ],
+              "PositionX": 575,
+              "PositionY": 475,
+              "Visualization": "Regular",
+              "Map": "anatolia",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD0",
+                  "ArenaEffectName": "SeasonsD0",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_AGG",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_AGG",
+                  "Civ": "Set",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 4,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_CORRUPTED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_CORRUPTED",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerCostLess_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/anatolia-sqr.png"
+            },
+            {
+              "Id": "L0P1C5M1",
+              "Title": "STR_AOTG_S0L0P1C5M1_TITLE",
+              "Predecessors": [
+                "L0P1C4M1",
+                "L0P1C4M2"
+              ],
+              "PositionX": 750,
+              "PositionY": 375,
+              "Visualization": "Boss",
+              "Map": "AotG/S0L0P1C5M1.mythscn",
+              "Size": "Normal",
+              "VictoryCondition": "Conquest",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD5",
+                  "ArenaEffectName": "SeasonsD5",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_FOLLOWERLOKI",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_FOLLOWERLOKI",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HouseVillSpawn_5"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "resources/maps/map_picker/tundra.png",
+              "MapPreviewImage": "resources/norse/static_color/minor_gods/freyja_icon.png"
+            },
+            {
+              "Id": "L0P1C6M1",
+              "Title": "STR_AOTG_S0L0P1C6M1_TITLE",
+              "Predecessors": [
+                "L0P1C5M1"
+              ],
+              "PositionX": 925,
+              "PositionY": 175,
+              "Visualization": "Regular",
+              "Map": "kerlaugar",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD5",
+                  "ArenaEffectName": "SeasonsD5",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_CORRUPTED",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS_AGG",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ODIN_CORRUPTED",
+                  "Civ": "Odin",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_CORRUPTED",
+                  "Civ": "Thor",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerAbilityRecharge_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/kerlaugar-sqr.png"
+            },
+            {
+              "Id": "L0P1C6M2",
+              "Title": "STR_AOTG_S0L0P1C6M2_TITLE",
+              "Predecessors": [
+                "L0P1C5M1"
+              ],
+              "PositionX": 925,
+              "PositionY": 375,
+              "Visualization": "Regular",
+              "Map": "kerlaugar",
+              "Size": "Normal",
+              "VictoryCondition": "SuddenDeath",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD5",
+                  "ArenaEffectName": "SeasonsD5",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_CORRUPTED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_DECEIVED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_FREYR_DEF",
+                  "Civ": "Freyr",
+                  "Team": 0,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_KastorsRetinue_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/kerlaugar-sqr.png"
+            },
+            {
+              "Id": "L0P1C6M3",
+              "Title": "STR_AOTG_S0L0P1C6M3_TITLE",
+              "Predecessors": [
+                "L0P1C5M1"
+              ],
+              "PositionX": 925,
+              "PositionY": 575,
+              "Visualization": "Regular",
+              "Map": "kerlaugar",
+              "Size": "Normal",
+              "VictoryCondition": "SuddenDeath",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD5",
+                  "ArenaEffectName": "SeasonsD5",
+                  "Title": "STR_AOTG_RULE_SEASONS",
+                  "Description": "STR_AOTG_RULE_SEASONS_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/thor_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/thor_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_CORRUPTED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_CORRUPTED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_AGG",
+                  "Civ": "Thor",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_DECEIVED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DECEIVED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_AGG",
+                  "Civ": "Thor",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_HumanTrainFaster_2"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythDeathExplode_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/kerlaugar-sqr.png"
+            },
+            {
+              "Id": "L0P1C7M1",
+              "Title": "STR_AOTG_S0L0P1C7M2_TITLE",
+              "Predecessors": [
+                "L0P1C6M1",
+                "L0P1C6M2"
+              ],
+              "PositionX": 1100,
+              "PositionY": 275,
+              "Visualization": "Regular",
+              "Map": "midgard",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD6",
+                  "ArenaEffectName": "SeasonsD6",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_DEF",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_RA_AGG",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_DECEIVED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_RA_DECEIVED",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_VillagerCostLess_1"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/midgard-sqr.png"
+            },
+            {
+              "Id": "L0P1C7M2",
+              "Title": "STR_AOTG_S0L0P1C7M3_TITLE",
+              "Predecessors": [
+                "L0P1C6M3",
+                "L0P1C6M2"
+              ],
+              "PositionX": 1100,
+              "PositionY": 475,
+              "Visualization": "Regular",
+              "Map": "midgard",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD6",
+                  "ArenaEffectName": "SeasonsD6",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA_AGG",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_AGG",
+                  "Civ": "Set",
+                  "Team": 4,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA_CORRUPTED",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_CORRUPTED",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessFavor_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/midgard-sqr.png"
+            },
+            {
+              "Id": "L0P1C8M2",
+              "Title": "STR_AOTG_S0L0P1C8M1_TITLE",
+              "Predecessors": [
+                "L0P1C7M1"
+              ],
+              "PositionX": 1275,
+              "PositionY": 275,
+              "Visualization": "Regular",
+              "Map": "jotunheim",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD7",
+                  "ArenaEffectName": "SeasonsD7",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_THOR",
+                  "Civ": "Thor",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 3,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_CORRUPTED",
+                  "Civ": "Zeus",
+                  "Team": 4,
+                  "Personality": "standard.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_THOR_CORRUPTED",
+                  "Civ": "Thor",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ORANOS_AGG",
+                  "Civ": "Oranos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_CORRUPTED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythDeathExplode_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/jotunheim-sqr.png"
+            },
+            {
+              "Id": "L0P1C8M3",
+              "Title": "STR_AOTG_S0L0P1C8M2_TITLE",
+              "Predecessors": [
+                "L0P1C7M2"
+              ],
+              "PositionX": 1275,
+              "PositionY": 475,
+              "Visualization": "Regular",
+              "Map": "jotunheim",
+              "Size": "Normal",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "Medium",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD7",
+                  "ArenaEffectName": "SeasonsD7",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_SET_AGG",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DEF",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_SET_DECEIVED",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "standard.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DECEIVED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_KRONOS",
+                  "Civ": "Kronos",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GatherBoost_2"
+                },
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerAbilityRecharge_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/jotunheim-sqr.png"
+            },
+            {
+              "Id": "L0P1C9M1",
+              "Title": "STR_AOTG_S0L0P1C9M1_TITLE",
+              "Predecessors": [
+                "L0P1C8M2"
+              ],
+              "PositionX": 1450,
+              "PositionY": 275,
+              "Visualization": "Regular",
+              "Map": "ghost_lake",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD8",
+                  "ArenaEffectName": "SeasonsD8",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_AGG",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DEF",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_AGG",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_ZEUS_DECEIVED",
+                  "Civ": "Zeus",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_HADES_DECEIVED",
+                  "Civ": "Hades",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_POSEIDON_DECEIVED",
+                  "Civ": "Poseidon",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_MythHitpoints_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/ghost_lake-sqr.png"
+            },
+            {
+              "Id": "L0P1C9M2",
+              "Title": "STR_AOTG_S0L0P1C9M2_TITLE",
+              "Predecessors": [
+                "L0P1C8M3"
+              ],
+              "PositionX": 1450,
+              "PositionY": 475,
+              "Visualization": "Regular",
+              "Map": "ghost_lake",
+              "Size": "Large",
+              "VictoryCondition": "Standard",
+              "GameType": "Standard",
+              "MapVisibility": "Normal",
+              "StartingResources": "High",
+              "AllowTitans": true,
+              "WorldTwists": [
+                {
+                  "Id": "SeasonsD8",
+                  "ArenaEffectName": "SeasonsD8",
+                  "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+                  "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+                  "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+                  "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+                  "Visualization": "Right"
+                },
+                {
+                  "Id": "RemnantsD0",
+                  "ArenaEffectName": "RemnantsD0",
+                  "Title": "STR_AOTG_RULE_ATLANTEAN_REMNANTS",
+                  "Description": "STR_AOTG_RULE_ATLANTEAN_REMNANTS_DESC",
+                  "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+                  "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+                  "Visualization": "Left"
+                },
+                {
+                  "Id": "GiveLegendKastorStart",
+                  "ArenaEffectName": "GiveLegendKastorStart",
+                  "Visualization": "Hidden"
+                },
+                {
+                  "Id": "AIPersonalitiesD1",
+                  "ArenaEffectName": "AIPersonalitiesD1",
+                  "Visualization": "Hidden"
+                }
+              ],
+              "Opponents": [
+                {
+                  "Title": "STR_AOTG_RA_DEF",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DEF",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_AGG",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "OpponentsFor2PlayerCoop": [
+                {
+                  "Title": "STR_AOTG_CHAR_RA_DECEIVED",
+                  "Civ": "Ra",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_ISIS_DECEIVED",
+                  "Civ": "Isis",
+                  "Team": 2,
+                  "Personality": "defender.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_SET_DECEIVED",
+                  "Civ": "Set",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                },
+                {
+                  "Title": "STR_AOTG_CHAR_LOKI_AGG",
+                  "Civ": "Loki",
+                  "Team": 2,
+                  "Personality": "attacker.personality"
+                }
+              ],
+              "Rewards": [
+                {
+                  "Amount": 1,
+                  "Scaling": "None",
+                  "ItemId": "Item_UploaderPrototypeTestSeason_VillagerCostLess_2"
+                }
+              ],
+              "NarrativeCutScene": [],
+              "MinimapImage": "",
+              "MapPreviewImage": "resources/maps/previews/ghost_lake-sqr.png"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "DropTables": [
+    {
+      "Id": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings",
+      "Entries": [
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CheaperTowers_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_InfantryHitpoints_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CavalryAreaDamage_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythLifesteal_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerCostLess_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_BerryBushSpawn_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_LargeMythUnits_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_BuildingHitpoints_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_FasterMythAtLowHP_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CavalrySpeedCharge_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_ShipLifesteal_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MoreStartingPop_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_GoldOnTechComplete_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_HeroAreaDamage_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CavalryHitpoints_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_HeroesMoveFaster_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_FavorSacrifice_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_StartWithExtraResources_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_InfantryTrainFaster_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_RefundMythFavor_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_InfantryAreaDamage_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_DwarfGenerateFavor_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_HeroArkantosStart_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_GatherBoost_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_FasterWorkingBarracks_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythFavorDamage_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_GoatStart_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythHitpoints_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CheaperFortress_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_BuildBuildingsFaster_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CavalryCostLessGold_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_VillagerHealthDamage_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessFavor_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_SiegeWeaponHitpoints_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_InfantryLifesteal_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_CavalryLifesteal_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerAbilityRecharge_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythDeathExplode_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessGold_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_InfantryMythBonus_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_SiegeWeaponCostLessGold_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_HeroBoarStart_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_DwarfOnAgeUp_0",
+          "Weight": 1
+        },
+        {
+          "Amount": 1,
+          "ItemId": "Item_UploaderPrototypeTestSeason_StrongerArmory_0",
+          "Weight": 1
+        }
+      ]
+    }
+  ],
+  "BattlePassRewards": [
+    {
+      "ForLevel": 1,
+      "ItemId": "Item_UploaderPrototypeTestSeason_HeroesMoveFaster_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 2,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessFavor_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 3,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CavalryHitpoints_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 4,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythHitpoints_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 5,
+      "ItemId": "Item_UploaderPrototypeTestSeason_BuildingHitpoints_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 6,
+      "ItemId": "Item_UploaderPrototypeTestSeason_SiegeWeaponHitpoints_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 7,
+      "ItemId": "Item_UploaderPrototypeTestSeason_SiegeWeaponCostLessGold_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 8,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythCostLessGold_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 9,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CavalryCostLessGold_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 10,
+      "ItemId": "Item_UploaderPrototypeTestSeason_BuildBuildingsFaster_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 11,
+      "ItemId": "Item_UploaderPrototypeTestSeason_StartWithExtraResources_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 12,
+      "ItemId": "Item_UploaderPrototypeTestSeason_FavorSacrifice_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 13,
+      "ItemId": "Item_UploaderPrototypeTestSeason_GatherBoost_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 14,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CheaperTowers_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 15,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CavalryLifesteal_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 16,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythLifesteal_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 17,
+      "ItemId": "Item_UploaderPrototypeTestSeason_ShipLifesteal_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 18,
+      "ItemId": "Item_UploaderPrototypeTestSeason_InfantryLifesteal_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 19,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CheaperFortress_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 20,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MoreStartingPop_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 21,
+      "ItemId": "Item_UploaderPrototypeTestSeason_FasterWorkingBarracks_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 22,
+      "ItemId": "Item_UploaderPrototypeTestSeason_VillagerHealthDamage_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 23,
+      "ItemId": "Item_UploaderPrototypeTestSeason_LargeMythUnits_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 24,
+      "ItemId": "Item_UploaderPrototypeTestSeason_StrongerArmory_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 25,
+      "ItemId": "Item_UploaderPrototypeTestSeason_RefundMythFavor_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 26,
+      "ItemId": "Item_UploaderPrototypeTestSeason_InfantryAreaDamage_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 27,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CavalryAreaDamage_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 28,
+      "ItemId": "Item_UploaderPrototypeTestSeason_HeroAreaDamage_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 29,
+      "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerAbilityRecharge_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 30,
+      "ItemId": "Item_UploaderPrototypeTestSeason_GodPowerCostLess_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 31,
+      "ItemId": "Item_UploaderPrototypeTestSeason_AgeUpsFree_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 32,
+      "ItemId": "Item_UploaderPrototypeTestSeason_GoldOnTechComplete_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 33,
+      "ItemId": "Item_UploaderPrototypeTestSeason_DwarfOnAgeUp_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 34,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythDeathExplode_1",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 35,
+      "ItemId": "Item_UploaderPrototypeTestSeason_DwarfGenerateFavor_1",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 36,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MythFavorDamage_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 37,
+      "ItemId": "Item_UploaderPrototypeTestSeason_HouseVillSpawn_3",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 38,
+      "ItemId": "Item_UploaderPrototypeTestSeason_MinorGodTechBuff_3",
+      "IsPremium": false
+    },
+    {
+      "ForLevel": 39,
+      "ItemId": "Item_UploaderPrototypeTestSeason_InfantryMythBonus_2",
+      "IsPremium": true
+    },
+    {
+      "ForLevel": 40,
+      "ItemId": "Item_UploaderPrototypeTestSeason_CavalrySpeedCharge_3",
+      "IsPremium": true
+    }
+  ]
+}

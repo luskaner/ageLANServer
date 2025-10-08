@@ -28,7 +28,7 @@ func PlayfabSession(r *http.Request) string {
 func PlayfabMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, mainDomain, tld, err := internal.SplitDomain(r.Host); err == nil && tld == common.Tld && mainDomain == common.PlayFabDomain {
-			if !playAnonymousPaths[r.URL.Path] {
+			if !playAnonymousPaths[r.URL.Path] && !strings.HasPrefix(r.URL.Path, playfab.StaticSuffix+"/") {
 				entityToken := PlayfabSession(r)
 				var exists bool
 				if entityToken != "" {

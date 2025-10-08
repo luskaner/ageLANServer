@@ -311,6 +311,12 @@ func Initialize(mux *http.ServeMux, gameSet mapset.Set[string]) {
 
 		playfabPartyGroup := playfabGroup.Subgroup("/Party")
 		playfabPartyGroup.HandleFunc("POST", "/RequestParty", Party.RequestParty)
+		fs := http.FileServer(http.Dir(playfab.BaseDir))
+		playfabGroup.Handle(
+			"GET",
+			playfab.StaticSuffix+"/",
+			http.StripPrefix(playfab.StaticPrefix+"/", fs),
+		)
 	}
 
 	if gameSet.ContainsOne(common.GameAoM) {
