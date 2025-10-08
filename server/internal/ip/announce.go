@@ -10,20 +10,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/spf13/viper"
 	"golang.org/x/net/ipv4"
 )
 
-func Announce(listenIP net.IP, multicastIP net.IP, targetBroadcastPort int, broadcast bool, multicast bool) {
+func Announce(gameId string, listenIP net.IP, multicastIP net.IP, targetBroadcastPort int, broadcast bool, multicast bool) {
 	sourceIPs, targetAddrs := ResolveAddrs(listenIP, multicastIP, targetBroadcastPort, broadcast, multicast)
 	if len(sourceIPs) == 0 {
-		fmt.Println("No suitable addresses found.")
+		fmt.Println("\tNo suitable addresses found.")
 		return
 	}
-	announce(sourceIPs, targetAddrs)
+	announce(gameId, sourceIPs, targetAddrs)
 }
 
-func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
+func announce(gameId string, sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	var connections []*net.UDPConn
 	for i := range targetAddrs {
 		sourceAddr := net.UDPAddr{IP: sourceIPs[i]}
@@ -40,12 +39,12 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Announcing %s -> %s\n", sourceAddr.IP.String(), targetAddr.IP.String())
+		fmt.Printf("\tAnnouncing %s -> %s\n", sourceAddr.IP.String(), targetAddr.IP.String())
 		connections = append(connections, conn)
 	}
 
 	if len(connections) == 0 {
-		fmt.Println("All connections failed.")
+		fmt.Println("\tAll connections failed.")
 		return
 	}
 
@@ -61,7 +60,7 @@ func announce(sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
 	var messageBuff bytes.Buffer
 	enc := gob.NewEncoder(&messageBuff)
 	err := enc.Encode(common.AnnounceMessageData001{
-		GameIds: viper.GetStringSlice("Games.Enabled"),
+		GameIds: []string{gameId},
 	})
 	if err != nil {
 		fmt.Println("Error encoding message data.")

@@ -34,10 +34,9 @@ Start = 'auto'
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
-# Also, by default, override the IPs address to bind to the server to ensure we can connect if it was changed.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
+ExecutableArgs = ['-e', '{Game}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
 # The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
 # Note: See the server config to set the interface to bind to.

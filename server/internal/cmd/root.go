@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
-	"net/netip"
 	"os"
 	"os/signal"
 	"path"
@@ -72,82 +70,12 @@ var (
 					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
 				}
 			}
-			hosts := viper.GetStringSlice("Hosts")
-			addrs := ip.ResolveHosts(hosts)
-			if addrs == nil || len(addrs) == 0 {
-				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
-				_ = lock.Unlock()
-				os.Exit(internal.ErrResolveHost)
-			}
-			common.CacheAllHosts()
-			mux := http.NewServeMux()
-			initializer.InitializeGames(gameSet)
-			routes.Initialize(mux, gameSet)
-			gameMux := middleware.GameMiddleware(mux)
-			sessionMux := middleware.SessionMiddleware(gameMux)
-			var finalMux http.Handler
-			if gameSet.ContainsOne(common.GameAoM) {
-				playfabMux := middleware.PlayfabMiddleware(sessionMux)
-				apiAgeOfEmpiresMux := middleware.ApiAgeOfEmpiresMiddleware(playfabMux)
-				finalMux = apiAgeOfEmpiresMux
-			} else {
-				finalMux = sessionMux
-			}
-
-			logToConsole := viper.GetBool("LogToConsole")
-			var writer io.Writer
-			if logToConsole {
-				writer = os.Stdout
-			} else {
-				err := os.MkdirAll("logs", 0755)
-				if err != nil {
-					fmt.Println("Failed to create logs directory")
-					_ = lock.Unlock()
-					os.Exit(internal.ErrCreateLogsDir)
-				}
-				t := time.Now()
-				fileName := fmt.Sprintf("logs/access_log_%d-%02d-%02dT%02d-%02d-%02d.txt", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
-				file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
-				if err != nil {
-					fmt.Println("Failed to create log file")
-					_ = lock.Unlock()
-					os.Exit(internal.ErrCreateLogFile)
-				}
-				writer = file
-			}
 			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
 			if certificatePairFolder == "" {
 				fmt.Println("Failed to determine certificate pair folder")
 				_ = lock.Unlock()
 				os.Exit(internal.ErrCertDirectory)
 			}
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-			handler := handlers.LoggingHandler(writer, finalMux)
-			cert, err := tls.LoadX509KeyPair(
-				filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key),
-			)
-			if err != nil {
-				panic(err)
-			}
-			selfSignedCert, err := tls.LoadX509KeyPair(
-				filepath.Join(certificatePairFolder, common.SelfSignedCert),
-				filepath.Join(certificatePairFolder, common.SelfSignedKey),
-			)
-			if err != nil {
-				panic(err)
-			}
-			tlsConfig := &tls.Config{
-				GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					if internal.SelfSignedCertificate(hello.ServerName) {
-						return &selfSignedCert, nil
-					}
-					return &cert, nil
-				},
-			}
-			var servers []*http.Server
-			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			var multicastIP net.IP
 			multicast := viper.GetBool("Announcement.Multicast")
 			if multicast {
@@ -163,32 +91,90 @@ var (
 			if broadcast || multicast {
 				fmt.Println("Announcing on port", announcePort)
 			}
-			for _, addr := range addrs {
-				server := &http.Server{
-					Addr:         addr.String() + ":443",
-					Handler:      handler,
-					ErrorLog:     customLogger,
-					IdleTimeout:  time.Second * 20,
-					ReadTimeout:  time.Second * 5,
-					WriteTimeout: time.Second * 5,
-					TLSConfig:    tlsConfig,
+			logToConsole := viper.GetBool("LogToConsole")
+			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
+			var servers []*http.Server
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+			for gameId := range gameSet.Iter() {
+				fmt.Printf("Game %s:\n", gameId)
+				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
+				addrs := ip.ResolveHosts(hosts)
+				if addrs == nil || len(addrs) == 0 {
+					fmt.Println("\tFailed to resolve host (or it was an IPv6 address)")
+					_ = lock.Unlock()
+					os.Exit(internal.ErrResolveHost)
 				}
+				baseMux := http.NewServeMux()
+				initializer.InitializeGame(gameId)
+				routes.Initialize(baseMux, gameId)
+				mux := middleware.GameMiddleware(gameId, baseMux)
+				mux = middleware.SessionMiddleware(mux)
+				if gameId == common.GameAoM {
+					mux = middleware.PlayfabMiddleware(mux)
+				}
+				if gameId == common.GameAoE3 || gameId == common.GameAoM {
+					mux = middleware.ApiAgeOfEmpiresMiddleware(mux)
+				}
+				var writer io.Writer
+				if logToConsole {
+					writer = &internal.PrefixedWriter{
+						Writer: os.Stdout,
+						Prefix: []byte(fmt.Sprintf("[%s] ", gameId)),
+					}
+				} else {
+					err := os.MkdirAll(filepath.Join("logs", gameId), 0755)
+					if err != nil {
+						fmt.Println("\tFailed to create logs directory")
+						_ = lock.Unlock()
+						os.Exit(internal.ErrCreateLogsDir)
+					}
+					t := time.Now()
+					fileName := fmt.Sprintf("logs/access_log_%s_%d-%02d-%02dT%02d-%02d-%02d.txt", gameId, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+					file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
+					if err != nil {
+						fmt.Println("\tFailed to create log file")
+						_ = lock.Unlock()
+						os.Exit(internal.ErrCreateLogFile)
+					}
+					writer = file
+				}
+				handler := handlers.LoggingHandler(writer, mux)
+				for _, addr := range addrs {
+					var certFile string
+					var keyFile string
+					if common.SelfSignedCertGame(gameId) {
+						certFile = filepath.Join(certificatePairFolder, common.SelfSignedCert)
+						keyFile = filepath.Join(certificatePairFolder, common.SelfSignedKey)
+					} else {
+						certFile = filepath.Join(certificatePairFolder, common.Cert)
+						keyFile = filepath.Join(certificatePairFolder, common.Key)
+					}
+					server := &http.Server{
+						Addr:         addr.String() + ":443",
+						Handler:      handler,
+						ErrorLog:     customLogger,
+						IdleTimeout:  time.Second * 20,
+						ReadTimeout:  time.Second * 5,
+						WriteTimeout: time.Second * 5,
+					}
 
-				fmt.Println("Listening on " + server.Addr)
-				go func() {
-					if broadcast || multicast {
-						go func() {
-							ip.Announce(addr, multicastIP, announcePort, broadcast, multicast)
-						}()
-					}
-					err := server.ListenAndServeTLS("", "")
-					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						fmt.Println("Failed to start 'server'")
-						fmt.Println(err)
-						os.Exit(internal.ErrStartServer)
-					}
-				}()
-				servers = append(servers, server)
+					fmt.Println("\tListening on " + server.Addr)
+					go func() {
+						if broadcast || multicast {
+							go func() {
+								ip.Announce(gameId, addr, multicastIP, announcePort, broadcast, multicast)
+							}()
+						}
+						err := server.ListenAndServeTLS(certFile, keyFile)
+						if err != nil && !errors.Is(err, http.ErrServerClosed) {
+							fmt.Println("\tFailed to start 'server'")
+							fmt.Printf("%s\n", err)
+							os.Exit(internal.ErrStartServer)
+						}
+					}()
+					servers = append(servers, server)
+				}
 			}
 
 			<-stop
@@ -221,7 +207,6 @@ func Execute() error {
 	rootCmd.Flags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
 	rootCmd.Flags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
 	cmd.GamesCommand(rootCmd.Flags())
-	rootCmd.Flags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the 'server' will bind to. Can be set multiple times.")
 	rootCmd.Flags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
@@ -237,9 +222,6 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.Flags().Lookup("announceMulticastGroup")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Hosts", rootCmd.Flags().Lookup("host")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Games.Enabled", rootCmd.Flags().Lookup("games")); err != nil {

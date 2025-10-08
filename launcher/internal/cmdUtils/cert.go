@@ -22,7 +22,7 @@ func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, can
 		for _, host := range hosts {
 			if !server.CheckConnectionFromServer(host, false) {
 				if canAdd != "false" {
-					cert := server.ReadCACertificateFromServer(host, gameId)
+					cert := server.ReadCACertificateFromServer(host)
 					if cert == nil {
 						fmt.Println("Failed to read certificate from " + host + ".")
 						errorCode = internal.ErrReadCert
@@ -38,7 +38,7 @@ func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, can
 					errorCode = internal.ErrConfigCert
 					return
 				}
-			} else if cert := server.ReadCACertificateFromServer(host, gameId); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
+			} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 				fmt.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
 				errorCode = internal.ErrCertMismatch
 				return
