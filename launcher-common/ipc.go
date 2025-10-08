@@ -1,8 +1,9 @@
 package launcher_common
 
 import (
-	"github.com/luskaner/ageLANServer/common"
 	"net"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 const ConfigAdminIpcRevert byte = 0
@@ -13,11 +14,11 @@ const configAdminIpcName = common.Name + `-launcher-config-admin-agent`
 type (
 	ConfigAdminIpcSetupCommand struct {
 		CDN         bool
-		IPs         []net.IP
+		IP          net.IP
 		Certificate []byte
+		GameId      string
 	}
 	ConfigAdminIpcRevertCommand struct {
-		CDN         bool
 		IPs         bool
 		Certificate bool
 	}

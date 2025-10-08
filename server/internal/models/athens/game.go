@@ -7,5 +7,5 @@ import (
 )
 
 func CreateGame() models.Game {
-	return models.CreateGame(common.GameAoM, mapset.NewThreadUnsafeSet[string]("itemDefinitions.json"), true, "null")
+	return models.CreateGame(common.GameAoM, mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"), true, "true")
 }

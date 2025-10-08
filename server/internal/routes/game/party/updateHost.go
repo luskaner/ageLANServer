@@ -1,10 +1,11 @@
 package party
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"strconv"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func UpdateHost(w http.ResponseWriter, r *http.Request) {

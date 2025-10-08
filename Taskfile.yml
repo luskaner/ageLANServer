@@ -15,8 +15,15 @@ tasks:
     deps: [ debug:prepare-server-base ]
     cmds:
       - build/server/bin/genCert{{exeExt}} -r
-  build-config:
+  prepare-battle-server-manager:
+    deps: [ debug:prepare-battle-server-manager-base, build-battle-server-manager, debug:prepare-server-base ]
+    cmds:
+      - go build -o build/battle-server-manager/battle-server-manager{{exeExt}} ./battle-server-manager
+  build-battle-server-manager:
     internal: true
+    cmds:
+      - go build -o build/battle-server-manager/battle-server-manager{{exeExt}} ./battle-server-manager
+  build-config:
     cmds:
       - go build -o build/launcher/bin/config{{exeExt}} ./launcher-config
   build-config-admin:

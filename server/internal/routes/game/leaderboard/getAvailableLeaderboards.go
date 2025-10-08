@@ -1,9 +1,10 @@
 package leaderboard
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"net/http"
 )
 
 func GetAvailableLeaderboards(w http.ResponseWriter, r *http.Request) {

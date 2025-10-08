@@ -22,4 +22,4 @@ You may run `revert -a -e <game>` (where game is either `age1`, `age2` or `age3`
 
 * [Base codes](../common/errors.go).
 * [Launcher shared codes](../launcher-common/errors.go).
-* [Config codes](internal/errors.go).
+* [Own codes](internal/errors.go).

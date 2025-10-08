@@ -4,13 +4,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/luskaner/ageLANServer/common"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
 func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
@@ -21,9 +24,12 @@ func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
 }
 
 func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
-	ip, ok := launcher_common.HostOrIpToIps(host).Pop()
-	if !ok {
+	ips := common.HostOrIpToIps(host)
+	var ip string
+	if len(ips) == 0 {
 		ip = host
+	} else {
+		ip = ips[0]
 	}
 	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify))
 	if err != nil {
@@ -43,19 +49,38 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 	return conn != nil
 }
 
-func ReadCertificateFromServer(host string) *x509.Certificate {
-	conn := connectToServer(host, true)
-	if conn == nil {
+func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
+	tr := &http.Transport{
+		TLSClientConfig: TlsConfig(host, true),
+	}
+	ips := common.HostOrIpToIps(host)
+	var ip string
+	if len(ips) == 0 {
+		ip = host
+	} else {
+		ip = ips[0]
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem?gameId=%s", ip, gameId))
+	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil
 	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	certificates := conn.ConnectionState().PeerCertificates
-	if len(certificates) > 0 {
-		return certificates[0]
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
 	}
-	return nil
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	block, _ := pem.Decode(bodyBytes)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil
+	}
+	return cert
 }
 
 func GenerateCertificatePair(certificateFolder string) (result *exec.Result) {

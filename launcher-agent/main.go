@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/pidLock"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
-	launcher_common "github.com/luskaner/ageLANServer/launcher-common"
 	"os"
 	"os/signal"
 	"runtime"
 	"strconv"
 	"syscall"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/pidLock"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 )
 
 func main() {
@@ -29,12 +30,14 @@ func main() {
 	if runtime.GOOS == "windows" {
 		xboxProcess, _ = strconv.ParseBool(os.Args[2])
 	}
+	gameId := os.Args[5]
 	serverExe := os.Args[3]
 	var broadcastBattleServer bool
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" && gameId != common.GameAoM {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
 	}
-	gameId := os.Args[5]
+	battleServerExe := os.Args[6]
+	battleServerRegion := os.Args[7]
 	var exitCode int
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -46,14 +49,26 @@ func main() {
 				_ = lock.Unlock()
 				os.Exit(exitCode)
 			}()
-			launcher_common.ConfigRevert(gameId, true, nil)
-			_ = launcher_common.RunRevertCommand()
+			launcherCommon.ConfigRevert(gameId, true, nil)
+			_ = launcherCommon.RunRevertCommand()
 			if serverExe != "-" {
 				_, _ = commonProcess.Kill(serverExe)
+				if battleServerExe != "-" && battleServerRegion != "-" {
+					launcherCommon.RemoveBattleServerRegion(battleServerExe, gameId, battleServerRegion)
+				}
 			}
 		}
 	}()
-	watch.Watch(gameId, steamProcess, xboxProcess, serverExe, broadcastBattleServer, &exitCode)
+	watch.Watch(
+		gameId,
+		steamProcess,
+		xboxProcess,
+		serverExe,
+		broadcastBattleServer,
+		battleServerExe,
+		battleServerRegion,
+		&exitCode,
+	)
 	_ = lock.Unlock()
 	os.Exit(exitCode)
 }

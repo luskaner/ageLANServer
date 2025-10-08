@@ -22,15 +22,18 @@ const (
 	ErrServerCertCreate
 	ErrServerStart
 	ErrConfigIpMap
-	ErrConfigIpMapFind
+	ErrGameUnsupportedLauncherCombo
 	ErrConfigIpMapAdd
 	ErrConfigCertAdd
+	ErrConfigCACertAdd
 	ErrConfigCert
 	ErrReadCert
 	ErrTrustCert
 	ErrMetadataProfilesSetup
 	ErrAgentStart
+	ErrInvalidClientPath
 	ErrInvalidServerArgs
+	ErrInvalidServerPath
 	ErrInvalidClientArgs
 	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
@@ -39,4 +42,7 @@ const (
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
+	ErrInvalidServerBattleServerManagerRun
+	ErrInvalidServerBattleServerManagerArgs
+	ErrBattleServerManagerRun
 )

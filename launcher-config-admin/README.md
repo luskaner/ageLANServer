@@ -17,4 +17,4 @@ CLI is available. You can see the available options with
 
 * [Base codes](../common/errors.go).
 * [Launcher shared codes](../launcher-common/errors.go).
-* [Config Admin codes](internal/errors.go).
+* [Own codes](internal/errors.go).

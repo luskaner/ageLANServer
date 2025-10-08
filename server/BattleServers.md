@@ -1,27 +1,3 @@
-# Battle Servers
-
-The Battle Servers handle the logic of the matches themselves (and part of the lobby logic) including observing. They
-are included in each
-game installation. Battle Servers are independent of the main server and can hosted anywhere, including the same machine
-as long as the server is configured properly.
-
-## Should I use `LAN` or `Online-like` Battle Server?
-
-| Feature               | LAN                                              | Online-like                                       |
-|-----------------------|--------------------------------------------------|---------------------------------------------------|
-| Execution             | $\color{Green}{\textsf{Automatic (game)}}$       | $\color{Yellow}{\textsf{Manual (Host)}}$          |
-| Discovery             | $\color{Green}{\textsf{Automatic (game)}}$       | $\color{Yellow}{\textsf{Manual (Server)}}$        |
-| Battle Server limit   | $\color{Yellow}{\textsf{1 per game}}$            | $\color{Green}{\textsf{None}}$                    |
-| Latency               | $\color{Green}{\textsf{1-10ms}}$                 | $\color{Yellow}{\textsf{10-20ms}}$                |
-| Observing             | $\color{Orange}{\textsf{Player observing only}}$ | $\color{Green}{\textsf{Full support}}$            | |
-| Configurable          | $\color{Red}{\textsf{No}}$                       | $\color{Green}{\textsf{Yes, like ports..., etc}}$ |
-| Can only host in self | $\color{Yellow}{\textsf{Yes}}$                   | $\color{Green}{\textsf{No}}$                      |
-
-The LAN Battle Server is the easiest to use, but it has limitations. The Online-like Battle Server is more complex to
-use, but it has more features and is more flexible.
-
-*TL;DR: Use the LAN Battle Server unless you are having issues or need to use proper observing.*
-
 ## Starting the Battle Server
 
 ### Path
@@ -30,6 +6,9 @@ Depending on the game and version, the path can be one of these two:
 
 * `Drive:\Path\To\Game\BattleServer.exe`
 * `Drive:\Path\To\Game\BattleServer\BattleServer.exe`
+
+There is an exception: AoM: RT includes a buggy implementation and requires a more modern version. The best is to use
+the newer version found in AoE II: DE.
 
 ### Executable
 
@@ -80,6 +59,10 @@ generated and that you are located in the battle server directory using the `Pow
 
 `& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
+#### AoM: RT
+
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30007 webSocketPort 30008 -outOfBandPort 30009 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+
 ## Configuring the Server
 
 For each battle server instance you run you will need to edit `<server>/resources/config.toml` and inside `[Games]`
@@ -94,7 +77,10 @@ inside that subsection the following properties are required (with the arguments
 | `-outOfBandPort`       | `OutOfBandPort`          |
 | `-webSocketPort`       | `WebSocketPort`          |
 
-Additionally, the `IPv4` which should point to a user-accessible IP. E.g., `192.168.1.2`.
+Additionally, the `IPv4` which should point to a user-accessible IP. E.g., `192.168.1.2`. When the Battle Server resides
+in the same machine as the server, using `auto` is the best option as it will ensure the same IP the client uses to
+connect to
+the server is also used to connect to the Battle Server.
 
 ### Examples
 
@@ -133,6 +119,17 @@ WebSocketPort = 30007
 OutOfBandPort = 30008
 ```
 
+#### AoM: RT
+
+```toml
+[[Games.age1.BattleServers]]
+Region = 'local'
+IPv4 = '192.168.1.2'
+BsPort = 30009
+WebSocketPort = 30010
+OutOfBandPort = 30011
+```
+
 ## Simplest way to use an online-like Battle Server
 
 ### Assumptions
@@ -159,9 +156,13 @@ Replace the placeholders with the actual paths.
     ```
     & ".\BattleServer.exe" -simulationPeriod 125 -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
-    * AoE III: DE
+    * AoE III: DE:
     ```
     & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
+    ```
+    * AoM: RT:
+    ```
+    & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30009 webSocketPort 30010 -outOfBandPort 30011 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
 6. Open `<server>/resources/config.toml` and add the corresponding configuration inside `[Games]` for the game you are
    running the
@@ -184,6 +185,7 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30004
     OutOfBandPort = 30005
     ```
+    * AoE II: DE:
     ```toml
     [[Games.age3.BattleServers]]
     Region = 'local'
@@ -192,8 +194,17 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30007
     OutOfBandPort = 30008
     ```
+    * AoM: RT:
+    ```toml
+    [[Games.athens.BattleServers]]
+    Region = 'local'
+    IPv4 = '<server-ip>'
+    BsPort = 30009
+    WebSocketPort = 30010
+    OutOfBandPort = 30011
+    ```
 7. Start the game as you normally would and then:
-    * AoE: DE: Click on "Multiplayer" then on "Create Game", you may select the "Region", "local", or leave as default.
+    * AoE DE: Click on "Multiplayer" then on "Create Game", you may select the "Region", "local", or leave as default.
       Players can
       join matches by clicking on "Multiplayer" and then on "Lobby Browser".
     * AoE II: DE: Click on "Multiplayer" then on "Host Game", you may select the "Server", "Local" or leave as default.
@@ -203,6 +214,5 @@ Replace the placeholders with the actual paths.
     * AoE III: DE: Click on "Multiplayer" (make sure the that "Online" is selected at top right) and then on "Host a
       Casual Game", you may select the "Region", "local", or leave as default. Players can join games by going to "
       Multiplayer" then "Browse Games" and, observe games by enabling here "Spectator Mode".
-
-
-
+    * AoM: RT: Click on "Multiplayer" and then on "Host", you may select the "Region", "local", or leave as default.
+      Players can join games by going to "Multiplayer" then "Browse Games" (and observe games too).

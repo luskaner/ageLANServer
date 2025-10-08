@@ -1,9 +1,10 @@
 package internal
 
 import (
+	"net"
+
 	"github.com/Microsoft/go-winio"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"net"
 )
 
 func preAgentStart()          {}

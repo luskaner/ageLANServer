@@ -2,10 +2,11 @@ package internal
 
 import (
 	"fmt"
-	"github.com/Microsoft/go-winio"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"net"
 	"os/user"
+
+	"github.com/Microsoft/go-winio"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 )
 
 func SetupIpcServer() (listener net.Listener, err error) {

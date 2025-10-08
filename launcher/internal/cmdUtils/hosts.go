@@ -3,6 +3,11 @@ package cmdUtils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
@@ -12,17 +17,21 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
-	"io"
-	"net"
-	"net/http"
-	"time"
 )
 
 const timeLayout = "2006-01-02 15:04:05"
 
-func requiresMapCDN() bool {
+func requiresMapCDN(gameId string) bool {
 	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get(fmt.Sprintf("https://%s/aoe/rl-server-status.json", launcherCommon.CDNDomain))
+	var prefix string
+	if gameId == common.GameAoM {
+		prefix = "athens"
+	} else {
+		prefix = "rl"
+	}
+	resp, err := client.Get(
+		fmt.Sprintf("https://%s/aoe/%s-server-status.json", prefix, launcherCommon.CDNDomain),
+	)
 	if err != nil {
 		return false
 	}
@@ -70,12 +79,12 @@ func requiresMapCDN() bool {
 	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
 }
 
-func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCode int) {
+func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (errorCode int) {
 	var mapCDN bool
 	var mapIP bool
 	ips := mapset.NewThreadUnsafeSet[string]()
 	if !customHostFile {
-		if requiresMapCDN() {
+		if requiresMapCDN(gameId) {
 			if !canMap {
 				fmt.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
 				errorCode = internal.ErrConfigCDNMap
@@ -83,8 +92,8 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 			}
 			mapCDN = true
 		}
-		for _, domain := range common.AllHosts() {
-			if !launcherCommon.Matches(ip, domain) {
+		for _, domain := range common.AllHosts(gameId) {
+			if !common.Matches(ip, domain) {
 				if !canMap {
 					fmt.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
 					errorCode = internal.ErrConfigIpMap
@@ -113,7 +122,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 			if err = hostFile.Close(); err != nil {
 				return internal.ErrConfigIpMapAdd
 			}
-			c.SetHostFilePath(hostFile.Name())
+			c.hostFilePath = hostFile.Name()
 			fmt.Printf("Saving hosts to '%s' file", hostFile.Name())
 		} else {
 			fmt.Print("Adding hosts to hosts file")
@@ -122,7 +131,7 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 			}
 		}
 		fmt.Println("...")
-		if result := executor.RunSetUp("", ips, nil, nil, false, false, mapCDN, true, c.HostFilePath(), ""); !result.Success() {
+		if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, mapCDN, true, c.hostFilePath, "", ""); !result.Success() {
 			fmt.Println("Failed to add hosts.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())
@@ -134,13 +143,11 @@ func (c *Config) MapHosts(ip string, canMap bool, customHostFile bool) (errorCod
 		} else if customHostFile {
 			cmd.MapCDN = true
 			if parsedIP := net.ParseIP(ip); parsedIP != nil {
-				cmd.MapIPs = append(cmd.MapIPs, parsedIP)
+				cmd.MapIP = parsedIP
 			}
-			mappings := hosts.HostMappings()
-			for hostToCache, ipsToCache := range mappings {
-				for ipToCache := range ipsToCache.Iter() {
-					launcherCommon.CacheMapping(hostToCache, ipToCache)
-				}
+			mappings := hosts.Mappings(gameId)
+			for hostToCache, ipToCache := range mappings {
+				common.CacheMapping(hostToCache, ipToCache.String())
 			}
 		}
 	}

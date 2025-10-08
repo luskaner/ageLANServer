@@ -3,13 +3,14 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 const resourceFolder = "resources"

@@ -1,12 +1,13 @@
 package invitation
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/invitation/shared"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
 )
 
 type replyRequest struct {
@@ -35,7 +36,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	peers := adv.GetPeers()
 	var peer *models.MainPeer
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
 		i.JSON(&w, i.A{2})

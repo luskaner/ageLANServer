@@ -1,51 +1,104 @@
 package chat
 
 import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
-	"strconv"
 )
 
+func whisperResult(w *http.ResponseWriter, gameId string, code int) {
+	response := i.A{code}
+	if gameId == common.GameAoM {
+		response = append(response, i.A{0})
+	}
+	i.JSON(w, response)
+}
+
 func SendWhisper(w http.ResponseWriter, r *http.Request) {
-	// FIXME: Show people as offline always
+	game := models.G(r)
+	gameTitle := game.Title()
 	text := r.Form.Get("message")
 	if text == "" {
-		i.JSON(&w, i.A{2})
+		whisperResult(&w, gameTitle, 2)
 		return
 	}
-	targetUserIdStr := r.Form.Get("recipientID")
-	if targetUserIdStr == "" {
-		i.JSON(&w, i.A{2})
-		return
+
+	var targetUserIds []int32
+	if gameTitle == common.GameAoM {
+		targetUserIdsStr := r.Form.Get("recipientIDs")
+		if targetUserIdsStr == "" {
+			whisperResult(&w, gameTitle, 2)
+			return
+		}
+		err := json.Unmarshal([]byte(targetUserIdsStr), &targetUserIds)
+		if err != nil {
+			whisperResult(&w, gameTitle, 2)
+			return
+		}
+	} else {
+		targetUserIdStr := r.Form.Get("recipientID")
+		if targetUserIdStr == "" {
+			whisperResult(&w, gameTitle, 2)
+			return
+		}
+		targetUserId, err := strconv.ParseInt(targetUserIdStr, 10, 32)
+		if err != nil {
+			whisperResult(&w, gameTitle, 2)
+			return
+		}
+		targetUserIds = append(targetUserIds, int32(targetUserId))
 	}
-	targetUserId, err := strconv.ParseInt(targetUserIdStr, 10, 32)
-	if err != nil {
-		i.JSON(&w, i.A{2})
-		return
+	users := game.Users()
+	receivers := make([]*models.MainUser, len(targetUserIds))
+	var ok bool
+
+	for j, profileId := range targetUserIds {
+		receivers[j], ok = users.GetUserById(profileId)
+		if !ok {
+			whisperResult(&w, gameTitle, 2)
+			return
+		}
 	}
-	session, ok := models.GetSessionByUserId(int32(targetUserId))
-	if !ok {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	currentSession := middleware.Session(r)
-	game := models.G(r)
+	currentSession := middleware.SessionOrPanic(r)
 	currentUser, ok := game.Users().GetUserById(currentSession.GetUserId())
 	if !ok {
-		i.JSON(&w, i.A{2})
+		whisperResult(&w, gameTitle, 2)
 		return
 	}
-	i.JSON(&w, i.A{0})
-	wss.SendOrStoreMessage(
-		session,
-		"PersonalChatMessage",
-		i.A{
-			currentUser.GetProfileInfo(false, game.Title(), session.GetClientLibVersion()),
-			"",
-			text,
-		},
-	)
+
+	message := i.A{""}
+	if gameTitle == common.GameAoM {
+		message = append(
+			message,
+			i.A{
+				"",
+				text,
+			}...,
+		)
+	}
+	message = append(message, text)
+	var receiverSession *models.Session
+	for _, receiver := range receivers {
+		receiverSession, ok = models.GetSessionByUserId(receiver.GetId())
+		if !ok {
+			continue
+		}
+		finalMessage := i.A{
+			currentUser.GetProfileInfo(false, gameTitle, receiverSession.GetClientLibVersion()),
+		}
+		finalMessage = append(finalMessage, message...)
+		wss.SendOrStoreMessage(
+			receiverSession,
+			"PersonalChatMessage",
+			finalMessage,
+		)
+	}
+
+	whisperResult(&w, gameTitle, 0)
 }

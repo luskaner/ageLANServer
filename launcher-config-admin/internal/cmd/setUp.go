@@ -3,17 +3,17 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/luskaner/ageLANServer/common"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 	"github.com/spf13/cobra"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func untrustCertificate() bool {
@@ -32,10 +32,6 @@ var setUpCmd = &cobra.Command{
 	Short: "Setups configuration",
 	Long:  "Adds one or more host mappings to the local DNS server and/or adding a certificate to the local machine's trusted root store",
 	Run: func(_ *cobra.Command, _ []string) {
-		if len(cmd.MapIPs) > 9 {
-			fmt.Println("Too many IPs. Up to 9 can be mapped")
-			os.Exit(launcherCommon.ErrIpMapAddTooMany)
-		}
 		trustedCertificate := false
 		if len(cmd.AddLocalCertData) > 0 {
 			fmt.Println("Adding local certificate")
@@ -61,9 +57,9 @@ var setUpCmd = &cobra.Command{
 				os.Exit(internal.ErrLocalCertAdd)
 			}
 		}
-		if len(cmd.MapIPs) > 0 || cmd.MapCDN {
+		if len(cmd.MapIP) > 0 || cmd.MapCDN {
 			fmt.Println("Adding IP mappings")
-			if ok, _ := launcherCommonHosts.AddHosts(hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
+			if ok, _ := launcherCommonHosts.AddHosts(cmd.GameId, hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
 				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd

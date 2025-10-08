@@ -2,8 +2,9 @@ package battle_server_broadcast
 
 import (
 	"bytes"
-	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
 	"net"
+
+	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
 )
 
 var header = []byte{0x21, 0x24, 0x00}

@@ -1,9 +1,10 @@
 package challenge
 
 import (
+	"net/http"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
-	"net/http"
 )
 
 func GetChallengeProgress(w http.ResponseWriter, _ *http.Request) {

@@ -1,10 +1,11 @@
 package models
 
 import (
-	"github.com/luskaner/ageLANServer/server/internal"
 	"math/rand/v2"
 	"sync"
 	"time"
+
+	"github.com/luskaner/ageLANServer/server/internal"
 )
 
 type Session struct {

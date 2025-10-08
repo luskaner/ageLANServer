@@ -2,9 +2,10 @@ package cert
 
 import (
 	"crypto/x509"
+	"unsafe"
+
 	"github.com/luskaner/ageLANServer/common"
 	"golang.org/x/sys/windows"
-	"unsafe"
 )
 
 func openStore(userStore bool) (windows.Handle, error) {

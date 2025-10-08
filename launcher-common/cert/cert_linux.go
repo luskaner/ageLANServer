@@ -6,13 +6,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/hairyhenderson/go-which"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
+
+	"github.com/hairyhenderson/go-which"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
 var updateStoreBinaries = []string{
@@ -60,7 +60,7 @@ func getCertPath() (err error, certPath string) {
 		err = fmt.Errorf("cert store not found")
 		return
 	}
-	certPath = path.Join(foundPath, fmt.Sprintf("%s.crt", common.Name))
+	certPath = filepath.Join(foundPath, fmt.Sprintf("%s.crt", common.Name))
 	return
 }
 

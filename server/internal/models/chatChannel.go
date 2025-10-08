@@ -1,9 +1,10 @@
 package models
 
 import (
-	"github.com/luskaner/ageLANServer/server/internal"
 	"iter"
 	"strconv"
+
+	"github.com/luskaner/ageLANServer/server/internal"
 )
 
 type MainChatChannel struct {

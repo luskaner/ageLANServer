@@ -1,8 +1,9 @@
 package clan
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 func Create(w http.ResponseWriter, _ *http.Request) {

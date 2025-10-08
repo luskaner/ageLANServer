@@ -2,15 +2,15 @@ package cmdUtils
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher/internal"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"net"
 	"sort"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
 func SelectBestServerIp(ips []string) (ok bool, ip string) {
@@ -88,7 +88,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 			sort.Strings(ips)
 			hosts := mapset.NewThreadUnsafeSet[string]()
 			for _, foundIp := range ips {
-				hosts.Append(launcherCommon.IpToHosts(foundIp).ToSlice()...)
+				hosts.Append(common.IpToHosts(foundIp).ToSlice()...)
 			}
 			ipsStr := strings.Join(ips, ", ")
 			hostsStr := ""
@@ -162,7 +162,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 		fmt.Println("Found 'server' executable path:", serverExecutablePath)
 	}
 
-	if exists, certificateFolder, cert := common.CertificatePair(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) {
+	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) || server.CertificateSoonExpired(caCert) || server.CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
 			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
 			errorCode = internal.ErrServerCertMissingExpired
@@ -198,7 +198,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, canTru
 	if result.Success() {
 		fmt.Println("'Server' started.")
 		if stop {
-			c.SetServerExe(serverExe)
+			c.serverExe = serverExe
 		}
 	} else {
 		fmt.Println("Could not start 'server'.")

@@ -2,12 +2,13 @@ package cloud
 
 import (
 	"fmt"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func GetTempCredentials(w http.ResponseWriter, r *http.Request) {

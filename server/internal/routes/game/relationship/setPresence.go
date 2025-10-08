@@ -1,12 +1,13 @@
 package relationship
 
 import (
+	"net/http"
+	"strconv"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
-	"net/http"
-	"strconv"
 )
 
 func ChangePresence(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser, presence int32) {
@@ -35,7 +36,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.Session(r)
+	sess := middleware.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())

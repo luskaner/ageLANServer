@@ -1,0 +1,246 @@
+package cmd
+
+import (
+	"battle-server-manager/internal"
+	"battle-server-manager/internal/cmdUtils"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+var configPaths = []string{"resources", "."}
+var hideWindow bool
+var gameId string
+var force bool
+var noErrExisting bool
+
+var (
+	gameCfgFile string
+	startCmd    = &cobra.Command{
+		Use:   "start",
+		Short: "Run Battle Server instances.",
+		Long:  "Run Battle Server instances and setup configurations.",
+		Run: func(_ *cobra.Command, _ []string) {
+			initConfig()
+			gameIds := []string{gameId}
+			games, err := cmdUtils.ParsedGameIds(&gameIds)
+			if err != nil {
+				os.Exit(internal.ErrGames)
+			}
+			gameId, _ := games.Pop()
+			fmt.Println("Checking and resolving configuration...")
+			isAdmin := commonExecutor.IsAdmin()
+			if isAdmin {
+				fmt.Println("Running as administrator, this is not needed and might cause issues.")
+			}
+			name := viper.GetString("Name")
+			region := viper.GetString("Region")
+			err, names, regions := cmdUtils.ExistingServers(gameId)
+			if err != nil {
+				fmt.Printf("could not get existing servers: %s\n", err.Error())
+				os.Exit(internal.ErrReadConfig)
+			}
+			if !force && !regions.IsEmpty() {
+				if noErrExisting {
+					return
+				}
+				fmt.Println("a Battle Server is already running, use --force to start another one")
+				os.Exit(internal.ErrAlreadyRunning)
+			}
+			if name == "auto" || region == "auto" {
+				if name == "auto" {
+					if names.ContainsOne("server") || regions.ContainsOne("server") {
+						for i := 1; ; i++ {
+							if currentName := fmt.Sprintf("Server (%d)", i); !names.ContainsOne(currentName) && !regions.ContainsOne(currentName) {
+								name = currentName
+								break
+							}
+						}
+					} else {
+						name = "Server"
+					}
+					fmt.Println("Auto-generated name:", name)
+				}
+				if region == "auto" {
+					region = name
+					fmt.Println("Auto-generated region:", region)
+				}
+			}
+			if lowerRegion := strings.ToLower(region); names.ContainsOne(lowerRegion) || regions.ContainsOne(lowerRegion) {
+				fmt.Printf("a Battle Server with the name/region '%s' already exists\n", region)
+				os.Exit(internal.ErrAlreadyExists)
+			}
+			if lowerName := strings.ToLower(name); names.ContainsOne(lowerName) || regions.ContainsOne(lowerName) {
+				fmt.Printf("a Battle Server with the name/region '%s' already exists\n", region)
+				os.Exit(internal.ErrAlreadyExists)
+			}
+			host := viper.GetString("Host")
+			var ip string
+			if host != "auto" {
+				ips := common.HostOrIpToIps(host)
+				if len(ips) == 0 {
+					fmt.Println("could not resolve host to an IP address")
+					os.Exit(internal.ErrResolveHost)
+				}
+				for _, currentIP := range ips {
+					if !net.ParseIP(currentIP).IsLoopback() {
+						ip = currentIP
+					}
+				}
+				if ip == "" {
+					fmt.Println("ip not valid or could not resolve host to a suitable IP address")
+					os.Exit(internal.ErrInvalidHost)
+				}
+				if ip != host {
+					fmt.Println("Resolved host to IP address:", ip)
+				}
+			} else {
+				ip = host
+			}
+			bsPort := viper.GetInt("Ports.BsPort")
+			websocketPort := viper.GetInt("Ports.WebSocketPort")
+			outOfBandPort := -1
+			if gameId != common.GameAoE1 {
+				outOfBandPort = viper.GetInt("Ports.OutOfBandPort")
+			}
+			if bsPort > 0 && !cmdUtils.Available(bsPort) {
+				fmt.Printf("bs port %d is already in use\n", bsPort)
+				os.Exit(internal.ErrBsPortInUse)
+			}
+			if websocketPort > 0 && !cmdUtils.Available(websocketPort) {
+				fmt.Printf("websocket port %d is already in use\n", websocketPort)
+				os.Exit(internal.ErrWsPortInUse)
+			}
+			if outOfBandPort > 0 && !cmdUtils.Available(outOfBandPort) {
+				fmt.Printf("out of band port %d is already in use\n", outOfBandPort)
+				os.Exit(internal.ErrOobPortInUse)
+			}
+			allPorts, err := cmdUtils.GeneratePortsAsNeeded([]int{bsPort, websocketPort, outOfBandPort})
+			if err != nil {
+				fmt.Printf("could not generate ports: %s\n", err)
+				os.Exit(internal.ErrGenPorts)
+			}
+			if bsPort != allPorts[0] {
+				fmt.Println("\tAuto-generated BsPort port:", allPorts[0])
+			}
+			if websocketPort != allPorts[1] {
+				fmt.Println("\tAuto-generated WebSocketPort port:", allPorts[1])
+			}
+			if outOfBandPort != allPorts[2] {
+				fmt.Println("\tAuto-generated Out Of Band Port:", allPorts[2])
+			}
+			resolvedCertFile, resolvedKeyFile, err := cmdUtils.ResolveSSLFilesPath(
+				gameId,
+				viper.GetBool("SSL.Auto"),
+			)
+			if err != nil {
+				fmt.Printf("could not resolve SSL files: %s\n", err)
+				os.Exit(internal.ErrResolveSSLFiles)
+			}
+			resolvedPath, err := cmdUtils.ResolvePath(gameId)
+			if err != nil {
+				fmt.Printf("could not resolve path: %s\n", err)
+				os.Exit(internal.ErrResolvePath)
+			}
+			extraArgs, err := common.ParseCommandArgs("Executable.ExtraArgs", nil, true)
+			if err != nil {
+				fmt.Printf("could not parse extra args: %s\n", err)
+				os.Exit(internal.ErrParseArgs)
+			}
+			var pid uint32
+			pid, err = cmdUtils.ExecuteBattleServer(
+				gameId,
+				resolvedPath,
+				region,
+				name,
+				allPorts,
+				resolvedCertFile,
+				resolvedKeyFile,
+				extraArgs,
+				hideWindow,
+			)
+			if err != nil {
+				fmt.Printf("could not execute BattleServer: %s\n", err)
+				os.Exit(internal.ErrStartBattleServer)
+			}
+			saveConfig := battleServerConfig.Config{
+				BaseConfig: battleServerConfig.BaseConfig{
+					Region:        region,
+					Name:          name,
+					IPv4:          ip,
+					BsPort:        allPorts[0],
+					WebSocketPort: allPorts[1],
+				},
+				PID: pid,
+			}
+			if allPorts[2] != -1 {
+				saveConfig.OutOfBandPort = allPorts[2]
+			}
+			fmt.Println("Waiting up to 10s for the initialization to complete...")
+			if !cmdUtils.WaitForBattleServerInit(saveConfig) {
+				fmt.Printf("battle server initialization did not complete in time\n")
+				if proc, localErr := process.FindProcess(int(saveConfig.PID)); localErr == nil && proc != nil {
+					if localErr := process.KillProc(proc); localErr != nil {
+						fmt.Println("Error: ", localErr)
+					} else {
+						fmt.Println("OK.")
+					}
+				} else if localErr != nil {
+					fmt.Println("Could not find the process to kill: ", localErr)
+				}
+				os.Exit(internal.ErrInitBattleServer)
+			}
+			if err = cmdUtils.WriteConfig(gameId, saveConfig); err != nil {
+				fmt.Printf("could not write config: %s\n", err)
+				fmt.Println(err)
+				fmt.Println("Stopping started Battle Server...")
+				cmdUtils.Kill(saveConfig)
+				os.Exit(internal.ErrConfigWrite)
+			}
+		},
+	}
+)
+
+func InitStart() {
+	cmd.GameVarCommand(startCmd.Flags(), &gameId)
+	if err := startCmd.MarkFlagRequired("game"); err != nil {
+		panic(err)
+	}
+	startCmd.Flags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	startCmd.Flags().BoolVarP(&hideWindow, "hideWindow", "w", false, "Hide Battle Server window.")
+	startCmd.Flags().BoolVarP(&force, "force", "f", false, "Force to start more than a single Battle Server per game.")
+	startCmd.Flags().BoolVarP(&noErrExisting, "noErrExisting", "r", false, "When 'force' is true and one already exists, exit without error.")
+	RootCmd.AddCommand(startCmd)
+}
+
+func initConfig() {
+	viper.SetDefault("Region", "auto")
+	viper.SetDefault("Name", "auto")
+	viper.SetDefault("Host", "auto")
+	viper.SetDefault("Executable.Path", "auto")
+	viper.SetDefault("SSL.Auto", true)
+	for _, configPath := range configPaths {
+		viper.AddConfigPath(configPath)
+	}
+	viper.SetConfigType("toml")
+	if gameCfgFile != "" {
+		viper.SetConfigFile(gameCfgFile)
+	} else {
+		viper.SetConfigName(fmt.Sprintf("config.%s", gameId))
+	}
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	} else {
+		fmt.Println("No config file found, using defaults.")
+	}
+	viper.AutomaticEnv()
+}

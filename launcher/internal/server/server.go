@@ -5,24 +5,18 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
-	"github.com/luskaner/ageLANServer/common"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"golang.org/x/net/ipv4"
 	"net"
 	"net/http"
 	"net/netip"
-	"os"
-	"path"
-	"path/filepath"
 	"time"
-)
 
-var autoServerDir = []string{fmt.Sprintf(`%c%s%c`, filepath.Separator, common.Server, filepath.Separator), fmt.Sprintf(`%c..%c`, filepath.Separator, filepath.Separator), fmt.Sprintf(`%c..%c%s%c`, filepath.Separator, filepath.Separator, common.Server, filepath.Separator)}
-var autoServerName = []string{common.GetExeFileName(true, common.Server)}
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"golang.org/x/net/ipv4"
+)
 
 func StartServer(stop string, executable string, args []string, selectBestServerIP func(ips []string) (ok bool, ip string)) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
@@ -38,7 +32,7 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}.Exec()
 	if result.Success() {
 		var ok bool
-		localIPs := launcherCommon.HostOrIpToIps(netip.IPv4Unspecified().String()).ToSlice()
+		localIPs := common.HostOrIpToIpsSet(netip.IPv4Unspecified().String()).ToSlice()
 		// Wait up to 30s for server to start
 		timeout := time.After(30 * time.Second)
 	loop:
@@ -53,7 +47,7 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 			}
 		}
 		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
-			if err = commonProcess.KillProc(pid, proc); err != nil {
+			if err = commonProcess.KillPidProc(pid, proc); err != nil {
 				fmt.Println("Failed to stop 'server'")
 				fmt.Println("Error message: " + err.Error())
 				fmt.Println("You may try killing it manually. Kill process 'server' in your task manager.")
@@ -66,30 +60,18 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 
 func GetExecutablePath(executable string) string {
 	if executable == "auto" {
-		ex, err := os.Executable()
-		if err != nil {
-			return ""
-		}
-		exePath := filepath.Dir(ex)
-		var f os.FileInfo
-		for _, dir := range autoServerDir {
-			dirPath := exePath + dir
-			for _, name := range autoServerName {
-				p := dirPath + name
-				if f, err = os.Stat(p); err == nil && !f.IsDir() {
-					return path.Clean(p)
-				}
-			}
-		}
-		return ""
+		return common.FindExecutablePath(common.GetExeFileName(true, common.Server))
 	}
 	return executable
 }
 
 func LanServer(host string, insecureSkipVerify bool) bool {
-	ip, ok := launcherCommon.HostOrIpToIps(host).Pop()
-	if !ok {
+	ips := common.HostOrIpToIps(host)
+	var ip string
+	if len(ips) == 0 {
 		ip = host
+	} else {
+		ip = ips[0]
 	}
 	tr := &http.Transport{
 		TLSClientConfig: TlsConfig(host, insecureSkipVerify),

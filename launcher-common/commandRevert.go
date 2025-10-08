@@ -1,10 +1,11 @@
 package launcher_common
 
 import (
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"os"
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
 var RevertCommandStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_command_revert.txt"))

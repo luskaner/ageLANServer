@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{

@@ -8,25 +8,33 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
-var anonymousPaths = map[string]bool{
-	"/test":                        true,
-	"/game/msstore/getStoreTokens": true,
-	"/game/login/platformlogin":    true,
-	"/wss/":                        true,
-	"/game/news/getNews":           true,
+var sessAnonymousPaths = map[string]bool{
+	"/cacert.pem":                       true,
+	"/test":                             true,
+	"/game/msstore/getStoreTokens":      true,
+	"/game/login/platformlogin":         true,
+	"/wss/":                             true,
+	"/game/news/getNews":                true,
+	"/game/Challenge/getChallenges":     true,
+	"/game/item/getItemBundleItemsJson": true,
 }
 
-func Session(r *http.Request) *models.Session {
-	sessAny, ok := r.Context().Value("session").(*models.Session)
+func SessionOrPanic(r *http.Request) *models.Session {
+	sessAny, ok := session(r)
 	if !ok {
-		panic("Session should have been set already")
+		panic("SessionOrPanic should have been set already")
 	}
 	return sessAny
 }
 
+func session(r *http.Request) (*models.Session, bool) {
+	sess, ok := r.Context().Value("session").(*models.Session)
+	return sess, ok
+}
+
 func SessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !anonymousPaths[r.URL.Path] && !strings.HasPrefix(r.URL.Path, "/cloudfiles/") {
+		if !sessAnonymousPaths[r.URL.Path] && !strings.HasPrefix(r.URL.Path, "/cloudfiles/") && !isPlayfab(r) && !isApiAgeOfEmpires(r) {
 			sessionID := r.URL.Query().Get("sessionID")
 			if sessionID == "" {
 				err := r.ParseForm()

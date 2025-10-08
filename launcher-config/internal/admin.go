@@ -4,37 +4,25 @@ import (
 	"crypto/x509"
 	"encoding/gob"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/cert"
-	"github.com/luskaner/ageLANServer/launcher-common/executor"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"net"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cert"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd"
+	"github.com/luskaner/ageLANServer/launcher-common/executor"
 )
 
 var ipc net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
-func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err error, exitCode int) {
+func RunSetUp(ipToMap net.IP, addCertData []byte, mapCDN bool) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
-	if mapIps.Cardinality() > 9 {
-		exitCode = launcherCommon.ErrIpMapAddTooMany
-		return
-	}
-	ips := make([]net.IP, mapIps.Cardinality())
-	i := 0
-	for ip := range mapIps.Iter() {
-		ips[i] = net.ParseIP(ip)
-		if ips[i] == nil {
-			return
-		}
-		i++
-	}
 	if ipc != nil {
-		return runSetUpAgent(ips, addCertData, mapCDN)
+		return runSetUpAgent(ipToMap, addCertData, mapCDN)
 	} else {
 		var certificate *x509.Certificate
 		if addCertData != nil {
@@ -44,17 +32,17 @@ func RunSetUp(mapIps mapset.Set[string], addCertData []byte, mapCDN bool) (err e
 				return
 			}
 		}
-		result := executor.RunSetUp(ips, certificate, mapCDN)
+		result := executor.RunSetUp(cmd.GameId, ipToMap, certificate, mapCDN)
 		err, exitCode = result.Err, result.ExitCode
 	}
 	return
 }
 
-func RunRevert(unmapIPs bool, removeCert bool, unmapCDN bool, failfast bool) (err error, exitCode int) {
+func RunRevert(unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {
 	if ipc != nil {
-		return runRevertAgent(unmapIPs, removeCert, unmapCDN)
+		return runRevertAgent(unmapIPs, removeCert)
 	}
-	result := executor.RunRevert(unmapIPs, removeCert, unmapCDN, failfast)
+	result := executor.RunRevert(unmapIPs, removeCert, failfast)
 	err, exitCode = result.Err, result.ExitCode
 	return
 }
@@ -117,7 +105,7 @@ func StartAgentIfNeeded() (result *exec.Result) {
 	return
 }
 
-func runRevertAgent(unmapIPs bool, removeCert bool, unmapCDN bool) (err error, exitCode int) {
+func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevert); err != nil {
 		return
 	}
@@ -126,7 +114,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool, unmapCDN bool) (err error, e
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IPs: unmapIPs, Certificate: removeCert, CDN: unmapCDN}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcRevertCommand{IPs: unmapIPs, Certificate: removeCert}); err != nil {
 		return
 	}
 
@@ -137,7 +125,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool, unmapCDN bool) (err error, e
 	return
 }
 
-func runSetUpAgent(mapIps []net.IP, certificate []byte, mapCDN bool) (err error, exitCode int) {
+func runSetUpAgent(mapIp net.IP, certificate []byte, mapCDN bool) (err error, exitCode int) {
 	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetup); err != nil {
 		return
 	}
@@ -146,7 +134,7 @@ func runSetUpAgent(mapIps []net.IP, certificate []byte, mapCDN bool) (err error,
 		return
 	}
 
-	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{IPs: mapIps, Certificate: certificate, CDN: mapCDN}); err != nil {
+	if err = encoder.Encode(launcherCommon.ConfigAdminIpcSetupCommand{GameId: cmd.GameId, IP: mapIp, Certificate: certificate, CDN: mapCDN}); err != nil {
 		return
 	}
 

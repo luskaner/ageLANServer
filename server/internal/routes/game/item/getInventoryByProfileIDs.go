@@ -2,9 +2,10 @@ package item
 
 import (
 	"encoding/json"
-	i "github.com/luskaner/ageLANServer/server/internal"
 	"net/http"
 	"strconv"
+
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 func GetInventoryByProfileIDs(w http.ResponseWriter, r *http.Request) {

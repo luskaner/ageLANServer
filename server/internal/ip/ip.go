@@ -1,9 +1,10 @@
 package ip
 
 import (
+	"net"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
-	"net"
 )
 
 func ResolveAddrs(listenIP net.IP, multicastIP net.IP, targetPort int, broadcast bool, multicast bool) (sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {

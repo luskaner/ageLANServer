@@ -1,9 +1,10 @@
 package parentCheck
 
 import (
-	"github.com/luskaner/ageLANServer/common"
 	"os"
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func ParentMatches() bool {

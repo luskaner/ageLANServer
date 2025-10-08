@@ -1,4 +1,4 @@
-# Launcher
+# Battle-Server-Manager
 
 The launcher is a tool that allows you to launch the game to connect to the LAN server. It also handles configuring the
 system and reverting that configuration upon exit.
@@ -24,19 +24,25 @@ require admin rights elevation.**
 - Discover the server.
 - Stop the server.
 
+## Battle-Server-Manager
+
+- Start the Online-like Battle Server.
+- Stop the Online-like Battle Server.
+
 ## Client (via [`bin\config`](../launcher-config/README.md))
 
 - Isolated metadata directory (except AoE I).
 - Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.
+- Add certificate to the game's trusted store (except AoE I).
 
 All possible client modifications are reverted upon the launcher's exit.
 
 ## Command Line
 
 CLI is available with similar options as the configuration. You can see the available options with
-`launcher -h`.
+`launcher -h`. Some configuration options are only exclusive to the CLI and some to the configuration files.
 
 ## Configuration
 
@@ -49,4 +55,4 @@ should help you understand the options.
 
 * [Base codes](../common/errors.go).
 * [Launcher shared codes](../launcher-common/errors.go).
-* [Launcher codes](internal/errors.go).
+* [Own codes](internal/errors.go).

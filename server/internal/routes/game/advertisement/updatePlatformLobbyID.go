@@ -41,7 +41,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 			return
 		}
 
-		sess := middleware.Session(r)
+		sess := middleware.SessionOrPanic(r)
 		currentUserId = sess.GetUserId()
 		peers := adv.GetPeers()
 		if _, ok = peers.Load(currentUserId); !ok {

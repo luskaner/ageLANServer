@@ -3,8 +3,9 @@
 package cmdUtils
 
 import (
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"os"
+
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
 func adminError(result *exec.Result) bool {

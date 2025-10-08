@@ -2,19 +2,20 @@ package launcher_common
 
 import (
 	"fmt"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
 )
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, stopAgent bool, failfast bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, gamePath string, stopAgent bool, failfast bool) []string {
 	args := make([]string, 0)
 	if game != "" {
 		args = append(args, "-e")
@@ -41,9 +42,16 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 		if restoreProfiles {
 			args = append(args, "-p")
 		}
+		if restoreGameCert {
+			args = append(args, "-s")
+		}
 		if unmapCDN {
 			args = append(args, "-c")
 		}
+	}
+	if gamePath != "" {
+		args = append(args, "--gamePath")
+		args = append(args, gamePath)
 	}
 	if hostFilePath != "" {
 		args = append(args, "-o")
@@ -73,15 +81,9 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 				revertLine += "all possible "
 			}
 			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, true, true, true, "", "", stopAgent, false)
+			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, true, "", "", "", stopAgent, false)
 		} else if !headless && slices.Contains(revertFlags, "-g") {
 			stopAgent = true
-		}
-
-		if err = RevertConfigStore.Delete(); err != nil {
-			if !headless {
-				fmt.Println("Failed to clear revert flags: ", err)
-			}
 		}
 
 		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
@@ -107,6 +109,12 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 				}
 			}
 			return false
+		}
+
+		if err = RevertConfigStore.Delete(); err != nil {
+			if !headless {
+				fmt.Println("Failed to clear revert flags: ", err)
+			}
 		}
 	}
 	return true

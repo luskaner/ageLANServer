@@ -2,54 +2,128 @@ package hosts
 
 import (
 	"bufio"
-	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
+	"io"
+	"net"
+	"os"
+	"strings"
+
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
-	"github.com/luskaner/ageLANServer/launcher-common/executor/exec"
-	"io"
-	"os"
-	"regexp"
-	"strings"
 )
 
-const HostEndMarking = "#" + common.Name
+const commentPrefix = "#"
+const hostEndMarking = common.Name
 const WindowsLineEnding = "\r\n"
 
-var mappingRegExp = regexp.MustCompile(`(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(?P<host>\S+)`)
+type Line struct {
+	ip      net.IP
+	hosts   []string
+	comment string
+}
+
+func (l Line) IP() net.IP {
+	return l.ip
+}
+
+func (l Line) Hosts() []string {
+	return l.hosts[:min(len(l.hosts), maxHostsPerLine)]
+}
+
+func (l Line) Own() bool {
+	return l.comment == hostEndMarking
+}
+
+func (l Line) String() string {
+	sb := strings.Builder{}
+	sb.WriteString(l.ip.String())
+	sb.WriteString("\t")
+	sb.WriteString(strings.Join(l.hosts, ` `))
+	if l.comment != "" {
+		sb.WriteString(" ")
+		sb.WriteString(commentPrefix)
+		sb.WriteString(l.comment)
+	}
+	return sb.String()
+}
+
+func NewLine(ip net.IP, hosts []string) Line {
+	return Line{
+		ip:      ip,
+		hosts:   hosts,
+		comment: hostEndMarking,
+	}
+}
+
+func Parse(line string) (ok bool, l Line) {
+	l = Line{}
+	split := strings.Split(line, "#")
+	if len(split) > 1 {
+		l.comment = split[1]
+	}
+	lineWithoutComment := split[0]
+	if lineWithoutComment == "" {
+		return
+	}
+	lineWithoutCommentSep := strings.Fields(lineWithoutComment)
+	if len(lineWithoutCommentSep) < 2 {
+		return
+	}
+	ip := net.ParseIP(lineWithoutCommentSep[0])
+	if ip == nil {
+		return
+	}
+	l.ip = net.ParseIP(lineWithoutCommentSep[0])
+	l.hosts = make([]string, len(lineWithoutCommentSep)-1)
+	for i, host := range lineWithoutCommentSep[1:min(len(lineWithoutCommentSep), maxHostsPerLine+1)] {
+		if net.ParseIP(host) != nil {
+			continue
+		}
+		l.hosts[i] = host
+	}
+	ok = true
+	return
+}
+
+// HostMappings maps a host to an IP, but an IP can be mapped to multiple hosts.
+type HostMappings map[string]net.IP
+
+func (h *HostMappings) String(lineEnding string) string {
+	lines := make([]Line, 0)
+	for host, ip := range *h {
+		lines = append(
+			lines,
+			NewLine(ip[:], []string{host}),
+		)
+	}
+	sb := strings.Builder{}
+	for _, line := range lines {
+		sb.WriteString(lineEnding)
+		sb.WriteString(line.String())
+	}
+	return sb.String()
+}
 
 func CreateTemp() (*os.File, error) {
 	return os.CreateTemp("", common.Name+"_host_*.txt")
 }
 
-func HostMappings() map[string]mapset.Set[string] {
-	mappings := make(map[string]mapset.Set[string])
-	if len(cmd.MapIPs) > 0 {
-		for _, host := range common.AllHosts() {
-			mappings[host] = mapset.NewThreadUnsafeSet[string]()
-			for _, ip := range cmd.MapIPs {
-				mappings[host].Add(ip.String())
-			}
+func Mappings(gameId string) HostMappings {
+	mappings := make(HostMappings)
+	if cmd.MapIP != nil {
+		for _, host := range common.AllHosts(gameId) {
+			mappings[host] = cmd.MapIP
 		}
 	}
 	if cmd.MapCDN {
-		mappings[launcherCommon.CDNDomain] = mapset.NewThreadUnsafeSet[string]()
-		mappings[launcherCommon.CDNDomain].Add(launcherCommon.CDNIP)
+		ip := net.ParseIP(launcherCommon.CDNIP)
+		mappings[launcherCommon.CDNDomain] = ip
 	}
 	return mappings
 }
 
-func mapping(line string) (string, string) {
-	uncommentedLine := LineWithoutComment(line)
-	matches := mappingRegExp.FindStringSubmatch(uncommentedLine)
-	if matches == nil {
-		return "", ""
-	}
-	return matches[1], matches[2]
-}
-
-func missingIpMappings(mappings *map[string]mapset.Set[string], hostFilePath string) (err error, f *os.File) {
+func missingIpMappings(mappings *HostMappings, hostFilePath string) (err error, f *os.File) {
 	err, f = OpenHostsFile(hostFilePath)
 	if err != nil {
 		return
@@ -58,10 +132,13 @@ func missingIpMappings(mappings *map[string]mapset.Set[string], hostFilePath str
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line = scanner.Text()
-		lineIp, lineHost := mapping(line)
-		if ips, ok := (*mappings)[lineHost]; ok && ips.ContainsOne(lineIp) {
-			(*mappings)[lineHost].Remove(lineIp)
-			if (*mappings)[lineHost].IsEmpty() {
+		ok, lineParsed := Parse(line)
+		if !ok {
+			continue
+		}
+		lineIp := lineParsed.IP()
+		for _, lineHost := range lineParsed.Hosts() {
+			if ip, ok := (*mappings)[lineHost]; ok && ip.Equal(lineIp) {
 				delete(*mappings, lineHost)
 			}
 		}
@@ -71,10 +148,6 @@ func missingIpMappings(mappings *map[string]mapset.Set[string], hostFilePath str
 		_ = f.Close()
 	}
 	return
-}
-
-func LineWithoutComment(line string) string {
-	return strings.Split(line, "#")[0]
 }
 
 func OpenHostsFile(hostFilePath string) (err error, f *os.File) {
@@ -156,9 +229,9 @@ func UpdateHosts(hostsFile *os.File, updater func(file *os.File) error, flushFn 
 	return err
 }
 
-func AddHosts(hostFilePath string, lineEnding string, flushFn func() (result *exec.Result)) (ok bool, err error) {
+func AddHosts(gameId string, hostFilePath string, lineEnding string, flushFn func() (result *exec.Result)) (ok bool, err error) {
 	var hostsFile *os.File
-	mappings := HostMappings()
+	mappings := Mappings(gameId)
 	err, hostsFile = missingIpMappings(&mappings, hostFilePath)
 	if err != nil {
 		return
@@ -179,13 +252,9 @@ func AddHosts(hostFilePath string, lineEnding string, flushFn func() (result *ex
 	}
 
 	err = UpdateHosts(hostsFile, func(f *os.File) error {
-		for hostname, ips := range mappings {
-			for ip := range ips.Iter() {
-				_, err = f.WriteString(fmt.Sprintf("%s%s\t%s\t%s", lineEnding, ip, hostname, HostEndMarking))
-				if err != nil {
-					return err
-				}
-			}
+		_, err = f.WriteString(mappings.String(lineEnding))
+		if err != nil {
+			return err
 		}
 		_, err = f.Seek(0, io.SeekStart)
 		if err != nil {

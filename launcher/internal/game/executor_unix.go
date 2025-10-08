@@ -3,13 +3,9 @@
 package game
 
 import (
-	commonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor/exec"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-// XboxExecutor is not supported on non-Windows platforms
-func isInstalledOnXbox(_ string) bool {
-	return false
-}
 func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 	// Should not be called
 	return
@@ -17,6 +13,7 @@ func (exec XboxExecutor) Execute(_ []string) (result *commonExecutor.Result) {
 func (exec XboxExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	return
 }
+func (exec XboxExecutor) GamePath() string { return "" }
 
 func (exec CustomExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 	steamProcess = true

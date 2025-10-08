@@ -3,9 +3,13 @@ package cmd
 import (
 	"crypto/x509"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
+	"net"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+
 	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -16,10 +20,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
 )
 
 func removeUserCert() bool {
@@ -35,7 +35,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	fmt.Println("Restoring previously backed up metadata")
-	if userData.Metadata(gameId).Restore(gameId) {
+	if userData.Metadata(cmd.GameId).Restore(cmd.GameId) {
 		fmt.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -46,7 +46,7 @@ func restoreMetadata() bool {
 
 func restoreProfiles() bool {
 	fmt.Println("Restoring previously backed up profiles")
-	if userData.RestoreProfiles(gameId, true) {
+	if userData.RestoreProfiles(cmd.GameId, true) {
 		fmt.Println("Successfully restored profiles")
 		return true
 	} else {
@@ -55,7 +55,18 @@ func restoreProfiles() bool {
 	}
 }
 
-func undoSetUp(addedUserCert bool, backedUpMetadata bool, backedUpProfiles bool) {
+func restoreGameCert() bool {
+	fmt.Println("Restoring previously added game's certificate store...")
+	if _, err := internal.NewCACert(cmd.GameId, gamePath).Restore(); err == nil {
+		fmt.Println("Successfully restored game's certificate store.")
+		return true
+	} else {
+		fmt.Println("Failed to restore game's certificate store.")
+		return false
+	}
+}
+
+func undoSetUp() {
 	if addedUserCert {
 		removeUserCert()
 	}
@@ -65,40 +76,52 @@ func undoSetUp(addedUserCert bool, backedUpMetadata bool, backedUpProfiles bool)
 	if backedUpProfiles {
 		restoreProfiles()
 	}
+	if addedGameCert {
+		restoreGameCert()
+	}
+	if hostFilePath != "" {
+		_ = os.Remove(hostFilePath)
+	}
+	if certFilePath != "" {
+		_ = os.Remove(certFilePath)
+	}
+	os.Exit(errorCode)
 }
 
-var AddUserCertData []byte
-var BackupMetadata bool
-var BackupProfiles bool
+var addUserCertData []byte
+var doBackupMetadata bool
+var doBackupProfiles bool
+var caStoreCert []byte
 var agentStart bool
 var agentEndOnError bool
+var errorCode int
 var storeString = "local"
+
+// State
+var addedUserCert bool
+var backedUpMetadata bool
+var backedUpProfiles bool
+var addedGameCert bool
 
 var setUpCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Setups configuration",
 	Long:  "Adds any of the following:\n* One or more host mappings to the local DNS server\n* Certificate to the " + storeString + " machine's trusted root store\n* Backup user metadata\n* Backup user profiles",
 	Run: func(_ *cobra.Command, _ []string) {
-		if len(cmd.MapIPs) > 9 {
-			fmt.Println("Too many IPs. Up to 9 can be mapped")
-			os.Exit(launcherCommon.ErrIpMapAddTooMany)
-		}
-		var addedUserCert bool
-		var backedUpMetadata bool
-		var backedUpProfiles bool
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
 			_, ok := <-sigs
 			if ok {
-				undoSetUp(addedUserCert, backedUpMetadata, backedUpProfiles)
-				os.Exit(common.ErrSignal)
+				errorCode = common.ErrSignal
+				undoSetUp()
 			}
 		}()
-		if gameId == common.GameAoE1 {
-			BackupMetadata = false
+		if cmd.GameId == common.GameAoE1 {
+			doBackupMetadata = false
+			doRestoreCaStoreCert = false
 		}
-		if (BackupMetadata || BackupProfiles) && !common.SupportedGames.ContainsOne(gameId) {
+		if (doBackupMetadata || doBackupProfiles) && !common.SupportedGames.ContainsOne(cmd.GameId) {
 			fmt.Println("Invalid game type")
 			os.Exit(launcherCommon.ErrInvalidGame)
 		}
@@ -111,14 +134,15 @@ var setUpCmd = &cobra.Command{
 		} else {
 			addLocalCertData = cmd.AddLocalCertData
 		}
-		fmt.Printf("Setting up configuration for %s...\n", gameId)
+		fmt.Printf("Setting up configuration for %s...\n", cmd.GameId)
 		isAdmin := executor.IsAdmin()
-		if AddUserCertData != nil {
+		if addUserCertData != nil {
 			fmt.Println("Adding user certificate, authorize it if needed...")
-			crt := wrapper.BytesToCertificate(AddUserCertData)
+			crt := wrapper.BytesToCertificate(addUserCertData)
 			if crt == nil {
 				fmt.Println("Failed to parse certificate")
-				os.Exit(internal.ErrUserCertAddParse)
+				errorCode = internal.ErrUserCertAddParse
+				undoSetUp()
 			}
 			if err := wrapper.AddUserCerts([]*x509.Certificate{crt}); err == nil {
 				fmt.Println("Successfully added user certificate")
@@ -126,75 +150,77 @@ var setUpCmd = &cobra.Command{
 			} else {
 				fmt.Println("Failed to add user certificate")
 				fmt.Println("Error message: " + err.Error())
-				os.Exit(internal.ErrUserCertAdd)
+				errorCode = internal.ErrUserCertAdd
+				undoSetUp()
 			}
 		}
-		if BackupMetadata {
+		if doBackupMetadata {
 			fmt.Println("Backing up metadata")
-			if userData.Metadata(gameId).Backup(gameId) {
+			if userData.Metadata(cmd.GameId).Backup(cmd.GameId) {
 				fmt.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
-				errorCode := internal.ErrMetadataBackup
-				if addedUserCert {
-					if !removeUserCert() {
-						errorCode = internal.ErrMetadataBackupRevert
-					}
-				}
 				fmt.Println("Failed to back up metadata")
-				os.Exit(errorCode)
+				errorCode = internal.ErrMetadataBackup
+				undoSetUp()
 			}
 		}
-		if BackupProfiles {
+		if doBackupProfiles {
 			fmt.Println("Backing up profiles")
-			if userData.BackupProfiles(gameId) {
+			if userData.BackupProfiles(cmd.GameId) {
 				fmt.Println("Successfully backed up profiles")
 				backedUpProfiles = true
 			} else {
-				errorCode := internal.ErrProfilesBackup
-				if addedUserCert {
-					if !removeUserCert() {
-						errorCode = internal.ErrProfilesBackupRevert
-					}
-				}
-				if backedUpMetadata {
-					if !restoreMetadata() {
-						errorCode = internal.ErrProfilesBackupRevert
-					}
-				}
 				fmt.Println("Failed to back up profiles")
-				os.Exit(errorCode)
+				errorCode = internal.ErrProfilesBackup
+				undoSetUp()
 			}
 		}
-		hostMappings := mapset.NewThreadUnsafeSet[string]()
+		if caStoreCert != nil {
+			fmt.Println("Adding certificate to game's store...")
+			if gamePath == "" {
+				fmt.Println("Game path is required to add certificate to game's store")
+				errorCode = internal.ErrGamePathMissing
+				undoSetUp()
+			}
+			crt := wrapper.BytesToCertificate(caStoreCert)
+			if crt == nil {
+				fmt.Println("Failed to parse certificate")
+				errorCode = internal.ErrGameCertAddParse
+				undoSetUp()
+			}
+			cert := internal.NewCACert(cmd.GameId, gamePath)
+			if err := cert.Backup(); err == nil {
+				fmt.Println("Successfully backed up game's store.")
+				addedGameCert = true
+			} else {
+				fmt.Println("Failed to add certificate to game's store.")
+				fmt.Println("Error message: " + err.Error())
+				errorCode = internal.ErrGameCertBackup
+				undoSetUp()
+			}
+			if err := cert.Append([]*x509.Certificate{crt}); err == nil {
+				fmt.Println("Successfully added certificate to game's store.")
+			} else {
+				fmt.Println("Failed to add certificate to game's store.")
+				fmt.Println("Error message: " + err.Error())
+				errorCode = internal.ErrGameCertAdd
+				undoSetUp()
+			}
+		}
+		var ipToMap net.IP
 		if hostFilePath == "" {
-			for _, ip := range cmd.MapIPs {
-				hostMappings.Add(ip.String())
+			if len(cmd.MapIP) > 0 {
+				ipToMap = cmd.MapIP
 			}
 		} else {
-			if cmd.MapCDN || len(cmd.MapIPs) > 0 {
-				if ok, _ := hosts.AddHosts(hostFilePath, hosts.WindowsLineEnding, nil); ok {
+			if cmd.MapCDN || len(cmd.MapIP) > 0 {
+				if ok, _ := hosts.AddHosts(cmd.GameId, hostFilePath, hosts.WindowsLineEnding, nil); ok {
 					fmt.Println("Successfully added host mappings")
 				} else {
 					fmt.Println("Failed to add host mappings")
-					_ = os.Remove(hostFilePath)
-					errorCode := internal.ErrHostsAdd
-					if addedUserCert {
-						if !removeUserCert() {
-							errorCode = internal.ErrAdminSetupRevert
-						}
-					}
-					if backedUpMetadata {
-						if !restoreMetadata() {
-							errorCode = internal.ErrAdminSetupRevert
-						}
-					}
-					if backedUpProfiles {
-						if !restoreProfiles() {
-							errorCode = internal.ErrAdminSetupRevert
-						}
-					}
-					os.Exit(errorCode)
+					errorCode = internal.ErrHostsAdd
+					undoSetUp()
 				}
 			}
 			cmd.MapCDN = false
@@ -209,28 +235,11 @@ var setUpCmd = &cobra.Command{
 			}
 			if err != nil {
 				fmt.Println("Error saving certificate file:", err)
-				_ = os.Remove(hostFilePath)
-				_ = os.Remove(certFilePath)
-				errorCode := internal.ErrUserCertAdd
-				if addedUserCert {
-					if !removeUserCert() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpMetadata {
-					if !restoreMetadata() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpProfiles {
-					if !restoreProfiles() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				os.Exit(errorCode)
+				errorCode = internal.ErrUserCertAdd
+				undoSetUp()
 			}
 		}
-		if addLocalCertData != nil || !hostMappings.IsEmpty() || cmd.MapCDN {
+		if addLocalCertData != nil || len(ipToMap) > 0 || cmd.MapCDN {
 			agentStarted := internal.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
 				result := internal.StartAgentIfNeeded()
@@ -242,12 +251,14 @@ var setUpCmd = &cobra.Command{
 					if result.ExitCode != common.ErrSuccess {
 						fmt.Println(result.ExitCode)
 					}
-					os.Exit(internal.ErrStartAgent)
+					errorCode = internal.ErrStartAgent
+					undoSetUp()
 				} else {
 					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
 						fmt.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
-						os.Exit(internal.ErrStartAgentVerify)
+						errorCode = internal.ErrStartAgentVerify
+						undoSetUp()
 					}
 				}
 			}
@@ -260,7 +271,7 @@ var setUpCmd = &cobra.Command{
 				}
 				fmt.Println("...")
 			}
-			err, exitCode := internal.RunSetUp(hostMappings, addLocalCertData, cmd.MapCDN)
+			err, exitCode := internal.RunSetUp(ipToMap, addLocalCertData, cmd.MapCDN)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					fmt.Println("Successfully communicated with 'config-admin-agent'")
@@ -276,28 +287,7 @@ var setUpCmd = &cobra.Command{
 					fmt.Println("Received exit code:")
 					fmt.Println(exitCode)
 				}
-				errorCode := internal.ErrAdminSetup
-				if addedUserCert {
-					if !removeUserCert() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpMetadata {
-					if !restoreMetadata() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if backedUpProfiles {
-					if !restoreProfiles() {
-						errorCode = internal.ErrAdminSetupRevert
-					}
-				}
-				if hostFilePath != "" {
-					_ = os.Remove(hostFilePath)
-				}
-				if certFilePath != "" {
-					_ = os.Remove(certFilePath)
-				}
+				errorCode = internal.ErrAdminSetup
 				if agentStarted {
 					fmt.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
 					if agentEndOnError {
@@ -313,7 +303,6 @@ var setUpCmd = &cobra.Command{
 							if failedStopAgent {
 								fmt.Println("Failed to stop 'config-admin-agent'. Kill it manually using the task manager")
 								fmt.Println("Error message: " + err.Error())
-								os.Exit(internal.ErrStartAgentRevert)
 							}
 						} else {
 							fmt.Println("Successfully stopped 'config-admin-agent'.")
@@ -322,7 +311,7 @@ var setUpCmd = &cobra.Command{
 				} else {
 					fmt.Println("Failed to run 'config-admin'")
 				}
-				os.Exit(errorCode)
+				undoSetUp()
 			}
 		}
 	},
@@ -333,7 +322,7 @@ func InitSetUp() {
 		storeString = "user/" + storeString
 	}
 	cmd.InitSetUp(setUpCmd)
-	commonCmd.GameVarCommand(setUpCmd.Flags(), &gameId)
+	addGamePathFlags(setUpCmd)
 	setUpCmd.Flags().StringVarP(
 		&hostFilePath,
 		"hostFilePath",
@@ -350,7 +339,7 @@ func InitSetUp() {
 	)
 	if runtime.GOOS != "linux" {
 		setUpCmd.Flags().BytesBase64VarP(
-			&AddUserCertData,
+			&addUserCertData,
 			"userCert",
 			"u",
 			nil,
@@ -358,18 +347,25 @@ func InitSetUp() {
 		)
 	}
 	setUpCmd.Flags().BoolVarP(
-		&BackupMetadata,
+		&doBackupMetadata,
 		"metadata",
 		"m",
 		false,
 		"Backup metadata. Not compatible with AoE:DE",
 	)
 	setUpCmd.Flags().BoolVarP(
-		&BackupProfiles,
+		&doBackupProfiles,
 		"profiles",
 		"p",
 		false,
 		"Backup profiles",
+	)
+	setUpCmd.Flags().BytesBase64VarP(
+		&caStoreCert,
+		"caStoreCert",
+		"s",
+		nil,
+		"Add the certificate to the game's trusted root store. For all except AoE I: DE.",
 	)
 	setUpCmd.Flags().BoolVarP(
 		&agentStart,
