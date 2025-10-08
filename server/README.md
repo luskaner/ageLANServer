@@ -29,12 +29,23 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Certificate
 
-You can use your own certificate by (re)placing the `cert.pem` and `key.pem` files in the `resources/certificates`
-directory.
 The easiest way to generate a self-signed certificate is by running the ``bin/genCert`` executable (more
 info [here](../server-genCert) or you may leave
 that to
 the ```launcher``` if you are hosting and running the launcher on same PC.
+
+#### Self-signed certificate
+
+The self signed certificate pair (``selfsigned_cert.pem`` and ``selfsigned_key.pem``) is generated specifically for
+non-AoM games.
+
+#### Default
+
+The default certificate pair (``cert.pem`` and ``key.pem``) serves as the default and for AoM. It is signed by
+`cacert.pem` certificate authority.
+
+You can use your own certificate by (re)placing the `cert.pem` and `key.pem` files in the `resources/certificates`
+directory.
 
 ### Main
 
@@ -54,6 +65,14 @@ The game connects to a static cloud to download assets. The server is configured
 itself. The configuration file is `cloudfilesIndex.json` inside the game subdirectory in `resources/config` and the
 corresponding
 files reside in the [`cloud`](resources/responses/cloud) directory.
+
+### api.ageofempires.com
+
+For AoM it acts as a proxy for all non implemented requests.
+
+### *.playfab
+
+For AoM it reimplements it partially.
 
 ### Age of Empires III: Definitive Edition only
 
