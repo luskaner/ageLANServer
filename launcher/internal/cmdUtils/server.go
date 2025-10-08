@@ -151,40 +151,7 @@ func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []ne
 	return
 }
 
-func (c *Config) StartServer(executable string, args []string, stop bool, canTrustCertificate bool) (errorCode int, ip string) {
-	serverExecutablePath := server.GetExecutablePath(executable)
-	if serverExecutablePath == "" {
-		fmt.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
-		errorCode = internal.ErrServerExecutable
-		return
-	}
-	if executable != serverExecutablePath {
-		fmt.Println("Found 'server' executable path:", serverExecutablePath)
-	}
-
-	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || server.CertificateSoonExpired(cert) || server.CertificateSoonExpired(caCert) || server.CertificateSoonExpired(selfSignedCert) {
-		if !canTrustCertificate {
-			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
-			errorCode = internal.ErrServerCertMissingExpired
-			return
-		}
-		if certificateFolder == "" {
-			fmt.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
-			errorCode = internal.ErrServerCertDirectory
-			return
-		}
-		if result := server.GenerateCertificatePair(certificateFolder); !result.Success() {
-			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
-			errorCode = internal.ErrServerCertCreate
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
-			return
-		}
-	}
+func (c *Config) StartServer(executable string, args []string, stop bool) (errorCode int, ip string) {
 	fmt.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {

@@ -15,6 +15,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher/internal"
 	"golang.org/x/net/ipv4"
 )
 
@@ -54,6 +55,33 @@ func StartServer(stop string, executable string, args []string, selectBestServer
 			}
 		}
 		result = nil
+	}
+	return
+}
+
+func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (errorCode int) {
+	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
+		if !canTrustCertificate {
+			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			errorCode = internal.ErrServerCertMissingExpired
+			return
+		}
+		if certificateFolder == "" {
+			fmt.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
+			errorCode = internal.ErrServerCertDirectory
+			return
+		}
+		if result := GenerateCertificatePair(certificateFolder); !result.Success() {
+			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
+			errorCode = internal.ErrServerCertCreate
+			if result.Err != nil {
+				fmt.Println("Error message: " + result.Err.Error())
+			}
+			if result.ExitCode != common.ErrSuccess {
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+			}
+			return
+		}
 	}
 	return
 }

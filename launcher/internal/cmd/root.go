@@ -371,6 +371,18 @@ var (
 					fmt.Println(" start the 'server'.")
 					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 				}
+				serverExecutablePath := server.GetExecutablePath(serverExecutable)
+				if serverExecutablePath == "" {
+					fmt.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
+					errorCode = internal.ErrServerExecutable
+					return
+				}
+				if serverExecutable != serverExecutablePath {
+					fmt.Println("Found 'server' executable path:", serverExecutablePath)
+				}
+				if errorCode = server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); errorCode != common.ErrSuccess {
+					return
+				}
 				if runBattleServerManager {
 					errorCode = config.RunBattleServerManager(
 						gameId,
@@ -382,7 +394,7 @@ var (
 						return
 					}
 				}
-				errorCode, serverIP = config.StartServer(serverExecutable, serverArgs, serverStop == "true", canTrustCertificate != "false")
+				errorCode, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true")
 				if errorCode != common.ErrSuccess {
 					return
 				}
