@@ -349,6 +349,7 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
 3. **Run** the `start_...` script.
 
 *Note: If you have any issues run the `bin/config revert -a`.*
+</details>
 
 <details>
     <summary>Battle Server Manager instructions</summary>
