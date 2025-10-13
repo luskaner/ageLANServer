@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func CacertPem(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func CacertPem(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		var file string
-		if r.URL.Query().Get("gameId") == common.GameAoM {
+		if title := models.G(r).Title(); title == common.GameAoM || title == common.GameAoE4 {
 			file = common.CACert
 		} else {
 			file = common.SelfSignedCert

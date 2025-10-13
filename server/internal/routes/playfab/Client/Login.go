@@ -5,9 +5,18 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
 )
+
+type customInfoResultPayload struct {
+	UserInventory           []any
+	UserDataVersion         int
+	UserReadOnlyDataVersion int
+	CharacterInventories    []any
+}
 
 type entityResponse struct {
 	Id         string
@@ -32,7 +41,7 @@ type settingsForUserResponse struct {
 	GatherFocusInfo  bool
 }
 
-type loginWithSteamResponse struct {
+type loginResponse struct {
 	SessionTicket               string
 	PlayFabId                   string
 	NewlyCreated                bool
@@ -40,16 +49,29 @@ type loginWithSteamResponse struct {
 	LastLoginTime               string
 	entityTokenResponse         `json:"EntityToken"`
 	treatmentAssignmentResponse `json:"TreatmentAssignment"`
+	*customInfoResultPayload    `json:"InfoResultPayload,omitempty"`
 }
 
-func LoginWithSteam(w http.ResponseWriter, _ *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
+	sessionTicket := uuid.NewString()
 	entityToken := uuid.NewString()
-	id := playfab.AddSession(entityToken)
+	var key string
+	var payload *customInfoResultPayload
+	if title := models.G(r).Title(); title == common.GameAoE4 {
+		key = sessionTicket
+		payload = &customInfoResultPayload{
+			UserInventory:        []any{},
+			CharacterInventories: []any{},
+		}
+	} else {
+		key = entityToken
+	}
+	id := playfab.AddSession(key)
 	shared.RespondOK(
 		&w,
-		loginWithSteamResponse{
-			SessionTicket: uuid.NewString(),
+		loginResponse{
+			SessionTicket: sessionTicket,
 			PlayFabId:     id,
 			NewlyCreated:  true,
 			settingsForUserResponse: settingsForUserResponse{
@@ -71,6 +93,7 @@ func LoginWithSteam(w http.ResponseWriter, _ *http.Request) {
 				Variants:  []any{},
 				Variables: []any{},
 			},
+			customInfoResultPayload: payload,
 		},
 	)
 }

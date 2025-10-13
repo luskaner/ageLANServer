@@ -46,8 +46,8 @@ func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServe
 			BaseConfig: bs.BaseConfig,
 		})
 	}
-	if gameId == common.GameAoM && len(battleServers) == 0 {
-		fmt.Println("AoM: RT requires a Battle Server. You can start one with 'battle-server-manager'.")
+	if (gameId == common.GameAoM || gameId == common.GameAoE4) && len(battleServers) == 0 {
+		fmt.Println("AoE: IV and AoM: RT require a Battle Server. You can start one with 'battle-server-manager'.")
 		os.Exit(internal.MissingBattleServer)
 	}
 	if len(battleServers) > 0 {

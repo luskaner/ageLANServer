@@ -63,7 +63,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
-	if title == common.GameAoE2 {
+	if title == common.GameAoE2 || title == common.GameAoE4 {
 		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.GameId, req.ClientLibVersion))
 	}
 	var unknownProfileInfoList i.A
@@ -86,7 +86,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 			i.A{172, profileId, 4, "", t2},
 			i.A{173, profileId, 1, "", t2},
 		}
-	case common.GameAoE3, common.GameAoM:
+	case common.GameAoE3, common.GameAoM, common.GameAoE4:
 		unknownProfileInfoList = i.A{
 			i.A{291, u.GetId(), 16, "", t2},
 		}

@@ -9,7 +9,6 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
-	"github.com/spf13/viper"
 )
 
 var gamePathHandlers = map[string]map[string]map[string]http.HandlerFunc{
@@ -23,15 +22,14 @@ var gamePathHandlers = map[string]map[string]map[string]http.HandlerFunc{
 var ignoredPaths = map[string]bool{
 	"/":                            true,
 	"/test":                        true,
-	"/cacert.pem":                  true,
 	"/game/msstore/getStoreTokens": true,
 	"/wss/":                        true,
 	"/game/news/getNews":           true,
 }
 
-func GameMiddleware(next http.Handler) http.Handler {
+func GameMiddleware(gameSet mapset.Set[string], next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !ignoredPaths[r.URL.Path] && !isPlayfab(r) && !isApiAgeOfEmpires(r) {
+		if !ignoredPaths[r.URL.Path] && !isApiAgeOfEmpires(r) {
 			gameId := r.URL.Query().Get("title")
 			if gameId == "" && r.Method == http.MethodPost {
 				if err := r.ParseForm(); err == nil {
@@ -42,11 +40,10 @@ func GameMiddleware(next http.Handler) http.Handler {
 				sess, ok := session(r)
 				if ok {
 					gameId = sess.GetGameId()
-				} else if domains := common.DomainToGameIds[r.Host]; len(domains) == 1 {
-					gameId = domains[0]
+				} else if commonGameIds := common.GameIds(r.Host).Intersect(gameSet); commonGameIds.Cardinality() == 1 {
+					gameId, _ = commonGameIds.Pop()
 				}
 			}
-			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games.Enabled")...)
 			if !gameSet.ContainsOne(gameId) {
 				http.Error(w, "Unavailable game type", http.StatusBadRequest)
 				return

@@ -16,13 +16,14 @@ func isPlayfab(r *http.Request) bool {
 }
 
 var playAnonymousPaths = map[string]bool{
+	"/Client/LoginWithCustomID":              true,
 	"/Client/LoginWithSteam":                 true,
 	"/MultiplayerServer/ListPartyQosServers": true,
 	"/Event/WriteTelemetryEvents":            true,
 }
 
 func PlayfabSession(r *http.Request) string {
-	return r.Header.Get("X-Entitytoken")
+	return r.Header.Get("X-Sessionticket")
 }
 
 func PlayfabMiddleware(next http.Handler) http.Handler {

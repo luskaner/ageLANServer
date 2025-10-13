@@ -184,12 +184,12 @@ var (
 			switch executer.(type) {
 			case game.SteamExecutor:
 				fmt.Println("Game found on Steam.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(game.SteamExecutor).GamePath()
 				}
 			case game.XboxExecutor:
 				fmt.Println("Game found on Xbox.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(game.XboxExecutor).GamePath()
 				}
 			case game.CustomExecutor:
@@ -205,7 +205,7 @@ var (
 						isolateProfiles = false
 					}
 				}
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					if clientFile, clientPath, err := common.ParsePath("Client.Path", nil); err != nil || !clientFile.IsDir() {
 						fmt.Println("Invalid client path")
 						errorCode = internal.ErrInvalidClientPath

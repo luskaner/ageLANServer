@@ -15,7 +15,7 @@ RevertCommand = []
 # Note: It is not recommended to use an executable that requires admin rights (but it is supported).
 # Linux Note: setting a custom launcher will make 'Config.IsolateMetadata' and 'Config.IsolateProfiles' act as 'false.
 # Note 2: You may use environment variables.
-Executable = 'auto'
+Executable = 'S:\Descargas\AoM\steamclient_loader_x64.exe'
 # The arguments to pass to the client launcher if it is custom.
 # {HostFilePath} will be replaced by the host file path.
 # If using this variable, 'Config.CanAddHost' setting will be ignored.
@@ -31,4 +31,4 @@ ExecutableArgs = []
 # Used to find the game certificate certificate store, file "cacert.pem".
 # Required that the game path can be found in all games except AoE I: DE.
 # Note: You may use environment variables.
-Path = 'auto'
+Path = '..\..\..\..\SteamLibrary\steamapps\common\AoE2DE'

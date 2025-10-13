@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -56,10 +57,21 @@ func (r *MainResources) initializeLogin(gameId string) {
 	if err != nil {
 		panic(err)
 	}
-	re := regexp.MustCompile(`"([^"]*)"`)
-	matches := re.FindAllStringSubmatch(string(data), -1)
-	for j := 0; j < len(matches)-1; j += 2 {
-		r.LoginData = append(r.LoginData, i.A{matches[j][1], matches[j+1][1]})
+	dec := json.NewDecoder(bytes.NewReader(data))
+	t, err := dec.Token()
+	if err != nil || t != json.Delim('{') {
+		panic(fmt.Errorf("expected start of object"))
+	}
+	for dec.More() {
+		key, err := dec.Token()
+		if err != nil {
+			panic(err)
+		}
+		var value any
+		if err := dec.Decode(&value); err != nil {
+			panic(err)
+		}
+		r.LoginData = append(r.LoginData, i.A{key.(string), value})
 	}
 }
 

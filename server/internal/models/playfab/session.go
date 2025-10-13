@@ -22,12 +22,12 @@ func init() {
 	sessions = internal.NewSafeMap[string, string]()
 }
 
-func Id(session string) (playfabId string, ok bool) {
-	return sessions.Load(session)
+func Id(someId string) (playfabId string, ok bool) {
+	return sessions.Load(someId)
 }
 
-func AddSession(session string) string {
+func AddSession(someId string) string {
 	id := generateId()
-	sessions.Store(session, id, nil)
+	sessions.Store(someId, id, nil)
 	return id
 }

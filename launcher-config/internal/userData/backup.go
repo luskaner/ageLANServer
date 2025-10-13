@@ -14,21 +14,24 @@ type Data struct {
 	Path string
 }
 
-const finalPathPrefix = "Games"
-
 func finalPath(gameId string) string {
 	var suffix string
 	switch gameId {
 	case common.GameAoE1:
-		suffix = filepath.Join(`Age of Empires DE`, `Users`)
+		suffix = `Age of Empires DE`
 	case common.GameAoE2:
 		suffix = `Age of Empires 2 DE`
 	case common.GameAoE3:
 		suffix = `Age of Empires 3 DE`
+	case common.GameAoE4:
+		suffix = `Age of Empires IV`
 	case common.GameAoM:
 		suffix = `Age of Mythology Retold`
 	}
-	return filepath.Join(finalPathPrefix, suffix)
+	if gameId != common.GameAoE4 {
+		return filepath.Join("My Games", suffix)
+	}
+	return filepath.Join("Games", suffix)
 }
 
 func (d Data) isolatedPath(gameId string) string {

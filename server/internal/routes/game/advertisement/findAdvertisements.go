@@ -40,7 +40,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 		battleServers = game.BattleServers()
 	}
 	var tagsCheck func(*models.MainAdvertisement) bool
-	if battleServers != nil && (title == common.GameAoE2 || title == common.GameAoM) {
+	if battleServers != nil && (title == common.GameAoE2 || title == common.GameAoM || title == common.GameAoE4) {
 		ok, numericTags, stringTags := parseTags(r)
 		if ok {
 			tagsCheck = func(adv *models.MainAdvertisement) bool {

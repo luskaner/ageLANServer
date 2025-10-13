@@ -2,6 +2,7 @@ package userData
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -10,9 +11,18 @@ import (
 
 var profiles []Data
 
+func profilesPath(gameId string, prefixPath string) string {
+	switch gameId {
+	case common.GameAoE1, common.GameAoE4:
+		return filepath.Join(prefixPath, "Users")
+	default:
+		return prefixPath
+	}
+}
+
 func setProfileData(gameId string) bool {
 	profiles = make([]Data, 0)
-	entries, err := os.ReadDir(path(gameId))
+	entries, err := os.ReadDir(profilesPath(gameId, path(gameId)))
 	if err != nil {
 		return false
 	}

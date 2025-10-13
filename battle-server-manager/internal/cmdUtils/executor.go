@@ -23,7 +23,7 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 		fmt.Println("Auto resolving executable path...")
 		// TODO: Review if AoE: DE and AoE III: DE can also use AoE II: DE
 		// The Battle Server for AoM is buggy and the only one working is the AoE II one
-		if gameId == common.GameAoM {
+		if gameId == common.GameAoM || gameId == common.GameAoE4 {
 			gameId = common.GameAoE2
 		}
 		battleServerPath := "BattleServer.exe"
@@ -71,7 +71,7 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 		simulationPeriod = 25
 	case common.GameAoE3, common.GameAoM:
 		simulationPeriod = 50
-	case common.GameAoE2:
+	case common.GameAoE2, common.GameAoE4:
 		simulationPeriod = 125
 	}
 	args := []string{

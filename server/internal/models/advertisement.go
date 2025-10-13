@@ -429,7 +429,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBat
 		adv.id,
 		adv.platformSessionId,
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoM {
+	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
 		response = append(
 			response,
 			"0",
@@ -444,7 +444,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBat
 		started,
 		adv.description,
 	)
-	if gameId == common.GameAoE2 || gameId == common.GameAoM {
+	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
 		response = append(response, adv.description)
 	}
 	lan := 1

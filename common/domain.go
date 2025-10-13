@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 const Tld = "com"
@@ -28,7 +30,7 @@ const SubDomainReleasePart = "-live-release"
 var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld}
 
 var hostsCache = make(map[string][]string)
-var DomainToGameIds = make(map[string][]string)
+var domainToGameIds = make(map[string]mapset.Set[string])
 
 func CertDomains() []string {
 	domains := []string{"*" + playFabSuffix, ApiAgeOfEmpires}
@@ -42,23 +44,32 @@ func CacheAllHosts() {
 	}
 }
 
+func GameIds(domain string) mapset.Set[string] {
+	if gameIds, ok := domainToGameIds[domain]; ok {
+		return gameIds
+	}
+	return mapset.NewThreadUnsafeSet[string]()
+}
+
 func AllHosts(gameId string) (domains []string) {
 	if cache, ok := hostsCache[gameId]; ok {
 		return cache
 	}
 	switch gameId {
 	case GameAoE1, GameAoE2, GameAoE3:
-		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
+		domains = []string{relicDomain}
+	case GameAoE4:
+		domains = []string{"ED603" + playFabSuffix, SubDomain + worldsEdge + dotTld, ApiAgeOfEmpires}
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
 	}
 	domains = append(domains, generateDomains(gameId)...)
 	hostsCache[gameId] = domains
 	for _, domain := range domains {
-		if _, ok := DomainToGameIds[domain]; !ok {
-			DomainToGameIds[domain] = []string{}
+		if _, ok := domainToGameIds[domain]; !ok {
+			domainToGameIds[domain] = mapset.NewThreadUnsafeSet[string]()
 		}
-		DomainToGameIds[domain] = append(DomainToGameIds[gameId], gameId)
+		domainToGameIds[domain].Add(gameId)
 	}
 	return
 }

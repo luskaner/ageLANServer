@@ -45,6 +45,5 @@ func SelfSignedCertificate(domain string) bool {
 		return false
 	}
 	return (subdomain == common.SubDomain && mainDomain == common.RelicMainDomain) ||
-		(subdomain == common.SubDomain && mainDomain == common.WorldsEdgeMainDomain) ||
 		(age2Pb.MatchString(subdomain) && mainDomain == common.WorldsEdgeMainDomain)
 }

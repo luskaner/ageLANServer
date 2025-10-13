@@ -83,10 +83,10 @@ var (
 			mux := http.NewServeMux()
 			initializer.InitializeGames(gameSet)
 			routes.Initialize(mux, gameSet)
-			gameMux := middleware.GameMiddleware(mux)
+			gameMux := middleware.GameMiddleware(gameSet, mux)
 			sessionMux := middleware.SessionMiddleware(gameMux)
 			var finalMux http.Handler
-			if gameSet.ContainsOne(common.GameAoM) {
+			if gameSet.ContainsAny(common.GameAoM, common.GameAoE4) {
 				playfabMux := middleware.PlayfabMiddleware(sessionMux)
 				apiAgeOfEmpiresMux := middleware.ApiAgeOfEmpiresMiddleware(playfabMux)
 				finalMux = apiAgeOfEmpiresMux
