@@ -18,6 +18,7 @@ var RemoveAllCmd = &cobra.Command{
 		fmt.Println("Removing all...")
 		games, err := cmdUtils.ParsedGameIds(nil)
 		if err != nil {
+			fmt.Println(err.Error())
 			os.Exit(internal.ErrGames)
 		}
 		for gameId := range games.Iter() {

@@ -15,7 +15,7 @@ Name = 'auto'
 # Note: This only applies to the server.
 Host = 'auto'
 [Executable]
-# Path to 'BattleServer.exe' executable.
+# Path to 'BattleServer.exe' executable including it.
 # If 'auto' it will try to find it using Steam and then Xbox (Windows-only).
 # AoM: RT: will search for AoE II: DE executable instead, as the one included does not work.
 # Note: You may use environment variables.
@@ -52,7 +52,7 @@ OutOfBand = 0
 # SSL files to use.
 # If 'auto' if 'auto', it will be try to execute the server binary in this directory order:
 # 1. './server/resources/certificates/'
-# 2. '../serverresources/certificates/'
+# 2. '../server/resources/certificates/'
 # 3. '../../server/resources/certificates/'
 [SSL]
 Auto = true

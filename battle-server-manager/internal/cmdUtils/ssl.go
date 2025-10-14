@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/spf13/viper"
 )
 
 func ResolveSSLFilesPath(gameId string, auto bool) (resolvedCertFile string, resolvedKeyFile string, err error) {
@@ -30,13 +31,13 @@ func ResolveSSLFilesPath(gameId string, auto bool) (resolvedCertFile string, res
 	}
 	var f os.FileInfo
 	var path string
-	if f, path, err = common.ParsePath("SSL.CertFile", nil); err != nil || f.IsDir() {
+	if f, path, err = common.ParsePath(viper.GetStringSlice("SSL.CertFile"), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid certificate file")
 		return
 	} else {
 		resolvedCertFile = path
 	}
-	if f, path, err = common.ParsePath("SSL.KeyFile", nil); err != nil || f.IsDir() {
+	if f, path, err = common.ParsePath(viper.GetStringSlice("SSL.KeyFile"), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid key file")
 		return
 	} else {

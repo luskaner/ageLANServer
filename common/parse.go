@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -14,9 +15,13 @@ import (
 var reWinToLinVar *regexp.Regexp
 
 func ParseCommandArgs(name string, values map[string]string, separateFields bool) (args []string, err error) {
-	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
-	for key, value := range values {
-		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
+	return parseCommandArgs(viper.GetStringSlice(name), values, separateFields)
+}
+
+func parseCommandArgs(value []string, values map[string]string, separateFields bool) (args []string, err error) {
+	cmdArgs := strings.Join(value, " ")
+	for key, val := range values {
+		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), val)
 	}
 	if runtime.GOOS == "windows" {
 		if reWinToLinVar == nil {
@@ -32,8 +37,9 @@ func ParseCommandArgs(name string, values map[string]string, separateFields bool
 	return
 }
 
-func ParsePath(name string, values map[string]string) (file os.FileInfo, path string, err error) {
-	args, err := ParseCommandArgs(name, values, false)
+func ParsePath(value []string, values map[string]string) (file os.FileInfo, path string, err error) {
+	var args []string
+	args, err = parseCommandArgs(value, values, false)
 	if err != nil {
 		return
 	}
@@ -41,7 +47,10 @@ func ParsePath(name string, values map[string]string) (file os.FileInfo, path st
 		err = fmt.Errorf("invalid path")
 		return
 	}
-	path = args[0]
-	file, err = os.Stat(args[0])
+	path, err = filepath.Abs(args[0])
+	if err != nil {
+		return
+	}
+	file, err = os.Stat(path)
 	return
 }
