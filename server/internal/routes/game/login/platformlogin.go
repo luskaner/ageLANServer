@@ -88,7 +88,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		}
 	case common.GameAoE3, common.GameAoM:
 		unknownProfileInfoList = i.A{
-			i.A{291, u.GetId(), 16, "", t2},
+			i.A{291, profileId, 16, "", t2},
 		}
 	default:
 		unknownProfileInfoList = i.A{}
