@@ -9,6 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game/appx"
 	"github.com/luskaner/ageLANServer/common/game/steam"
+	"github.com/spf13/viper"
 )
 
 func ResolvePath(gameId string) (resolvedPath string, err error) {
@@ -18,8 +19,8 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 		}
 		return false
 	}
-	file, path, pathErr := common.ParsePath("Executable.Path", nil)
-	if path == "auto" {
+	var path string
+	if viper.GetString("Executable.Path") == "auto" {
 		fmt.Println("Auto resolving executable path...")
 		// TODO: Review if AoE: DE and AoE III: DE can also use AoE II: DE
 		// The Battle Server for AoM is buggy and the only one working is the AoE II one
@@ -51,9 +52,13 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 		}
 		err = fmt.Errorf("could not find battle server executable")
 		return
-	} else if pathErr != nil || !file.IsDir() {
-		err = fmt.Errorf("invalid battle server executable path")
-		return
+	} else {
+		var pathErr error
+		_, path, pathErr = common.ParsePath(viper.GetStringSlice("Executable.Path"), nil)
+		if pathErr != nil {
+			err = fmt.Errorf("invalid battle server executable path")
+			return
+		}
 	}
 	if validPath(path) {
 		resolvedPath = path

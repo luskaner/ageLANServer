@@ -19,6 +19,7 @@ var RemoveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		games, err := cmdUtils.ParsedGameIds(nil)
 		if err != nil {
+			fmt.Println(err.Error())
 			os.Exit(internal.ErrGames)
 		}
 		region := viper.GetString("Region")
