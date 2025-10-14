@@ -6,16 +6,17 @@ require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
-	github.com/luskaner/ageLANServer/common v0.0.0-20250911010759-0a4fd4ba120a
+	github.com/luskaner/ageLANServer/common v0.0.0-20251009162849-268a0d1d4793
 	github.com/luskaner/ageLANServer/launcher-common v0.0.0-20250911010759-0a4fd4ba120a
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
-	golang.org/x/net v0.45.0
-	golang.org/x/sys v0.36.0
+	golang.org/x/net v0.46.0
+	golang.org/x/sys v0.37.0
 	mvdan.cc/sh/v3 v3.12.0
 )
 
 require (
+	github.com/andygrunwald/vdf v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/hairyhenderson/go-which v0.2.2 // indirect
@@ -28,6 +29,6 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/term v0.35.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/term v0.36.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 )

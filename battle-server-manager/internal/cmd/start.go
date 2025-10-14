@@ -34,6 +34,7 @@ var (
 			gameIds := []string{gameId}
 			games, err := cmdUtils.ParsedGameIds(&gameIds)
 			if err != nil {
+				fmt.Println(err.Error())
 				os.Exit(internal.ErrGames)
 			}
 			gameId, _ := games.Pop()
