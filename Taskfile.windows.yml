@@ -18,7 +18,10 @@ tasks:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
       - powershell Copy-Item -Path launcher/resources/config.toml -Destination build/launcher/resources/config.toml -ErrorAction Ignore -Force
-      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.game.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age1.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age2.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age3.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.athens.toml -ErrorAction Ignore -Force
       - go build -o build/launcher/bin/agent.exe ./launcher-agent
   prepare-server-genCert:
     cmds:
@@ -28,4 +31,7 @@ tasks:
       - :build-battle-server-manager
     cmds:
       - powershell New-Item -ItemType Directory -Force -Path build/battle-server-manager/resources -ErrorAction Ignore
-      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.game.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.age1.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.age2.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.age3.toml -ErrorAction Ignore -Force
+      - powershell Copy-Item -Path battle-server-manager/resources/config.game.toml -Destination build/battle-server-manager/resources/config.athens.toml -ErrorAction Ignore -Force
