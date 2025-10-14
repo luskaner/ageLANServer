@@ -19,7 +19,7 @@ func joinReturnStartObservingError(battleServers *models.MainBattleServers, r *h
 func encodeStartObservingResponse(errorCode int, battleServer *models.MainBattleServer, r *http.Request, userIdsInt i.A, userIdsStr i.A, startTime int64) i.A {
 	response := i.A{
 		errorCode,
-		battleServer.ResolveIPv4(r),
+		battleServer.IPv4,
 	}
 	response = append(response, battleServer.EncodePorts()...)
 	response = append(response, userIdsInt, startTime, userIdsStr)

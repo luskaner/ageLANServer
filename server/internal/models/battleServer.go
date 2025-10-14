@@ -3,8 +3,6 @@ package models
 import (
 	"fmt"
 	"iter"
-	"net"
-	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
@@ -39,12 +37,12 @@ func (battleServer *MainBattleServer) AppendName(encoded *internal.A) {
 	}
 }
 
-func (battleServer *MainBattleServer) EncodeLogin(r *http.Request) internal.A {
+func (battleServer *MainBattleServer) EncodeLogin() internal.A {
 	encoded := internal.A{
 		battleServer.Region,
 	}
 	battleServer.AppendName(&encoded)
-	encoded = append(encoded, battleServer.ResolveIPv4(r))
+	encoded = append(encoded, battleServer.IPv4)
 	encoded = append(encoded, battleServer.EncodePorts()...)
 	return encoded
 }
@@ -58,21 +56,12 @@ func (battleServer *MainBattleServer) EncodePorts() internal.A {
 	return encoded
 }
 
-func (battleServer *MainBattleServer) EncodeAdvertisement(r *http.Request) internal.A {
+func (battleServer *MainBattleServer) EncodeAdvertisement() internal.A {
 	encoded := internal.A{
-		battleServer.ResolveIPv4(r),
+		battleServer.IPv4,
 	}
 	encoded = append(encoded, battleServer.EncodePorts()...)
 	return encoded
-}
-
-func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) string {
-	if battleServer.IPv4 == "auto" {
-		addr, _ := r.Context().Value(http.LocalAddrContextKey).(net.Addr)
-		ip, _, _ := net.SplitHostPort(addr.String())
-		return ip
-	}
-	return battleServer.IPv4
 }
 
 func (battleServer *MainBattleServer) String() string {
@@ -111,11 +100,11 @@ func (battleSrvs *MainBattleServers) Iter() iter.Seq2[string, *MainBattleServer]
 	return battleSrvs.store.Iter()
 }
 
-func (battleSrvs *MainBattleServers) Encode(r *http.Request) internal.A {
+func (battleSrvs *MainBattleServers) Encode() internal.A {
 	encoded := make(internal.A, battleSrvs.store.Len())
 	i := 0
 	for _, bs := range battleSrvs.store.Iter() {
-		encoded[i] = bs.EncodeLogin(r)
+		encoded[i] = bs.EncodeLogin()
 		i++
 	}
 	return encoded

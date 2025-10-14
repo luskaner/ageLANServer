@@ -88,13 +88,13 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		}
 	case common.GameAoE3, common.GameAoM:
 		unknownProfileInfoList = i.A{
-			i.A{291, profileId, 16, "", t2},
+			i.A{291, u.GetId(), 16, "", t2},
 		}
 	default:
 		unknownProfileInfoList = i.A{}
 	}
 	battleServers := game.BattleServers()
-	servers := battleServers.Encode(r)
+	servers := battleServers.Encode()
 	if len(servers) == 0 {
 		server := battleServers.NewBattleServer("")
 		server.IPv4 = "127.0.0.1"
@@ -104,7 +104,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 			server.Name = "localhost"
 			server.OutOfBandPort = 27212
 		}
-		servers = append(servers, server.EncodeLogin(r))
+		servers = append(servers, server.EncodeLogin())
 	}
 	response := i.A{
 		0,

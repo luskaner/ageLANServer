@@ -31,7 +31,7 @@ func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServ
 		advId,
 		"authtoken",
 	}
-	response = append(response, battleServer.EncodeAdvertisement(r)...)
+	response = append(response, battleServer.EncodeAdvertisement()...)
 	response = append(
 		response,
 		relayRegion,

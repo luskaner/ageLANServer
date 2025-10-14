@@ -24,7 +24,7 @@ func encodeJoinResponse(errorCode int, ip string, battleServer *models.MainBattl
 	response := i.A{
 		errorCode,
 		ip,
-		battleServer.ResolveIPv4(r),
+		battleServer.IPv4,
 	}
 	response = append(response, battleServer.EncodePorts()...)
 	response = append(response, i.A{peerEncoded})
