@@ -17,7 +17,6 @@ tasks:
     cmds:
       - go build -o build/server ./server
       - powershell New-Item -ItemType Directory -Force -Path build/launcher/resources -ErrorAction Ignore
-      - powershell Copy-Item -Path launcher/resources/config.toml -Destination build/launcher/resources/config.toml -ErrorAction Ignore -Force
       - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age1.toml -ErrorAction Ignore -Force
       - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age2.toml -ErrorAction Ignore -Force
       - powershell Copy-Item -Path launcher/resources/config.game.toml -Destination build/launcher/resources/config.age3.toml -ErrorAction Ignore -Force
