@@ -353,6 +353,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.athens.toml
       - src: server/resources/windows/start_age1.bat
         dst: server/start_age1.bat
@@ -360,6 +362,8 @@ archives:
         dst: server/start_age2.bat
       - src: server/resources/windows/start_age3.bat
         dst: server/start_age3.bat
+      - src: server/resources/windows/start_age4.bat
+        dst: server/start_age4.bat
       - src: server/resources/windows/start_athens.bat
         dst: server/start_athens.bat
       - src: launcher/resources/windows/start_age1.bat
@@ -368,6 +372,8 @@ archives:
         dst: launcher/start_age2.bat
       - src: launcher/resources/windows/start_age3.bat
         dst: launcher/start_age3.bat
+      - src: launcher/resources/windows/start_age4.bat
+        dst: launcher/start_age4.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: launcher/start_athens.bat
       - src: battle-server-manager/resources/windows/clean.bat
@@ -380,6 +386,8 @@ archives:
         dst: battle-server-manager/start_age2.bat
       - src: battle-server-manager/resources/windows/start_age3.bat
         dst: battle-server-manager/start_age3.bat
+      - src: battle-server-manager/resources/windows/start_age4.bat
+        dst: battle-server-manager/start_age4.bat
       - src: battle-server-manager/resources/windows/start_athens.bat
         dst: battle-server-manager/start_athens.bat
       - src: battle-server-manager/resources/config.game.toml
@@ -388,6 +396,8 @@ archives:
         dst: battle-server-manager/resources/config.age2.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age4.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.athens.toml
       - src: battle-server-manager/README.md
@@ -427,6 +437,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.athens.toml
       - src: server/resources/windows/start_age1.bat
         dst: server/start_age1.bat
@@ -434,6 +446,8 @@ archives:
         dst: server/start_age2.bat
       - src: server/resources/windows/start_age3.bat
         dst: server/start_age3.bat
+      - src: server/resources/windows/start_age4.bat
+        dst: server/start_age4.bat
       - src: server/resources/windows/start_athens.bat
         dst: server/start_athens.bat
       - src: launcher/resources/windows/start_age1.bat
@@ -442,6 +456,8 @@ archives:
         dst: launcher/start_age2.bat
       - src: launcher/resources/windows/start_age3.bat
         dst: launcher/start_age3.bat
+      - src: launcher/resources/windows/start_age4.bat
+        dst: launcher/start_age4.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: launcher/start_athens.bat
       - src: battle-server-manager/resources/windows/clean.bat
@@ -454,6 +470,8 @@ archives:
         dst: battle-server-manager/start_age2.bat
       - src: battle-server-manager/resources/windows/start_age3.bat
         dst: battle-server-manager/start_age3.bat
+      - src: battle-server-manager/resources/windows/start_age4.bat
+        dst: battle-server-manager/start_age4.bat
       - src: battle-server-manager/resources/windows/start_athens.bat
         dst: battle-server-manager/start_athens.bat
       - src: battle-server-manager/resources/config.game.toml
@@ -462,6 +480,8 @@ archives:
         dst: battle-server-manager/resources/config.age2.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age4.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.athens.toml
       - src: battle-server-manager/README.md
@@ -505,6 +525,10 @@ archives:
         dst: server/start_age3.sh
         info:
           mode: 0744
+      - src: server/resources/unix/start_age4.sh
+        dst: server/start_age4.sh
+        info:
+          mode: 0744
       - src: server/resources/unix/start_athens.sh
         dst: server/start_athens.sh
         info:
@@ -526,6 +550,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: launcher/resources/config.athens.toml
       - src: launcher/resources/unix/start_age1.sh
         dst: launcher/start_age1.sh
@@ -537,6 +563,10 @@ archives:
           mode: 0744
       - src: launcher/resources/unix/start_age3.sh
         dst: launcher/start_age3.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age4.sh
+        dst: launcher/start_age4.sh
         info:
           mode: 0744
       - src: launcher/resources/unix/start_athens.sh
@@ -563,6 +593,10 @@ archives:
         dst: battle-server-manager/start_age3.sh
         info:
           mode: 0744
+      - src: battle-server-manager/resources/unix/start_age4.sh
+        dst: battle-server-manager/start_age4.sh
+        info:
+          mode: 0744
       - src: battle-server-manager/resources/unix/start_athens.sh
         dst: battle-server-manager/start_athens.sh
         info:
@@ -573,6 +607,8 @@ archives:
         dst: battle-server-manager/resources/config.age2.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age4.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: battle-server-manager/resources/config.athens.toml
       - src: battle-server-manager/README.md
@@ -600,6 +636,8 @@ archives:
         dst: start_age2.bat
       - src: server/resources/windows/start_age3.bat
         dst: start_age3.bat
+      - src: server/resources/windows/start_age4.bat
+        dst: start_age4.bat
       - src: server/resources/windows/start_athens.bat
         dst: start_athens.bat
       - src: server/resources/config
@@ -629,6 +667,10 @@ archives:
           mode: 0744
       - src: server/resources/unix/start_age3.sh
         dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age4.sh
+        dst: start_age4.sh
         info:
           mode: 0744
       - src: server/resources/unix/start_athens.sh
@@ -673,6 +715,10 @@ archives:
         dst: start_age3.sh
         info:
           mode: 0744
+      - src: server/resources/unix/start_age4.sh
+        dst: start_age4.sh
+        info:
+          mode: 0744
       - src: server/resources/unix/start_athens.sh
         dst: start_athens.sh
         info:
@@ -711,6 +757,10 @@ archives:
         dst: start_age3.command
         info:
           mode: 0744
+      - src: server/resources/unix/start_age4.sh
+        dst: start_age4.command
+        info:
+          mode: 0744
       - src: server/resources/unix/start_athens.sh
         dst: start_athens.command
         info:
@@ -742,6 +792,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: resources/config.athens.toml
       - src: LICENSE
         dst: docs/LICENSE.txt
@@ -755,6 +807,8 @@ archives:
         dst: start_age2.bat
       - src: launcher/resources/windows/start_age3.bat
         dst: start_age3.bat
+      - src: launcher/resources/windows/start_age4.bat
+        dst: start_age4.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: start_athens.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
@@ -776,6 +830,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: resources/config.athens.toml
       - src: LICENSE
         dst: docs/LICENSE.txt
@@ -789,6 +845,8 @@ archives:
         dst: start_age2.bat
       - src: launcher/resources/windows/start_age3.bat
         dst: start_age3.bat
+      - src: launcher/resources/windows/start_age4.bat
+        dst: start_age4.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: start_athens.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
@@ -810,6 +868,8 @@ archives:
       - src: launcher/resources/config.game.toml
         dst: resources/config.age3.toml
       - src: launcher/resources/config.game.toml
+        dst: resources/config.age4.toml
+      - src: launcher/resources/config.game.toml
         dst: resources/config.athens.toml
       - src: LICENSE
         dst: docs/LICENSE
@@ -827,6 +887,10 @@ archives:
           mode: 0744
       - src: launcher/resources/unix/start_age3.sh
         dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age4.sh
+        dst: start_age4.sh
         info:
           mode: 0744
       - src: launcher/resources/unix/start_athens.sh
@@ -861,6 +925,8 @@ archives:
         dst: start_age2.bat
       - src: battle-server-manager/resources/windows/start_age3.bat
         dst: start_age3.bat
+      - src: battle-server-manager/resources/windows/start_age4.bat
+        dst: start_age4.bat
       - src: battle-server-manager/resources/windows/start_athens.bat
         dst: start_athens.bat
       - src: battle-server-manager/resources/config.game.toml
@@ -869,6 +935,8 @@ archives:
         dst: resources/config.age2.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age4.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: resources/config.athens.toml
       - src: README.md
@@ -904,6 +972,10 @@ archives:
         dst: start_age3.sh
         info:
           mode: 0744
+      - src: battle-server-manager/resources/unix/start_age4.sh
+        dst: start_age4.sh
+        info:
+          mode: 0744
       - src: battle-server-manager/resources/unix/start_athens.sh
         dst: start_athens.sh
         info:
@@ -914,6 +986,8 @@ archives:
         dst: resources/config.age2.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age4.toml
       - src: battle-server-manager/resources/config.game.toml
         dst: resources/config.athens.toml
       - src: README.md
@@ -928,10 +1002,10 @@ universal_binaries:
     replace: true
 checksum:
   name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
-#signs:
-#  - artifacts: checksum
-#    cmd: gpg2
-#    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
+signs:
+  - artifacts: checksum
+    cmd: gpg2
+    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
 release:
   draft: true
   replace_existing_draft: false

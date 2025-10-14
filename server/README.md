@@ -113,6 +113,21 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 
+#### Age of Empires IV: Anniversary Edition
+
+- [`Achievements`](resources/responses/age4/achievements.json): List of achievements.
+- [`Leaderboards`](resources/responses/age4/leaderboards.json): List of leaderboards.
+- [`Automatch maps`](resources/responses/age4/automatchMaps.json): List of maps for automatch.
+- [`Challenges`](resources/responses/age4/challenges.json): List of challenges.
+- [`Presence Data`](resources/responses/age4/presenceData.json): Presence data. Basically if a player is online, offline
+  or
+  away.
+- [`Item Definitions`](resources/responses/age4/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
+  other items.
+- [`Item Bundle Items`](resources/responses/age4/itemBundleItems.json): Grouping of items into bundles.
+- [`Level Rewards Table`](resources/responses/age4/levelRewardsTable.json): Table of rewards based on player level.
+
 #### Age of Mythology: Retold
 
 - [`Achievements`](resources/responses/athens/achievements.json): List of achievements.

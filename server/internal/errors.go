@@ -12,5 +12,6 @@ const (
 	ErrStartServer
 	ErrMulticastGroup
 	ErrGames
-	MissingBattleServer
+	ErrMissingBattleServer
+	ErrIncompatibleGames
 )

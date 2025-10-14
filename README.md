@@ -20,6 +20,9 @@ is in maintenance or is eventually shutdown.
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
+* **Age of Empires IV: Anniversary Edition** ([currently](https://github.com/luskaner/ageLANServer/issues/TODO) only the
+  *Steam*
+  version).
 * **Age of Mythology: Retold** ([currently](https://github.com/luskaner/ageLANServer/issues/245) only the *Steam*
   version).
 
@@ -36,7 +39,7 @@ is in maintenance or is eventually shutdown.
 > See more details
 > in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
 
-### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition and Age of Mythology: Retold
+### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition, Age of Empires IV: Anniversary Edition and Age of Mythology: Retold
 
 <details>
 <summary>List of features</summary>
@@ -68,7 +71,7 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-### Age of Mythology: Retold
+### Age of Empires IV: Anniversary Edition and Age of Mythology: Retold
 
 <details>
 <summary>List of features</summary>
@@ -88,7 +91,7 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-#### Age of Empires III: Definitive Edition
+#### Age of Empires III: Definitive Edition and Age of Empires IV: Anniversary Edition
 
 <details>
 <summary>List of limitations</summary>
@@ -182,6 +185,10 @@ it will require admin rights elevation.**
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
   Windows*). Recommended a late 2023 version or later.
+- Age of Empires IV: Anniversary Edition
+  on [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition). Recommended a late 2023
+  version or
+  later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
@@ -313,17 +320,22 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    `Client.Path` to point to the game's directory.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. If you are using AoM and don't have AoE II: DE installed on Steam edit the `battle-server-manager/resources/config.athens.toml` file and point `Executable.Path` to the AoE II: DE BattleServer.exe executable (it's portable), for example, 'S:\SteamLibrary\steamapps\common\AoE2DE\BattleServer\BattleServer.exe'.
+6. If you are using AoM and don't have AoE II: DE installed on Steam edit the
+   `battle-server-manager/resources/config.athens.toml` file and point `Executable.Path` to the AoE II: DE
+   BattleServer.exe executable (it's portable), for example, 'S:
+   \SteamLibrary\steamapps\common\AoE2DE\BattleServer\BattleServer.exe'.
 7. **Execute `launcher/start_<game_title>` script**: you will be asked for admin elevation and
    confirmation of other dialogs as needed, you will also need to allow the connections via the Microsoft Defender
    Firewall or any other.
-8. **Repeat the above steps for every PC** (except the point 6) you want to play in LAN with by running the *launcher*, the first PC to
+8. **Repeat the above steps for every PC** (except the point 6) you want to play in LAN with by running the *launcher*,
+   the first PC to
    launch it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
 9. In the game, just host a new lobby via the Multiplayer section. Setting it to public visibility is recommended.
-10. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
-   and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
-   works if already
-   in-game).
+10. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by
+    name
+    and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
+    works if already
+    in-game).
 
 ## Standalone execution
 

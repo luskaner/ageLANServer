@@ -41,7 +41,7 @@ var (
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service for LAN features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
+		Short: "server is a service for LAN features in AoE: DE, AoE 2: DE, AoE 3: DE, AoE 4: AE and AoM: RT.",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
 			if err := lock.Lock(); err != nil {
@@ -66,6 +66,11 @@ var (
 				}
 			}
 			fmt.Printf("Games: %s\n", strings.Join(gameSet.ToSlice(), ", "))
+			if gameSet.ContainsOne(common.GameAoE4) && gameSet.ContainsAny(common.GameAoE1, common.GameAoE2, common.GameAoE3) {
+				fmt.Println("AoE4 cannot be enabled at the same time as AoE1, AoE2 or AoE3.")
+				_ = lock.Unlock()
+				os.Exit(internal.ErrIncompatibleGames)
+			}
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
@@ -140,7 +145,7 @@ var (
 			}
 			tlsConfig := &tls.Config{
 				GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					if internal.SelfSignedCertificate(hello.ServerName) {
+					if internal.SelfSignedCertificate(gameSet, hello.ServerName) {
 						return &selfSignedCert, nil
 					}
 					return &cert, nil

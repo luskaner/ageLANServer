@@ -26,6 +26,7 @@ const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + ApiAgeOfEmpiresDomain +
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
 const SubDomainReleasePart = "-live-release"
+const worldsEdgeDomain = SubDomain + worldsEdge + dotTld
 
 var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld}
 
@@ -57,9 +58,9 @@ func AllHosts(gameId string) (domains []string) {
 	}
 	switch gameId {
 	case GameAoE1, GameAoE2, GameAoE3:
-		domains = []string{relicDomain}
+		domains = []string{relicDomain, worldsEdgeDomain}
 	case GameAoE4:
-		domains = []string{"ED603" + playFabSuffix, SubDomain + worldsEdge + dotTld, ApiAgeOfEmpires}
+		domains = []string{"ED603" + playFabSuffix, worldsEdgeDomain, ApiAgeOfEmpires}
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
 	}

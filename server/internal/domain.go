@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"golang.org/x/net/publicsuffix"
 )
@@ -39,11 +40,21 @@ func SplitDomain(domain string) (subdomain, mainDomain, tld string, err error) {
 	return
 }
 
-func SelfSignedCertificate(domain string) bool {
+func SelfSignedCertificate(games mapset.Set[string], domain string) bool {
 	subdomain, mainDomain, tld, err := SplitDomain(domain)
 	if err != nil || tld != common.Tld {
 		return false
 	}
+	var extraCheck func() bool
+	if games.Contains(common.GameAoE4) {
+		extraCheck = func() bool {
+			return false
+		}
+	} else {
+		extraCheck = func() bool {
+			return subdomain == common.SubDomain && mainDomain == common.WorldsEdgeMainDomain
+		}
+	}
 	return (subdomain == common.SubDomain && mainDomain == common.RelicMainDomain) ||
-		(age2Pb.MatchString(subdomain) && mainDomain == common.WorldsEdgeMainDomain)
+		(age2Pb.MatchString(subdomain) && mainDomain == common.WorldsEdgeMainDomain) || extraCheck()
 }

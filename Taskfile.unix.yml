@@ -20,6 +20,7 @@ tasks:
       - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age1.toml
       - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age2.toml
       - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age3.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age4.toml
       - cp -f launcher/resources/config.game.toml build/launcher/resources/config.athens.toml
       - go build -o build/launcher/bin/agent ./launcher-agent
   prepare-server-genCert:
@@ -33,4 +34,5 @@ tasks:
       - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age1.toml
       - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age2.toml
       - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age3.toml
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age4.toml
       - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.athens.toml
