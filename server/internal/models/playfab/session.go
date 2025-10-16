@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"math/rand/v2"
+	"net/http"
 
 	"github.com/luskaner/ageLANServer/server/internal"
 )
@@ -30,4 +31,8 @@ func AddSession(session string) string {
 	id := generateId()
 	sessions.Store(session, id, nil)
 	return id
+}
+
+func Session(r *http.Request) string {
+	return r.Header.Get("X-Entitytoken")
 }

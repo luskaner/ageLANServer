@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -20,7 +19,7 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	game := models.G(r)
 	gameTitle := game.Title()
 	users := game.Users()
-	clientLibVersion := middleware.SessionOrPanic(r).GetClientLibVersion()
+	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
 	for _, id := range ids {
 		var u *models.MainUser
 		var ok bool

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -36,7 +35,7 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	peers := adv.GetPeers()
 	var peer *models.MainPeer
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
 		i.JSON(&w, i.A{2})

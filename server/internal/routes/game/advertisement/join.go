@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -39,7 +38,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		joinReturnError(battleServers, r, w)
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {

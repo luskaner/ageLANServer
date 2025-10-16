@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -17,7 +16,7 @@ func FindProfiles(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	gameTitle := game.Title()
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	profileInfo := game.Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		return strings.Contains(strings.ToLower(currentUser.GetAlias()), name)
 	}, gameTitle, sess.GetClientLibVersion())

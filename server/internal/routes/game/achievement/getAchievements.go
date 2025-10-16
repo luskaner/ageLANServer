@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 func GetAchievements(w http.ResponseWriter, r *http.Request) {
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	i.JSON(&w,
 		i.A{
 			0,

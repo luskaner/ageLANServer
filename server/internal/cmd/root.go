@@ -25,9 +25,8 @@ import (
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/ip"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
-	"github.com/luskaner/ageLANServer/server/internal/routes"
+	"github.com/luskaner/ageLANServer/server/internal/routes/router"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -97,10 +96,6 @@ var (
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 			for gameId := range gameSet.Iter() {
-				// TODO: Implement mux per domain
-				// Playfab
-				// ApiAgeOfEmpires
-				// Else: Main
 				fmt.Printf("Game %s:\n", gameId)
 				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
 				addrs := ip.ResolveHosts(hosts)
@@ -109,17 +104,7 @@ var (
 					_ = lock.Unlock()
 					os.Exit(internal.ErrResolveHost)
 				}
-				baseMux := http.NewServeMux()
 				initializer.InitializeGame(gameId)
-				routes.Initialize(baseMux, gameId)
-				mux := middleware.GameMiddleware(gameId, baseMux)
-				mux = middleware.SessionMiddleware(mux)
-				if gameId == common.GameAoM {
-					mux = middleware.PlayfabMiddleware(mux)
-				}
-				if gameId == common.GameAoE3 || gameId == common.GameAoM {
-					mux = middleware.ApiAgeOfEmpiresMiddleware(mux)
-				}
 				var writer io.Writer
 				if logToConsole {
 					writer = &internal.PrefixedWriter{
@@ -134,7 +119,7 @@ var (
 						os.Exit(internal.ErrCreateLogsDir)
 					}
 					t := time.Now()
-					fileName := fmt.Sprintf("logs/access_log_%s_%d-%02d-%02dT%02d-%02d-%02d.txt", gameId, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+					fileName := fmt.Sprintf("logs/%s/access_log_%d-%02d-%02dT%02d-%02d-%02d.txt", gameId, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 					file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
 					if err != nil {
 						fmt.Println("\tFailed to create log file")
@@ -143,6 +128,9 @@ var (
 					}
 					writer = file
 				}
+				general := &router.General{}
+				mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId))
+				mux = router.GameMiddleware(gameId, mux)
 				handler := handlers.LoggingHandler(writer, mux)
 				for _, addr := range addrs {
 					var certFile string

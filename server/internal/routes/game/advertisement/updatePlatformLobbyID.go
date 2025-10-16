@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -41,7 +40,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 			return
 		}
 
-		sess := middleware.SessionOrPanic(r)
+		sess := models.SessionOrPanic(r)
 		currentUserId = sess.GetUserId()
 		peers := adv.GetPeers()
 		if _, ok = peers.Load(currentUserId); !ok {
