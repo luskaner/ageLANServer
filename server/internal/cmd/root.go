@@ -97,6 +97,10 @@ var (
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 			for gameId := range gameSet.Iter() {
+				// TODO: Implement mux per domain
+				// Playfab
+				// ApiAgeOfEmpires
+				// Else: Main
 				fmt.Printf("Game %s:\n", gameId)
 				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
 				addrs := ip.ResolveHosts(hosts)

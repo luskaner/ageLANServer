@@ -20,6 +20,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/cmd"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/pidLock"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
@@ -277,6 +278,11 @@ var (
 			fmt.Println("Cleaning up (if needed)...")
 			config.KillAgent()
 			launcherCommon.ConfigRevert(gameId, false, executor.RunRevert)
+			var proc *os.Process
+			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
+			if err == nil && proc != nil {
+				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
+			}
 			if err = executor.RunRevertCommand(); err != nil {
 				fmt.Println("Failed to run revert command.")
 				fmt.Println("Error message: " + err.Error())
