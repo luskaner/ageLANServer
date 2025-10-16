@@ -149,24 +149,34 @@ var (
 				isolateMetadata = viper.GetBool("Config.IsolateMetadata")
 			}
 			isolateProfiles := viper.GetBool("Config.IsolateProfiles")
-			serverFile, serverExecutable, err := common.ParsePath("Server.Executable", nil)
-			if serverExecutable != "auto" && (err != nil || serverFile.IsDir()) {
-				fmt.Println("Invalid 'server' executable")
-				errorCode = internal.ErrInvalidServerPath
-				return
+			var serverExecutable string
+			if serverExecutable = viper.GetString("Server.Executable"); serverExecutable != "auto" {
+				var serverFile os.FileInfo
+				if serverFile, serverExecutable, err = common.ParsePath(viper.GetStringSlice("Server.Executable"), nil); err != nil || serverFile.IsDir() {
+					fmt.Println("Invalid 'server' executable")
+					errorCode = internal.ErrInvalidServerPath
+					return
+				}
 			}
-			battleServerManagerFile, battleServerManagerExecutable, err := common.ParsePath("Server.BattleServerManager.Executable", nil)
-			if battleServerManagerExecutable != "auto" && (err != nil || battleServerManagerFile.IsDir()) {
-				fmt.Println("Invalid 'battle-server-manager executable")
-				errorCode = internal.ErrInvalidServerPath
-				return
+			var battleServerManagerExecutable string
+			if battleServerManagerExecutable = viper.GetString("Server.BattleServerManager.Executable"); battleServerManagerExecutable != "auto" {
+				var battleServerManagerFile os.FileInfo
+				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(viper.GetStringSlice("Server.BattleServerManager.Executable"), nil); err != nil || battleServerManagerFile.IsDir() {
+					fmt.Println("Invalid 'battle-server-manager' executable")
+					errorCode = internal.ErrInvalidClientPath
+					return
+				}
 			}
-			clientFile, clientExecutable, err := common.ParsePath("Client.Executable", nil)
-			if clientExecutable != "auto" && clientExecutable != "steam" && clientExecutable != "msstore" && (err != nil || clientFile.IsDir()) {
-				fmt.Println("Invalid client executable")
-				errorCode = internal.ErrInvalidClientPath
-				return
+			var clientExecutable string
+			if clientExecutable = viper.GetString("Client.Executable"); clientExecutable != "auto" && clientExecutable != "steam" && clientExecutable != "msstore" {
+				var clientFile os.FileInfo
+				if clientFile, clientExecutable, err = common.ParsePath(viper.GetStringSlice("Client.Executable"), nil); err != nil || clientFile.IsDir() {
+					fmt.Println("Invalid client executable")
+					errorCode = internal.ErrInvalidClientPath
+					return
+				}
 			}
+
 			serverHost := viper.GetString("Server.Host")
 
 			fmt.Printf("Game %s.\n", gameId)
@@ -205,7 +215,7 @@ var (
 					}
 				}
 				if gameId != common.GameAoE1 {
-					if clientFile, clientPath, err := common.ParsePath("Client.Path", nil); err != nil || !clientFile.IsDir() {
+					if clientFile, clientPath, err := common.ParsePath(viper.GetStringSlice("Client.Path"), nil); err != nil || !clientFile.IsDir() {
 						fmt.Println("Invalid client path")
 						errorCode = internal.ErrInvalidClientPath
 						return

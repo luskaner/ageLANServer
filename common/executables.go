@@ -49,6 +49,7 @@ func FindExecutablePath(executableName string) string {
 	for _, dir := range directories {
 		executablePath := filepath.Join(exePath, dir, exeDir, executableName)
 		if f, err = os.Stat(executablePath); err == nil && !f.IsDir() {
+			executablePath, _ = filepath.Abs(executablePath)
 			return executablePath
 		}
 	}

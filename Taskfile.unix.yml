@@ -17,8 +17,10 @@ tasks:
       - go build -o build/server ./server
       - pkexec --keep-cwd setcap 'CAP_NET_BIND_SERVICE=+ep' build/server/server
       - mkdir -p build/launcher/resources
-      - cp -f launcher/resources/config.toml build/launcher/resources/config.toml
-      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.game.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age1.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age2.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.age3.toml
+      - cp -f launcher/resources/config.game.toml build/launcher/resources/config.athens.toml
       - go build -o build/launcher/bin/agent ./launcher-agent
   prepare-server-genCert:
     cmds:
@@ -28,4 +30,7 @@ tasks:
       - :build-battle-server-manager
     cmds:
       - mkdir -p build/battle-server-manager/resources
-      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.game.toml
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age1.toml
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age2.toml
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.age3.toml
+      - cp -f battle-server-manager/resources/config.game.toml build/battle-server-manager/resources/config.athens.toml

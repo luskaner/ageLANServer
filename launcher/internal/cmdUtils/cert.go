@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -63,7 +64,7 @@ func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, can
 		if err = certFile.Close(); err != nil {
 			return internal.ErrConfigCertAdd
 		}
-		c.certFilePath = certFile.Name()
+		c.certFilePath, _ = filepath.Abs(certFile.Name())
 		addLocalCertData = serverCertificate.Raw
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
 	} else {

@@ -154,9 +154,9 @@ var (
 						Addr:         addr.String() + ":443",
 						Handler:      handler,
 						ErrorLog:     customLogger,
-						IdleTimeout:  time.Second * 20,
+						IdleTimeout:  time.Second * 30,
 						ReadTimeout:  time.Second * 5,
-						WriteTimeout: time.Second * 5,
+						WriteTimeout: time.Second * 30,
 					}
 
 					fmt.Println("\tListening on " + server.Addr)

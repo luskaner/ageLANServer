@@ -19,6 +19,7 @@ var CleanCmd = &cobra.Command{
 		fmt.Println("Cleaning up...")
 		games, err := cmdUtils.ParsedGameIds(nil)
 		if err != nil {
+			fmt.Println(err.Error())
 			os.Exit(internal.ErrGames)
 		}
 		for gameId := range games.Iter() {

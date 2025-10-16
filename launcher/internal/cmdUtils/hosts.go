@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -122,7 +123,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 			if err = hostFile.Close(); err != nil {
 				return internal.ErrConfigIpMapAdd
 			}
-			c.hostFilePath = hostFile.Name()
+			c.hostFilePath, _ = filepath.Abs(hostFile.Name())
 			fmt.Printf("Saving hosts to '%s' file", hostFile.Name())
 		} else {
 			fmt.Print("Adding hosts to hosts file")
