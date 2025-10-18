@@ -18,7 +18,6 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/gorilla/handlers"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -107,10 +106,7 @@ var (
 				initializer.InitializeGame(gameId)
 				var writer io.Writer
 				if logToConsole {
-					writer = &internal.PrefixedWriter{
-						Writer: os.Stdout,
-						Prefix: []byte(fmt.Sprintf("[%s] ", gameId)),
-					}
+					writer = os.Stdout
 				} else {
 					err := os.MkdirAll(filepath.Join("logs", gameId), 0755)
 					if err != nil {
@@ -128,10 +124,9 @@ var (
 					}
 					writer = file
 				}
-				general := &router.General{}
-				mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId))
-				mux = router.GameMiddleware(gameId, mux)
-				handler := handlers.LoggingHandler(writer, mux)
+				general := &router.General{Writer: writer}
+				mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
+				mux = router.TitleMiddleware(gameId, mux)
 				for _, addr := range addrs {
 					var certFile string
 					var keyFile string
@@ -144,7 +139,7 @@ var (
 					}
 					server := &http.Server{
 						Addr:         addr.String() + ":443",
-						Handler:      handler,
+						Handler:      mux,
 						ErrorLog:     customLogger,
 						IdleTimeout:  time.Second * 30,
 						ReadTimeout:  time.Second * 5,
