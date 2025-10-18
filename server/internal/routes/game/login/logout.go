@@ -6,7 +6,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/chat"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
@@ -14,7 +13,7 @@ import (
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	advertisements := game.Advertisements()

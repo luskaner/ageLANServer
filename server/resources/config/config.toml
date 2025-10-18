@@ -1,7 +1,3 @@
-# The hosts/IPs the server will bind to. Only Ipv4 is supported.
-# *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
-Hosts = ['0.0.0.0']
-
 # Whether to log the requests to the console (stdout) or not (files)
 LogToConsole = false
 
@@ -12,7 +8,23 @@ GeneratePlatformUserId = false
 [Games]
 # Games that the server will accept.
 # "age1" (AoE: DE), "age2" (AoE II: DE), "age3" (AoE III: DE) and "athens" (AoM: RT).
-Enabled = ["age1", "age2", "age3", "athens"]
+Enabled = []
+
+# Games.<game>.Hosts is the hosts/IPs the server will bind to for that game. Only IPv4 is supported.
+# Must be unique within enabled games.
+# *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
+
+[Games.age1]
+Hosts = ['0.0.0.0']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[Games.age3]
+Hosts = ['0.0.0.0']
+
+[Games.athens]
+Hosts = ['0.0.0.0']
 
 # CONFIGURING BATTLE SERVERS
 # See the complete information in BattleServers.md

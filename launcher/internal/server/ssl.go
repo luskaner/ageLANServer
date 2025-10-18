@@ -49,7 +49,7 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 	return conn != nil
 }
 
-func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
+func ReadCACertificateFromServer(host string) *x509.Certificate {
 	tr := &http.Transport{
 		TLSClientConfig: TlsConfig(host, true),
 	}
@@ -61,7 +61,7 @@ func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
 		ip = ips[0]
 	}
 	client := &http.Client{Transport: tr}
-	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem?gameId=%s", ip, gameId))
+	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem", ip))
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil
 	}

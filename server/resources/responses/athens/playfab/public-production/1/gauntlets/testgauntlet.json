@@ -1,0 +1,750 @@
+{
+  "Id": "TestGauntlet",
+  "Labyrinth": {
+    "Id": "gauntlet_labyrinth",
+    "Title": "Gauntlet0",
+    "Pages": [
+      {
+        "Id": "G0P0",
+        "Title": "Gauntlet0_Page0_Title",
+        "Missions": [
+          {
+            "Id": "G0P0C1M1",
+            "Title": "G0P0C1M1_Title",
+            "Predecessors": [],
+            "PositionX": 50,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "anatolia",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "High",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "FastRun",
+                "ArenaEffectName": "FastRun"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P0C2M1",
+            "Title": "G0P0C2M1_Title",
+            "Predecessors": [
+              "G0P0C1M1"
+            ],
+            "PositionX": 225,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "mediterranean",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "IdleBolt",
+                "ArenaEffectName": "IdleBolt"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_RA",
+                "Civ": "Ra",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 3
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_RA",
+                "Civ": "Ra",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 3
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P0C3M1",
+            "Title": "G0P0C3M1_Title",
+            "Predecessors": [
+              "G0P0C2M1"
+            ],
+            "PositionX": 400,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "savannah",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "Zombie",
+                "ArenaEffectName": "Zombie"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P0C4M1",
+            "Title": "G0P0C4M1_Title",
+            "Predecessors": [
+              "G0P0C3M1"
+            ],
+            "PositionX": 575,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "jotunheim",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "InstantTechs",
+                "ArenaEffectName": "InstantTechs"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_LOKI",
+                "Civ": "Loki",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_LOKI",
+                "Civ": "Loki",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P0C5M1",
+            "Title": "G0P0C5M1_Title",
+            "Predecessors": [
+              "G0P0C4M1"
+            ],
+            "PositionX": 750,
+            "PositionY": 375,
+            "Visualization": "Boss",
+            "Map": "land_unknown",
+            "Size": "Normal",
+            "VictoryCondition": "SuddenDeath",
+            "GameType": "Deathmatch",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "GiantUnits",
+                "ArenaEffectName": "GiantUnits"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_GAIA",
+                "Civ": "Gaia",
+                "Team": 0
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ORANOS",
+                "Civ": "Oranos",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_KRONOS",
+                "Civ": "Kronos",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 3
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 3
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_GAIA",
+                "Civ": "Gaia",
+                "Team": 0
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ORANOS",
+                "Civ": "Oranos",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_KRONOS",
+                "Civ": "Kronos",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 3
+              },
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 3
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          }
+        ]
+      },
+      {
+        "Id": "G0P1",
+        "Title": "Gauntlet0_Page1_Title",
+        "Missions": [
+          {
+            "Id": "G0P1C1M1",
+            "Title": "G0P1C1M1_Title",
+            "Predecessors": [
+              "G0P0C5M1"
+            ],
+            "PositionX": 50,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "blue_lagoon",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "High",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "DoubleGodTech",
+                "ArenaEffectName": "DoubleGodTech"
+              },
+              {
+                "Id": "FastRun",
+                "ArenaEffectName": "FastRun"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_KRONOS",
+                "Civ": "Kronos",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_KRONOS",
+                "Civ": "Kronos",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P1C2M1",
+            "Title": "G0P1C2M1_Title",
+            "Predecessors": [
+              "G0P1C1M1"
+            ],
+            "PositionX": 225,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "mirkwood",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "DoubleGodTech",
+                "ArenaEffectName": "DoubleGodTech"
+              },
+              {
+                "Id": "InstantTechs",
+                "ArenaEffectName": "InstantTechs"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_LOKI",
+                "Civ": "Loki",
+                "Team": 3
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_LOKI",
+                "Civ": "Loki",
+                "Team": 3
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P1C3M1",
+            "Title": "G0P1C3M1_Title",
+            "Predecessors": [
+              "G0P1C2M1"
+            ],
+            "PositionX": 400,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "nile_shallows",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "DoubleGodTech",
+                "ArenaEffectName": "DoubleGodTech"
+              },
+              {
+                "Id": "Zombie",
+                "ArenaEffectName": "Zombie"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_ZEUS",
+                "Civ": "Zeus",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P1C4M1",
+            "Title": "G0P1C4M1_Title",
+            "Predecessors": [
+              "G0P1C3M1"
+            ],
+            "PositionX": 575,
+            "PositionY": 375,
+            "Visualization": "Regular",
+            "Map": "mirage",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Deathmatch",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "DoubleGodTech",
+                "ArenaEffectName": "DoubleGodTech"
+              },
+              {
+                "Id": "MeteorHit",
+                "ArenaEffectName": "MeteorHit"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_GAIA",
+                "Civ": "Gaia",
+                "Team": 2
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_GAIA",
+                "Civ": "Gaia",
+                "Team": 2
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          },
+          {
+            "Id": "G0P1C5M1",
+            "Title": "G0P1C5M1_Title",
+            "Predecessors": [
+              "G0P1C4M1"
+            ],
+            "PositionX": 750,
+            "PositionY": 375,
+            "Visualization": "Boss",
+            "Map": "giza",
+            "Size": "Normal",
+            "VictoryCondition": "Conquest",
+            "GameType": "Standard",
+            "MapVisibility": "Normal",
+            "StartingResources": "Medium",
+            "AllowTitans": true,
+            "WorldTwists": [
+              {
+                "Id": "LowGravity",
+                "ArenaEffectName": "LowGravity"
+              },
+              {
+                "Id": "DoubleGodTech",
+                "ArenaEffectName": "DoubleGodTech"
+              },
+              {
+                "Id": "IdleBolt",
+                "ArenaEffectName": "IdleBolt"
+              }
+            ],
+            "Opponents": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 0
+              },
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_RA",
+                "Civ": "Ra",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_HADES",
+                "Civ": "Hades",
+                "Team": 3
+              },
+              {
+                "Title": "STR_AOTG_CHAR_SET",
+                "Civ": "Set",
+                "Team": 3
+              }
+            ],
+            "OpponentsFor2PlayerCoop": [
+              {
+                "Title": "STR_AOTG_CHAR_THOR",
+                "Civ": "Thor",
+                "Team": 0
+              },
+              {
+                "Title": "STR_AOTG_CHAR_POSEIDON",
+                "Civ": "Poseidon",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_RA",
+                "Civ": "Ra",
+                "Team": 2
+              },
+              {
+                "Title": "STR_AOTG_CHAR_HADES",
+                "Civ": "Hades",
+                "Team": 3
+              },
+              {
+                "Title": "STR_AOTG_CHAR_SET",
+                "Civ": "Set",
+                "Team": 3
+              }
+            ],
+            "Rewards": [
+              {
+                "Amount": 1,
+                "Scaling": "None",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Ambrosia"
+              },
+              {
+                "Amount": 1,
+                "Scaling": "Linear",
+                "ItemId": "Currency_UploaderPrototypeTestSeason_Token"
+              },
+              {
+                "Amount": 2,
+                "Scaling": "None",
+                "DropTableId": "DropTable_UploaderPrototypeTestSeason_MundaneBlessings"
+              }
+            ],
+            "NarrativeCutScene": [],
+            "MinimapImage": "",
+            "MapPreviewImage": ""
+          }
+        ]
+      }
+    ]
+  },
+  "LeaderboardVersion": 0
+}

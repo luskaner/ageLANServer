@@ -409,7 +409,7 @@ var (
 					return
 				}
 			}
-			serverCertificate := server.ReadCACertificateFromServer(serverIP, gameId)
+			serverCertificate := server.ReadCACertificateFromServer(serverIP)
 			if serverCertificate == nil {
 				fmt.Println("Failed to read certificate from " + serverIP + ". Try to access it with your browser and checking the certificate.")
 				errorCode = internal.ErrReadCert

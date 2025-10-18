@@ -8,7 +8,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -56,7 +55,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	peers := adv.GetPeers()
 

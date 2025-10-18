@@ -1,0 +1,633 @@
+{
+  "KnownBlessings": [
+    {
+      "EffectName": "BlessingSiegeMovesFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingFavorOnAgeUp",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "EffectName": "FavorOnAgeUp",
+      "KnownRarities": [
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingHealingTemples",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingVillagersSlowDownEnemyHumanUnits",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HeroesMoveFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythCostLessFavor",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CavalryHitpoints",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythHitpoints",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BuildingHitpoints",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "SiegeWeaponHitpoints",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythCostLessGold",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CavalryCostLessGold",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BuildBuildingsFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "GatherBoost",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CheaperTowers",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CavalryLifesteal",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythLifesteal",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "InfantryLifesteal",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "FasterWorkingBarracks",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "VillagerHealthDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "LargeMythUnits",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "InfantryAreaDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CavalryAreaDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HeroAreaDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "GodPowerAbilityRecharge",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "GodPowerCostLess",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "GoldOnTechComplete",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingDwarfOnAgeUp",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythDeathExplode",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "DwarfGenerateFavor",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "MythFavorDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HouseVillSpawn",
+      "KnownRarities": [
+        3,
+        5
+      ]
+    },
+    {
+      "EffectName": "MinorGodTechBuff",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "InfantryMythBonus",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "CavalrySpeedCharge",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BerryBushSpawn",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "FasterMythAtLowHP",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "ArkantosStart",
+      "KnownRarities": [
+        4
+      ]
+    },
+    {
+      "EffectName": "GoatStart",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "GiantSpawn",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "NidhoggSpawn",
+      "KnownRarities": [
+        3,
+        5
+      ]
+    },
+    {
+      "EffectName": "InfantryHitpoints",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "InfantryTrainFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HeroBoarStart",
+      "KnownRarities": [
+        0
+      ]
+    },
+    {
+      "EffectName": "LegendKastorStart",
+      "KnownRarities": [
+        0
+      ]
+    },
+    {
+      "EffectName": "KastorsRetinue",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "VillagerCostLess",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HumanDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HumanTrainFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "HumanLifesteal",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "KronosUnique",
+      "KnownRarities": [
+        0,
+        5
+      ]
+    },
+    {
+      "EffectName": "GaiaUnique",
+      "KnownRarities": [
+        0,
+        5
+      ]
+    },
+    {
+      "EffectName": "AndromedaRefundMythFavor",
+      "KnownRarities": [
+        2
+      ]
+    },
+    {
+      "EffectName": "AndromedaCheaperFortress",
+      "KnownRarities": [
+        2
+      ]
+    },
+    {
+      "EffectName": "BossNidhoggSpawn",
+      "KnownRarities": [
+        4
+      ]
+    },
+    {
+      "EffectName": "AIServantKronosStart",
+      "KnownRarities": [
+        -1
+      ]
+    },
+    {
+      "EffectName": "AIFollowerLokiStart",
+      "KnownRarities": [
+        -1
+      ]
+    },
+    {
+      "EffectName": "AIChampionFreyrStart",
+      "KnownRarities": [
+        -1
+      ]
+    },
+    {
+      "EffectName": "BlessingRangedUnitsShootFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingAgeUpMinotaurUnit",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingInfantryDealsAreaDamage",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingTradeUnitsGenerateMoreGold",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingBarracksWorkUltraFast",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingEarnFoodWhenVillagersDie",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingTownCentersGainsMassiveLOS",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingHerdablesFattenFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingCavalryMovesFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "EffectName": "BlessingTownCentersCostLessAndBuildFaster",
+      "KnownRarities": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}
