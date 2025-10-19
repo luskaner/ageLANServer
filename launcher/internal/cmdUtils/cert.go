@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
@@ -14,7 +15,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
-func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
+func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
 	hosts := common.AllHosts(gameId)
 	var addCert bool
 	if customCertFile {
@@ -43,7 +44,7 @@ func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, can
 				fmt.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
 				errorCode = internal.ErrCertMismatch
 				return
-			} else if !server.LanServer(host, false) {
+			} else if !server.LanServerHost(serverId, gameId, host, false) {
 				fmt.Println("Something went wrong, " + host + " does not point to a lan server.")
 				errorCode = internal.ErrServerConnectSecure
 				return
@@ -105,7 +106,7 @@ func (c *Config) AddCert(gameId string, serverCertificate *x509.Certificate, can
 				fmt.Println(host + " must have been trusted automatically at this point.")
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServer(host, false) {
+			} else if !server.LanServerHost(serverId, gameId, host, false) {
 				fmt.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return

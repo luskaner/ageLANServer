@@ -16,6 +16,7 @@ import (
 	"syscall"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
@@ -112,9 +113,26 @@ var (
 			config.SetGameId(gameId)
 			serverValues := map[string]string{
 				"Game": gameId,
+				"Id":   uuid.NewString(),
 			}
 			serverArgs, err := common.ParseCommandArgs("Server.ExecutableArgs", serverValues, true)
-			if err != nil {
+			serverId := uuid.Nil
+			if err == nil {
+				// Find the actual ID in case the user missed it or passed another one
+				for i, arg := range serverArgs {
+					if arg == "--id" && i+1 < len(serverArgs) {
+						if id, err := uuid.Parse(serverArgs[i+1]); err == nil {
+							serverId = id
+						}
+						break
+					}
+				}
+				if serverId == uuid.Nil {
+					fmt.Println("You must provide a valid UUID for the server ID using the '--id' argument in 'server' executable arguments")
+					errorCode = internal.ErrInvalidServerArgs
+					return
+				}
+			} else {
 				fmt.Println("Failed to parse 'server' executable arguments")
 				errorCode = internal.ErrInvalidServerArgs
 				return
@@ -310,29 +328,32 @@ var (
 					return
 				}
 			}
+			var serverIP string
 			if serverStart == "auto" {
 				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
-				portsStr := make([]string, len(announcePorts))
-				for i, portInt := range announcePorts {
-					portsStr[i] = strconv.Itoa(portInt)
+				ports := mapset.NewThreadUnsafeSetWithSize[uint16](len(announcePorts))
+				for _, portInt := range announcePorts {
+					ports.Add(uint16(portInt))
 				}
 				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
-				multicastIPs := make([]net.IP, len(multicastIPsStr))
-				for i, str := range multicastIPsStr {
-					if IP := net.ParseIP(str); IP.To4() != nil && IP.IsMulticast() {
-						multicastIPs[i] = IP
+				multicastIPs := mapset.NewThreadUnsafeSetWithSize[netip.Addr](len(multicastIPsStr))
+				for _, str := range multicastIPsStr {
+					if IP, err := netip.ParseAddr(str); err == nil && IP.Is4() && IP.IsMulticast() {
+						multicastIPs.Add(IP)
 					} else {
 						fmt.Printf("Invalid multicast group \"%s\"\n", str)
 						errorCode = internal.ErrAnnouncementMulticastGroup
 						return
 					}
 				}
-				fmt.Printf("Waiting 15 seconds for 'server' announcements on LAN on port(s) %s (we are v. %d), you might need to allow 'launcher' in the firewall...\n", strings.Join(portsStr, ", "), common.AnnounceVersionLatest)
-				errorCode, selectedServerIp := cmdUtils.ListenToServerAnnouncementsAndSelectBestIp(gameId, multicastIPs, announcePorts)
-				if errorCode != common.ErrSuccess {
-					return
-				} else if selectedServerIp != "" {
-					serverHost = selectedServerIp
+				var selectedServerIp net.IP
+				serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIpAddr(
+					gameId,
+					multicastIPs,
+					ports,
+				)
+				if serverId != uuid.Nil {
+					serverIP = selectedServerIp.String()
 					serverStart = "false"
 					if serverStop == "auto" && (!isAdmin || runtime.GOOS == "windows") {
 						serverStop = "false"
@@ -344,29 +365,34 @@ var (
 					}
 				}
 			}
-			var serverIP string
 			if serverStart == "false" {
 				if serverStop == "true" {
 					fmt.Println("serverStart is false. Ignoring serverStop being true.")
 				}
-				if serverHost == "" {
-					fmt.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
-					errorCode = internal.ErrInvalidServerHost
-					return
-				}
-				if addr, err := netip.ParseAddr(serverHost); err == nil && addr.Is6() {
-					fmt.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
-					errorCode = internal.ErrInvalidServerHost
-					return
-				}
-				if !server.CheckConnectionFromServer(serverHost, true) {
-					fmt.Println("serverStart is false. " + serverHost + " must be reachable. Review the host is correct, the 'server' is started and you can connect to TCP port 443 (HTTPS).")
-					errorCode = internal.ErrInvalidServerStart
-					return
-				}
-				var ok bool
-				if ok, serverIP = cmdUtils.SelectBestServerIp(common.HostOrIpToIpsSet(serverHost).ToSlice()); !ok {
-					fmt.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
+				if serverIP == "" {
+					if serverHost == "" {
+						fmt.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
+						errorCode = internal.ErrInvalidServerHost
+						return
+					}
+					if addr, err := netip.ParseAddr(serverHost); err == nil && addr.Is6() {
+						fmt.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
+						errorCode = internal.ErrInvalidServerHost
+						return
+					}
+					if id, measuredServerIPAddrs, data := server.FilterServerIPs(
+						uuid.Nil,
+						serverHost,
+						gameId,
+						common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(serverHost))),
+					); data == nil {
+						fmt.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
+						errorCode = internal.ErrInvalidServerHost
+						return
+					} else {
+						serverIP = measuredServerIPAddrs[0].Ip.String()
+						serverId = id
+					}
 				}
 			} else {
 				if gameId == common.GameAoM && battleServerManagerRun == "false" {
@@ -404,7 +430,7 @@ var (
 						return
 					}
 				}
-				errorCode, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true")
+				errorCode, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true", serverId)
 				if errorCode != common.ErrSuccess {
 					return
 				}
@@ -421,7 +447,7 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
-			errorCode = config.AddCert(gameId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode = config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
 			}))
 			if errorCode != common.ErrSuccess {
@@ -475,7 +501,7 @@ func Execute() error {
 	rootCmd.Flags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
 	rootCmd.Flags().StringP("serverStop", "o", "auto", `Stop the 'server' if started, "auto" will stop the 'server' if one was started, "false" (will not stop the 'server' regardless if one was started), "true" (will not stop the 'server' even if it was started).`)
 	rootCmd.Flags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
-	rootCmd.Flags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{"239.31.97.8"}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
+	rootCmd.Flags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
 	rootCmd.Flags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	serverExe := common.GetExeFileName(false, common.Server)
 	rootCmd.Flags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))

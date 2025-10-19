@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"path"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -31,6 +33,7 @@ import (
 )
 
 var configPaths = []string{path.Join("resources", "config"), "."}
+var id string
 
 var (
 	Version string
@@ -45,6 +48,13 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			var err error
+			if internal.Id, err = uuid.Parse(id); err != nil {
+				fmt.Println("Invalid server instance ID")
+				_ = lock.Unlock()
+				os.Exit(internal.ErrInvalidId)
+			}
+			fmt.Println("Server instance ID:", internal.Id)
 			if viper.GetBool("GeneratePlatformUserId") {
 				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
@@ -61,7 +71,6 @@ var (
 					os.Exit(internal.ErrGames)
 				}
 			}
-			fmt.Printf("Games: %s\n", strings.Join(gameSet.ToSlice(), ", "))
 			if executor.IsAdmin() {
 				fmt.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
@@ -74,21 +83,23 @@ var (
 				_ = lock.Unlock()
 				os.Exit(internal.ErrCertDirectory)
 			}
-			var multicastIP net.IP
+			multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
 			multicast := viper.GetBool("Announcement.Multicast")
 			if multicast {
-				multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
-				if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
+				multicastIP, err := netip.ParseAddr(viper.GetString("Announcement.MulticastGroup"))
+				if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
 					fmt.Println("Invalid multicast IP")
+					if err != nil {
+						fmt.Println(err.Error())
+					}
 					_ = lock.Unlock()
 					os.Exit(internal.ErrMulticastGroup)
 				}
+				multicastGroups.Add(multicastIP)
 			}
 			broadcast := viper.GetBool("Announcement.Broadcast")
 			announcePort := viper.GetInt("Announcement.Port")
-			if broadcast || multicast {
-				fmt.Println("Announcing on port", announcePort)
-			}
+			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 			logToConsole := viper.GetBool("LogToConsole")
 			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			var servers []*http.Server
@@ -97,8 +108,8 @@ var (
 			for gameId := range gameSet.Iter() {
 				fmt.Printf("Game %s:\n", gameId)
 				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
-				addrs := ip.ResolveHosts(hosts)
-				if addrs == nil || len(addrs) == 0 {
+				addrs := ip.ResolveHosts(mapset.NewThreadUnsafeSet[string](hosts...))
+				if addrs.IsEmpty() {
 					fmt.Println("\tFailed to resolve host (or it was an IPv6 address)")
 					_ = lock.Unlock()
 					os.Exit(internal.ErrResolveHost)
@@ -124,10 +135,14 @@ var (
 					}
 					writer = file
 				}
+				internal.AnnounceMessageData[gameId] = internal.AnnounceMessageDataLatest{
+					GameTitle: gameId,
+					Version:   Version,
+				}
 				general := &router.General{Writer: writer}
 				mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
 				mux = router.TitleMiddleware(gameId, mux)
-				for _, addr := range addrs {
+				for addr := range addrs.Iter() {
 					var certFile string
 					var keyFile string
 					if common.SelfSignedCertGame(gameId) {
@@ -136,6 +151,16 @@ var (
 					} else {
 						certFile = filepath.Join(certificatePairFolder, common.Cert)
 						keyFile = filepath.Join(certificatePairFolder, common.Key)
+					}
+					var listenConns []*net.UDPConn
+					if broadcast || multicast {
+						var err error
+						err, listenConns = ip.QueryConnections(addr, multicastGroups, announcePort)
+						if err != nil {
+							fmt.Println("\tFailed to listen to UDP connections for address", addr.String())
+							_ = lock.Unlock()
+							os.Exit(internal.ErrAnnounce)
+						}
 					}
 					server := &http.Server{
 						Addr:         addr.String() + ":443",
@@ -148,10 +173,14 @@ var (
 
 					fmt.Println("\tListening on " + server.Addr)
 					go func() {
-						if broadcast || multicast {
-							go func() {
-								ip.Announce(gameId, addr, multicastIP, announcePort, broadcast, multicast)
-							}()
+						if len(listenConns) > 0 {
+							for _, conn := range listenConns {
+								fmt.Printf(
+									"\tListening for query connections on %s\n",
+									conn.LocalAddr(),
+								)
+							}
+							ip.ListenQueryConnections(listenConns)
 						}
 						err := server.ListenAndServeTLS(certFile, keyFile)
 						if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -192,10 +221,12 @@ func Execute() error {
 	rootCmd.Flags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
 	rootCmd.Flags().StringP("announceMulticast", "m", "true", "Whether to announce the 'server' using Multicast.")
 	rootCmd.Flags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
-	rootCmd.Flags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
+	rootCmd.Flags().StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Whether to announce the 'server' using Multicast or Broadcast.")
 	cmd.GamesCommand(rootCmd.Flags())
 	rootCmd.Flags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
+	rootCmd.Flags().StringVar(&id, "id", uuid.NewString(), "Server instance ID to identify it.")
+
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
 		return err
 	}

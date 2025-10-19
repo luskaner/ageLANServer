@@ -30,20 +30,6 @@ func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
 	)
 }
 
-func GameCommand(flags *pflag.FlagSet) {
-	flags.StringP(
-		name,
-		shorthand,
-		"",
-		fmt.Sprintf(
-			`%s %s %s`,
-			descriptionStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
-			descriptionEnd,
-		),
-	)
-}
-
 func gamesDescription() string {
 	return fmt.Sprintf(
 		`%s %s %s`,

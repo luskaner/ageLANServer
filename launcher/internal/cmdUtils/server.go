@@ -3,155 +3,117 @@ package cmdUtils
 import (
 	"fmt"
 	"net"
+	"net/netip"
+	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
-func SelectBestServerIp(ips []string) (ok bool, ip string) {
-	var successIps []net.IP
-
-	for _, curIp := range ips {
-		if server.LanServer(curIp, true) {
-			parsedIp := net.ParseIP(curIp)
-			if parsedIp.IsLoopback() {
-				return true, curIp
-			}
-			successIps = append(successIps, parsedIp.To4())
-		}
-	}
-
-	countSuccessIps := len(successIps)
-	if countSuccessIps == 0 {
-		return
-	}
-
-	ok = true
-	ip = successIps[0].String()
-	interfaces, err := net.Interfaces()
-
-	if err != nil {
-		return
-	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-		addrs, err = i.Addrs()
-		if err != nil {
-			continue
-		}
-		for _, addr := range addrs {
-			v, addrOk := addr.(*net.IPNet)
-			if !addrOk {
-				continue
-			}
-
-			for _, curIp := range successIps {
-				if v.Contains(curIp) {
-					ip = curIp.String()
-					return
-				}
-			}
-		}
-	}
-
-	return
+type processedServer struct {
+	server.MesuredIpAddress
+	id          uuid.UUID
+	description string
 }
 
-func ListenToServerAnnouncementsAndSelectBestIp(gameId string, multicastIPs []net.IP, ports []int) (errorCode int, ip string) {
-	errorCode = common.ErrSuccess
-	servers := server.LanServersAnnounced(multicastIPs, ports)
-	if servers == nil {
-		fmt.Println("Could not listen to 'server' announcements. Maybe the UDP port", common.AnnouncePort, "is blocked or already in use.")
-		errorCode = internal.ErrListenServerAnnouncements
-	}
-	if servers != nil && len(servers) > 0 {
-		var ok bool
-		var serverTags []string
-		var serversStr [][]string
-		announcedNewerVersion := false
-		announcedOlderVersion := false
-		for _, data := range servers {
-			if data.Version >= common.AnnounceVersion1 {
-				announceData := data.Data.(common.AnnounceMessageData001)
-				gameIdSet := mapset.NewThreadUnsafeSet[string](announceData.GameIds...)
-				if !gameIdSet.ContainsOne(gameId) {
-					continue
+func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
+	var processed []*processedServer
+	for serverId, data := range servers {
+		_, measuredIPs, internalData := server.FilterServerIPs(serverId, "", gameTitle, data.IpAddrs)
+		if internalData == nil {
+			continue
+		}
+		bestAddress := measuredIPs[0]
+		var bestHostsSlice []string
+		bestHosts := common.IpToHosts(bestAddress.Ip.String())
+		var alternativeIpSlice []string
+		var alternativeHostsSlice []string
+		alternativeHosts := mapset.NewThreadUnsafeSet[string]()
+		for _, alternativeAddress := range measuredIPs[1:] {
+			alternativeHosts.Append(common.IpToHosts(alternativeAddress.Ip.String()).Difference(bestHosts).ToSlice()...)
+			alternativeIpSlice = append(alternativeIpSlice, alternativeAddress.Ip.String())
+		}
+		sort.Strings(alternativeIpSlice)
+		if !alternativeHosts.IsEmpty() {
+			alternativeHostsSlice = alternativeHosts.ToSlice()
+			sort.Strings(alternativeHostsSlice)
+		}
+		if !bestHosts.IsEmpty() {
+			bestHostsSlice = bestHosts.ToSlice()
+			sort.Strings(bestHostsSlice)
+		}
+		description := bestAddress.Ip.String()
+		if len(alternativeIpSlice) > 1 {
+			description += ", "
+			description += strings.Join(alternativeIpSlice, ", ")
+		}
+		if len(bestHostsSlice) > 0 || len(alternativeHostsSlice) > 0 {
+			description += " ("
+			for i, host := range bestHostsSlice {
+				if i > 0 {
+					description += ", "
 				}
+				description += host
 			}
-			ips := data.Ips.ToSlice()
-			sort.Strings(ips)
-			hosts := mapset.NewThreadUnsafeSet[string]()
-			for _, foundIp := range ips {
-				hosts.Append(common.IpToHosts(foundIp).ToSlice()...)
+			if len(alternativeHostsSlice) > 0 {
+				if len(bestHostsSlice) > 0 {
+					description += ", "
+				}
+				description += strings.Join(alternativeHostsSlice, ", ")
 			}
-			ipsStr := strings.Join(ips, ", ")
-			hostsStr := ""
-			suffix := ""
-			if !hosts.IsEmpty() {
-				hostsSlice := hosts.ToSlice()
-				sort.Strings(hostsSlice)
-				hostsStr = strings.Join(hostsSlice, ", ")
-			}
-			suffix = fmt.Sprintf("- v. %d", data.Version)
-			if data.Version > common.AnnounceVersionLatest {
-				announcedNewerVersion = true
-			} else if data.Version < common.AnnounceVersionLatest {
-				announcedOlderVersion = true
-			}
-			var strVars []interface{}
-			strVars = append(strVars, ipsStr)
-			format := "%s"
-			if len(hostsStr) > 0 {
-				format += " (%s)"
-				strVars = append(strVars, hostsStr)
-			}
-			format += " %s"
-			strVars = append(strVars, suffix)
-			serverTags = append(serverTags, fmt.Sprintf(format, strVars...))
-			serversStr = append(serversStr, ips)
+			description += ")"
 		}
-		if announcedNewerVersion {
-			fmt.Println("Found at least a 'server' with a newer version than this 'launcher'. This 'launcher' should be upgraded.")
-		}
-		if announcedOlderVersion {
-			fmt.Println("Found at least a 'server' with an older version than this 'launcher'. The 'server'(s) should be upgraded.")
-		}
-		if len(serversStr) == 0 {
-			return
-		} else {
+		description += fmt.Sprintf(" - %d ms", bestAddress.Latency.Truncate(time.Millisecond).Milliseconds())
+		description += fmt.Sprintf(" (%s)", internalData.Version)
+		processed = append(processed, &processedServer{
+			id:               serverId,
+			MesuredIpAddress: bestAddress,
+			description:      description,
+		})
+	}
+	slices.SortStableFunc(processed, func(a, b *processedServer) int {
+		return int(a.Latency - b.Latency)
+	})
+	return processed
+}
+
+func DiscoverServersAndSelectBestIpAddr(gameTitle string, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
+	id = uuid.Nil
+	servers := make(map[uuid.UUID]*server.AnnounceMessage)
+	fmt.Println("Searching for 'server's, you might need to allow the 'launcher' in the firewall...")
+	server.QueryServers(multicastGroups, targetPorts, servers)
+	if len(servers) > 0 {
+		if procServers := processedServers(gameTitle, servers); len(procServers) > 0 {
 			var option int
 			for {
 				fmt.Println("Found the following 'server's:")
-				for i := range serversStr {
-					fmt.Printf("%d. %s\n", i+1, serverTags[i])
+				for i := range procServers {
+					fmt.Printf("%d. %s\n", i+1, procServers[i].description)
 				}
-				fmt.Printf("Enter the number of the 'server' (1-%d): ", len(serversStr))
+				fmt.Printf("Enter the number of the 'server' (1-%d): ", len(procServers))
 				_, err := fmt.Scan(&option)
-				if err != nil || option < 1 || option > len(serversStr) {
+				if err != nil || option < 1 || option > len(procServers) {
 					fmt.Println("Invalid (or error reading) option. Please enter a number from the list.")
 					continue
 				}
-				ips := serversStr[option-1]
-				ok, ip = SelectBestServerIp(ips)
-				if ok {
-					break
-				} else {
-					fmt.Println(fmt.Sprintf("'Server' #%d is not reachable. Check the client can connect to it on TCP port 443 (HTTPS).", option))
-					fmt.Println("Please enter the same (to retry) or another number from the list")
-				}
+				selectedServer := procServers[option-1]
+				ip = selectedServer.Ip
+				id = selectedServer.id
+				break
 			}
 		}
 	}
 	return
 }
 
-func (c *Config) StartServer(executable string, args []string, stop bool) (errorCode int, ip string) {
+func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID) (errorCode int, ip string) {
 	fmt.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
@@ -161,7 +123,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool) (error
 	}
 	var result *commonExecutor.Result
 	var serverExe string
-	result, serverExe, ip = server.StartServer(stopStr, executable, args, SelectBestServerIp)
+	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, args, serverId)
 	if result.Success() {
 		fmt.Println("'Server' started.")
 		if stop {
