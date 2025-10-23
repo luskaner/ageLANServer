@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
@@ -85,7 +86,9 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	certMsg += "..."
 	fmt.Println(certMsg)
-	if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, ""); !result.Success() {
+	if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, "", func(options exec.Options) {
+		LogPrintln("run config setup for CA store cert", options.String())
+	}); !result.Success() {
 		if customCertFile {
 			fmt.Println("Failed to save certificate to file")
 		} else {

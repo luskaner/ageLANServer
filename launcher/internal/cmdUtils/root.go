@@ -52,6 +52,7 @@ func (c *Config) RevertCommand() []string {
 }
 
 func (c *Config) Revert() {
+	WriteFileLog(c.gameId, "pre-revert")
 	c.KillAgent()
 	if c.serverExe != "" {
 		fmt.Println("Stopping 'server'...")
@@ -66,7 +67,9 @@ func (c *Config) Revert() {
 		}
 		if c.battleServerRegion != "" && c.battleServerExe != "" {
 			fmt.Println("Stopping battle server via 'battle-server-manager'...")
-			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion); result.Success() {
+			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, func(options exec.Options) {
+				LogPrintln("run battle-server-manager", options.String())
+			}); result.Success() {
 				fmt.Println("Battle-server stopped (or was already).")
 			} else {
 				fmt.Println("Failed to stop the battle-server.")
@@ -82,12 +85,16 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresConfigRevert() {
 		fmt.Println("Cleaning up...")
-		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert); !ok {
+		if ok := launcherCommon.ConfigRevert(c.gameId, false, func(options exec.Options) {
+			LogPrintln("run config revert", options.String())
+		}, executor.RunRevert); !ok {
 			fmt.Println("Failed to clean up.")
 		}
 	}
 	if c.RequiresRunningRevertCommand() {
-		err := executor.RunRevertCommand()
+		err := executor.RunRevertCommand(func(options exec.Options) {
+			LogPrintln("run revert command", options.String())
+		})
 		if err != nil {
 			fmt.Println("Failed to run revert command.")
 			fmt.Println("Error message: " + err.Error())
@@ -95,6 +102,7 @@ func (c *Config) Revert() {
 			fmt.Println("Ran Revert command.")
 		}
 	}
+	WriteFileLog(c.gameId, "post-revert")
 }
 
 func anyProcessExists(names []string) bool {
@@ -118,14 +126,16 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 	if len(cmd) > 1 {
 		args = cmd[1:]
 	}
-	result = exec.Options{
+	options := exec.Options{
 		File:           cmd[0],
 		Wait:           true,
 		SpecialFile:    true,
 		Shell:          true,
 		UseWorkingPath: true,
 		Args:           args,
-	}.Exec()
+	}
+	LogPrintln("run setup command", options.String())
+	result = options.Exec()
 	certStore.ReloadSystemCertificates()
 	common.ClearCache()
 	return

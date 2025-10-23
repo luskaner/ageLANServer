@@ -29,7 +29,7 @@ type MesuredIpAddress struct {
 	Latency time.Duration
 }
 
-func StartServer(gameTitle string, stop string, executable string, args []string, id uuid.UUID) (result *commonExecutor.Result, executablePath string, ip string) {
+func StartServer(gameTitle string, stop string, executable string, args []string, id uuid.UUID, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
@@ -40,7 +40,9 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 	} else {
 		showWindow = true
 	}
-	result = commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}.Exec()
+	options := commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}
+	optionsFn(options)
+	result = options.Exec()
 	if result.Success() {
 		localIPs := common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(netip.IPv4Unspecified().String())))
 		timeout := time.After(time.Duration(localIPs.Cardinality()) * (latencyMeasurementCount + 1) * time.Second)
@@ -83,7 +85,9 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 			errorCode = internal.ErrServerCertDirectory
 			return
 		}
-		if result := GenerateCertificatePair(certificateFolder); !result.Success() {
+		if result := GenerateCertificatePair(certificateFolder, func(options commonExecutor.Options) {
+
+		}); !result.Success() {
 			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
 			errorCode = internal.ErrServerCertCreate
 			if result.Err != nil {

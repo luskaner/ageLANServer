@@ -44,4 +44,5 @@ const (
 	ErrInvalidServerBattleServerManagerRun
 	ErrInvalidServerBattleServerManagerArgs
 	ErrBattleServerManagerRun
+	ErrOpenFileLog
 )

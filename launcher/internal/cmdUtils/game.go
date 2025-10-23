@@ -50,6 +50,9 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 			canBroadcastBattleServer == "true",
 			c.battleServerExe,
 			c.battleServerRegion,
+			func(options commonExecutor.Options) {
+				LogPrintln("start agent", options.String())
+			},
 		)
 		if !result.Success() {
 			fmt.Println("Failed to start 'agent'.")
@@ -96,12 +99,16 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 		return
 	}
 
-	if result = executer.Execute(args); !result.Success() && result.Err != nil {
+	if result = executer.Execute(args, func(options commonExecutor.Options) {
+		LogPrintln("start game", options.String())
+	}); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
 				fmt.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config/option setting 'CanTrustCertificate' to 'local'.")
 			}
-			result = customExecutor.ExecuteElevated(args)
+			result = customExecutor.ExecuteElevated(args, func(options commonExecutor.Options) {
+				LogPrintln("start elevated game", options.String())
+			})
 		}
 	}
 	if !result.Success() {

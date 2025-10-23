@@ -8,7 +8,7 @@ import (
 )
 
 type Executor interface {
-	Execute(args []string) (result *commonExecutor.Result)
+	Execute(args []string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result)
 	GameProcesses() (steamProcess bool, xboxProcess bool)
 }
 
@@ -28,8 +28,8 @@ type CustomExecutor struct {
 	Executable string
 }
 
-func (exec SteamExecutor) Execute(_ []string) (result *commonExecutor.Result) {
-	return startUri(steam.NewGame(exec.gameId).OpenUri())
+func (exec SteamExecutor) Execute(_ []string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
+	return startUri(steam.NewGame(exec.gameId).OpenUri(), optionsFn)
 }
 
 func (exec SteamExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
@@ -41,23 +41,24 @@ func (exec SteamExecutor) GamePath() string {
 	return steam.NewGame(exec.gameId).Path(exec.libraryFolder)
 }
 
-func (exec CustomExecutor) execute(args []string, admin bool) (result *commonExecutor.Result) {
+func (exec CustomExecutor) execute(args []string, admin bool, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
 	options := commonExecutor.Options{File: exec.Executable, Args: args}
 	if admin {
 		options.AsAdmin = true
 	}
 	options.ShowWindow = true
+	optionsFn(options)
 	result = options.Exec()
 	return
 }
 
-func (exec CustomExecutor) Execute(args []string) (result *commonExecutor.Result) {
-	result = exec.execute(args, false)
+func (exec CustomExecutor) Execute(args []string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
+	result = exec.execute(args, false, optionsFn)
 	return
 }
 
-func (exec CustomExecutor) ExecuteElevated(args []string) (result *commonExecutor.Result) {
-	result = exec.execute(args, true)
+func (exec CustomExecutor) ExecuteElevated(args []string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
+	result = exec.execute(args, true, optionsFn)
 	return
 }
 

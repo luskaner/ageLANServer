@@ -13,7 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string, optionsFn func(options exec.Options)) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
@@ -71,7 +71,9 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "--gamePath")
 		args = append(args, gamePath)
 	}
-	result = exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	options := exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
+	optionsFn(options)
+	result = options.Exec()
 	if reloadSystemCertificates {
 		certStore.ReloadSystemCertificates()
 	}
@@ -96,7 +98,7 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		)
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
 			fmt.Println("Failed to store revert arguments, reverting setup...")
-			result = RunRevert(revertArgs, false)
+			result = RunRevert(revertArgs, false, optionsFn)
 			if !result.Success() {
 				fmt.Println("Failed to revert setup.")
 			}
@@ -106,8 +108,8 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	return
 }
 
-func RunRevert(flags []string, bin bool) (result *exec.Result) {
-	result = launcherCommon.RunRevert(flags, bin)
+func RunRevert(flags []string, bin bool, optionFn func(options exec.Options)) (result *exec.Result) {
+	result = launcherCommon.RunRevert(flags, bin, optionFn)
 	if slices.Contains(flags, "-a") || slices.Contains(flags, "-u") || slices.Contains(flags, "-l") {
 		certStore.ReloadSystemCertificates()
 	}

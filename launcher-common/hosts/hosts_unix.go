@@ -9,9 +9,14 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const LineEnding = "\n"
+const maxHostsPerLine = math.MaxInt32 - 1
+
 var Lock *unix.Flock_t
 
-const maxHostsPerLine = math.MaxInt32 - 1
+func Path() string {
+	return "/etc/hosts"
+}
 
 func LockFile(file *os.File) (err error) {
 	Lock = &unix.Flock_t{

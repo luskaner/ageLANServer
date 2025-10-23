@@ -59,7 +59,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if len(cmd.MapIP) > 0 || cmd.MapCDN {
 			fmt.Println("Adding IP mappings")
-			if ok, _ := launcherCommonHosts.AddHosts(cmd.GameId, hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
+			if ok, _ := launcherCommonHosts.AddHosts(cmd.GameId, "", "", hosts.FlushDns); ok {
 				fmt.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd

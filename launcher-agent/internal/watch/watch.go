@@ -34,7 +34,7 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 			}
 			if battleServerExe != "-" && battleServerRegion != "-" {
 				newExitCode := launcherCommon.RemoveBattleServerRegion(
-					battleServerExe, gameId, battleServerRegion,
+					battleServerExe, gameId, battleServerRegion, nil,
 				).ExitCode
 				if *exitCode == common.ErrSuccess {
 					*exitCode = newExitCode
@@ -43,10 +43,10 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		}()
 	}
 	defer func() {
-		_ = launcherCommon.RunRevertCommand()
+		_ = launcherCommon.RunRevertCommand(nil)
 	}()
 	defer func() {
-		launcherCommon.ConfigRevert(gameId, true, nil)
+		launcherCommon.ConfigRevert(gameId, true, nil, nil)
 	}()
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {

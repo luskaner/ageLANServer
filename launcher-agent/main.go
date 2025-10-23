@@ -49,12 +49,12 @@ func main() {
 				_ = lock.Unlock()
 				os.Exit(exitCode)
 			}()
-			launcherCommon.ConfigRevert(gameId, true, nil)
-			_ = launcherCommon.RunRevertCommand()
+			launcherCommon.ConfigRevert(gameId, true, nil, nil)
+			_ = launcherCommon.RunRevertCommand(nil)
 			if serverExe != "-" {
 				_, _ = commonProcess.Kill(serverExe)
 				if battleServerExe != "-" && battleServerRegion != "-" {
-					launcherCommon.RemoveBattleServerRegion(battleServerExe, gameId, battleServerRegion)
+					launcherCommon.RemoveBattleServerRegion(battleServerExe, gameId, battleServerRegion, nil)
 				}
 			}
 		}

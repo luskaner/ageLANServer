@@ -20,6 +20,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -59,8 +60,16 @@ var (
 				fmt.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			if err := cmdUtils.OpenFileLog(gameId); err != nil {
+				fmt.Println("Failed to open file log")
+				fmt.Println(err.Error())
+				os.Exit(internal.ErrOpenFileLog)
+			}
+			cmdUtils.WriteFileLog(gameId, "start")
 			var errorCode = common.ErrSuccess
 			defer func() {
+				cmdUtils.WriteFileLog(gameId, "before exit")
+				cmdUtils.CloseFileLog()
 				_ = lock.Unlock()
 				os.Exit(errorCode)
 			}()
@@ -284,6 +293,7 @@ var (
 				_, ok := <-sigs
 				if ok {
 					config.Revert()
+					cmdUtils.CloseFileLog()
 					_ = lock.Unlock()
 					os.Exit(errorCode)
 				}
@@ -295,16 +305,21 @@ var (
 			*/
 			fmt.Println("Cleaning up (if needed)...")
 			config.KillAgent()
-			launcherCommon.ConfigRevert(gameId, false, executor.RunRevert)
+			launcherCommon.ConfigRevert(gameId, false, func(options exec.Options) {
+				cmdUtils.LogPrintln("run config revert", options.String())
+			}, executor.RunRevert)
 			var proc *os.Process
 			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
 			if err == nil && proc != nil {
 				fmt.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
-			if err = executor.RunRevertCommand(); err != nil {
+			if err = executor.RunRevertCommand(func(options exec.Options) {
+				cmdUtils.LogPrintln("run revert command", options.String())
+			}); err != nil {
 				fmt.Println("Failed to run revert command.")
 				fmt.Println("Error message: " + err.Error())
 			}
+			cmdUtils.WriteFileLog(gameId, "post initial cleanup")
 			if len(revertCommand) > 0 {
 				if err := launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
 					fmt.Println("Failed to store revert command")
@@ -421,7 +436,6 @@ var (
 				}
 				if runBattleServerManager {
 					errorCode = config.RunBattleServerManager(
-						gameId,
 						battleServerManagerExecutable,
 						battleServerManagerArgs,
 						serverStop == "true",
@@ -447,21 +461,25 @@ var (
 			if errorCode != common.ErrSuccess {
 				return
 			}
+			cmdUtils.WriteFileLog(gameId, "post host mapping")
 			errorCode = config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
 			}))
 			if errorCode != common.ErrSuccess {
 				return
 			}
+			cmdUtils.WriteFileLog(gameId, "post add cert")
 			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
 			if errorCode != common.ErrSuccess {
 				return
 			}
+			cmdUtils.WriteFileLog(gameId, "post isolate user data")
 			if gamePath != "" {
 				errorCode = config.AddCACertToGame(gameId, serverCertificate, gamePath)
 				if errorCode != common.ErrSuccess {
 					return
 				}
+				cmdUtils.WriteFileLog(gameId, "post add game cert")
 			}
 			errorCode = config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)
 		},
@@ -472,6 +490,7 @@ func Execute() error {
 	rootCmd.Version = Version
 	rootCmd.Flags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.Flags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	rootCmd.Flags().Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
 	rootCmd.Flags().StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS == "windows" {
@@ -536,6 +555,9 @@ func Execute() error {
 		if err := viper.BindPFlag("Config.CanBroadcastBattleServer", rootCmd.Flags().Lookup("canBroadcastBattleServer")); err != nil {
 			return err
 		}
+	}
+	if err := viper.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
+		return err
 	}
 	if err := viper.BindPFlag("Config.IsolateMetadata", rootCmd.Flags().Lookup("isolateMetadata")); err != nil {
 		return err

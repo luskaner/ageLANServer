@@ -21,6 +21,8 @@ IsolateMetadata = true
 # May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
 # Linux Note: Only supported when not using a custom launcher.
 IsolateProfiles = false
+# Whether to log more info to a file. Enable it for errors.
+Log = false
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN

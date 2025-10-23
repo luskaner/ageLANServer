@@ -123,7 +123,9 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 	}
 	var result *commonExecutor.Result
 	var serverExe string
-	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, args, serverId)
+	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, args, serverId, func(options commonExecutor.Options) {
+		LogPrintln("start server", options.String())
+	})
 	if result.Success() {
 		fmt.Println("'Server' started.")
 		if stop {
