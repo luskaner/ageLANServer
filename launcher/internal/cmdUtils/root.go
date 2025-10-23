@@ -65,22 +65,22 @@ func (c *Config) Revert() {
 				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
 			}
 		}
-		if c.battleServerRegion != "" && c.battleServerExe != "" {
-			fmt.Println("Stopping battle server via 'battle-server-manager'...")
-			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, func(options exec.Options) {
-				LogPrintln("run battle-server-manager", options.String())
-			}); result.Success() {
-				fmt.Println("Battle-server stopped (or was already).")
-			} else {
-				fmt.Println("Failed to stop the battle-server.")
-				if result.Err != nil {
-					fmt.Println("Error message: " + result.Err.Error())
-				}
-				if result.ExitCode != common.ErrSuccess {
-					fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-				}
-				fmt.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
+	}
+	if c.battleServerRegion != "" && c.battleServerExe != "" {
+		fmt.Println("Stopping battle server via 'battle-server-manager'...")
+		if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, func(options exec.Options) {
+			LogPrintln("run battle-server-manager", options.String())
+		}); result.Success() {
+			fmt.Println("Battle-server stopped (or was already).")
+		} else {
+			fmt.Println("Failed to stop the battle-server.")
+			if result.Err != nil {
+				fmt.Println("Error message: " + result.Err.Error())
 			}
+			if result.ExitCode != common.ErrSuccess {
+				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+			}
+			fmt.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
 		}
 	}
 	if c.RequiresConfigRevert() {
