@@ -378,7 +378,7 @@ var (
 					if runBattleServerManager {
 						fmt.Print(" start a battle server (if needed) and then")
 					}
-					fmt.Println(" start the 'server'.")
+					fmt.Println(" start the 'server'. Press enter to continue...")
 					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 				}
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
