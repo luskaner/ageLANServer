@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -36,7 +35,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())

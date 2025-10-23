@@ -45,6 +45,21 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 }
 
 func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) {
+	return iterateContext(
+		userStore,
+		func(store windows.Handle, _ *windows.CertContext) (*windows.CertContext, error) {
+			return windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
+		},
+		func(certContext *windows.CertContext) error {
+			defer func(ctx *windows.CertContext) {
+				_ = windows.CertFreeCertificateContext(ctx)
+			}(certContext)
+			return windows.CertDeleteCertificateFromStore(certContext)
+		},
+	)
+}
+
+func iterateContext(userStore bool, contextGetter func(store windows.Handle, prevCertContext *windows.CertContext) (*windows.CertContext, error), action func(*windows.CertContext) error) (certs []*x509.Certificate, err error) {
 	var store windows.Handle
 	store, err = openStore(userStore)
 	if err != nil {
@@ -53,11 +68,10 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 	defer func(store windows.Handle, flags uint32) {
 		_ = windows.CertCloseStore(store, flags)
 	}(store, 0)
-
 	certs = make([]*x509.Certificate, 0)
 	var certContext *windows.CertContext
 	for {
-		certContext, err = windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
+		certContext, err = contextGetter(store, certContext)
 		if certContext == nil || err != nil {
 			if len(certs) > 0 {
 				err = nil
@@ -75,10 +89,23 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 		}
 		certs = append(certs, cert)
 
-		err = windows.CertDeleteCertificateFromStore(certContext)
+		err = action(certContext)
 		if err != nil {
 			break
 		}
 	}
+	if certContext != nil {
+		_ = windows.CertFreeCertificateContext(certContext)
+	}
 	return
+}
+
+func EnumCertificates(userStore bool) (certs []*x509.Certificate, err error) {
+	return iterateContext(
+		userStore,
+		windows.CertEnumCertificatesInStore,
+		func(certContext *windows.CertContext) error {
+			return nil
+		},
+	)
 }

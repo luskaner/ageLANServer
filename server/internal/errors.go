@@ -13,4 +13,6 @@ const (
 	ErrMulticastGroup
 	ErrGames
 	MissingBattleServer
+	ErrAnnounce
+	ErrInvalidId
 )

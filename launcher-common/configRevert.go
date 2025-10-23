@@ -64,7 +64,7 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	return args
 }
 
-func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string, bin bool) (result *exec.Result)) bool {
+func ConfigRevert(gameId string, headless bool, optionsFn func(options exec.Options), runRevertFn func(flags []string, bin bool, optionsFn func(options exec.Options)) (result *exec.Result)) bool {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
@@ -100,7 +100,7 @@ func ConfigRevert(gameId string, headless bool, runRevertFn func(flags []string,
 			return false
 		}
 
-		if revertResult := runRevertFn(revertFlags, headless); !revertResult.Success() {
+		if revertResult := runRevertFn(revertFlags, headless, optionsFn); !revertResult.Success() {
 			if !headless {
 				if ConfigAdminAgentRunning(false) {
 					fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
@@ -150,9 +150,13 @@ func RequiresStopConfigAgent(args []string) bool {
 			!slices.Contains(args, "-o")))
 }
 
-func RunRevert(flags []string, bin bool) (result *exec.Result) {
+func RunRevert(flags []string, bin bool, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
-	result = exec.Options{File: common.GetExeFileName(bin, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}.Exec()
+	options := exec.Options{File: common.GetExeFileName(bin, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
+	if optionsFn != nil {
+		optionsFn(options)
+	}
+	result = options.Exec()
 	return
 }

@@ -2,7 +2,6 @@ package advertisement
 
 import (
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 
@@ -23,7 +22,7 @@ func Leave(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		sess := middleware.SessionOrPanic(r)
+		sess := models.SessionOrPanic(r)
 		success = advertisements.UnsafeRemovePeer(adv.GetId(), sess.GetUserId())
 	})
 	if success {

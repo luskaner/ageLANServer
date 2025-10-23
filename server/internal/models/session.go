@@ -2,6 +2,7 @@ package models
 
 import (
 	"math/rand/v2"
+	"net/http"
 	"sync"
 	"time"
 
@@ -128,4 +129,17 @@ func GetSessionByUserId(userId int32) (*Session, bool) {
 		}
 	}
 	return nil, false
+}
+
+func SessionOrPanic(r *http.Request) *Session {
+	sessAny, ok := session(r)
+	if !ok {
+		panic("Session should have been set already")
+	}
+	return sessAny
+}
+
+func session(r *http.Request) (*Session, bool) {
+	sess, ok := r.Context().Value("session").(*Session)
+	return sess, ok
 }

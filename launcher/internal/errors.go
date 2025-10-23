@@ -13,7 +13,6 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
@@ -45,4 +44,5 @@ const (
 	ErrInvalidServerBattleServerManagerRun
 	ErrInvalidServerBattleServerManagerArgs
 	ErrBattleServerManagerRun
+	ErrOpenFileLog
 )

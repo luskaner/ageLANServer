@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -28,7 +27,7 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	users := game.Users()
 	user, ok := users.GetUserById(sess.GetUserId())
 	if !ok {

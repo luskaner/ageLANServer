@@ -20,7 +20,7 @@ func (l *Lock) Lock() error {
 	l.lock = &windows.Overlapped{}
 	err = windows.LockFileEx(
 		l.handle,
-		windows.LOCKFILE_EXCLUSIVE_LOCK,
+		windows.LOCKFILE_EXCLUSIVE_LOCK|windows.LOCKFILE_FAIL_IMMEDIATELY,
 		0,
 		0,
 		0,

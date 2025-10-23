@@ -12,6 +12,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
@@ -132,7 +133,9 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 			}
 		}
 		fmt.Println("...")
-		if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, mapCDN, true, c.hostFilePath, "", ""); !result.Success() {
+		if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, mapCDN, true, c.hostFilePath, "", "", func(options exec.Options) {
+			LogPrintln("run config setup for hosts", options.String())
+		}); !result.Success() {
 			fmt.Println("Failed to add hosts.")
 			if result.Err != nil {
 				fmt.Println("Error message: " + result.Err.Error())

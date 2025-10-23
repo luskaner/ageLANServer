@@ -16,7 +16,7 @@ func (l *Lock) Lock() error {
 		return err
 	}
 	l.fd = int(l.file.Fd())
-	err = syscall.Flock(l.fd, syscall.LOCK_SH|syscall.LOCK_NB)
+	err = syscall.Flock(l.fd, syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		_ = l.file.Close()
 		l.file = nil

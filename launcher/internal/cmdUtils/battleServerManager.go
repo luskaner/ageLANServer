@@ -11,7 +11,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal"
 )
 
-func (c *Config) RunBattleServerManager(gameId string, executable string, args []string, stop bool) (errorCode int) {
+func (c *Config) RunBattleServerManager(executable string, args []string, stop bool) (errorCode int) {
 	if executable == "auto" {
 		executable = common.FindExecutablePath(common.GetExeFileName(true, "battle-server-manager"))
 		if executable == "" {
@@ -22,7 +22,7 @@ func (c *Config) RunBattleServerManager(gameId string, executable string, args [
 	var beforeConfigs []battleServerConfig.Config
 	if stop {
 		var err error
-		beforeConfigs, err = battleServerConfig.Configs(gameId, true)
+		beforeConfigs, err = battleServerConfig.Configs(c.gameId, true)
 		if err != nil {
 			fmt.Println("Could not get existing configurations:", err)
 			return internal.ErrBattleServerManagerRun
@@ -34,10 +34,12 @@ func (c *Config) RunBattleServerManager(gameId string, executable string, args [
 	}
 	finalArgs = append(finalArgs, args...)
 	fmt.Println("Running 'battle-server-manager', you might to allow it in the firewall...")
-	result := commonExecutor.Options{File: executable, Args: finalArgs, Wait: true, ExitCode: true}.Exec()
+	options := commonExecutor.Options{File: executable, Args: finalArgs, Wait: true, ExitCode: true}
+	LogPrintln("run battle-server-manager", options.String())
+	result := options.Exec()
 	if result.Success() {
 		if stop {
-			afterConfigs, err := battleServerConfig.Configs(gameId, true)
+			afterConfigs, err := battleServerConfig.Configs(c.gameId, true)
 			if err == nil && len(afterConfigs) > 0 {
 				if absPath, err := filepath.Abs(executable); err == nil {
 					beforeConfigsSet := mapset.NewThreadUnsafeSet[battleServerConfig.Config](beforeConfigs...)

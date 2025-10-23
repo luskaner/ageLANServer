@@ -11,26 +11,19 @@ import (
 )
 
 func getExistingHosts() (err error, existingHosts mapset.Set[string], f *os.File) {
-	err, f = launcherCommonHosts.OpenHostsFile(Path())
+	var lines []launcherCommonHosts.Line
+	err, lines, f = launcherCommonHosts.GetAllLines(os.O_RDWR)
 	if err != nil {
 		return
 	}
 	existingHosts = mapset.NewThreadUnsafeSet[string]()
-	var line string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line = scanner.Text()
-		ok, parsedLine := launcherCommonHosts.Parse(line)
-		if !ok || !parsedLine.Own() {
+	for _, line := range lines {
+		if !line.Own() {
 			continue
 		}
-		for _, lineHost := range parsedLine.Hosts() {
+		for _, lineHost := range line.Hosts() {
 			existingHosts.Add(lineHost)
 		}
-	}
-	if err = scanner.Err(); err != nil {
-		_ = launcherCommonHosts.UnlockFile(f)
-		_ = f.Close()
 	}
 	return
 }
@@ -42,16 +35,14 @@ func RemoveHosts() error {
 	}
 	if existingHosts.IsEmpty() {
 		if hostsFile != nil && launcherCommonHosts.Lock != nil {
-			_ = launcherCommonHosts.UnlockFile(hostsFile)
-			_ = hostsFile.Close()
+			launcherCommonHosts.CloseFile(hostsFile)
 		}
 		return nil
 	}
 
 	_, err = hostsFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = launcherCommonHosts.UnlockFile(hostsFile)
-		_ = hostsFile.Close()
+		launcherCommonHosts.CloseFile(hostsFile)
 		return err
 	}
 
@@ -86,7 +77,7 @@ func RemoveHosts() error {
 			return err
 		}
 
-		linesJoined := strings.Join(lines, LineEnding)
+		linesJoined := strings.Join(lines, launcherCommonHosts.LineEnding)
 		_, err = f.WriteString(linesJoined)
 		if err != nil {
 			return err

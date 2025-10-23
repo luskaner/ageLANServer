@@ -2,10 +2,10 @@ package exec
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -67,7 +67,9 @@ func (options Options) standardExec() (result *Result) {
 }
 
 func (options Options) String() string {
-	return fmt.Sprintf("%s %s", options.File, options.Args)
+	allArgs := []string{options.File}
+	allArgs = append(allArgs, options.Args...)
+	return strings.Join(allArgs, " ")
 }
 
 func getExecutablePath(executable string) string {
