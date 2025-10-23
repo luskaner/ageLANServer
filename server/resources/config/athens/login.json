@@ -1,5 +1,5 @@
 {
-  "ATH_SYNC_ALL": "100",
+  "ATH_SYNC_ALL": "10",
   "TLM_CMD_AI_SEND": "0",
   "TLM_CMD_IGNORE": "Work Stop Train Build Research SetGatherPoint Cancel Enter Eject Empower",
   "TLM_CLIENT_HB_FREQ": "300",
@@ -9,6 +9,8 @@
   "TLM_ASSET_FREQ": "150",
   "TLM_UISESSION_PERCENT": "10",
   "SKP_LEADERBOARD": "0",
+  "ATH_GAUNTLET_LEADERBOARD": "0",
+  "ATH_GAUNTLET_SHOW_BETA_TAG": "1",
   "RL_USE_WEBSOCKET_PERCENT": "100",
   "RL_KEEPALIVE": "20",
   "RL_DISCONNECT": "30",

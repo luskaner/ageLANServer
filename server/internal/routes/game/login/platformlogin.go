@@ -144,6 +144,9 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if title != common.GameAoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
+	if title == common.GameAoM && req.ClientLibVersion >= 193 {
+		allProfileInfo = append(allProfileInfo, -1)
+	}
 	response = append(response,
 		game.Resources().LoginData,
 		allProfileInfo,
