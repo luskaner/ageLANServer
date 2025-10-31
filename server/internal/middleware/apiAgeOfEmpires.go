@@ -16,7 +16,7 @@ func isApiAgeOfEmpires(r *http.Request) bool {
 
 func ApiAgeOfEmpiresMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if subdomain, mainDomain, tld, err := internal.SplitDomain(r.Host); err == nil && tld == common.Tld && mainDomain == common.ApiAgeOfEmpiresDomain && subdomain == common.ApiAgeOfEmpiresSubdomain {
+		if _, mainDomain, tld, err := internal.SplitDomain(r.Host); err == nil && tld == common.Tld && mainDomain == common.ApiAgeOfEmpiresDomain {
 			r.URL.Path = path.Join(apiAgeOfEmpires.Prefix, r.URL.Path)
 		}
 		next.ServeHTTP(w, r)

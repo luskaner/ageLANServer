@@ -28,7 +28,7 @@ const SubDomainAge2Prefix = "pb"
 const SubDomainReleasePart = "-live-release"
 const worldsEdgeDomain = SubDomain + worldsEdge + dotTld
 
-var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld}
+var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + ApiAgeOfEmpiresDomain + dotTld}
 
 var hostsCache = make(map[string][]string)
 var domainToGameIds = make(map[string]mapset.Set[string])
@@ -60,7 +60,7 @@ func AllHosts(gameId string) (domains []string) {
 	case GameAoE1, GameAoE2, GameAoE3:
 		domains = []string{relicDomain, worldsEdgeDomain}
 	case GameAoE4:
-		domains = []string{"ED603" + playFabSuffix, worldsEdgeDomain, ApiAgeOfEmpires}
+		domains = []string{"ED603" + playFabSuffix, worldsEdgeDomain, "dr-activerelease1-api.worldsedgelink.com", "dr-" + ApiAgeOfEmpires}
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
 	}
