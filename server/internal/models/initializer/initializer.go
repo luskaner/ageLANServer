@@ -11,7 +11,10 @@ import (
 
 var Games = map[string]models.Game{}
 
-func InitializeGame(gameId string) {
+func InitializeGame(gameId string) error {
+	if err := models.InitializeBattleServers(gameId); err != nil {
+		return err
+	}
 	var game models.Game
 	switch gameId {
 	case common.GameAoE1:
@@ -24,4 +27,5 @@ func InitializeGame(gameId string) {
 		game = athens.CreateGame()
 	}
 	Games[gameId] = game
+	return nil
 }

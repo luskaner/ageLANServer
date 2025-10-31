@@ -2,18 +2,20 @@ package executor
 
 import (
 	"encoding/base64"
-	"fmt"
+	"io"
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
@@ -71,8 +73,15 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 		args = append(args, "--gamePath")
 		args = append(args, gamePath)
 	}
+	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
+		args = append(args, "--logRoot", logRoot)
+	}
 	options := exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	optionsFn(options)
+	if out != nil {
+		options.Stdout = out
+		options.Stderr = out
+	}
 	result = options.Exec()
 	if reloadSystemCertificates {
 		certStore.ReloadSystemCertificates()
@@ -93,14 +102,15 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 			hostFilePath,
 			certFilePath,
 			gamePath,
+			commonLogger.FileLogger.Folder(),
 			launcherCommon.RequiresStopConfigAgent(args),
 			true,
 		)
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
-			fmt.Println("Failed to store revert arguments, reverting setup...")
-			result = RunRevert(revertArgs, false, optionsFn)
+			logger.Println("Failed to store revert arguments, reverting setup...")
+			result = RunRevert(revertArgs, false, out, optionsFn)
 			if !result.Success() {
-				fmt.Println("Failed to revert setup.")
+				logger.Println("Failed to revert setup.")
 			}
 			result.Err = err
 		}
@@ -108,8 +118,8 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	return
 }
 
-func RunRevert(flags []string, bin bool, optionFn func(options exec.Options)) (result *exec.Result) {
-	result = launcherCommon.RunRevert(flags, bin, optionFn)
+func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options exec.Options)) (result *exec.Result) {
+	result = launcherCommon.RunRevert(flags, bin, out, optionFn)
 	if slices.Contains(flags, "-a") || slices.Contains(flags, "-u") || slices.Contains(flags, "-l") {
 		certStore.ReloadSystemCertificates()
 	}

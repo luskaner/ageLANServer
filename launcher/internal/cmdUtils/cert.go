@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
@@ -27,26 +30,26 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 				if canAdd != "false" {
 					cert := server.ReadCACertificateFromServer(host)
 					if cert == nil {
-						fmt.Println("Failed to read certificate from " + host + ".")
+						logger.Println("Failed to read certificate from " + host + ".")
 						errorCode = internal.ErrReadCert
 						return
 					} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-						fmt.Println("The certificate for " + host + " does not match the server certificate.")
+						logger.Println("The certificate for " + host + " does not match the server certificate.")
 						errorCode = internal.ErrCertMismatch
 						return
 					}
 					addCert = true
 				} else {
-					fmt.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
+					logger.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
 					errorCode = internal.ErrConfigCert
 					return
 				}
 			} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-				fmt.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
+				logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
 				errorCode = internal.ErrCertMismatch
 				return
 			} else if !server.LanServerHost(serverId, gameId, host, false) {
-				fmt.Println("Something went wrong, " + host + " does not point to a lan server.")
+				logger.Println("Something went wrong, " + host + " does not point to a lan server.")
 				errorCode = internal.ErrServerConnectSecure
 				return
 			}
@@ -85,32 +88,37 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		}
 	}
 	certMsg += "..."
-	fmt.Println(certMsg)
-	if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, "", func(options exec.Options) {
-		LogPrintln("run config setup for CA store cert", options.String())
-	}); !result.Success() {
-		if customCertFile {
-			fmt.Println("Failed to save certificate to file")
-		} else {
-			fmt.Println("Failed to trust certificate")
+	logger.Println(certMsg)
+	var err error
+	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
+		if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, "", writer, func(options exec.Options) {
+			commonLogger.Println("run config setup for CA store cert", options.String())
+		}); !result.Success() {
+			if customCertFile {
+				logger.Println("Failed to save certificate to file")
+			} else {
+				logger.Println("Failed to trust certificate")
+			}
+			errorCode = internal.ErrConfigCertAdd
+			if result.Err != nil {
+				logger.Println("Error message: " + result.Err.Error())
+			}
+			if result.ExitCode != common.ErrSuccess {
+				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+			}
+			return
 		}
-		errorCode = internal.ErrConfigCertAdd
-		if result.Err != nil {
-			fmt.Println("Error message: " + result.Err.Error())
-		}
-		if result.ExitCode != common.ErrSuccess {
-			fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-		}
-		return
+	}); err != nil {
+		return common.ErrFileLog
 	}
 	if !customCertFile {
 		for _, host := range hosts {
 			if !server.CheckConnectionFromServer(host, false) {
-				fmt.Println(host + " must have been trusted automatically at this point.")
+				logger.Println(host + " must have been trusted automatically at this point.")
 				errorCode = internal.ErrServerConnectSecure
 				return
 			} else if !server.LanServerHost(serverId, gameId, host, false) {
-				fmt.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
+				logger.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return
 			}

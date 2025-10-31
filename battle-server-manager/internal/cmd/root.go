@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ var Version string
 func Execute() error {
 	lock := &pidLock.Lock{}
 	if err := lock.Lock(); err != nil {
-		fmt.Println("Failed to lock pid file. Kill process 'battle-server-manager' if it is running in your task manager.")
-		fmt.Println(err.Error())
+		commonLogger.Println("Failed to lock pid file. Kill process 'battle-server-manager' if it is running in your task manager.")
+		commonLogger.Println(err.Error())
 		os.Exit(common.ErrPidLock)
 	}
 	defer func() {

@@ -18,6 +18,7 @@ func (exec XboxExecutor) Execute(_ []string, optionsFn func(options commonExecut
 		File:        fmt.Sprintf(`shell:appsfolder\%s!App`, appx.FamilyName(exec.gameId)),
 		Shell:       true,
 		SpecialFile: true,
+		ShowWindow:  true,
 	}
 	optionsFn(options)
 	result = options.Exec()
@@ -34,7 +35,7 @@ func (exec XboxExecutor) GameProcesses() (steamProcess bool, xboxProcess bool) {
 }
 
 func startUri(uri string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
-	options := commonExecutor.Options{File: uri, Shell: true, SpecialFile: true}
+	options := commonExecutor.Options{File: uri, Shell: true, SpecialFile: true, ShowWindow: true}
 	optionsFn(options)
 	result = options.Exec()
 	return

@@ -57,3 +57,12 @@ func GamesCommand(flags *pflag.FlagSet) {
 		gamesDescription(),
 	)
 }
+
+func LogRootCommand(flags *pflag.FlagSet, logRoot *string) {
+	flags.StringVar(
+		logRoot,
+		"logRoot",
+		"",
+		"Path to the log folder. If not empty, enables extra logging.",
+	)
+}

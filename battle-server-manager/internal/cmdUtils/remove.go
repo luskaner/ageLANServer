@@ -1,23 +1,23 @@
 package cmdUtils
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
 )
 
 func Kill(config battleServerConfig.Config) bool {
 	proc, err := process.FindProcess(int(config.PID))
 	if err == nil && proc != nil {
-		fmt.Print("\t\tProcess still running, killing it...")
+		str := "\t\tProcess still running, killing it..."
 		if err = process.KillProc(proc); err == nil {
-			fmt.Println(" OK")
+			commonLogger.Println(str + " OK")
 			return true
 		} else {
-			fmt.Println(" failed with error: ", err)
+			commonLogger.Println(str+" failed with error: ", err)
 			return false
 		}
 	}
@@ -25,7 +25,7 @@ func Kill(config battleServerConfig.Config) bool {
 }
 
 func remove(gameId string, config battleServerConfig.Config) bool {
-	fmt.Println("\tRemoving:", config.Region)
+	commonLogger.Println("\tRemoving:", config.Region)
 	_ = Kill(config)
 	folder := battleServerConfig.Folder(gameId)
 	if f, err := os.Stat(folder); err != nil || !f.IsDir() {
@@ -33,14 +33,14 @@ func remove(gameId string, config battleServerConfig.Config) bool {
 	}
 	fullPath := filepath.Join(folder, config.Path())
 	if f, err := os.Stat(fullPath); err == nil && !f.IsDir() {
-		fmt.Print("\t\tRemoving config file...")
+		str := "\t\tRemoving config file..."
 		if err := os.Remove(fullPath); err == nil {
-			fmt.Println(" OK")
+			commonLogger.Println(str + " OK")
 		} else {
-			fmt.Println(" failed with error: ", err)
+			commonLogger.Println(str+" failed with error: ", err)
 		}
 	} else {
-		fmt.Println(" failed with error: ", err)
+		commonLogger.Println("Failed with error: ", err)
 	}
 	return true
 }

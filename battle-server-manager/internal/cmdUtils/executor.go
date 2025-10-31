@@ -9,6 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game/appx"
 	"github.com/luskaner/ageLANServer/common/game/steam"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/viper"
 )
 
@@ -21,7 +22,7 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 	}
 	var path string
 	if viper.GetString("Executable.Path") == "auto" {
-		fmt.Println("Auto resolving executable path...")
+		commonLogger.Println("Auto resolving executable path...")
 		// TODO: Review if AoE: DE and AoE III: DE can also use AoE II: DE
 		// The Battle Server for AoM is buggy and the only one working is the AoE II one
 		if gameId == common.GameAoM {
@@ -38,7 +39,7 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 			if folder != "" {
 				path = filepath.Join(folder, battleServerPath)
 				if validPath(path) {
-					fmt.Println("\tFound in Steam")
+					commonLogger.Println("\tFound in Steam")
 					return path, nil
 				}
 			}
@@ -46,7 +47,7 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 		if ok, folder := appx.GameInstallLocation(gameId); ok {
 			path = filepath.Join(folder, battleServerPath)
 			if validPath(path) {
-				fmt.Println("\tFound on Xbox")
+				commonLogger.Println("\tFound on Xbox")
 				return path, nil
 			}
 		}
@@ -69,7 +70,7 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 }
 
 func ExecuteBattleServer(gameId string, path string, region string, name string, ports []int, certFile string,
-	keyFile string, extraArgs []string, hideWindow bool) (pid uint32, err error) {
+	keyFile string, extraArgs []string, hideWindow bool, logRoot string) (pid uint32, err error) {
 	var simulationPeriod int
 	switch gameId {
 	case common.GameAoE1:
@@ -100,7 +101,16 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 		Args:           args,
 		Pid:            true,
 	}
-	fmt.Println("Executing:", options)
+	if hideWindow && logRoot != "" {
+		var f *os.File
+		if _, f, err = commonLogger.NewFileLogger("battle-server", logRoot, "", true); err != nil {
+			return
+		} else if f != nil {
+			options.Stdout = f
+			options.Stderr = f
+		}
+	}
+	commonLogger.Println("Executing:", options)
 	if result := options.Exec(); result.Success() {
 		pid = result.Pid
 	} else {

@@ -1,9 +1,13 @@
 package watch
 
 import (
+	"io"
+	"os"
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -22,20 +26,44 @@ func waitUntilAnyProcessExist(names []string) (processesPID map[string]uint32) {
 	return
 }
 
-func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
+func Watch(gameId string, logRoot string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
 	battleServerExe string, battleServerRegion string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if serverExe != "-" {
 		defer func() {
+			commonLogger.Println("Killing server...")
 			if _, err := commonProcess.Kill(serverExe); err != nil {
+				commonLogger.Println("Failed to kill server.")
+				commonLogger.Println(err.Error())
 				if *exitCode == common.ErrSuccess {
 					*exitCode = internal.ErrFailedStopServer
 				}
 			}
 			if battleServerExe != "-" && battleServerRegion != "-" {
-				newExitCode := launcherCommon.RemoveBattleServerRegion(
-					battleServerExe, gameId, battleServerRegion, nil,
-				).ExitCode
+				commonLogger.Println("Shutting down battle-server...")
+				var result *exec.Result
+				if logErr := internal.Logger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
+					result = launcherCommon.RemoveBattleServerRegion(
+						battleServerExe, gameId, battleServerRegion, writer, func(options exec.Options) {
+							if writer != nil {
+								commonLogger.Println("run battle-server-manager", options.String())
+							}
+						},
+					)
+				}); logErr != nil {
+					result.ExitCode = common.ErrFileLog
+					result.Err = logErr
+				}
+				newExitCode := result.ExitCode
+				if !result.Success() {
+					commonLogger.Println("Failed to shut down battle-server.")
+					if result.ExitCode != common.ErrSuccess {
+						commonLogger.Println("Exit code: ", newExitCode)
+					}
+					if result.Err != nil {
+						commonLogger.Printf("Error: %v\n", result.Err)
+					}
+				}
 				if *exitCode == common.ErrSuccess {
 					*exitCode = newExitCode
 				}
@@ -43,13 +71,31 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		}()
 	}
 	defer func() {
-		_ = launcherCommon.RunRevertCommand(nil)
+		_ = internal.Logger.Buffer("revert_command_end", func(writer io.Writer) {
+			if err := launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
+				if writer != nil {
+					commonLogger.Println("run revert command", options.String())
+				}
+			}); err != nil {
+				commonLogger.Printf("Failed to revert command: %v\n", err)
+			}
+		})
 	}()
 	defer func() {
-		launcherCommon.ConfigRevert(gameId, true, nil, nil)
+		_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
+			if !launcherCommon.ConfigRevert(gameId, logRoot, true, writer, func(options exec.Options) {
+				if writer != nil {
+					commonLogger.Println("run config revert", options.String())
+				}
+			}, nil) {
+				commonLogger.Println("Failed to revert configuration")
+			}
+		})
 	}()
+	commonLogger.Println("Waiting up to 1 minute for game to start...")
 	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
 	if len(processes) == 0 {
+		commonLogger.Println("Failed to find the game.")
 		*exitCode = internal.ErrGameTimeoutStart
 		return
 	}
@@ -60,6 +106,7 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		} else {
 			port = 9999
 		}
+		commonLogger.Printf("Broadcasting BattleServer port to %d...\n", port)
 		rebroadcastBattleServer(exitCode, port)
 	}
 	var PID uint32
@@ -67,7 +114,9 @@ func Watch(gameId string, steamProcess bool, xboxProcess bool, serverExe string,
 		PID = p
 		break
 	}
-	if !waitForProcess(PID) {
+	commonLogger.Printf("Waiting for PID %d to end\n", PID)
+	if !commonProcess.WaitForProcess(&os.Process{Pid: int(PID)}, nil) {
+		commonLogger.Println("Failed to wait.")
 		*exitCode = internal.ErrFailedWaitForProcess
 	}
 }

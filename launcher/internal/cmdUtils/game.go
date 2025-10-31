@@ -1,14 +1,16 @@
 package cmdUtils
 
 import (
-	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game"
 )
@@ -17,9 +19,9 @@ func (c *Config) KillAgent() {
 	agent := common.GetExeFileName(false, common.LauncherAgent)
 	proc, err := commonProcess.Kill(agent)
 	if proc != nil {
-		fmt.Println("Killing 'agent'...")
+		logger.Println("Killing 'agent'...")
 		if err != nil {
-			fmt.Println("Failed to kill it: ", err, ", try using the task manager.")
+			logger.Println("Failed to kill it: ", err, ", try using the task manager.")
 			return
 		}
 	}
@@ -36,13 +38,23 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
 	if len(revertCommand) > 0 || canBroadcastBattleServer == "true" || len(c.serverExe) > 0 || requiresConfigRevert {
-		fmt.Print("Starting 'agent'")
+		str := "Starting 'agent'"
 		if canBroadcastBattleServer == "true" {
-			fmt.Print(", authorize it in firewall if needed")
+			str += ", authorize it in firewall if needed"
 		}
-		fmt.Println("...")
+		logger.Println(str + "...")
 		steamProcess, xboxProcess := executer.GameProcesses()
-		result := executor.RunAgent(
+		var err error
+		var f *os.File
+		if f, err = commonLogger.FileLogger.Open("agent"); err != nil {
+			logger.Println("Error message: " + err.Error())
+			return common.ErrFileLog
+		}
+		loggerPath := commonLogger.FileLogger.Folder()
+		if loggerPath == "" {
+			loggerPath = "-"
+		}
+		result := executor.StartAgent(
 			c.gameId,
 			steamProcess,
 			xboxProcess,
@@ -50,29 +62,31 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 			canBroadcastBattleServer == "true",
 			c.battleServerExe,
 			c.battleServerRegion,
+			loggerPath,
+			f,
 			func(options commonExecutor.Options) {
-				LogPrintln("start agent", options.String())
+				commonLogger.Println("start agent", options.String())
 			},
 		)
 		if !result.Success() {
-			fmt.Println("Failed to start 'agent'.")
+			logger.Println("Failed to start 'agent'.")
 			errorCode = internal.ErrAgentStart
 			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
+				logger.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			return
 		} else {
-			fmt.Println("'Agent' started.")
+			logger.Println("'Agent' started.")
 		}
 	}
-	fmt.Print("Starting game")
+	str := "Starting game"
 	if customExecutor.Executable != "" {
-		fmt.Print(", authorize it if needed")
+		str += ", authorize it if needed"
 	}
-	fmt.Println("...")
+	logger.Println(str + "...")
 	var result *commonExecutor.Result
 	var values map[string]string = nil
 	if c.hostFilePath != "" {
@@ -94,31 +108,31 @@ func (c *Config) LaunchAgentAndGame(executer game.Executor, customExecutor game.
 	}
 	args, err := ParseCommandArgs("Client.ExecutableArgs", values)
 	if err != nil {
-		fmt.Println("Failed to parse client executable arguments")
+		logger.Println("Failed to parse client executable arguments")
 		errorCode = internal.ErrInvalidClientArgs
 		return
 	}
 
 	if result = executer.Execute(args, func(options commonExecutor.Options) {
-		LogPrintln("start game", options.String())
+		commonLogger.Println("start game", options.String())
 	}); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
-				fmt.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config/option setting 'CanTrustCertificate' to 'local'.")
+				logger.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config/option setting 'CanTrustCertificate' to 'local'.")
 			}
 			result = customExecutor.ExecuteElevated(args, func(options commonExecutor.Options) {
-				LogPrintln("start elevated game", options.String())
+				commonLogger.Println("start elevated game", options.String())
 			})
 		}
 	}
 	if !result.Success() {
 		errorCode = internal.ErrGameLauncherStart
 		if result.Err != nil {
-			fmt.Println("Game failed to start. Error message: " + result.Err.Error())
+			logger.Println("Game failed to start. Error message: " + result.Err.Error())
 		}
 		c.KillAgent()
 	} else {
-		fmt.Println("Game started.")
+		logger.Println("Game started.")
 	}
 	return
 }

@@ -3,17 +3,18 @@
 package internal
 
 import (
-	"fmt"
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/process"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"net"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/process"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 )
 
 func preAgentStart() {
 	if !executor.IsAdmin() {
-		fmt.Println("Waiting up to 30s for 'agent' to start...")
+		commonLogger.Println("Waiting up to 30s for 'agent' to start...")
 	}
 }
 
@@ -29,5 +30,7 @@ func postAgentStart(file string) {
 }
 
 func DialIPC() (net.Conn, error) {
-	return net.Dial("unix", launcherCommon.ConfigAdminIpcPath())
+	path := launcherCommon.ConfigAdminIpcPath()
+	commonLogger.Printf("Using unix:%s\n", path)
+	return net.Dial("unix", path)
 }

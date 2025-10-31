@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -19,6 +18,7 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"golang.org/x/net/ipv4"
 )
 
@@ -63,9 +63,9 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 		}
 		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
 			if err = commonProcess.KillPidProc(pid, proc); err != nil {
-				fmt.Println("Failed to stop 'server'")
-				fmt.Println("Error message: " + err.Error())
-				fmt.Println("You may try killing it manually. Kill process 'server' in your task manager.")
+				logger.Println("Failed to stop 'server'")
+				logger.Println("Error message: " + err.Error())
+				logger.Println("You may try killing it manually. Kill process 'server' in your task manager.")
 			}
 		}
 		result = nil
@@ -76,25 +76,25 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (errorCode int) {
 	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
-			fmt.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			logger.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
 			errorCode = internal.ErrServerCertMissingExpired
 			return
 		}
 		if certificateFolder == "" {
-			fmt.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
+			logger.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
 			errorCode = internal.ErrServerCertDirectory
 			return
 		}
 		if result := GenerateCertificatePair(certificateFolder, func(options commonExecutor.Options) {
 
 		}); !result.Success() {
-			fmt.Println("Failed to generate certificate pair. Check the folder and its permissions")
+			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")
 			errorCode = internal.ErrServerCertCreate
 			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
+				logger.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			return
 		}

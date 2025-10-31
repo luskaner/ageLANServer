@@ -1,8 +1,11 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"sync"
+
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
 var PrefixerMutex sync.Mutex
@@ -14,9 +17,13 @@ type PrefixedWriter struct {
 }
 
 func NewPrefixedWriter(writer io.Writer, game string, name string) *PrefixedWriter {
+	prefix := fmt.Sprintf("[%s] ", name)
+	if commonLogger.FileLogger == nil {
+		prefix = fmt.Sprintf("[%s] ", game) + prefix
+	}
 	return &PrefixedWriter{
 		writer: writer,
-		prefix: []byte("[" + game + "][" + name + "] "),
+		prefix: []byte(prefix),
 	}
 }
 

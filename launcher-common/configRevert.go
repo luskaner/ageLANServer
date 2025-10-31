@@ -1,7 +1,7 @@
 package launcher_common
 
 import (
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,12 +10,13 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 )
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, gamePath string, stopAgent bool, failfast bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, gamePath string, logRoot string, stopAgent bool, failfast bool) []string {
 	args := make([]string, 0)
 	if game != "" {
 		args = append(args, "-e")
@@ -53,6 +54,10 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 		args = append(args, "--gamePath")
 		args = append(args, gamePath)
 	}
+	if logRoot != "" {
+		args = append(args, "--logRoot")
+		args = append(args, logRoot)
+	}
 	if hostFilePath != "" {
 		args = append(args, "-o")
 		args = append(args, hostFilePath)
@@ -64,7 +69,7 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	return args
 }
 
-func ConfigRevert(gameId string, headless bool, optionsFn func(options exec.Options), runRevertFn func(flags []string, bin bool, optionsFn func(options exec.Options)) (result *exec.Result)) bool {
+func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, optionsFn func(options exec.Options), runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result)) bool {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
@@ -77,11 +82,11 @@ func ConfigRevert(gameId string, headless bool, optionsFn func(options exec.Opti
 		}
 		if err != nil {
 			if !headless {
-				fmt.Println("Failed to get revert flags: ", err)
+				commonLogger.Println("Failed to get revert flags: ", err)
 				revertLine += "all possible "
 			}
 			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, true, "", "", "", stopAgent, false)
+			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, true, "", "", "", logRoot, stopAgent, false)
 		} else if !headless && slices.Contains(revertFlags, "-g") {
 			stopAgent = true
 		}
@@ -89,23 +94,22 @@ func ConfigRevert(gameId string, headless bool, optionsFn func(options exec.Opti
 		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
 		if !headless {
 			revertLine += "configuration"
-			fmt.Print(revertLine)
 			if requiresRevertAdminElevation {
-				fmt.Print(`, authorize 'config-admin' if needed`)
+				revertLine += `, authorize 'config-admin' if needed`
 			} else if stopAgent {
-				fmt.Print(` and stopping its agent`)
+				revertLine += ` and stopping its agent`
 			}
-			fmt.Println(`...`)
+			commonLogger.Println(revertLine + `...`)
 		} else if requiresRevertAdminElevation {
 			return false
 		}
 
-		if revertResult := runRevertFn(revertFlags, headless, optionsFn); !revertResult.Success() {
+		if revertResult := runRevertFn(revertFlags, headless, out, optionsFn); !revertResult.Success() {
 			if !headless {
 				if ConfigAdminAgentRunning(false) {
-					fmt.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
+					commonLogger.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 				} else {
-					fmt.Println("Failed to cleanup configuration, try to do it manually.")
+					commonLogger.Println("Failed to cleanup configuration, try to do it manually.")
 				}
 			}
 			return false
@@ -113,7 +117,7 @@ func ConfigRevert(gameId string, headless bool, optionsFn func(options exec.Opti
 
 		if err = RevertConfigStore.Delete(); err != nil {
 			if !headless {
-				fmt.Println("Failed to clear revert flags: ", err)
+				commonLogger.Println("Failed to clear revert flags: ", err)
 			}
 		}
 	}
@@ -150,12 +154,16 @@ func RequiresStopConfigAgent(args []string) bool {
 			!slices.Contains(args, "-o")))
 }
 
-func RunRevert(flags []string, bin bool, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
 	options := exec.Options{File: common.GetExeFileName(bin, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	if optionsFn != nil {
 		optionsFn(options)
+	}
+	if out != nil {
+		options.Stdout = out
+		options.Stderr = out
 	}
 	result = options.Exec()
 	return

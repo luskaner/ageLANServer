@@ -13,7 +13,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
@@ -87,20 +89,20 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 func DiscoverServersAndSelectBestIpAddr(gameTitle string, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
 	id = uuid.Nil
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
-	fmt.Println("Searching for 'server's, you might need to allow the 'launcher' in the firewall...")
+	logger.Println("Searching for 'server's, you might need to allow the 'launcher' in the firewall...")
 	server.QueryServers(multicastGroups, targetPorts, servers)
 	if len(servers) > 0 {
 		if procServers := processedServers(gameTitle, servers); len(procServers) > 0 {
 			var option int
 			for {
-				fmt.Println("Found the following 'server's:")
+				logger.Println("Found the following 'server's:")
 				for i := range procServers {
-					fmt.Printf("%d. %s\n", i+1, procServers[i].description)
+					logger.Printf("%d. %s\n", i+1, procServers[i].description)
 				}
-				fmt.Printf("Enter the number of the 'server' (1-%d): ", len(procServers))
+				logger.Printf("Enter the number of the 'server' (1-%d): ", len(procServers))
 				_, err := fmt.Scan(&option)
 				if err != nil || option < 1 || option > len(procServers) {
-					fmt.Println("Invalid (or error reading) option. Please enter a number from the list.")
+					logger.Println("Invalid (or error reading) option. Please enter a number from the list.")
 					continue
 				}
 				selectedServer := procServers[option-1]
@@ -114,7 +116,7 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, multicastGroups mapset
 }
 
 func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID) (errorCode int, ip string) {
-	fmt.Println("Starting 'server', authorize it in firewall if needed...")
+	logger.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -124,25 +126,25 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 	var result *commonExecutor.Result
 	var serverExe string
 	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, args, serverId, func(options commonExecutor.Options) {
-		LogPrintln("start server", options.String())
+		commonLogger.Println("start server", options.String())
 	})
 	if result.Success() {
-		fmt.Println("'Server' started.")
+		logger.Println("'Server' started.")
 		if stop {
 			c.serverExe = serverExe
 		}
 	} else {
-		fmt.Println("Could not start 'server'.")
+		logger.Println("Could not start 'server'.")
 		errorCode = internal.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
+				logger.Println("Error message: " + result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 		} else {
-			fmt.Println("Try running the 'server' manually.")
+			logger.Println("Try running the 'server' manually.")
 		}
 	}
 	return

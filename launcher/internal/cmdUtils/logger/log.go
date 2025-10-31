@@ -1,16 +1,15 @@
-package cmdUtils
+package logger
 
 import (
 	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
@@ -19,46 +18,27 @@ import (
 )
 
 var processesLog = []string{common.LauncherAgent, common.LauncherConfigAdminAgent}
-var logFile *os.File
 var allHosts []string
 
-func OpenFileLog(gameId string) error {
+func OpenMainFileLog(gameId string) error {
 	if viper.GetBool("Config.Log") {
-		t := time.Now()
-		var err error
-		logFile, err = os.OpenFile(
-			filepath.Join("logs", gameId, fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d.txt", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())),
-			os.O_CREATE|os.O_WRONLY,
-			0666,
-		)
+		err := commonLogger.NewOwnFileLogger("launcher", "", gameId, false)
 		if err != nil {
 			return err
 		}
-		log.SetOutput(logFile)
-		log.SetFlags(0)
 	}
 	return nil
 }
 
-func CloseFileLog() {
-	if viper.GetBool("Config.Log") && logFile != nil {
-		_ = logFile.Close()
-	}
-}
-
-func logPrefix(name string) {
-	log.SetPrefix("|" + strings.ToUpper(name) + "| ")
-}
-
 func WriteFileLog(gameId string, name string) {
-	if viper.GetBool("Config.Log") {
-		logPrefix(name)
+	if commonLogger.FileLogger != nil {
+		commonLogger.Prefix(name)
 		allHosts = common.AllHosts(gameId)
-		if err := writeLog(gameId, "Auxiliar processes Status", writeProcessesStatus); err != nil {
+		if err := writeLog(gameId, "Auxiliar processes status", writeProcessesStatus); err != nil {
 			log.Println(err)
 		}
 		if err := writeLog(gameId, "Relevant installed certificates", writeCertificateInfo); err != nil {
-			log.Println(err)
+			commonLogger.Println(err)
 		}
 		if err := writeLog(gameId, "Relevant host entries", writeHostInfo); err != nil {
 			log.Println(err)
@@ -72,25 +52,14 @@ func WriteFileLog(gameId string, name string) {
 	}
 }
 
-func LogPrintf(name string, format string, a ...any) {
-	if viper.GetBool("Config.Log") {
-		logPrefix(name)
-		log.Printf(format, a...)
-	}
+func Printf(format string, a ...any) {
+	commonLogger.PrefixPrintf("main", format, a...)
+	fmt.Printf(format, a...)
 }
 
-func LogPrint(name string, a ...any) {
-	if viper.GetBool("Config.Log") {
-		logPrefix(name)
-		log.Print(a...)
-	}
-}
-
-func LogPrintln(name string, a ...any) {
-	if viper.GetBool("Config.Log") {
-		logPrefix(name)
-		log.Println(a...)
-	}
+func Println(a ...any) {
+	commonLogger.PrefixPrintln("main", a...)
+	fmt.Println(a...)
 }
 
 func writeProcessesStatus(_ string) error {
@@ -103,7 +72,7 @@ func writeProcessesStatus(_ string) error {
 		} else {
 			str += "alive"
 		}
-		log.Println(str)
+		commonLogger.Println(str)
 	}
 	return nil
 }
@@ -123,12 +92,12 @@ func writeHostInfo(_ string) error {
 				hostsSet.Add(strings.ToLower(host))
 			}
 			if hostsSet.ContainsAnyElement(allHostsSet) {
-				log.Printf(line.String())
+				commonLogger.Printf(line.String())
 				addedSomeEntry = true
 			}
 		}
 		if !addedSomeEntry {
-			log.Println("No matchings.")
+			commonLogger.Println("No matchings.")
 		}
 	}
 	return nil
@@ -140,9 +109,9 @@ func writeRevertCommandArgs(_ string) error {
 		return fmt.Errorf("error reading revert command args: %w", err)
 	}
 	if len(flags) == 0 {
-		log.Println("No arguments.")
+		commonLogger.Println("No arguments.")
 	} else {
-		log.Println(strings.Join(flags, " "))
+		commonLogger.Println(strings.Join(flags, " "))
 	}
 	return nil
 }
@@ -153,9 +122,9 @@ func writeRevertConfigArgs(_ string) error {
 		return fmt.Errorf("error reading revert config args: %w", err)
 	}
 	if len(flags) == 0 {
-		log.Println("No arguments.")
+		commonLogger.Println("No arguments.")
 	} else {
-		log.Println(strings.Join(flags, " "))
+		commonLogger.Println(strings.Join(flags, " "))
 	}
 	return nil
 }
@@ -167,14 +136,14 @@ func writeCertificateInfo(_ string) error {
 	}
 	matchingCerts := filterMatchingCerts(certs, allHosts)
 	if len(matchingCerts) == 0 {
-		log.Println("No certificates.")
+		commonLogger.Println("No certificates.")
 	} else {
 		for _, crt := range matchingCerts {
 			dnsGames := "No DNS Names."
 			if len(crt.DNSNames) > 0 {
 				dnsGames = strings.Join(crt.DNSNames, ", ")
 			}
-			log.Printf("%s: %s\n", crt.Subject.CommonName, dnsGames)
+			commonLogger.Printf("%s: %s\n", crt.Subject.CommonName, dnsGames)
 		}
 	}
 	return nil
@@ -226,14 +195,10 @@ func filterMatchingCerts(certs []*x509.Certificate, hosts []string) []*x509.Cert
 	return matchingCerts
 }
 
-func writeSection(section string) {
-	log.Printf("# %s\n", section)
-}
-
-func writeLog(gameId string, name string, logger func(gameId string) error) error {
+func writeLog(gameId string, name string, log func(gameId string) error) error {
 	nameCaps := strings.ToUpper(name)
-	log.Printf("========== %s ==========\n", nameCaps)
-	err := logger(gameId)
+	commonLogger.Printf("========== %s ==========\n", nameCaps)
+	err := log(gameId)
 	if err != nil {
 		return fmt.Errorf("failed to write log content text: %v", err)
 	}

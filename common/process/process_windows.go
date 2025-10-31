@@ -3,10 +3,32 @@ package process
 import (
 	"os"
 	"slices"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
+
+func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
+	handle, err := windows.OpenProcess(windows.SYNCHRONIZE, true, uint32(proc.Pid))
+	if err != nil {
+		return false
+	}
+
+	defer func(handle windows.Handle) {
+		_ = windows.CloseHandle(handle)
+	}(handle)
+
+	var event uint32
+	var waitMilliseconds uint32
+	if duration == nil {
+		waitMilliseconds = windows.INFINITE
+	} else {
+		waitMilliseconds = uint32(duration.Milliseconds())
+	}
+	event, err = windows.WaitForSingleObject(handle, waitMilliseconds)
+	return err == nil && event == uint32(windows.WAIT_OBJECT_0)
+}
 
 func ProcessesPID(names []string) map[string]uint32 {
 	name := func(entry *windows.ProcessEntry32) string {

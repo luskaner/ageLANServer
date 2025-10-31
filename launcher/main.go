@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmd"
 	"github.com/spf13/cobra"
 )
@@ -9,6 +10,7 @@ import (
 const version = "development"
 
 func main() {
+	commonLogger.Initialize(nil)
 	cobra.MousetrapHelpText = ""
 	cmd.Version = version
 	common.ChdirToExe()

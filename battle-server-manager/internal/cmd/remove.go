@@ -3,12 +3,12 @@ package cmd
 import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
-	"fmt"
 	"os"
 	"slices"
 
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
 	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,23 +19,23 @@ var RemoveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		games, err := cmdUtils.ParsedGameIds(nil)
 		if err != nil {
-			fmt.Println(err.Error())
+			commonLogger.Println(err.Error())
 			os.Exit(internal.ErrGames)
 		}
 		region := viper.GetString("Region")
 		for gameId := range games.Iter() {
-			fmt.Printf("Game: %s\n", gameId)
-			fmt.Printf("\tRemoving '%s' region...\n", region)
+			commonLogger.Printf("Game: %s\n", gameId)
+			commonLogger.Printf("\tRemoving '%s' region...\n", region)
 			configs, err := battleServerConfig.Configs(gameId, false)
 			if err != nil {
-				fmt.Printf("\t%s\n", err)
+				commonLogger.Printf("\t%s\n", err)
 				continue
 			}
 			configs = slices.DeleteFunc(configs, func(c battleServerConfig.Config) bool {
 				return c.Region != region
 			})
 			if !cmdUtils.Remove(gameId, configs, false) {
-				fmt.Println("\tNo configuration needs it.")
+				commonLogger.Println("\tNo configuration needs it.")
 			}
 		}
 	},

@@ -1,6 +1,7 @@
 package launcher_common
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 
@@ -10,7 +11,7 @@ import (
 
 var RevertCommandStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_command_revert.txt"))
 
-func RunRevertCommand(optionsFn func(options exec.Options)) (err error) {
+func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err error) {
 	var args []string
 	var cmd []string
 	err, cmd = RevertCommandStore.Load()
@@ -28,6 +29,10 @@ func RunRevertCommand(optionsFn func(options exec.Options)) (err error) {
 	}
 	if optionsFn != nil {
 		optionsFn(options)
+	}
+	if out != nil {
+		options.Stdout = out
+		options.Stderr = out
 	}
 	result := options.Exec()
 	err = result.Err

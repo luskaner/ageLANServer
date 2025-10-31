@@ -5,6 +5,7 @@ const (
 	ErrGeneral
 	ErrSignal
 	ErrPidLock
+	ErrFileLog
 	// ErrLast is only used as a marker to where to start, not a real error
 	ErrLast
 )

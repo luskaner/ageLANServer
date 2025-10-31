@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/logger"
 )
 
 type Data struct {
@@ -48,6 +49,7 @@ func path(gameId string) string {
 }
 
 func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok bool) {
+	commonLogger.Printf("\tSwitching %s <-> %s\n", currentPath, backupPath)
 	if _, err := os.Stat(backupPath); err == nil {
 		return
 	}
@@ -70,6 +72,7 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 			info, err = os.Stat(newParent)
 			if err == nil {
 				mode = info.Mode()
+				commonLogger.Printf("\t\tCreating all path hierarchy: %s\n", absolutePath)
 				if err = os.MkdirAll(absolutePath, mode); err != nil {
 					return
 				}
@@ -85,6 +88,7 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 		return
 	}
 
+	commonLogger.Printf("\t\tRenaming/Moving %s to %s\n", absolutePath, backupPath)
 	if err := os.Rename(absolutePath, backupPath); err != nil {
 		return
 	}
@@ -99,6 +103,7 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 	}()
 
 	revertMethods = append(revertMethods, func() bool {
+		commonLogger.Printf("\t\tRenaming/Moving %s to %s\n", backupPath, absolutePath)
 		return os.Rename(backupPath, absolutePath) == nil
 	})
 
@@ -111,6 +116,7 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 				return
 			}
 		}
+		commonLogger.Printf("\t\tMaking directory %s\n", currentPath)
 		if err = os.Mkdir(currentPath, mode); err != nil {
 			return
 		}
@@ -118,6 +124,7 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 		return
 	}
 
+	commonLogger.Printf("\t\tRenaming/Moving %s to %s\n", currentPath, absolutePath)
 	if err := os.Rename(currentPath, absolutePath); err != nil {
 		return
 	}

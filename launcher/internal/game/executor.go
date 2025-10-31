@@ -47,6 +47,7 @@ func (exec CustomExecutor) execute(args []string, admin bool, optionsFn func(opt
 		options.AsAdmin = true
 	}
 	options.ShowWindow = true
+	options.GUI = true
 	optionsFn(options)
 	result = options.Exec()
 	return

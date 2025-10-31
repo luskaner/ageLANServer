@@ -17,6 +17,7 @@ var gamePath string
 var Version string
 var hostFilePath string
 var certFilePath string
+var logRoot string
 
 func Execute() error {
 	RootCmd.Version = Version
@@ -25,11 +26,11 @@ func Execute() error {
 	return RootCmd.Execute()
 }
 
-func addGamePathFlags(cmd *cobra.Command) {
+func addGamePathFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(
 		&gamePath,
 		"gamePath",
 		"",
-		"Path to the game folder. Required when using 'caStoreCert' and all except AoE I: DE..",
+		"Path to the game folder. Required when using 'caStoreCert' and all except AoE: DE.",
 	)
 }
