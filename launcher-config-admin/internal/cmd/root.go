@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 }
 
 var Version string
+var logRoot string
 
 func Execute() error {
 	rootCmd.Version = Version

@@ -13,7 +13,6 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable

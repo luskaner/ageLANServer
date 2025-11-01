@@ -3,7 +3,6 @@ package process
 import (
 	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -11,6 +10,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 )
+
+var waitDuration = 3 * time.Second
 
 func steamProcess(gameId string) string {
 	switch gameId {
@@ -87,30 +88,17 @@ func KillPidProc(pidPath string, proc *os.Process) (err error) {
 }
 
 func KillProc(proc *os.Process) (err error) {
+	if err = proc.Signal(os.Interrupt); err == nil && WaitForProcess(proc, &waitDuration) {
+		return
+	}
 	err = proc.Kill()
 	if err != nil {
 		return
 	}
-	done := make(chan error, 1)
-	go func() {
-		_, err = proc.Wait()
-		done <- err
-	}()
-
-	select {
-	case <-time.After(3 * time.Second):
+	if !WaitForProcess(proc, &waitDuration) {
 		err = errors.New("timeout")
-		return
-
-	case err = <-done:
-		if err != nil {
-			var e *exec.ExitError
-			if !errors.As(err, &e) {
-				return
-			}
-		}
-		return
 	}
+	return
 }
 
 func Kill(exe string) (proc *os.Process, err error) {

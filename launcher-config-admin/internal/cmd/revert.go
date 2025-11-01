@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"crypto/x509"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
@@ -16,12 +17,12 @@ import (
 )
 
 func trustCertificates(certificates []*x509.Certificate) bool {
-	fmt.Println("Adding previously removed local certificate")
+	commonLogger.Println("Adding previously removed local certificate")
 	if err := cert.TrustCertificates(false, certificates); err == nil {
-		fmt.Println("Successfully added local certificate")
+		commonLogger.Println("Successfully added local certificate")
 		return true
 	} else {
-		fmt.Println("Failed to add local certificate")
+		commonLogger.Println("Failed to add local certificate")
 		return false
 	}
 }
@@ -31,15 +32,19 @@ var revertCmd = &cobra.Command{
 	Short: "Reverts configuration",
 	Long:  "Removes one or more host mappings from the local DNS server and/or removes a certificate from the local machine's trusted root store",
 	Run: func(_ *cobra.Command, _ []string) {
+		internal.SetUp = false
+		if logRoot != "" {
+			internal.Initialize(logRoot)
+		}
 		if cmd.RemoveAll {
 			cmd.UnmapIPs = true
 			cmd.RemoveLocalCert = true
 		}
 		var removedCertificates []*x509.Certificate
 		if cmd.RemoveLocalCert {
-			fmt.Println("Removing local certificate")
+			commonLogger.Println("Removing local certificate")
 			if removedCertificates, err := cert.UntrustCertificates(false); err == nil {
-				fmt.Println("Successfully removed local certificate")
+				commonLogger.Println("Successfully removed local certificate")
 				sigs := make(chan os.Signal, 1)
 				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 				go func() {
@@ -50,16 +55,16 @@ var revertCmd = &cobra.Command{
 					}
 				}()
 			} else {
-				fmt.Println("Failed to remove local certificate")
+				commonLogger.Println("Failed to remove local certificate")
 				if !cmd.RemoveAll {
 					os.Exit(internal.ErrLocalCertRemove)
 				}
 			}
 		}
 		if cmd.UnmapIPs {
-			fmt.Println("Removing IP mappings")
+			commonLogger.Println("Removing IP mappings")
 			if err := hosts.RemoveHosts(); err == nil {
-				fmt.Println("Successfully removed IP mappings")
+				commonLogger.Println("Successfully removed IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapRemove
 				if !cmd.RemoveAll {
@@ -69,7 +74,7 @@ var revertCmd = &cobra.Command{
 						}
 					}
 				}
-				fmt.Println("Failed to remove IP mappings")
+				commonLogger.Println("Failed to remove IP mappings")
 				if !cmd.RemoveAll {
 					os.Exit(errorCode)
 				}
@@ -80,5 +85,6 @@ var revertCmd = &cobra.Command{
 
 func initRevert() {
 	cmd.InitRevert(revertCmd)
+	commonCmd.LogRootCommand(revertCmd.Flags(), &logRoot)
 	rootCmd.AddCommand(revertCmd)
 }

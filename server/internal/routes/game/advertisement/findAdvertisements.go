@@ -5,7 +5,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -33,7 +32,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 	}
 	game := models.G(r)
 	title := game.Title()
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	var battleServers *models.MainBattleServers
 	if len(lanRegions) == 0 {

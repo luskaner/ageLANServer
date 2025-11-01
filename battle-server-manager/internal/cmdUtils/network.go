@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+
+	"github.com/luskaner/ageLANServer/common/logger"
 )
 
 func GeneratePortsAsNeeded(ports []int) (generatedPorts []int, err error) {
@@ -15,7 +17,7 @@ func GeneratePortsAsNeeded(ports []int) (generatedPorts []int, err error) {
 	}
 	var finalPorts []int
 	if portsToGenerate > 0 {
-		fmt.Println("Generating ports...")
+		commonLogger.Println("Generating ports...")
 		generatedPorts, err = findUnusedPorts(portsToGenerate)
 		if err != nil {
 			return nil, err

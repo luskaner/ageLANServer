@@ -1,0 +1,16 @@
+{
+  "CurrentSeason": "UploaderPrototypeTestSeason",
+  "QuestPoolPath": "quest_pool.json",
+  "Seasons": [
+    {
+      "SeasonId": "UploaderPrototypeTestSeason",
+      "Path": "seasons/uploaderprototypetestseason.json"
+    }
+  ],
+  "Gauntlets": [
+    {
+      "LeaderboardVersion": 0,
+      "Path": "gauntlets/testgauntlet.json"
+    }
+  ]
+}

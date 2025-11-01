@@ -1,91 +1,24 @@
 package ip
 
 import (
-	"net"
+	"net/netip"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 )
 
-func ResolveAddrs(listenIP net.IP, multicastIP net.IP, targetPort int, broadcast bool, multicast bool) (sourceIPs []net.IP, targetAddrs []*net.UDPAddr) {
-	interfaces, err := net.Interfaces()
-
-	if err != nil {
-		return
-	}
-
-	var addrs []net.Addr
-	for _, i := range interfaces {
-
-		if i.Flags&net.FlagRunning == 0 {
-			continue
-		}
-
-		addrs, err = i.Addrs()
-		if err != nil {
-			return
-		}
-
-		for _, addr := range addrs {
-			var currentIP net.IP
-			v, ok := addr.(*net.IPNet)
-			if !ok {
-				continue
-			}
-
-			currentIP = v.IP
-			currentIPv4 := currentIP.To4()
-			if currentIPv4 == nil {
-				continue
-			}
-
-			if listenIP.IsUnspecified() || currentIPv4.Equal(listenIP) {
-				if broadcast {
-					sourceIPs = append(sourceIPs, currentIPv4)
-					if i.Flags&net.FlagBroadcast != 0 {
-						targetAddrs = append(targetAddrs, &net.UDPAddr{
-							IP:   common.CalculateBroadcastIp(currentIPv4, v.Mask),
-							Port: targetPort,
-						})
-					} else {
-						targetAddrs = append(targetAddrs, &net.UDPAddr{
-							IP:   currentIPv4,
-							Port: targetPort,
-						})
-					}
-				}
-
-				if multicast && i.Flags&net.FlagMulticast != 0 {
-					sourceIPs = append(sourceIPs, currentIPv4)
-					targetAddrs = append(
-						targetAddrs,
-						&net.UDPAddr{
-							IP:   multicastIP,
-							Port: targetPort,
-						},
-					)
-				}
+func ResolveHosts(hosts mapset.Set[string]) mapset.Set[netip.Addr] {
+	ipAddrs := mapset.NewThreadUnsafeSet[netip.Addr]()
+	for host := range hosts.Iter() {
+		ipAddr, err := netip.ParseAddr(host)
+		if err == nil && ipAddr.Is4() {
+			ipAddrs.Add(ipAddr)
+		} else if err != nil {
+			ips := common.HostOrIpToIpsSet(host)
+			for ip := range ips.Iter() {
+				ipAddrs.Add(netip.MustParseAddr(ip))
 			}
 		}
 	}
-	return
-}
-
-func ResolveHosts(hosts []string) []net.IP {
-	ipsSet := mapset.NewThreadUnsafeSet[string]()
-	for _, host := range hosts {
-		ip := net.ParseIP(host)
-		if ip == nil {
-			for _, resolvedIP := range common.HostToIps(host) {
-				ipsSet.Add(resolvedIP.String())
-			}
-		} else if ip.To4() != nil {
-			ipsSet.Add(ip.String())
-		}
-	}
-	var ips []net.IP
-	for _, ip := range ipsSet.ToSlice() {
-		ips = append(ips, net.ParseIP(ip))
-	}
-	return ips
+	return ipAddrs
 }

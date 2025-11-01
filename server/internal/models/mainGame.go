@@ -1,14 +1,7 @@
 package models
 
 import (
-	"fmt"
-	"os"
-
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
-	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/spf13/viper"
 )
 
 type MainGame struct {
@@ -29,34 +22,7 @@ func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServe
 		chatChannels:   &MainChatChannels{},
 		title:          gameId,
 	}
-	var battleServers []MainBattleServer
-	key := fmt.Sprintf("Games.%s.BattleServers", gameId)
-	if viper.IsSet(key) {
-		err := viper.UnmarshalKey(key, &battleServers)
-		if err != nil {
-			panic(err)
-		}
-	}
-	tmpBattleServer, err := battleServerConfig.Configs(gameId, true)
-	if err != nil {
-		panic(err)
-	}
-	for _, bs := range tmpBattleServer {
-		battleServers = append(battleServers, MainBattleServer{
-			BaseConfig: bs.BaseConfig,
-		})
-	}
-	if gameId == common.GameAoM && len(battleServers) == 0 {
-		fmt.Println("AoM: RT requires a Battle Server. You can start one with 'battle-server-manager'.")
-		os.Exit(internal.MissingBattleServer)
-	}
-	if len(battleServers) > 0 {
-		fmt.Printf("Battle Servers for %s:\n", gameId)
-	}
-	game.battleServers.Initialize(battleServers, battleServerHaveOobPort, battleServerName)
-	for _, bs := range game.battleServers.Iter() {
-		fmt.Println(bs.String())
-	}
+	game.battleServers.Initialize(BattleServers[gameId], battleServerHaveOobPort, battleServerName)
 	game.resources.Initialize(gameId, rssKeyedFilenames)
 	game.users.Initialize()
 	game.advertisements.Initialize(game.users, game.battleServers)

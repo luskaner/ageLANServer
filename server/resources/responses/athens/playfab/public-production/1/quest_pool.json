@@ -1,0 +1,216 @@
+{
+    "Daily":
+    [
+        {
+            "Type": "GatherResources",
+            "Title": "Gather {0} {1}",
+            "Description": "Gather {0} {1}",
+            "Goal": 5000,
+            "Reward": {
+                "Xp": 1000
+            },
+
+
+            "TypeSpecificData" :
+            {
+                "Resource": "Food"
+            }
+        },
+        {
+            "Type": "GatherResources",
+            "Title": "Lumberjack",
+            "Description": "Gather {0} {1}",
+            "Goal": 5000,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "Resource": "Wood"
+            }
+        },
+        {
+            "Type": "GatherResources",
+            "Title": "Gather {0} {1}",
+            "Description": "Gather {0} {1}",
+            "Goal": 5000,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "Resource": "Gold"
+            }
+        },
+        {
+            "Type": "GatherResources",
+            "Title": "Gather {0} {1}",
+            "Description": "Gather {0} {1}",
+            "Goal": 1000,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "Resource": "Favor"
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Win a match as the Greeks",
+            "Description": "Win a match as the Greeks",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Zeus",
+                    "Hades",
+                    "Poseidon"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Win a match as the Egyptians",
+            "Description": "Win a match as the Egyptians",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Ra",
+                    "Set",
+                    "Isis"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "To Valhalla!",
+            "Description": "Win a match as the Norse",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Thor",
+                    "Loki",
+                    "Odin"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Win a match as the Atlanteans",
+            "Description": "Win a match as the Atlanteans",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Oranos",
+                    "Kronos",
+                    "Gaia"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Ladies of the Deities",
+            "Description": "Win a match as Gaia or Isis",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Isis",
+                    "Gaia"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Masters of the Skies",
+            "Description": "Win a match as Zeus, Oranos, Thor or Ra",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Zeus",
+                    "Oranos",
+                    "Thor",
+                    "Ra"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Win a match as Hades, Loki, Kronos or Set",
+            "Description": "Win a match as Hades, Loki, Kronos or Set",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Hades",
+                    "Loki",
+                    "Kronos",
+                    "Set"
+                ]
+            }
+        },
+        {
+            "Type": "WinMatch",
+            "Title": "Win a match as Poseidon, Gaia, Isis or Odin",
+            "Description": "Win a match as Poseidon, Gaia, Isis or Odin",
+            "Goal": 1,
+            "Reward": {
+                "Xp": 1000
+            },
+
+            "TypeSpecificData":
+            {
+                "PlayerGod": 
+                [
+                    "Poseidon",
+                    "Gaia",
+                    "Isis",
+                    "Odin"
+                ]
+            }
+        }
+    ]
+}

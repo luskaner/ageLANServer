@@ -1,13 +1,16 @@
 package cmdUtils
 
 import (
-	"fmt"
+	"io"
 	"runtime"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
+	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
@@ -52,49 +55,60 @@ func (c *Config) RevertCommand() []string {
 }
 
 func (c *Config) Revert() {
+	logger.WriteFileLog(c.gameId, "pre-revert")
 	c.KillAgent()
 	if c.serverExe != "" {
-		fmt.Println("Stopping 'server'...")
-		if proc, err := commonProcess.Kill(c.serverExe); err == nil {
-			fmt.Println("'Server' stopped.")
+		logger.Println("Stopping 'server'...")
+		if err := serverKill.Do(c.serverExe); err == nil {
+			logger.Println("'Server' stopped.")
 		} else {
-			fmt.Println("Failed to stop 'server'.")
-			fmt.Println("Error message: " + err.Error())
-			if proc != nil {
-				fmt.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
-			}
+			logger.Println("Failed to stop 'server'.")
+			logger.Println("Error message: " + err.Error())
 		}
 	}
 	if c.battleServerRegion != "" && c.battleServerExe != "" {
-		fmt.Println("Stopping battle server via 'battle-server-manager'...")
-		if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion); result.Success() {
-			fmt.Println("Battle-server stopped (or was already).")
-		} else {
-			fmt.Println("Failed to stop the battle-server.")
-			if result.Err != nil {
-				fmt.Println("Error message: " + result.Err.Error())
+		logger.Println("Stopping battle server via 'battle-server-manager'...")
+		_ = commonLogger.FileLogger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
+			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options exec.Options) {
+				commonLogger.Println("battle-server-manager_remove", options.String())
+			}); result.Success() {
+				logger.Println("Battle-server stopped (or was already).")
+			} else {
+				logger.Println("Failed to stop the battle-server.")
+				if result.Err != nil {
+					logger.Println("Error message: " + result.Err.Error())
+				}
+				if result.ExitCode != common.ErrSuccess {
+					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				}
+				logger.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
 			}
-			if result.ExitCode != common.ErrSuccess {
-				fmt.Printf(`Exit code: %d.`+"\n", result.ExitCode)
-			}
-			fmt.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
-		}
+		})
 	}
 	if c.RequiresConfigRevert() {
-		fmt.Println("Cleaning up...")
-		if ok := launcherCommon.ConfigRevert(c.gameId, false, executor.RunRevert); !ok {
-			fmt.Println("Failed to clean up.")
-		}
+		logger.Println("Cleaning up...")
+		_ = commonLogger.FileLogger.Buffer("config_revert", func(writer io.Writer) {
+			if ok := launcherCommon.ConfigRevert(c.gameId, commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
+				commonLogger.Println("run config revert", options.String())
+			}, executor.RunRevert); !ok {
+				logger.Println("Failed to clean up.")
+			}
+		})
 	}
 	if c.RequiresRunningRevertCommand() {
-		err := executor.RunRevertCommand()
-		if err != nil {
-			fmt.Println("Failed to run revert command.")
-			fmt.Println("Error message: " + err.Error())
-		} else {
-			fmt.Println("Ran Revert command.")
-		}
+		_ = commonLogger.FileLogger.Buffer("revert_command", func(writer io.Writer) {
+			err := executor.RunRevertCommand(writer, func(options exec.Options) {
+				commonLogger.Println("run revert command", options.String())
+			})
+			if err != nil {
+				logger.Println("Failed to run revert command.")
+				logger.Println("Error message: " + err.Error())
+			} else {
+				logger.Println("Ran Revert command.")
+			}
+		})
 	}
+	logger.WriteFileLog(c.gameId, "post-revert")
 }
 
 func anyProcessExists(names []string) bool {
@@ -106,7 +120,7 @@ func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
 	for gameId := range common.AllGames.Iter() {
 		if anyProcessExists(commonProcess.GameProcesses(gameId, true, xbox)) {
-			fmt.Println("Some Age game is already running, exit the game and execute the 'launcher' again.")
+			logger.Println("Some Age game is already running, exit the game and execute the 'launcher' again.")
 			return true
 		}
 	}
@@ -118,14 +132,25 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 	if len(cmd) > 1 {
 		args = cmd[1:]
 	}
-	result = exec.Options{
+	options := exec.Options{
 		File:           cmd[0],
 		Wait:           true,
 		SpecialFile:    true,
 		Shell:          true,
 		UseWorkingPath: true,
 		Args:           args,
-	}.Exec()
+	}
+	if buffErr := commonLogger.FileLogger.Buffer("setup_command", func(writer io.Writer) {
+		commonLogger.Println("run setup command", options.String())
+		if writer != nil {
+			options.Stderr = writer
+			options.Stdout = writer
+		}
+		result = options.Exec()
+	}); buffErr != nil {
+		result.Err = buffErr
+		result.ExitCode = common.ErrFileLog
+	}
 	certStore.ReloadSystemCertificates()
 	common.ClearCache()
 	return
