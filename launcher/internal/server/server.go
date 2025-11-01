@@ -17,6 +17,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"golang.org/x/net/ipv4"
@@ -61,8 +62,8 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 				}
 			}
 		}
-		if pid, proc, err := commonProcess.Process(executablePath); err == nil {
-			if err = commonProcess.KillPidProc(pid, proc); err != nil {
+		if _, _, err := commonProcess.Process(executablePath); err == nil {
+			if err = serverKill.Do(executablePath); err != nil {
 				logger.Println("Failed to stop 'server'")
 				logger.Println("Error message: " + err.Error())
 				logger.Println("You may try killing it manually. Kill process 'server' in your task manager.")

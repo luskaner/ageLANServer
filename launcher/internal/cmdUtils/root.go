@@ -9,6 +9,7 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
@@ -58,14 +59,11 @@ func (c *Config) Revert() {
 	c.KillAgent()
 	if c.serverExe != "" {
 		logger.Println("Stopping 'server'...")
-		if proc, err := commonProcess.Kill(c.serverExe); err == nil {
+		if err := serverKill.Do(c.serverExe); err == nil {
 			logger.Println("'Server' stopped.")
 		} else {
 			logger.Println("Failed to stop 'server'.")
 			logger.Println("Error message: " + err.Error())
-			if proc != nil {
-				logger.Println("You may try killing it manually. Kill process 'server' if it is running in your task manager.")
-			}
 		}
 	}
 	if c.battleServerRegion != "" && c.battleServerExe != "" {

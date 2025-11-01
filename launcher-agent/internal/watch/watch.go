@@ -11,6 +11,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 
 var processWaitInterval = 1 * time.Second
@@ -32,7 +33,7 @@ func Watch(gameId string, logRoot string, steamProcess bool, xboxProcess bool, s
 	if serverExe != "-" {
 		defer func() {
 			commonLogger.Println("Killing server...")
-			if _, err := commonProcess.Kill(serverExe); err != nil {
+			if err := serverKill.Do(serverExe); err != nil {
 				commonLogger.Println("Failed to kill server.")
 				commonLogger.Println(err.Error())
 				if *exitCode == common.ErrSuccess {

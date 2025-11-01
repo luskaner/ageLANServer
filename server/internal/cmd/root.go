@@ -11,14 +11,12 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -142,8 +140,7 @@ var (
 			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			var servers []*http.Server
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+			internal.InitializeStopSignal()
 			for gameId := range gameSet.Iter() {
 				logger.Printf("Game %s:\n", gameId)
 				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
@@ -267,7 +264,7 @@ var (
 				}
 			}
 
-			<-stop
+			<-internal.StopSignal
 
 			logger.Println("'Servers' are shutting down...")
 
