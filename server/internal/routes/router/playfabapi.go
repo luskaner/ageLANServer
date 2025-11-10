@@ -3,6 +3,8 @@ package router
 import (
 	"net/http"
 
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Event"
@@ -17,6 +19,17 @@ type PlayfabApi struct {
 
 func (p *PlayfabApi) Name() string {
 	return "playfabapi"
+}
+
+func (p *PlayfabApi) Check(r *http.Request) bool {
+	if _, mainDomain, tld, err := internal.SplitDomain(r.Host); err == nil && tld == common.Tld && mainDomain == common.PlayFabDomain {
+		return true
+	}
+	return false
+}
+
+func (p *PlayfabApi) Initialize(gameId string) bool {
+	return gameId == common.GameAoM
 }
 
 func (p *PlayfabApi) InitializeRoutes(_ string, _ http.Handler) http.Handler {

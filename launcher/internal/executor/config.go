@@ -7,6 +7,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
@@ -15,7 +16,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
-func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, mapCDN bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, addLocalCertData []byte, addGameCertData []byte, backupMetadata bool, backupProfiles bool, exitAgentOnError bool, hostFilePath string, certFilePath string, gamePath string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	args := make([]string, 0)
@@ -57,10 +58,6 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	if backupProfiles {
 		args = append(args, "-p")
 	}
-	if mapCDN {
-		args = append(args, "-c")
-		reloadHostMappings = true
-	}
 	if hostFilePath != "" {
 		args = append(args, "-o")
 		args = append(args, hostFilePath)
@@ -76,7 +73,7 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
 		args = append(args, "--logRoot", logRoot)
 	}
-	options := exec.Options{File: common.GetExeFileName(false, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
+	options := exec.Options{File: executables.Filename(false, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	optionsFn(options)
 	if out != nil {
 		options.Stdout = out
@@ -98,7 +95,6 @@ func RunSetUp(game string, mapIps mapset.Set[string], addUserCertData []byte, ad
 			addGameCertData != nil,
 			backupMetadata,
 			backupProfiles,
-			mapCDN,
 			hostFilePath,
 			certFilePath,
 			gamePath,

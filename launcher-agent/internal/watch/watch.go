@@ -10,6 +10,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/gameLogs"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
@@ -119,5 +120,9 @@ func Watch(gameId string, logRoot string, steamProcess bool, xboxProcess bool, s
 	if !commonProcess.WaitForProcess(&os.Process{Pid: int(PID)}, nil) {
 		commonLogger.Println("Failed to wait.")
 		*exitCode = internal.ErrFailedWaitForProcess
+		return
+	}
+	if logRoot != "-" {
+		gameLogs.CopyGameLogs(gameId, logRoot)
 	}
 }

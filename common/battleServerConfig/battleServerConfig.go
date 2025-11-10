@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/process"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -35,7 +36,7 @@ type Config struct {
 }
 
 func ParseFileName(fileName string) (int, error) {
-	index := common.BaseNameNoExt(fileName)
+	index := executables.BaseNameNoExt(fileName)
 	return strconv.Atoi(index)
 }
 

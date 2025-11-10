@@ -5,20 +5,29 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
+	"github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/spf13/viper"
 )
 
-var processesLog = []string{common.LauncherAgent, common.LauncherConfigAdminAgent}
+var processesLog = []string{executables.LauncherAgent, executables.LauncherConfigAdminAgent}
 var allHosts []string
+var Cacert *cert.CA
+var dataTypeToString = map[int]string{
+	userData.TypeServer: "Own Backup",
+	userData.TypeBackup: "Original Backup",
+	userData.TypeActive: "Active",
+}
 
 func OpenMainFileLog(gameId string) error {
 	if viper.GetBool("Config.Log") {
@@ -37,8 +46,21 @@ func WriteFileLog(gameId string, name string) {
 		if err := writeLog(gameId, "Auxiliar processes status", writeProcessesStatus); err != nil {
 			log.Println(err)
 		}
-		if err := writeLog(gameId, "Relevant installed certificates", writeCertificateInfo); err != nil {
+		if err := writeLog(gameId, "Relevant installed certificates", writePcCertificateInfo); err != nil {
 			commonLogger.Println(err)
+		}
+		if Cacert != nil {
+			if err := writeLog(gameId, "Relevant game installed certificates", writeGameCertificateInfo); err != nil {
+				commonLogger.Println(err)
+			}
+		}
+		if gameId != common.GameAoE1 {
+			if err := writeLog(gameId, "Metadata folders", writeMetadataInfo); err != nil {
+				log.Println(err)
+			}
+		}
+		if err := writeLog(gameId, "Profile folders", writeProfilesInfo); err != nil {
+			log.Println(err)
 		}
 		if err := writeLog(gameId, "Relevant host entries", writeHostInfo); err != nil {
 			log.Println(err)
@@ -65,10 +87,12 @@ func Println(a ...any) {
 func writeProcessesStatus(_ string) error {
 	for _, processName := range processesLog {
 		str := processName + ": "
-		path := common.GetExeFileName(false, processName)
-		_, _, err := process.Process(path)
+		path := executables.Filename(false, processName)
+		_, proc, err := process.Process(path)
 		if err != nil {
-			str += "dead/unknown"
+			str += "unknown"
+		} else if proc == nil {
+			str += "dead"
 		} else {
 			str += "alive"
 		}
@@ -84,7 +108,6 @@ func writeHostInfo(_ string) error {
 		defer hosts.CloseFile(f)
 		addedSomeEntry := false
 		allHostsSet := mapset.NewThreadUnsafeSet[string](allHosts...)
-		allHostsSet.Add(launcherCommon.CDNDomain)
 		for _, line := range lines {
 			hsts := line.Hosts()
 			hostsSet := mapset.NewThreadUnsafeSet[string]()
@@ -129,11 +152,7 @@ func writeRevertConfigArgs(_ string) error {
 	return nil
 }
 
-func writeCertificateInfo(_ string) error {
-	certs, err := cert.EnumCertificates(true)
-	if err != nil {
-		return fmt.Errorf("failed to enumerate certificates: %v", err)
-	}
+func writeCertificateInfo(certs []*x509.Certificate) error {
 	matchingCerts := filterMatchingCerts(certs, allHosts)
 	if len(matchingCerts) == 0 {
 		commonLogger.Println("No certificates.")
@@ -147,6 +166,62 @@ func writeCertificateInfo(_ string) error {
 		}
 	}
 	return nil
+}
+
+func writeGameCertificateInfo(_ string) error {
+	files := []string{Cacert.TmpPath(), Cacert.BackupPath(), Cacert.OriginalPath()}
+	for _, file := range files {
+		str := filepath.Base(file) + ": "
+		_, _, certs, err := cert.ReadFromFile(file)
+		if err != nil {
+			commonLogger.Println(str + err.Error())
+			continue
+		}
+		commonLogger.Println(str)
+		if err := writeCertificateInfo(certs); err != nil {
+			commonLogger.Println(err.Error())
+		}
+	}
+	return nil
+}
+
+func writePcCertificateInfo(_ string) error {
+	certs, err := cert.EnumCertificates(true)
+	if err != nil {
+		return fmt.Errorf("failed to enumerate certificates: %v", err)
+	}
+	return writeCertificateInfo(certs)
+}
+
+func writeMetadataInfo(gameId string) error {
+	if err, metadatas := userData.Metadatas(gameId); err != nil {
+		return err
+	} else {
+		writeDataInfo(metadatas)
+		return nil
+	}
+}
+
+func writeProfilesInfo(gameId string) error {
+	if err, metadatas := userData.Profiles(gameId); err != nil {
+		return err
+	} else {
+		writeDataInfo(metadatas)
+		return nil
+	}
+}
+
+func writeDataInfo(datas mapset.Set[userData.Data]) {
+	counter := map[int]int{}
+	for typ := range dataTypeToString {
+		counter[typ] = 0
+	}
+	for data := range datas.Iter() {
+		counter[data.Type]++
+	}
+	for typ, count := range counter {
+		commonLogger.Printf("%s: %d\n", dataTypeToString[typ], count)
+	}
 }
 
 func matchPattern(pattern string, hosts []string) bool {

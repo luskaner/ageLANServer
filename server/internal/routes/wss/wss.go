@@ -2,15 +2,16 @@ package wss
 
 import (
 	"crypto/sha512"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -47,33 +48,52 @@ func (c *connectionWrapper) ReadJSON(v any) error {
 	}
 }
 
+func computeData(data []byte) *wss.Data {
+	var dataHash [64]byte
+	if len(data) > 0 {
+		dataHash = sha512.Sum512(data)
+	}
+	if len(data) > 4_096 {
+		data = []byte{}
+	}
+	return &wss.Data{
+		Body:     serverCommunication.Body{Body: data},
+		BodyHash: serverCommunication.BodyHash{BodyHash: dataHash},
+	}
+}
+
 func (c *connectionWrapper) logJSON(sender string, receiver string, data any) {
-	logger.LogMessage(
-		"wss",
-		slog.String("type", "json"),
-		slog.String("sender", sender),
-		slog.String("receiver", receiver),
-		slog.Any("data", data),
-	)
+	if logger.CommBuffer != nil {
+		dataMarshalled, _ := json.Marshal(data)
+		d := computeData(dataMarshalled)
+		msg := wss.NewWrite(
+			*d,
+			serverCommunication.Uptime{
+				Uptime: logger.Uptime(nil),
+			},
+			serverCommunication.Sender{Sender: sender},
+			receiver,
+		)
+		logger.CommBuffer.Log(&msg)
+	}
 }
 
 func (c *connectionWrapper) logControl(sender string, receiver string, messageType int, data []byte) {
-	bodyHash := ""
-	if len(data) > 0 {
-		hash := sha512.Sum512(data)
-		bodyHash = base64.StdEncoding.EncodeToString(hash[:])
+	if logger.CommBuffer != nil {
+		d := computeData(data)
+		msg := wss.NewWrite(
+			wss.Control{
+				Data:        *d,
+				MessageType: messageType,
+			},
+			serverCommunication.Uptime{
+				Uptime: logger.Uptime(nil),
+			},
+			serverCommunication.Sender{Sender: sender},
+			receiver,
+		)
+		logger.CommBuffer.Log(&msg)
 	}
-	logger.LogMessage(
-		"wss",
-		slog.String("type", "control"),
-		slog.String("sender", sender),
-		slog.String("receiver", receiver),
-		slog.Group("data",
-			slog.Int("messageType", messageType),
-			slog.String("body", base64.StdEncoding.EncodeToString(data)),
-			slog.String("body_hash", bodyHash),
-		),
-	)
 }
 
 func (c *connectionWrapper) WriteControl(messageType int, data []byte, deadline time.Time) error {
@@ -82,12 +102,17 @@ func (c *connectionWrapper) WriteControl(messageType int, data []byte, deadline 
 }
 
 func (c *connectionWrapper) logClose(sender string, receiver string) {
-	logger.LogMessage(
-		"wss",
-		slog.String("type", "disconnection"),
-		slog.String("sender", sender),
-		slog.String("receiver", receiver),
-	)
+	if logger.CommBuffer != nil {
+		msg := wss.NewWrite(
+			wss.Disconnection{},
+			serverCommunication.Uptime{
+				Uptime: logger.Uptime(nil),
+			},
+			serverCommunication.Sender{Sender: sender},
+			receiver,
+		)
+		logger.CommBuffer.Log(&msg)
+	}
 }
 
 func (c *connectionWrapper) Close() error {
@@ -164,15 +189,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		writeLock: &sync.Mutex{},
 		conn:      conn,
 	}
-	logger.LogMessage(
-		"wss",
-		slog.String("type", "connection"),
-		slog.String("receiver", connWrapper.LocalAddr()),
-		slog.String("sender", connWrapper.RemoteAddr()),
-		slog.Group("data",
-			slog.String("host", r.Host),
-		),
-	)
+	if logger.CommBuffer != nil {
+		msg := wss.NewWrite(
+			wss.Connection{},
+			serverCommunication.Uptime{
+				Uptime: logger.Uptime(nil),
+			},
+			serverCommunication.Sender{Sender: connWrapper.RemoteAddr()},
+			connWrapper.LocalAddr(),
+		)
+		logger.CommBuffer.Log(&msg)
+	}
 	connWrapper.conn.SetCloseHandler(func(code int, text string) error {
 		closeConn(connWrapper, code, text)
 		return nil

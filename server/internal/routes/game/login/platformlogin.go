@@ -2,7 +2,6 @@ package login
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -31,7 +30,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	var t2 int64
 	var t3 int64
-	i.WithRng(func(rand *rand.Rand) {
+	i.WithRng(func(rand *i.RandReader) {
 		t2 = t - rand.Int64N(3600*2-3600+1) + 3600
 		t3 = t - rand.Int64N(3600*2-3600+1) + 3600
 	})

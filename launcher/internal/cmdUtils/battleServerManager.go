@@ -7,6 +7,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal"
@@ -15,7 +16,7 @@ import (
 
 func (c *Config) RunBattleServerManager(executable string, args []string, stop bool) (errorCode int) {
 	if executable == "auto" {
-		executable = common.FindExecutablePath(common.GetExeFileName(true, "battle-server-manager"))
+		executable = executables.FindPath(executables.Filename(true, "battle-server-manager"))
 		if executable == "" {
 			logger.Println("Could not find 'battle-server-manager' executable")
 			return internal.ErrBattleServerManagerRun

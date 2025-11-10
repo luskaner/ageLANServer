@@ -64,12 +64,13 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	var pid int
 	for _, pidPath = range pidPaths {
 		var data []byte
-		data, err = os.ReadFile(pidPath)
-		if err != nil {
+		var localErr error
+		data, localErr = os.ReadFile(pidPath)
+		if localErr != nil {
 			continue
 		}
-		pid, err = strconv.Atoi(string(data))
-		if err != nil {
+		pid, localErr = strconv.Atoi(string(data))
+		if localErr != nil {
 			continue
 		}
 		proc, err = FindProcess(pid)
@@ -101,14 +102,14 @@ func KillProc(proc *os.Process) (err error) {
 	return
 }
 
-func Kill(exe string) (proc *os.Process, err error) {
-	var pidPath string
-	pidPath, proc, err = Process(exe)
+func Kill(exe string) error {
+	pidPath, proc, err := Process(exe)
 	if err != nil {
-		return
+		return err
+	} else if proc != nil {
+		return KillPidProc(pidPath, proc)
 	}
-	err = KillPidProc(pidPath, proc)
-	return
+	return nil
 }
 
 func GameProcesses(gameId string, steam bool, xbox bool) []string {

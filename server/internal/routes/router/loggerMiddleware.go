@@ -4,32 +4,16 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/sha512"
-	"encoding/base64"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 	"net/http"
-	"net/textproto"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/request"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 )
-
-var keepRequestHeaders = []string{
-	"host",
-	"content-type",
-	"content-length",
-	"transfer-encoding",
-	"connection",
-	"upgrade",
-	"proxy-connection",
-	"accept-encoding",
-	"sec-websocket-key",
-	"sec-websocket-version",
-	"authorization",
-	"x-entitytoken",
-}
 
 type ResponseWriterWrapper struct {
 	http.ResponseWriter
@@ -68,25 +52,8 @@ func (w *ResponseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, fmt.Errorf("ResponseWriter does not implement http.Hijacker")
 }
 
-func encodeBase64(body []byte) string {
-	return base64.StdEncoding.EncodeToString(body)
-}
-
-func filterHeaders(original http.Header) http.Header {
-	filtered := make(http.Header)
-	for _, key := range keepRequestHeaders {
-		canonicalKey := textproto.CanonicalMIMEHeaderKey(key)
-		values := original[canonicalKey]
-		if len(values) > 0 {
-			filtered[canonicalKey] = values
-		}
-	}
-	return filtered
-}
-
 func NewLoggingMiddleware(next http.Handler, t time.Time) http.Handler {
 	logger.StartTime = t
-	logger.SlogEnabled = true
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestStart := time.Now()
 		requestBody, _ := io.ReadAll(r.Body)
@@ -96,30 +63,41 @@ func NewLoggingMiddleware(next http.Handler, t time.Time) http.Handler {
 		next.ServeHTTP(wWrapper, r)
 		requestLatency := time.Since(requestStart)
 		responseBody := wWrapper.Body.Bytes()
-		requestGroup := slog.Group("in",
-			slog.String("host", r.Host),
-			slog.String("method", r.Method),
-			slog.String("path", r.RequestURI),
-			slog.String("remote_addr", r.RemoteAddr),
-			slog.Any("headers", filterHeaders(r.Header)),
-			slog.String("body", encodeBase64(requestBody)),
-		)
-		bodyHash := ""
-		if len(responseBody) > 0 {
-			hash := sha512.Sum512(responseBody)
-			bodyHash = encodeBase64(hash[:])
+		var hash [64]byte
+		if r.Method != http.MethodHead && len(responseBody) > 0 {
+			hash = sha512.Sum512(responseBody)
 		}
-		responseBodyStr := ""
-		if len(responseBody) <= 4_096 {
-			responseBodyStr = encodeBase64(responseBody)
+		if len(responseBody) > 4_096 {
+			responseBody = []byte{}
 		}
-		responseGroup := slog.Group("out",
-			slog.Int("status_code", wWrapper.StatusCode),
-			slog.Int64("latency", requestLatency.Milliseconds()),
-			slog.Any("headers", wWrapper.Header()),
-			slog.String("body", responseBodyStr),
-			slog.String("body_hash", bodyHash),
-		)
-		logger.LogMessage("request", requestGroup, responseGroup)
+		url := r.URL
+		if r.URL.Scheme == "" {
+			r.URL.Scheme = "https"
+		}
+		if r.URL.Host == "" {
+			r.URL.Host = r.Host
+		}
+		req := request.NewWrite(request.Read{
+			In: request.In{
+				Base: request.Base{
+					Body:    serverCommunication.Body{Body: requestBody},
+					Headers: r.Header,
+				},
+				Uptime: serverCommunication.Uptime{Uptime: logger.Uptime(&requestStart)},
+				Sender: serverCommunication.Sender{Sender: r.RemoteAddr},
+				Url:    url,
+				Method: r.Method,
+			},
+			Out: request.Out{
+				Base: request.Base{
+					Body:    serverCommunication.Body{Body: responseBody},
+					Headers: wWrapper.Header(),
+				},
+				BodyHash:   serverCommunication.BodyHash{BodyHash: hash},
+				StatusCode: wWrapper.StatusCode,
+				Latency:    requestLatency,
+			},
+		})
+		logger.CommBuffer.Log(req)
 	})
 }

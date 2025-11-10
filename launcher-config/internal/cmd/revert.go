@@ -9,12 +9,14 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
@@ -33,7 +35,7 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 
 func backupMetadata() bool {
 	commonLogger.Println("Backing up previously restored metadata")
-	if userData.Metadata(cmd.GameId).Backup(gameId) {
+	if userData.Metadata(cmd.GameId).Backup() {
 		commonLogger.Println("Successfully backed up metadata")
 		return true
 	} else {
@@ -134,7 +136,7 @@ var revertCmd = &cobra.Command{
 		}
 		if doRestoreMetadata {
 			commonLogger.Println("Restoring metadata")
-			if userData.Metadata(cmd.GameId).Restore(cmd.GameId) {
+			if userData.Metadata(cmd.GameId).Restore() {
 				commonLogger.Println("Successfully restored metadata")
 				restoredMetadata = true
 			} else {
@@ -175,7 +177,7 @@ var revertCmd = &cobra.Command{
 		}
 		var agentConnected bool
 		if cmd.RemoveLocalCert || cmd.UnmapIPs {
-			agentConnected = internal.ConnectAgentIfNeeded() == nil
+			agentConnected = admin.ConnectAgentIfNeeded() == nil
 			if agentConnected {
 				commonLogger.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
 			} else {
@@ -186,7 +188,7 @@ var revertCmd = &cobra.Command{
 				commonLogger.Println(str + "...")
 			}
 			var err error
-			err, errorCode = internal.RunRevert(logRoot, cmd.UnmapIPs, cmd.RemoveLocalCert, !cmd.RemoveAll)
+			err, errorCode = admin.RunRevert(logRoot, cmd.UnmapIPs, cmd.RemoveLocalCert, !cmd.RemoveAll)
 			if err == nil && errorCode == common.ErrSuccess {
 				if agentConnected {
 					commonLogger.Println("Successfully communicated with 'config-admin-agent'")
@@ -225,9 +227,9 @@ var revertCmd = &cobra.Command{
 			failedStopAgent := true
 			if agentConnected {
 				commonLogger.Println("Trying to stop 'config-admin-agent'.")
-				err := internal.StopAgentIfNeeded()
+				err := admin.StopAgentIfNeeded()
 				if err == nil {
-					if internal.ConnectAgentIfNeededWithRetries(false) {
+					if admin.ConnectAgentIfNeededWithRetries(false) {
 						commonLogger.Println("Stopped 'config-admin-agent'")
 						failedStopAgent = false
 					} else {
@@ -239,8 +241,8 @@ var revertCmd = &cobra.Command{
 				}
 			}
 			if failedStopAgent {
-				exeFileName := common.GetExeFileName(true, common.LauncherConfigAdminAgent)
-				if pid, proc, err := commonProcess.Process(exeFileName); err == nil {
+				exeFileName := executables.Filename(true, executables.LauncherConfigAdminAgent)
+				if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
 					if isAdmin {
 						if err := commonProcess.KillPidProc(pid, proc); err == nil {
 							commonLogger.Println("Successfully killed 'config-admin-agent'.")
@@ -251,7 +253,7 @@ var revertCmd = &cobra.Command{
 					} else {
 						commonLogger.Println("Re-run as administrator to kill 'config-admin-agent'")
 					}
-				} else {
+				} else if err == nil && proc == nil {
 					failedStopAgent = false
 				}
 			}

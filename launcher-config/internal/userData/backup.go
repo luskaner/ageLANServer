@@ -7,54 +7,35 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/logger"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 type Data struct {
 	Path string
 }
 
-const finalPathPrefix = "Games"
-
-func finalPath(gameId string) string {
-	var suffix string
-	switch gameId {
-	case common.GameAoE1:
-		suffix = filepath.Join(`Age of Empires DE`, `Users`)
-	case common.GameAoE2:
-		suffix = `Age of Empires 2 DE`
-	case common.GameAoE3:
-		suffix = `Age of Empires 3 DE`
-	case common.GameAoM:
-		suffix = `Age of Mythology Retold`
+func (d Data) isolatedPath() string {
+	if ok, transformedPath := commonUserData.TransformPath(d.Path, commonUserData.TypeActive, commonUserData.TypeServer); ok {
+		return transformedPath
 	}
-	return filepath.Join(finalPathPrefix, suffix)
+	return ""
 }
 
-func (d Data) isolatedPath(gameId string) string {
-	return d.absolutePath(gameId) + `.lan`
+func (d Data) originalPath() string {
+	if ok, transformedPath := commonUserData.TransformPath(d.Path, commonUserData.TypeActive, commonUserData.TypeBackup); ok {
+		return transformedPath
+	}
+	return ""
 }
 
-func (d Data) originalPath(gameId string) string {
-	return d.absolutePath(gameId) + `.bak`
-}
-
-func (d Data) absolutePath(gameId string) string {
-	return filepath.Join(path(gameId), d.Path)
-}
-
-func path(gameId string) string {
-	return filepath.Join(basePath(gameId), finalPath(gameId))
-}
-
-func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok bool) {
+func (d Data) switchPaths(backupPath string, currentPath string) (ok bool) {
 	commonLogger.Printf("\tSwitching %s <-> %s\n", currentPath, backupPath)
 	if _, err := os.Stat(backupPath); err == nil {
 		return
 	}
 
-	absolutePath := d.absolutePath(gameId)
+	absolutePath := d.Path
 	var mode os.FileMode
 
 	if _, err := os.Stat(absolutePath); errors.Is(err, fs.ErrNotExist) {
@@ -133,10 +114,10 @@ func (d Data) switchPaths(gameId, backupPath string, currentPath string) (ok boo
 	return true
 }
 
-func (d Data) Backup(gameId string) bool {
-	return d.switchPaths(gameId, d.originalPath(gameId), d.isolatedPath(gameId))
+func (d Data) Backup() bool {
+	return d.switchPaths(d.originalPath(), d.isolatedPath())
 }
 
-func (d Data) Restore(gameId string) bool {
-	return d.switchPaths(gameId, d.isolatedPath(gameId), d.originalPath(gameId))
+func (d Data) Restore() bool {
+	return d.switchPaths(d.isolatedPath(), d.originalPath())
 }

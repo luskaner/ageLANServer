@@ -24,7 +24,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 		logger.Println("Backing up " + strings.Join(isolateItems, " and ") + ".")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_isolate", func(writer io.Writer) {
-			if result := executor.RunSetUp(c.gameId, nil, nil, nil, nil, metadata, profiles, false, false, "", "", "", writer, func(options exec.Options) {
+			if result := executor.RunSetUp(c.gameId, nil, nil, nil, nil, metadata, profiles, false, "", "", "", writer, func(options exec.Options) {
 				commonLogger.Println("run config setup for data isolation", options.String())
 			}); !result.Success() {
 				isolateMsg := "Failed to backup "

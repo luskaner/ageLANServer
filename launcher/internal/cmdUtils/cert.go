@@ -91,7 +91,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	logger.Println(certMsg)
 	var err error
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
-		if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, false, "", c.certFilePath, "", writer, func(options exec.Options) {
+		if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, "", c.certFilePath, "", writer, func(options exec.Options) {
 			commonLogger.Println("run config setup for CA store cert", options.String())
 		}); !result.Success() {
 			if customCertFile {

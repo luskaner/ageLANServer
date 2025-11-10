@@ -287,7 +287,9 @@ play.
   game.
 - (Optional) Modify the hosts file to:
     - Redirect the game's API requests to the LAN server.
-    - Redirect the game CDN so it does not detect the official game status.
+    - Proxy certain requests:
+        - CDN so it does not detect the official game status.
+        - Chat and user names show properly.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
 - (except AoE I) Add a certificate to the game's store to allow the game to connect to the LAN server.
 - (Optional) Run custom configuration commands to setup/revert the configuration.
@@ -313,17 +315,22 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    `Client.Path` to point to the game's directory.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. If you are using AoM and don't have AoE II: DE installed on Steam edit the `battle-server-manager/resources/config.athens.toml` file and point `Executable.Path` to the AoE II: DE BattleServer.exe executable (it's portable), for example, 'S:\SteamLibrary\steamapps\common\AoE2DE\BattleServer\BattleServer.exe'.
+6. If you are using AoM and don't have AoE II: DE installed on Steam edit the
+   `battle-server-manager/resources/config.athens.toml` file and point `Executable.Path` to the AoE II: DE
+   BattleServer.exe executable (it's portable), for example, 'S:
+   \SteamLibrary\steamapps\common\AoE2DE\BattleServer\BattleServer.exe'.
 7. **Execute `launcher/start_<game_title>` script**: you will be asked for admin elevation and
    confirmation of other dialogs as needed, you will also need to allow the connections via the Microsoft Defender
    Firewall or any other.
-8. **Repeat the above steps for every PC** (except the point 6) you want to play in LAN with by running the *launcher*, the first PC to
+8. **Repeat the above steps for every PC** (except the point 6) you want to play in LAN with by running the *launcher*,
+   the first PC to
    launch it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
 9. In the game, just host a new lobby via the Multiplayer section. Setting it to public visibility is recommended.
-10. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by name
-   and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
-   works if already
-   in-game).
+10. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by
+    name
+    and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
+    works if already
+    in-game).
 
 ## Standalone execution
 

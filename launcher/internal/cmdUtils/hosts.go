@@ -1,20 +1,16 @@
 package cmdUtils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"path/filepath"
-	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher/internal"
@@ -23,79 +19,10 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
-const timeLayout = "2006-01-02 15:04:05"
-
-func requiresMapCDN(gameId string) bool {
-	client := http.Client{Timeout: 3 * time.Second}
-	var prefix string
-	if gameId == common.GameAoM {
-		prefix = "athens"
-	} else {
-		prefix = "rl"
-	}
-	resp, err := client.Get(
-		fmt.Sprintf("https://%s/aoe/%s-server-status.json", prefix, launcherCommon.CDNDomain),
-	)
-	if err != nil {
-		return false
-	}
-	if resp.StatusCode != http.StatusOK {
-		return false
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
-	var body []byte
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return false
-	}
-	var result map[string]interface{}
-	if err = json.Unmarshal(body, &result); err != nil {
-		return false
-	}
-	var ok bool
-	var startTime string
-	if startTime, ok = result["start-time"].(string); !ok {
-		return false
-	}
-	var endTime string
-	if endTime, ok = result["end-time"].(string); !ok {
-		return false
-	}
-	var startTimeParsed time.Time
-	if startTimeParsed, err = time.Parse(timeLayout, startTime); err != nil {
-		return false
-	}
-	var endTimeParsed time.Time
-	if endTimeParsed, err = time.Parse(timeLayout, endTime); err != nil {
-		return false
-	}
-	if endTimeParsed.Before(startTimeParsed) {
-		return false
-	}
-	now := time.Now().UTC()
-	if now.After(startTimeParsed) && now.Before(endTimeParsed) {
-		return true
-	}
-	// Check time window is within 8 hours of now
-	upperLimit := now.Add(8 * time.Hour)
-	return (startTimeParsed.Before(upperLimit) && startTimeParsed.After(now)) || (endTimeParsed.Before(upperLimit) && endTimeParsed.After(now)) || (startTimeParsed.Before(now) && endTimeParsed.After(upperLimit))
-}
-
 func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (errorCode int) {
-	var mapCDN bool
 	var mapIP bool
 	ips := mapset.NewThreadUnsafeSet[string]()
 	if !customHostFile {
-		if requiresMapCDN(gameId) {
-			if !canMap {
-				logger.Println("canAddHost is false but CDN is required to be mapped. You should have added the", launcherCommon.CDNIP, "mapping to", launcherCommon.CDNDomain, "in the hosts file (or just set canAddHost to true).")
-				errorCode = internal.ErrConfigCDNMap
-				return
-			}
-			mapCDN = true
-		}
 		for _, domain := range common.AllHosts(gameId) {
 			if !common.Matches(ip, domain) {
 				if !canMap {
@@ -117,7 +44,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 	if mapIP {
 		ips.Add(ip)
 	}
-	if !ips.IsEmpty() || mapCDN {
+	if !ips.IsEmpty() {
 		var str string
 		if customHostFile {
 			hostFile, err := hosts.CreateTemp()
@@ -138,7 +65,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 		logger.Println(str + "...")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
-			if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, mapCDN, true, c.hostFilePath, "", "", writer, func(options exec.Options) {
+			if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, true, c.hostFilePath, "", "", writer, func(options exec.Options) {
 				commonLogger.Println("run config setup for hosts", options.String())
 			}); !result.Success() {
 				logger.Println("Failed to add hosts.")
@@ -150,7 +77,6 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 				}
 				errorCode = internal.ErrConfigIpMapAdd
 			} else if customHostFile {
-				cmd.MapCDN = true
 				if parsedIP := net.ParseIP(ip); parsedIP != nil {
 					cmd.MapIP = parsedIP
 				}

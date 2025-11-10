@@ -1,15 +1,54 @@
 package logger
 
 import (
-	"log/slog"
+	"bufio"
+	"encoding/json"
+	"os"
+	"sync"
 	"time"
 )
 
-func LogMessage(name string, args ...any) {
-	if SlogEnabled {
-		serverUptime := time.Since(StartTime)
-		allArgs := []any{slog.Int64("uptime", serverUptime.Milliseconds())}
-		allArgs = append(allArgs, args...)
-		slog.Info(name, allArgs...)
+type Buffer struct {
+	f        *os.File
+	buff     *bufio.Writer
+	buffLock sync.Mutex
+	enc      *json.Encoder
+}
+
+func (b *Buffer) Close() error {
+	b.buffLock.Lock()
+	defer b.buffLock.Unlock()
+	if err := b.buff.Flush(); err != nil {
+		return err
 	}
+	return b.f.Close()
+}
+
+func (b *Buffer) Log(value any) {
+	if b == nil {
+		return
+	}
+	b.buffLock.Lock()
+	defer b.buffLock.Unlock()
+	_ = b.enc.Encode(value)
+}
+
+func NewBuffer(f *os.File) *Buffer {
+	buff := bufio.NewWriter(f)
+	CommBuffer = &Buffer{
+		f:    f,
+		buff: buff,
+		enc:  json.NewEncoder(buff),
+	}
+	return CommBuffer
+}
+
+var CommBuffer *Buffer
+
+func Uptime(startTime *time.Time) time.Duration {
+	if startTime == nil {
+		t := time.Now()
+		startTime = &t
+	}
+	return startTime.Sub(StartTime)
 }

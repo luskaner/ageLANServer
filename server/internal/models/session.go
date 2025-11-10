@@ -1,7 +1,6 @@
 package models
 
 import (
-	"math/rand/v2"
 	"net/http"
 	"sync"
 	"time"
@@ -28,7 +27,7 @@ var (
 
 func generateSessionId() string {
 	sessionId := make([]rune, 30)
-	internal.WithRng(func(rand *rand.Rand) {
+	internal.WithRng(func(rand *internal.RandReader) {
 		for i := range sessionId {
 			sessionId[i] = sessionLetters[rand.IntN(len(sessionLetters))]
 		}
@@ -98,24 +97,24 @@ func (sess *Session) ResetExpiryTimer() {
 }
 
 func CreateSession(gameId string, userId int32, clientLibVersion uint16) string {
-	session := &Session{
+	sess := &Session{
 		userId:           userId,
 		gameId:           gameId,
 		clientLibVersion: clientLibVersion,
 		messageChan:      make(chan internal.A, 100),
 	}
 	defer func() {
-		session.expiryTimer = time.AfterFunc(sessionDuration, func() {
-			session.Delete()
+		sess.expiryTimer = time.AfterFunc(sessionDuration, func() {
+			sess.Delete()
 		})
 	}()
 	for exists := true; exists; {
-		session.id = generateSessionId()
-		_, exists = sessionStore.Store(session.id, session, func(_ *Session) bool {
+		sess.id = generateSessionId()
+		_, exists = sessionStore.Store(sess.id, sess, func(_ *Session) bool {
 			return false
 		})
 	}
-	return session.id
+	return sess.id
 }
 
 func GetSessionById(sessionId string) (*Session, bool) {

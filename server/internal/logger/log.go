@@ -9,7 +9,6 @@ import (
 )
 
 var StartTime time.Time
-var SlogEnabled bool
 
 func OpenMainFileLog(root string) error {
 	if viper.GetBool("Config.Log") {

@@ -4,7 +4,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
@@ -29,7 +29,7 @@ func StartAgent(game string, steamProcess bool, xboxProcess bool, serverExe stri
 		battleServerRegion,
 		logRoot,
 	}
-	options := exec.Options{File: common.GetExeFileName(false, common.LauncherAgent), Pid: true, Args: args}
+	options := exec.Options{File: executables.Filename(false, executables.LauncherAgent), Pid: true, Args: args}
 	optionsFn(options)
 	if out != nil {
 		options.Stdout = out

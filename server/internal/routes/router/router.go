@@ -1,6 +1,8 @@
 package router
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Group struct {
 	parent *Group
@@ -44,6 +46,14 @@ func (r *Router) initialize() {
 		path: "",
 		mux:  http.NewServeMux(),
 	}
+}
+
+func (r *Router) Check(_ *http.Request) bool {
+	return true
+}
+
+func (r *Router) Initialize(_ string) bool {
+	return true
 }
 
 type Initializer interface {

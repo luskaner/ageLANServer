@@ -18,7 +18,7 @@ CanBroadcastBattleServer = 'auto'
 # Linux Note: Only supported when not using a custom launcher.
 IsolateMetadata = true
 # (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
+# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
 # Linux Note: Only supported when not using a custom launcher.
 IsolateProfiles = false
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
@@ -37,7 +37,7 @@ Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
 # {Id} will be replaced by a random unique server id (UUID v4).
-# When 'Config.Log' is true '-l', '--flatLog' and '--logRoot' arguments will be passed.
+# When 'Config.Log' is true '-l', '--flatLog', '--logRoot' and '--deterministic' arguments will be passed.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = ['-e', '{Game}', '--id', '{Id}']

@@ -15,6 +15,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
@@ -62,7 +63,7 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 				}
 			}
 		}
-		if _, _, err := commonProcess.Process(executablePath); err == nil {
+		if _, proc, err := commonProcess.Process(executablePath); err == nil && proc != nil {
 			if err = serverKill.Do(executablePath); err != nil {
 				logger.Println("Failed to stop 'server'")
 				logger.Println("Error message: " + err.Error())
@@ -105,7 +106,7 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 
 func GetExecutablePath(executable string) string {
 	if executable == "auto" {
-		return common.FindExecutablePath(common.GetExeFileName(true, common.Server))
+		return executables.FindPath(executables.Filename(true, executables.Server))
 	}
 	return executable
 }

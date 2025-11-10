@@ -235,11 +235,11 @@ func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i
 
 func (u *MainUser) GetProfileInfo(includePresence bool, gameId string, clientLibVersion uint16) i.A {
 	var randomTimeDiff int64
-	i.WithRng(func(rand *rand.Rand) {
+	i.WithRng(func(rand *i.RandReader) {
 		randomTimeDiff = rand.Int64N(300-50+1) + 50
 	})
 	profileInfo := i.A{
-		time.Now().UTC().Unix() - randomTimeDiff,
+		time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix() - randomTimeDiff,
 		u.GetId(),
 		u.GetPlatformPath(),
 		u.GetProfileMetadata(),

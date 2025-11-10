@@ -16,7 +16,7 @@ func (c *Config) AddCACertToGame(gameId string, cert *x509.Certificate, gamePath
 	logger.Println("Adding CA certificate to game...")
 	var err error
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_game", func(writer io.Writer) {
-		if result := executor.RunSetUp(gameId, nil, nil, nil, cert.Raw, false, false, false, false, "", "", gamePath, writer, func(options exec.Options) {
+		if result := executor.RunSetUp(gameId, nil, nil, nil, cert.Raw, false, false, false, "", "", gamePath, writer, func(options exec.Options) {
 			commonLogger.Println("run config setup for CA game cert", options.String())
 		}); !result.Success() {
 			logger.Println("Failed to save CA certificate to game")

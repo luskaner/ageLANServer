@@ -20,17 +20,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/game"
+	gameExecutor "github.com/luskaner/ageLANServer/launcher/internal/game/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -227,21 +229,21 @@ var (
 
 			logger.Println("Looking for the game...")
 			var gamePath string
-			executer := game.MakeExecutor(gameId, clientExecutable)
-			var customExecutor game.CustomExecutor
+			executer := gameExecutor.MakeExec(gameId, clientExecutable)
+			var customExecutor gameExecutor.CustomExec
 			switch executer.(type) {
-			case game.SteamExecutor:
+			case gameExecutor.SteamExec:
 				logger.Println("Game found on Steam.")
 				if gameId != common.GameAoE1 {
-					gamePath = executer.(game.SteamExecutor).GamePath()
+					gamePath = executer.(gameExecutor.SteamExec).GamePath()
 				}
-			case game.XboxExecutor:
+			case gameExecutor.XboxExec:
 				logger.Println("Game found on Xbox.")
 				if gameId != common.GameAoE1 {
-					gamePath = executer.(game.XboxExecutor).GamePath()
+					gamePath = executer.(gameExecutor.XboxExec).GamePath()
 				}
-			case game.CustomExecutor:
-				customExecutor = executer.(game.CustomExecutor)
+			case gameExecutor.CustomExec:
+				customExecutor = executer.(gameExecutor.CustomExec)
 				logger.Println("Game found on custom path.")
 				if runtime.GOOS == "linux" {
 					if isolateMetadata {
@@ -266,6 +268,10 @@ var (
 				logger.Println("Game not found.")
 				errorCode = internal.ErrGameLauncherNotFound
 				return
+			}
+			if gamePath != "" && commonLogger.FileLogger != nil {
+				caCert := cert.NewCA(gameId, gamePath)
+				logger.Cacert = &caCert
 			}
 
 			if isAdmin {
@@ -315,7 +321,7 @@ var (
 				return
 			}
 			var proc *os.Process
-			_, proc, err = commonProcess.Process(common.GetExeFileName(false, common.Server))
+			_, proc, err = commonProcess.Process(executables.Filename(false, executables.Server))
 			if err == nil && proc != nil {
 				logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 			}
@@ -431,6 +437,9 @@ var (
 					if !slices.Contains(serverArgs, "--flatLog") {
 						serverArgs = append(serverArgs, "--flatLog")
 					}
+					if !slices.Contains(serverArgs, "--deterministic") {
+						serverArgs = append(serverArgs, "--deterministic")
+					}
 				}
 				if gameId == common.GameAoM && battleServerManagerRun == "false" {
 					logger.Println("AoM: RT needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
@@ -544,8 +553,8 @@ func Execute() error {
 	rootCmd.Flags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
 	rootCmd.Flags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
 	rootCmd.Flags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
-	serverExe := common.GetExeFileName(false, common.Server)
-	rootCmd.Flags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, common.Server, serverExe, serverExe, common.Server, serverExe))
+	serverExe := executables.Filename(false, executables.Server)
+	rootCmd.Flags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
 	rootCmd.Flags().StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
 	if runtime.GOOS == "windows" {

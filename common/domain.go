@@ -18,14 +18,16 @@ const WorldsEdgeMainDomain = "worldsedge" + linkMainDomainSuffix
 const worldsEdge = "." + WorldsEdgeMainDomain
 const apiWorldsEdge = ApiSubdomainSuffix + worldsEdge + dotTld
 const PlayFabDomain = "playfabapi"
-const ApiAgeOfEmpiresDomain = "ageofempires"
+const AgeOfEmpires = "ageofempires"
 const ApiAgeOfEmpiresSubdomain = "api"
-const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + ApiAgeOfEmpiresDomain + dotTld
+const CdnAgeOfEmpiresSubdomain = "cdn"
+const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
+const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
 const SubDomainReleasePart = "-live-release"
 
-var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, ApiAgeOfEmpires}
+var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + AgeOfEmpires + dotTld}
 
 var hostsCache = make(map[string][]string)
 
@@ -49,6 +51,7 @@ func AllHosts(gameId string) (domains []string) {
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
 	}
+	domains = append(domains, CdnAgeOfEmpires)
 	if gameId == GameAoE3 {
 		domains = append(domains, ApiAgeOfEmpires)
 	}

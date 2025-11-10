@@ -92,7 +92,7 @@ func main() {
 			})
 			if serverExe != "-" {
 				commonLogger.Println("Killing server...")
-				if _, err := commonProcess.Kill(serverExe); err != nil {
+				if err := commonProcess.Kill(serverExe); err != nil {
 					commonLogger.Printf("Failed to kill server: %v\n", serverExe)
 				}
 				if battleServerExe != "-" && battleServerRegion != "-" {

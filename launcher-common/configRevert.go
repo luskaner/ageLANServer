@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
@@ -16,7 +17,7 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, unmapCDN bool, hostFilePath string, certFilePath string, gamePath string, logRoot string, stopAgent bool, failfast bool) []string {
+func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, hostFilePath string, certFilePath string, gamePath string, logRoot string, stopAgent bool, failfast bool) []string {
 	args := make([]string, 0)
 	if game != "" {
 		args = append(args, "-e")
@@ -45,9 +46,6 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 		}
 		if restoreGameCert {
 			args = append(args, "-s")
-		}
-		if unmapCDN {
-			args = append(args, "-c")
 		}
 	}
 	if gamePath != "" {
@@ -86,7 +84,7 @@ func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, o
 				revertLine += "all possible "
 			}
 			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, true, "", "", "", logRoot, stopAgent, false)
+			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true /*true,*/, "", "", "", logRoot, stopAgent, false)
 		} else if !headless && slices.Contains(revertFlags, "-g") {
 			stopAgent = true
 		}
@@ -125,7 +123,7 @@ func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, o
 }
 
 func ConfigAdminAgentRunning(bin bool) bool {
-	if _, proc, err := commonProcess.Process(common.GetExeFileName(bin, common.LauncherConfigAdminAgent)); err == nil && proc != nil {
+	if _, proc, err := commonProcess.Process(executables.Filename(bin, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
 		return true
 	}
 	return false
@@ -157,7 +155,7 @@ func RequiresStopConfigAgent(args []string) bool {
 func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
-	options := exec.Options{File: common.GetExeFileName(bin, common.LauncherConfig), Wait: true, Args: args, ExitCode: true}
+	options := exec.Options{File: executables.Filename(bin, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	if optionsFn != nil {
 		optionsFn(options)
 	}

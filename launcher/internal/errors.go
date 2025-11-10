@@ -37,7 +37,6 @@ const (
 	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
 	ErrSetupCommand
-	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch

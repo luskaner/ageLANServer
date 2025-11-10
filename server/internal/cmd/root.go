@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"net/netip"
@@ -40,6 +39,7 @@ var configPaths = []string{path.Join("resources", "config"), "."}
 var id string
 var logRoot string
 var flatLog bool
+var deterministic bool
 
 var (
 	Version string
@@ -57,9 +57,6 @@ var (
 				os.Exit(common.ErrPidLock)
 			}
 			commonLogger.Initialize(nil)
-			if id == "" {
-				id = uuid.NewString()
-			}
 			if logRoot == "" {
 				logRoot = commonLogger.LogRootDate("")
 			}
@@ -68,11 +65,14 @@ var (
 				os.Exit(common.ErrFileLog)
 			}
 			var seed uint64
-			if commonLogger.FileLogger == nil {
+			if !deterministic {
 				seed = uint64(time.Now().UnixNano())
 			}
 			internal.InitializeRng(seed)
-			var files []*os.File
+			if id == "" {
+				id = uuid.NewString()
+			}
+			var closables []io.Closer
 			defer func() {
 				if r := recover(); r != nil {
 					logger.Println(r)
@@ -80,7 +80,7 @@ var (
 					exitCode = common.ErrGeneral
 				}
 				commonLogger.CloseFileLog()
-				for _, file := range files {
+				for _, file := range closables {
 					_ = file.Close()
 				}
 				_ = lock.Unlock()
@@ -181,7 +181,7 @@ var (
 					exitCode = internal.ErrCreateLogFile
 					return
 				} else {
-					files = append(files, f)
+					closables = append(closables, f)
 					writer = f
 				}
 				internal.AnnounceMessageData[gameId] = internal.AnnounceMessageDataLatest{
@@ -196,20 +196,7 @@ var (
 						logger.Printf("\tFailed to open communication log file: %v\n", err)
 						exitCode = internal.ErrCreateLogFile
 					} else {
-						files = append(files, f)
-						opts := &slog.HandlerOptions{
-							ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-								if len(groups) == 0 {
-									switch a.Key {
-									case slog.TimeKey, slog.LevelKey:
-										return slog.Attr{}
-									}
-								}
-								return a
-							},
-						}
-						handler := slog.NewJSONHandler(f, opts)
-						slog.SetDefault(slog.New(handler))
+						closables = append(closables, logger.NewBuffer(f))
 						mux = router.NewLoggingMiddleware(mux, time.Now().UTC())
 					}
 				}
@@ -298,6 +285,7 @@ func Execute() error {
 	rootCmd.Flags().StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Whether to announce the 'server' using Multicast or Broadcast.")
 	rootCmd.Flags().Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
 	rootCmd.Flags().BoolVar(&flatLog, "flatLog", false, "Whether to log in a flat structure in --logRoot. Only applicable if --log is passed.")
+	rootCmd.Flags().BoolVar(&deterministic, "deterministic", false, "Whether to be as deterministic as possible.")
 	cmd.GamesCommand(rootCmd.Flags())
 	cmd.LogRootCommand(rootCmd.Flags(), &logRoot)
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")

@@ -32,6 +32,8 @@ func Do(path string) error {
 	}
 	pid, proc, err := process.Process(path)
 	if err != nil {
+		return err
+	} else if proc == nil {
 		return nil
 	}
 	wait := 2 * time.Second

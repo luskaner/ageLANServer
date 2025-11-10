@@ -10,6 +10,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
@@ -18,6 +19,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
 	"github.com/spf13/cobra"
@@ -36,7 +38,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	commonLogger.Println("Restoring previously backed up metadata")
-	if userData.Metadata(cmd.GameId).Restore(cmd.GameId) {
+	if userData.Metadata(cmd.GameId).Restore() {
 		commonLogger.Println("Successfully restored metadata")
 		return true
 	} else {
@@ -160,7 +162,7 @@ var setUpCmd = &cobra.Command{
 		}
 		if doBackupMetadata {
 			commonLogger.Println("Backing up metadata")
-			if userData.Metadata(cmd.GameId).Backup(cmd.GameId) {
+			if userData.Metadata(cmd.GameId).Backup() {
 				commonLogger.Println("Successfully backed up metadata")
 				backedUpMetadata = true
 			} else {
@@ -217,17 +219,14 @@ var setUpCmd = &cobra.Command{
 			if len(cmd.MapIP) > 0 {
 				ipToMap = cmd.MapIP
 			}
-		} else {
-			if cmd.MapCDN || len(cmd.MapIP) > 0 {
-				if ok, _ := hosts.AddHosts(cmd.GameId, hostFilePath, hosts.WindowsLineEnding, nil); ok {
-					commonLogger.Println("Successfully added host mappings")
-				} else {
-					commonLogger.Println("Failed to add host mappings")
-					errorCode = internal.ErrHostsAdd
-					undoSetUp()
-				}
+		} else if len(cmd.MapIP) > 0 {
+			if ok, _ := hosts.AddHosts(cmd.GameId, hostFilePath, hosts.WindowsLineEnding, nil); ok {
+				commonLogger.Println("Successfully added host mappings")
+			} else {
+				commonLogger.Println("Failed to add host mappings")
+				errorCode = internal.ErrHostsAdd
+				undoSetUp()
 			}
-			cmd.MapCDN = false
 		}
 		if certFilePath != "" {
 			certFile, err := os.Create(certFilePath)
@@ -243,10 +242,10 @@ var setUpCmd = &cobra.Command{
 				undoSetUp()
 			}
 		}
-		if addLocalCertData != nil || len(ipToMap) > 0 || cmd.MapCDN {
-			agentStarted := internal.ConnectAgentIfNeeded() == nil
+		if addLocalCertData != nil || len(ipToMap) > 0 {
+			agentStarted := admin.ConnectAgentIfNeeded() == nil
 			if !agentStarted && agentStart && !isAdmin {
-				result := internal.StartAgentIfNeeded()
+				result := admin.StartAgentIfNeeded()
 				if !result.Success() {
 					commonLogger.Println("Failed to start 'config-admin-agent'")
 					if result.Err != nil {
@@ -258,7 +257,7 @@ var setUpCmd = &cobra.Command{
 					errorCode = internal.ErrStartAgent
 					undoSetUp()
 				} else {
-					agentStarted = internal.ConnectAgentIfNeededWithRetries(true)
+					agentStarted = admin.ConnectAgentIfNeededWithRetries(true)
 					if !agentStarted {
 						commonLogger.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
 						errorCode = internal.ErrStartAgentVerify
@@ -275,7 +274,7 @@ var setUpCmd = &cobra.Command{
 				}
 				commonLogger.Println(str + "...")
 			}
-			err, exitCode := internal.RunSetUp(logRoot, ipToMap, addLocalCertData, cmd.MapCDN)
+			err, exitCode := admin.RunSetUp(logRoot, ipToMap, addLocalCertData)
 			if err == nil && exitCode == common.ErrSuccess {
 				if agentStarted {
 					commonLogger.Println("Successfully communicated with 'config-admin-agent'")
@@ -295,10 +294,10 @@ var setUpCmd = &cobra.Command{
 				if agentStarted {
 					commonLogger.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
 					if agentEndOnError {
-						if err := internal.StopAgentIfNeeded(); err != nil {
+						if err := admin.StopAgentIfNeeded(); err != nil {
 							failedStopAgent := true
 							if isAdmin {
-								_, err := commonProcess.Kill(common.GetExeFileName(true, common.LauncherConfigAdminAgent))
+								err := commonProcess.Kill(executables.Filename(true, executables.LauncherConfigAdminAgent))
 								if err == nil {
 									commonLogger.Println("Successfully killed 'config-admin-agent'.")
 									failedStopAgent = false
@@ -333,7 +332,7 @@ func InitSetUp() {
 		"hostFilePath",
 		"o",
 		"",
-		"Path to the host file. Only relevant when using 'ip' and/or 'CDN' option. If empty, it will use the system path",
+		"Path to the host file. Only relevant when using 'ip' option. If empty, it will use the system path",
 	)
 	setUpCmd.Flags().StringVarP(
 		&certFilePath,

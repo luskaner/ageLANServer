@@ -6,11 +6,11 @@ import (
 	"io"
 	"net"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, CDN bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup", "-e", gameId)
 	if len(IP) > 0 {
@@ -21,13 +21,10 @@ func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, CDN bool,
 		args = append(args, "-l")
 		args = append(args, base64.StdEncoding.EncodeToString(certificate.Raw))
 	}
-	if CDN {
-		args = append(args, "-c")
-	}
 	if logRoot != "" {
 		args = append(args, "--logRoot", logRoot)
 	}
-	options := exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
 	optionsFn(options)
 	if out != nil {
 		options.Stdout = out
@@ -53,7 +50,7 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 	if logRoot != "" {
 		args = append(args, "--logRoot", logRoot)
 	}
-	options := exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
 	optionsFn(options)
 	if out != nil {
 		options.Stdout = out

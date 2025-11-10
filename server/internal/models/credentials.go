@@ -3,7 +3,6 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"math/rand/v2"
 	"time"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -27,7 +26,7 @@ func (creds *Credentials) Initialize() {
 
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
-	i.WithRng(func(rand *rand.Rand) {
+	i.WithRng(func(rand *i.RandReader) {
 		for j := 0; j < len(b); j++ {
 			b[j] = byte(rand.UintN(256))
 		}

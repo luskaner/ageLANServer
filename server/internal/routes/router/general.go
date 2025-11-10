@@ -27,24 +27,24 @@ func (g *General) InitializeRoutes(gameId string, next http.Handler) http.Handle
 	g.group.Handle(
 		"GET",
 		"/test",
-		handlers.LoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.CustomLoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			test.Test(w, r)
-		})),
+		}), logFormatter),
 	)
 	g.group.Handle(
 		"GET",
 		"/cacert.pem",
-		handlers.LoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.CustomLoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cacertPem.CacertPem(w, r)
-		})),
+		}), logFormatter),
 	)
 	if runtime.GOOS == "windows" {
 		g.group.Handle(
 			"POST",
 			"/shutdown",
-			handlers.LoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handlers.CustomLoggingHandler(writer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				shutdown.Shutdown(w, r)
-			})),
+			}), logFormatter),
 		)
 	}
 	g.group.HandlePath("/", next)

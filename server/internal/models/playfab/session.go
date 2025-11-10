@@ -3,7 +3,6 @@ package playfab
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"math/rand/v2"
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/server/internal"
@@ -13,7 +12,7 @@ var sessions *internal.SafeMap[string, string]
 
 func generateId() string {
 	bytes := make([]byte, 8)
-	internal.WithRng(func(rand *rand.Rand) {
+	internal.WithRng(func(rand *internal.RandReader) {
 		binary.BigEndian.PutUint64(bytes, rand.Uint64())
 	})
 	return hex.EncodeToString(bytes)

@@ -12,6 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal/ipc"
 )
 
 func main() {
@@ -55,5 +56,5 @@ func main() {
 			os.Exit(common.ErrSignal)
 		}
 	}()
-	exitCode = internal.RunIpcServer(logRoot)
+	exitCode = ipc.StartServer(logRoot)
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 )
 
@@ -128,10 +127,6 @@ func Mappings(gameId string) HostMappings {
 		for _, host := range common.AllHosts(gameId) {
 			mappings.Set(host, cmd.MapIP)
 		}
-	}
-	if cmd.MapCDN {
-		ip := net.ParseIP(launcherCommon.CDNIP)
-		mappings.Set(launcherCommon.CDNDomain, ip)
 	}
 	return mappings
 }
