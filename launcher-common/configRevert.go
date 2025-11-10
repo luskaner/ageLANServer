@@ -84,7 +84,7 @@ func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, o
 				revertLine += "all possible "
 			}
 			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true /*true,*/, "", "", "", logRoot, stopAgent, false)
+			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, "", "", "", logRoot, stopAgent, false)
 		} else if !headless && slices.Contains(revertFlags, "-g") {
 			stopAgent = true
 		}
