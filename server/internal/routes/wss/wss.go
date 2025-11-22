@@ -4,6 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -22,30 +23,46 @@ type connectionWrapper struct {
 	conn      *websocket.Conn
 }
 
+func (c *connectionWrapper) withConn(fn func(conn *websocket.Conn)) {
+	if c.conn != nil {
+		fn(c.conn)
+	}
+}
+
 func (c *connectionWrapper) LocalAddr() string {
-	return c.conn.LocalAddr().String()
+	var localAddr string
+	c.withConn(func(conn *websocket.Conn) {
+		localAddr = c.conn.LocalAddr().String()
+	})
+	return localAddr
 }
 
 func (c *connectionWrapper) RemoteAddr() string {
-	return c.conn.RemoteAddr().String()
+	var remoteAddr string
+	c.withConn(func(conn *websocket.Conn) {
+		remoteAddr = c.conn.RemoteAddr().String()
+	})
+	return remoteAddr
 }
 
 func (c *connectionWrapper) WriteJSON(v any) error {
-	if err := c.conn.WriteJSON(v); err == nil {
-		c.logJSON(c.LocalAddr(), c.RemoteAddr(), v)
-		return nil
-	} else {
-		return err
-	}
+	var err error
+	c.withConn(func(conn *websocket.Conn) {
+		if err = c.conn.WriteJSON(v); err == nil {
+			c.logJSON(c.LocalAddr(), c.RemoteAddr(), v)
+		}
+	})
+	return err
 }
 
 func (c *connectionWrapper) ReadJSON(v any) error {
-	if err := c.conn.ReadJSON(v); err == nil {
-		c.logJSON(c.RemoteAddr(), c.LocalAddr(), v)
-		return nil
-	} else {
-		return err
-	}
+	var err error
+	c.withConn(func(conn *websocket.Conn) {
+		if err = c.conn.ReadJSON(v); err == nil {
+			c.logJSON(c.RemoteAddr(), c.LocalAddr(), v)
+		}
+	})
+	return err
 }
 
 func computeData(data []byte) *wss.Data {
@@ -97,8 +114,17 @@ func (c *connectionWrapper) logControl(sender string, receiver string, messageTy
 }
 
 func (c *connectionWrapper) WriteControl(messageType int, data []byte, deadline time.Time) error {
-	c.logControl(c.LocalAddr(), c.RemoteAddr(), messageType, data)
-	return c.conn.WriteControl(messageType, data, deadline)
+	var err error
+	var haveConn bool
+	c.withConn(func(conn *websocket.Conn) {
+		haveConn = true
+		c.logControl(c.LocalAddr(), c.RemoteAddr(), messageType, data)
+		err = c.conn.WriteControl(messageType, data, deadline)
+	})
+	if !haveConn {
+		return fmt.Errorf("connection already closed")
+	}
+	return err
 }
 
 func (c *connectionWrapper) logClose(sender string, receiver string) {
@@ -121,11 +147,19 @@ func (c *connectionWrapper) Close() error {
 		c.writeLock = nil
 	}()
 	c.logClose(c.LocalAddr(), c.RemoteAddr())
-	return c.conn.Close()
+	var err error
+	c.withConn(func(conn *websocket.Conn) {
+		err = c.conn.Close()
+	})
+	return err
 }
 
 func (c *connectionWrapper) SetReadDeadline(t time.Time) error {
-	return c.conn.SetReadDeadline(t)
+	var err error
+	c.withConn(func(conn *websocket.Conn) {
+		err = c.conn.SetReadDeadline(t)
+	})
+	return err
 }
 
 func (c *connectionWrapper) SetPingHandler(h func(appData string) error) {

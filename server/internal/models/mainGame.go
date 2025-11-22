@@ -13,7 +13,7 @@ type MainGame struct {
 	title          string
 }
 
-func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServerHaveOobPort bool, battleServerName string) Game {
+func CreateMainGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServerHaveOobPort bool, battleServerName string) *MainGame {
 	game := &MainGame{
 		battleServers:  &MainBattleServers{},
 		resources:      &MainResources{},
@@ -28,6 +28,10 @@ func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServe
 	game.advertisements.Initialize(game.users, game.battleServers)
 	game.chatChannels.Initialize(game.resources.ChatChannels)
 	return game
+}
+
+func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServerHaveOobPort bool, battleServerName string) Game {
+	return CreateMainGame(gameId, rssKeyedFilenames, battleServerHaveOobPort, battleServerName)
 }
 
 func (g *MainGame) Resources() *MainResources {

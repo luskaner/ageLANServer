@@ -63,7 +63,7 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 			inviteeSession,
 			"ExtendInvitationMessage",
 			i.A{
-				u.GetProfileInfo(false, game.Title(), inviteeSession.GetClientLibVersion()),
+				u.GetProfileInfo(false, inviteeSession.GetClientLibVersion()),
 				q.AdvertisementId,
 				q.AdvertisementPassword,
 			},

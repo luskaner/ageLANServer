@@ -53,6 +53,11 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	communityEventGroup := gameGroup.Subgroup("/CommunityEvent")
 	communityEventGroup.HandleFunc("GET", "/getAvailableCommunityEvents", communityEvent.GetAvailableCommunityEvents)
 
+	if gameId == common.GameAoM {
+		communityEventGroup.HandleFunc("GET", "/getEventStats", communityEvent.GetEventStats)
+		communityEventGroup.HandleFunc("GET", "/getEventLeaderboard", communityEvent.GetEventLeaderboard)
+	}
+
 	challengeGroup := gameGroup.Subgroup("/challenge")
 	if gameId == common.GameAoE3 {
 		challengeGroup.HandleFunc("POST", "/updateProgress", challenge.UpdateProgress)

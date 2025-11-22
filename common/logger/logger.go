@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -16,7 +17,7 @@ import (
 var logger *log.Logger
 var file *os.File
 var FileLogger *Root
-var buf bufferWrapper
+var Buf bufferWrapper
 
 type Root struct {
 	root string
@@ -24,9 +25,12 @@ type Root struct {
 
 type bufferWrapper struct {
 	buffer bytes.Buffer
+	mu     sync.Mutex
 }
 
 func (b *bufferWrapper) Write(p []byte) (n int, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	n, err = b.buffer.Write(p)
 	return n, err
 }
@@ -61,7 +65,7 @@ func Buffer(name string, root string, gameId string, finalRoot bool, fn func(wri
 func Initialize(writer io.Writer) {
 	var flags int
 	if writer == nil {
-		writer = &buf
+		writer = &Buf
 	}
 	if writer != os.Stdout || !common.Interactive() {
 		flags = log.Lmicroseconds | log.Ltime | log.LUTC | log.Lmsgprefix
@@ -75,7 +79,7 @@ func Prefix(name string) {
 
 func CloseFileLog() {
 	if file != nil {
-		if _, err := file.Write(buf.buffer.Bytes()); err != nil {
+		if _, err := file.Write(Buf.buffer.Bytes()); err != nil {
 			return
 		}
 		_ = file.Sync()

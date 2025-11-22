@@ -74,6 +74,9 @@ is in maintenance or is eventually shutdown.
 <summary>List of features</summary>
 
 - 🗣️ Whispering.
+- 🙏 Arena of the Gods:
+    * Story.
+    * Daily Celestial Challenge.
 
 </details>
 
@@ -103,8 +106,11 @@ is in maintenance or is eventually shutdown.
 <summary>List of limitations</summary>
 
 - ⚠️ **Friend list** will instead show all online users as if they were friends.
-- ⚠️ ***Arena of Gods* modes** (*Story*, *Challenge* and *Daily Celestial Challenge*)
-  are [currently](https://github.com/luskaner/ageLANServer/issues?q=is%3Aissue%20arena%20of%20gods) not supported.
+- ℹ️ **Arena of Gods**:
+    * ⚠️ Challenge mode is [currently](https://github.com/luskaner/ageLANServer/issues/243) not supported.
+    * No rewards are gained, **all blessings and rarities are unlocked by default**, including those not available in
+      the official server.
+    * Story mode has all missiones unlocked by default.
 
 </details>
 

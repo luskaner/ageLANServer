@@ -17,7 +17,6 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 
 	message := i.A{0, i.A{}, i.A{}, i.A{}}
 	game := models.G(r)
-	gameTitle := game.Title()
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
 	for _, id := range ids {
@@ -38,9 +37,9 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 			1,
 			i.A{u.GetId()},
 		})
-		message[2] = append(message[2].(i.A), u.GetProfileInfo(false, gameTitle, clientLibVersion))
+		message[2] = append(message[2].(i.A), u.GetProfileInfo(false, clientLibVersion))
 		if includeExtraProfileInfo {
-			message[3] = append(message[3].(i.A), u.GetExtraProfileInfo(gameTitle, clientLibVersion))
+			message[3] = append(message[3].(i.A), u.GetExtraProfileInfo(clientLibVersion))
 		}
 		break
 	}

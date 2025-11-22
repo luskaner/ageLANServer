@@ -1,6 +1,8 @@
 package userData
 
 import (
+	"errors"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -24,6 +26,20 @@ func metadataFolder(gameId string) string {
 
 func Metadatas(gameId string) (err error, metadatas mapset.Set[Data]) {
 	p := filepath.Join(Path(gameId), metadataFolder(gameId))
+	if _, err = os.Stat(p); errors.Is(err, fs.ErrNotExist) {
+		oldParent := p
+		for parent := filepath.Dir(p); parent != oldParent; parent = filepath.Dir(parent) {
+			var f os.FileInfo
+			if f, err = os.Stat(parent); err == nil {
+				if err = os.MkdirAll(p, f.Mode().Perm()); err != nil {
+					return
+				}
+				break
+			}
+			oldParent = parent
+		}
+	}
+	err = nil
 	metadatas = mapset.NewThreadUnsafeSet[Data]()
 	if p != "" {
 		allSuffixes := maps.Clone(suffixToType)

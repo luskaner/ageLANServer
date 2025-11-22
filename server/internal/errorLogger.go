@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"os"
+	"io"
 	"strings"
 )
 
 type CustomWriter struct {
-	OriginalWriter *os.File
+	OriginalWriter io.Writer
 }
 
 func (cw *CustomWriter) Write(p []byte) (n int, err error) {

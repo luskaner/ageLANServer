@@ -22,5 +22,5 @@ func Ignore(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	i.JSON(&w, i.A{2, u.GetProfileInfo(false, game.Title(), models.SessionOrPanic(r).GetClientLibVersion()), i.A{}})
+	i.JSON(&w, i.A{2, u.GetProfileInfo(false, models.SessionOrPanic(r).GetClientLibVersion()), i.A{}})
 }

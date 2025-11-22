@@ -89,7 +89,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		finalMessage := i.A{
-			currentUser.GetProfileInfo(false, gameTitle, receiverSession.GetClientLibVersion()),
+			currentUser.GetProfileInfo(false, receiverSession.GetClientLibVersion()),
 		}
 		finalMessage = append(finalMessage, message...)
 		wss.SendOrStoreMessage(

@@ -8,10 +8,23 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+func relationshipResponse(errorCode int, friends []i.A, lastConnection []i.A) i.A {
+	return i.A{
+		errorCode,
+		friends,
+		i.A{},
+		i.A{},
+		i.A{},
+		lastConnection,
+		i.A{},
+		i.A{},
+	}
+}
+
 func Relationships(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {
 	profileInfo := users.GetProfileInfo(true, func(u *models.MainUser) bool {
 		return u != user && u.GetPresence() > 0
-	}, gameTitle, clientLibVersion)
+	}, clientLibVersion)
 	friends := profileInfo
 	lastConnection := profileInfo
 	if gameTitle == common.GameAoE3 || gameTitle == common.GameAoM {
@@ -19,7 +32,7 @@ func Relationships(gameTitle string, clientLibVersion uint16, users *models.Main
 	} else {
 		friends = []i.A{}
 	}
-	return i.A{0, friends, i.A{}, i.A{}, i.A{}, lastConnection, i.A{}, i.A{}}
+	return relationshipResponse(0, friends, lastConnection)
 }
 
 func GetRelationships(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +45,6 @@ func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		i.JSON(&w, Relationships(game.Title(), sess.GetClientLibVersion(), users, currentUser))
 	} else {
-		i.JSON(&w, i.A{0, []i.A{}, i.A{}, i.A{}, i.A{}, []i.A{}, i.A{}, i.A{}})
+		i.JSON(&w, relationshipResponse(0, []i.A{}, []i.A{}))
 	}
 }

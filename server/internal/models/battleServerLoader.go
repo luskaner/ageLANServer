@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var BattleServers = make(map[string][]MainBattleServer)
+var BattleServers = make(map[string][]*MainBattleServer)
 
 func InitializeBattleServers(gameId string) error {
-	var battleServers []MainBattleServer
+	var battleServers []*MainBattleServer
 	key := fmt.Sprintf("Games.%s.BattleServers", gameId)
 	if viper.IsSet(key) {
 		err := viper.UnmarshalKey(key, &battleServers)
@@ -24,7 +24,7 @@ func InitializeBattleServers(gameId string) error {
 		return err
 	}
 	for _, bs := range tmpBattleServer {
-		battleServers = append(battleServers, MainBattleServer{
+		battleServers = append(battleServers, &MainBattleServer{
 			BaseConfig: bs.BaseConfig,
 		})
 	}

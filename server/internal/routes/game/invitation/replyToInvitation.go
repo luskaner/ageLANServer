@@ -63,7 +63,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 			inviterSession,
 			"ReplyInvitationMessage",
 			i.A{
-				u.GetProfileInfo(false, game.Title(), inviterSession.GetClientLibVersion()),
+				u.GetProfileInfo(false, inviterSession.GetClientLibVersion()),
 				q.AdvertisementId,
 				acceptStr,
 			},

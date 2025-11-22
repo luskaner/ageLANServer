@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 type target struct {
@@ -30,17 +31,15 @@ type cdnPathConfig struct {
 	CdnBundles []cdnBundle
 }
 
-var BaseDir = path.Join("resources", "responses", common.GameAoM, "playfab")
+var BaseDir = path.Join(models.ResponsesFolder, common.GameAoM, "playfab")
 var StaticConfig string
 
-const Prefix = "/playfab"
 const StaticSuffix = "/static"
-const StaticPrefix = Prefix + StaticSuffix
 const branch = "public/production"
 
 /* Ids:
 * 1: c8c9727eb975e7aba1f949beaa6153e7e7ccb415
-* 2: 90c2d7d24c66218bf2be6e26df4f712a08163f34
+* 2: 1edf70cddb1a814c20cc368c3770a60ab2657358
  */
 
 func init() {

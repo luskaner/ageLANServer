@@ -34,13 +34,13 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
-	exists, encodedUsers := chatChannel.AddUser(user, game.Title(), sess.GetClientLibVersion())
+	exists, encodedUsers := chatChannel.AddUser(user, sess.GetClientLibVersion())
 	if exists {
 		i.JSON(&w, i.A{2, "", 0, i.A{}})
 		return
 	}
 	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
-	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false, game.Title(), sess.GetClientLibVersion())}}
+	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false, sess.GetClientLibVersion())}}
 	for userId := range users.GetUserIds() {
 		var existingUserSession *models.Session
 		existingUserSession, ok = models.GetSessionByUserId(userId)

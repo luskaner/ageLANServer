@@ -5,6 +5,7 @@ import (
 	"iter"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
@@ -16,15 +17,22 @@ type MainBattleServer struct {
 	lan                           *bool
 	hasOobPort                    bool
 	battleServerName              string
+	lanMu                         sync.RWMutex
 }
 
 func (battleServer *MainBattleServer) LAN() bool {
+	battleServer.lanMu.RLock()
 	if battleServer.lan == nil {
+		battleServer.lanMu.RUnlock()
 		var lan bool
+		battleServer.lanMu.Lock()
 		battleServer.lan = &lan
+		defer battleServer.lanMu.Unlock()
 		if guid, err := uuid.Parse(battleServer.Region); err == nil && guid.Version() == 4 {
 			lan = true
 		}
+	} else {
+		defer battleServer.lanMu.RUnlock()
 	}
 	return *battleServer.lan
 }
@@ -93,14 +101,14 @@ type MainBattleServers struct {
 	battleServerName string
 }
 
-func (battleSrvs *MainBattleServers) Initialize(battleServers []MainBattleServer, haveOobPort bool, battleServerName string) {
+func (battleSrvs *MainBattleServers) Initialize(battleServers []*MainBattleServer, haveOobPort bool, battleServerName string) {
 	keyOrder := make([]string, len(battleServers))
 	mapping := make(map[string]*MainBattleServer, len(battleServers))
 	for i, bs := range battleServers {
 		battleServers[i].hasOobPort = haveOobPort
 		battleServers[i].battleServerName = battleServerName
 		keyOrder[i] = bs.Region
-		mapping[keyOrder[i]] = &battleServers[i]
+		mapping[keyOrder[i]] = battleServers[i]
 	}
 	battleSrvs.battleServerName = battleServerName
 	battleSrvs.haveOobPort = haveOobPort

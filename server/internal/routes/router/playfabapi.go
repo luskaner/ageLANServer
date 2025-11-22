@@ -6,7 +6,9 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Catalog"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client"
+	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/CloudScript"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Event"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Inventory"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/MultiplayerServer"
@@ -54,11 +56,19 @@ func (p *PlayfabApi) InitializeRoutes(_ string, _ http.Handler) http.Handler {
 
 	playfabPartyGroup := p.group.Subgroup("/Party")
 	playfabPartyGroup.HandleFunc("POST", "/RequestParty", Party.RequestParty)
+
+	catalogGroup := p.group.Subgroup("/Catalog")
+	catalogGroup.HandleFunc("POST", "/GetItems", Catalog.GetItems)
+
+	cloudScriptGroup := p.group.Subgroup("/CloudScript")
+	cloudScriptGroup.HandleFunc("POST", "/ExecuteFunction", CloudScript.ExecuteFunction)
+
 	fs := http.FileServer(http.Dir(playfab.BaseDir))
-	p.group.Handle(
+	playfabStaticGroup := p.group.Subgroup(playfab.StaticSuffix)
+	playfabStaticGroup.Handle(
 		"GET",
-		playfab.StaticSuffix+"/",
-		http.StripPrefix(playfab.StaticPrefix+"/", fs),
+		"/",
+		http.StripPrefix(playfab.StaticSuffix, fs),
 	)
 	return PlayfabMiddleware(p.group.mux)
 }

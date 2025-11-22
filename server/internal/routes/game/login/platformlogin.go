@@ -44,8 +44,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionId := models.CreateSession(req.GameId, u.GetId(), req.ClientLibVersion)
 	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(req.GameId, req.ClientLibVersion, users, u, 1)
-	profileInfo := u.GetProfileInfo(false, req.GameId, req.ClientLibVersion)
+	relationship.ChangePresence(req.ClientLibVersion, users, u, 1)
+	profileInfo := u.GetProfileInfo(false, req.ClientLibVersion)
 	if title == common.GameAoE3 || title == common.GameAoM {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
@@ -63,7 +63,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title == common.GameAoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.GameId, req.ClientLibVersion))
+		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.ClientLibVersion))
 	}
 	var unknownProfileInfoList i.A
 	switch title {
@@ -91,6 +91,13 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		unknownProfileInfoList = i.A{}
+	}
+	if title == common.GameAoM {
+		unknownProfileInfoList = append(
+			unknownProfileInfoList,
+			// 10k of favour stash (the maximum)
+			i.A{117, u.GetId(), 10_000, "", t2},
+		)
 	}
 	battleServers := game.BattleServers()
 	servers := battleServers.Encode(r)
@@ -143,7 +150,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if title != common.GameAoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
-	if title == common.GameAoM && req.ClientLibVersion >= 193 {
+	if req.ClientLibVersion >= 193 {
 		allProfileInfo = append(allProfileInfo, -1)
 	}
 	response = append(response,

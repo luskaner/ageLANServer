@@ -138,7 +138,6 @@ var (
 			broadcast := viper.GetBool("Announcement.Broadcast")
 			announcePort := viper.GetInt("Announcement.Port")
 			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
-			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
 			var servers []*http.Server
 			internal.InitializeStopSignal()
 			for gameId := range gameSet.Iter() {
@@ -170,20 +169,29 @@ var (
 				} else {
 					gameLogRoot = filepath.Join(gameLogRoot, gameId)
 				}
+				customLoggerWriters := []io.Writer{os.Stderr}
 				if commonLogger.FileLogger == nil {
 					writer = os.Stdout
-				} else if err, root = commonLogger.NewFile(gameLogRoot, "", true); err != nil {
-					logger.Printf("\tFailed to prepare log folder: %v\n", err)
-					exitCode = internal.ErrCreateLogFile
-					return
-				} else if f, err := root.Open(filePrefix + "access_log"); err != nil {
-					logger.Printf("\tFailed to open access log file: %v\n", err)
-					exitCode = internal.ErrCreateLogFile
-					return
 				} else {
-					closables = append(closables, f)
-					writer = f
+					customLoggerWriters = append(customLoggerWriters, &commonLogger.Buf)
+					if err, root = commonLogger.NewFile(gameLogRoot, "", true); err != nil {
+						logger.Printf("\tFailed to prepare log folder: %v\n", err)
+						exitCode = internal.ErrCreateLogFile
+						return
+					} else if f, err := root.Open(filePrefix + "access_log"); err != nil {
+						logger.Printf("\tFailed to open access log file: %v\n", err)
+						exitCode = internal.ErrCreateLogFile
+						return
+					} else {
+						closables = append(closables, f)
+						writer = f
+					}
 				}
+				customLogger := log.New(
+					&internal.CustomWriter{OriginalWriter: io.MultiWriter(customLoggerWriters...)},
+					"|SERVER| ",
+					log.Ltime|log.Lmicroseconds,
+				)
 				internal.AnnounceMessageData[gameId] = internal.AnnounceMessageDataLatest{
 					GameTitle: gameId,
 					Version:   Version,

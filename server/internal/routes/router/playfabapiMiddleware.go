@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
@@ -15,7 +16,7 @@ var playAnonymousPaths = map[string]bool{
 
 func PlayfabMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !playAnonymousPaths[r.URL.Path] {
+		if !playAnonymousPaths[r.URL.Path] && !strings.HasPrefix(r.URL.Path, playfab.StaticSuffix) {
 			entityToken := playfab.Session(r)
 			var exists bool
 			if entityToken != "" {

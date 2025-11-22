@@ -77,7 +77,7 @@ func generateDomains(gameId string) (domains []string) {
 		releaseMin = 2
 	case GameAoM:
 		prefix = "andromeda"
-		releaseMin = 12
+		releaseMin = 13
 	default:
 		return
 	}

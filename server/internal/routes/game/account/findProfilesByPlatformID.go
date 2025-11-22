@@ -25,11 +25,10 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 		platformIdsMap[platformId] = struct{}{}
 	}
 	game := models.G(r)
-	gameTitle := game.Title()
 	sess := models.SessionOrPanic(r)
 	profileInfo := game.Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
 		_, ok := platformIdsMap[currentUser.GetPlatformUserID()]
 		return ok
-	}, gameTitle, sess.GetClientLibVersion())
+	}, sess.GetClientLibVersion())
 	i.JSON(&w, i.A{0, profileInfo})
 }

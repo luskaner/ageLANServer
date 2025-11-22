@@ -628,6 +628,78 @@
         3,
         4
       ]
+    },
+    {
+      "EffectName": "GrantLegendGargarensis",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendCirce",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendKamos",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendAmanra",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendTheris",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendSetna",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendReginleif",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendKingFolstag",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendHalogi",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendYanFeifeng",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendChiyou",
+      "KnownRarities": [
+        5
+      ]
+    },
+    {
+      "EffectName": "GrantLegendNuchou",
+      "KnownRarities": [
+        5
+      ]
     }
   ]
 }
