@@ -15,7 +15,7 @@ func GetTime(w http.ResponseWriter, _ *http.Request) {
 	shared.RespondOK(
 		&w,
 		timeResponse{
-			Time: shared.FormatDate(time.Now()),
+			Time: shared.FormatDate(time.Now().UTC()),
 		},
 	)
 }

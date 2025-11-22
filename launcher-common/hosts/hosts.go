@@ -9,7 +9,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 )
 
@@ -89,6 +88,19 @@ func Parse(line string) (ok bool, l Line) {
 // HostMappings maps a host to an IP, but an IP can be mapped to multiple hosts.
 type HostMappings map[string]net.IP
 
+func (h *HostMappings) Set(host string, ip net.IP) {
+	(*h)[strings.ToLower(host)] = ip
+}
+
+func (h *HostMappings) Get(host string) (ip net.IP, ok bool) {
+	ip, ok = (*h)[strings.ToLower(host)]
+	return
+}
+
+func (h *HostMappings) Delete(host string) {
+	delete(*h, strings.ToLower(host))
+}
+
 func (h *HostMappings) String(lineEnding string) string {
 	lines := make([]Line, 0)
 	for host, ip := range *h {
@@ -113,18 +125,40 @@ func Mappings(gameId string) HostMappings {
 	mappings := make(HostMappings)
 	if cmd.MapIP != nil {
 		for _, host := range common.AllHosts(gameId) {
-			mappings[host] = cmd.MapIP
+			mappings.Set(host, cmd.MapIP)
 		}
-	}
-	if cmd.MapCDN {
-		ip := net.ParseIP(launcherCommon.CDNIP)
-		mappings[launcherCommon.CDNDomain] = ip
 	}
 	return mappings
 }
 
+func CloseFile(f *os.File) {
+	_ = UnlockFile(f)
+	_ = f.Close()
+}
+
+func GetAllLines(flag int) (err error, lines []Line, f *os.File) {
+	err, f = openHostsFile(Path(), flag)
+	if err != nil {
+		return
+	}
+	var line string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line = scanner.Text()
+		ok, parsedLine := Parse(line)
+		if !ok {
+			continue
+		}
+		lines = append(lines, parsedLine)
+	}
+	if err = scanner.Err(); err != nil {
+		CloseFile(f)
+	}
+	return
+}
+
 func missingIpMappings(mappings *HostMappings, hostFilePath string) (err error, f *os.File) {
-	err, f = OpenHostsFile(hostFilePath)
+	err, f = openHostsFile(hostFilePath, os.O_RDWR)
 	if err != nil {
 		return
 	}
@@ -138,22 +172,21 @@ func missingIpMappings(mappings *HostMappings, hostFilePath string) (err error, 
 		}
 		lineIp := lineParsed.IP()
 		for _, lineHost := range lineParsed.Hosts() {
-			if ip, ok := (*mappings)[lineHost]; ok && ip.Equal(lineIp) {
-				delete(*mappings, lineHost)
+			if ip, ok := mappings.Get(lineHost); ok && ip.Equal(lineIp) {
+				mappings.Delete(lineHost)
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		_ = UnlockFile(f)
-		_ = f.Close()
+		CloseFile(f)
 	}
 	return
 }
 
-func OpenHostsFile(hostFilePath string) (err error, f *os.File) {
+func openHostsFile(hostFilePath string, flag int) (err error, f *os.File) {
 	f, err = os.OpenFile(
 		hostFilePath,
-		os.O_RDWR,
+		flag,
 		0666,
 	)
 	if err == nil {
@@ -230,6 +263,12 @@ func UpdateHosts(hostsFile *os.File, updater func(file *os.File) error, flushFn 
 }
 
 func AddHosts(gameId string, hostFilePath string, lineEnding string, flushFn func() (result *exec.Result)) (ok bool, err error) {
+	if hostFilePath == "" {
+		hostFilePath = Path()
+	}
+	if lineEnding == "" {
+		lineEnding = LineEnding
+	}
 	var hostsFile *os.File
 	mappings := Mappings(gameId)
 	err, hostsFile = missingIpMappings(&mappings, hostFilePath)
@@ -238,16 +277,14 @@ func AddHosts(gameId string, hostFilePath string, lineEnding string, flushFn fun
 	}
 
 	if len(mappings) == 0 {
-		_ = UnlockFile(hostsFile)
-		_ = hostsFile.Close()
+		CloseFile(hostsFile)
 		ok = true
 		return
 	}
 
 	_, err = hostsFile.Seek(0, io.SeekStart)
 	if err != nil {
-		_ = UnlockFile(hostsFile)
-		_ = hostsFile.Close()
+		CloseFile(hostsFile)
 		return
 	}
 

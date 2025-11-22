@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"fmt"
 	"net"
 
 	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/spf13/cobra"
 )
 
 var MapIP net.IP
 var AddLocalCertData []byte
-var MapCDN bool
 var GameId string
 
 func InitSetUp(cmd *cobra.Command) {
@@ -21,13 +18,6 @@ func InitSetUp(cmd *cobra.Command) {
 		"i",
 		nil,
 		"IP to resolve in local DNS server.",
-	)
-	cmd.Flags().BoolVarP(
-		&MapCDN,
-		"CDN",
-		"c",
-		false,
-		fmt.Sprintf("Resolve '%s' to %s in local DNS server", launcherCommon.CDNIP, launcherCommon.CDNDomain),
 	)
 	cmd.Flags().BytesBase64VarP(
 		&AddLocalCertData,

@@ -5,13 +5,15 @@ import (
 	"os"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/viper"
 )
 
 func ResolveSSLFilesPath(gameId string, auto bool) (resolvedCertFile string, resolvedKeyFile string, err error) {
 	if auto {
-		fmt.Println("Auto resolving SSL certificate and key files...")
-		serverExe := common.FindExecutablePath(common.GetExeFileName(true, common.Server))
+		commonLogger.Println("Auto resolving SSL certificate and key files...")
+		serverExe := executables.FindPath(executables.Filename(true, executables.Server))
 		if serverExe == "" {
 			err = fmt.Errorf("could not find server executable")
 			return

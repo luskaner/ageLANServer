@@ -5,13 +5,12 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, gameTitle string, clientLibVersion uint16) {
-	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, gameTitle, clientLibVersion)}
+func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, clientLibVersion uint16) {
+	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, clientLibVersion)}
 	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {
 			continue
@@ -44,7 +43,7 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	users := game.Users()
 	user, ok := users.GetUserById(sess.GetUserId())
 	if !ok || !chatChannel.RemoveUser(user) {
@@ -52,5 +51,5 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.JSON(&w, i.A{0})
-	NotifyLeaveChannel(users, user, chatChannel.GetId(), game.Title(), sess.GetClientLibVersion())
+	NotifyLeaveChannel(users, user, chatChannel.GetId(), sess.GetClientLibVersion())
 }

@@ -30,20 +30,6 @@ func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
 	)
 }
 
-func GameCommand(flags *pflag.FlagSet) {
-	flags.StringP(
-		name,
-		shorthand,
-		"",
-		fmt.Sprintf(
-			`%s %s %s`,
-			descriptionStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
-			descriptionEnd,
-		),
-	)
-}
-
 func gamesDescription() string {
 	return fmt.Sprintf(
 		`%s %s %s`,
@@ -69,5 +55,14 @@ func GamesCommand(flags *pflag.FlagSet) {
 		shorthand,
 		common.SupportedGames.ToSlice(),
 		gamesDescription(),
+	)
+}
+
+func LogRootCommand(flags *pflag.FlagSet, logRoot *string) {
+	flags.StringVar(
+		logRoot,
+		"logRoot",
+		"",
+		"Path to the log folder. If not empty, enables extra logging.",
 	)
 }

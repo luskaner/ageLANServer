@@ -16,8 +16,8 @@ import (
 const resourceFolder = "resources"
 
 var configFolder = filepath.Join(resourceFolder, "config")
-var responsesFolder = filepath.Join(resourceFolder, "responses")
-var CloudFolder = filepath.Join(responsesFolder, "cloud")
+var ResponsesFolder = filepath.Join(resourceFolder, "responses")
+var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
 type MainResources struct {
 	keyedFilenames  mapset.Set[string]
@@ -64,9 +64,9 @@ func (r *MainResources) initializeLogin(gameId string) {
 }
 
 func (r *MainResources) initializeResponses(gameId string) {
-	dirEntries, _ := os.ReadDir(filepath.Join(responsesFolder, gameId))
+	dirEntries, _ := os.ReadDir(filepath.Join(ResponsesFolder, gameId))
 	for _, entry := range dirEntries {
-		data, err := os.ReadFile(filepath.Join(responsesFolder, gameId, entry.Name()))
+		data, err := os.ReadFile(filepath.Join(ResponsesFolder, gameId, entry.Name()))
 		if err != nil {
 			continue
 		}

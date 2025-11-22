@@ -8,8 +8,28 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
+
+func generateRequestId() string {
+	var u [16]byte
+	internal.WithRng(func(rand *internal.RandReader) {
+		for i := 0; i < 10; i++ {
+			u[i] = byte(rand.UintN(256))
+		}
+	})
+	u[6] = (u[6] & 0x0f) | 0x40
+	u[8] = (u[8] & 0x3f) | 0x80
+	copy(u[10:], []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		u[0:4],
+		u[4:6],
+		u[6:8],
+		u[8:10],
+		u[10:16],
+	)
+}
 
 func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 	key := strings.Join(strings.Split(r.URL.Path, "/")[2:], "/")
@@ -40,7 +60,7 @@ func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Accept-Range", "bytes")
 		w.Header().Set("ETag", file.ETag)
 		w.Header().Set("Server", "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0")
-		w.Header().Set("x-ms-request-id", fmt.Sprintf("%d", time.Now().Unix()))
+		w.Header().Set("x-ms-request-id", generateRequestId())
 		w.Header().Set("x-ms-version", file.Version)
 		if models.G(r).Title() != common.GameAoE3 && models.G(r).Title() != common.GameAoM {
 			w.Header().Set("x-ms-meta-filename", filename)

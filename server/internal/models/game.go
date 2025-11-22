@@ -12,5 +12,9 @@ type Game interface {
 }
 
 func G(r *http.Request) Game {
-	return r.Context().Value("game").(Game)
+	return Gg[Game](r)
+}
+
+func Gg[T Game](r *http.Request) T {
+	return r.Context().Value("game").(T)
 }

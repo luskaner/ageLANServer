@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
@@ -49,7 +50,7 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 	return conn != nil
 }
 
-func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
+func ReadCACertificateFromServer(host string) *x509.Certificate {
 	tr := &http.Transport{
 		TLSClientConfig: TlsConfig(host, true),
 	}
@@ -61,7 +62,7 @@ func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
 		ip = ips[0]
 	}
 	client := &http.Client{Transport: tr}
-	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem?gameId=%s", ip, gameId))
+	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem", ip))
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil
 	}
@@ -83,13 +84,15 @@ func ReadCACertificateFromServer(host string, gameId string) *x509.Certificate {
 	return cert
 }
 
-func GenerateCertificatePair(certificateFolder string) (result *exec.Result) {
+func GenerateCertificatePair(certificateFolder string, optionsFn func(options exec.Options)) (result *exec.Result) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
-	exePath := filepath.Join(baseFolder, common.GetExeFileName(false, common.ServerGenCert))
+	exePath := filepath.Join(baseFolder, executables.Filename(false, executables.ServerGenCert))
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}
-	result = exec.Options{File: exePath, Wait: true, Args: []string{"-r"}, ExitCode: true}.Exec()
+	options := exec.Options{File: exePath, Wait: true, Args: []string{"-r"}, ExitCode: true}
+	optionsFn(options)
+	result = options.Exec()
 	return
 }
 

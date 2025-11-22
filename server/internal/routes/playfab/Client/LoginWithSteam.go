@@ -57,7 +57,7 @@ func LoginWithSteam(w http.ResponseWriter, _ *http.Request) {
 				GatherDeviceInfo: true,
 				GatherFocusInfo:  true,
 			},
-			LastLoginTime: shared.FormatDate(now.AddDate(0, 0, -1)),
+			LastLoginTime: shared.FormatDate(time.Date(2025, 11, 12, 3, 34, 0, 0, time.UTC)),
 			entityTokenResponse: entityTokenResponse{
 				EntityToken:     entityToken,
 				TokenExpiration: shared.FormatDate(now.AddDate(0, 0, 1)),

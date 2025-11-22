@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"crypto/x509"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd"
 	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
@@ -17,12 +18,12 @@ import (
 )
 
 func untrustCertificate() bool {
-	fmt.Println("Removing previously added local certificate")
+	commonLogger.Println("Removing previously added local certificate")
 	if _, err := cert.UntrustCertificates(false); err == nil {
-		fmt.Println("Successfully removed local certificate")
+		commonLogger.Println("Successfully removed local certificate")
 		return true
 	} else {
-		fmt.Println("Failed to remove local certificate")
+		commonLogger.Println("Failed to remove local certificate")
 		return false
 	}
 }
@@ -32,16 +33,20 @@ var setUpCmd = &cobra.Command{
 	Short: "Setups configuration",
 	Long:  "Adds one or more host mappings to the local DNS server and/or adding a certificate to the local machine's trusted root store",
 	Run: func(_ *cobra.Command, _ []string) {
+		internal.SetUp = true
+		if logRoot != "" {
+			internal.Initialize(logRoot)
+		}
 		trustedCertificate := false
 		if len(cmd.AddLocalCertData) > 0 {
-			fmt.Println("Adding local certificate")
+			commonLogger.Println("Adding local certificate")
 			crt := cert.BytesToCertificate(cmd.AddLocalCertData)
 			if crt == nil {
-				fmt.Println("Failed to parse certificate")
+				commonLogger.Println("Failed to parse certificate")
 				os.Exit(internal.ErrLocalCertAddParse)
 			}
 			if err := cert.TrustCertificates(false, []*x509.Certificate{crt}); err == nil {
-				fmt.Println("Successfully added local certificate")
+				commonLogger.Println("Successfully added local certificate")
 				trustedCertificate = true
 				sigs := make(chan os.Signal, 1)
 				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -53,14 +58,14 @@ var setUpCmd = &cobra.Command{
 					}
 				}()
 			} else {
-				fmt.Println("Failed to add local certificate")
+				commonLogger.Println("Failed to add local certificate")
 				os.Exit(internal.ErrLocalCertAdd)
 			}
 		}
-		if len(cmd.MapIP) > 0 || cmd.MapCDN {
-			fmt.Println("Adding IP mappings")
-			if ok, _ := launcherCommonHosts.AddHosts(cmd.GameId, hosts.Path(), hosts.LineEnding, hosts.FlushDns); ok {
-				fmt.Println("Successfully added IP mappings")
+		if len(cmd.MapIP) > 0 {
+			commonLogger.Println("Adding IP mappings")
+			if ok, _ := launcherCommonHosts.AddHosts(cmd.GameId, "", "", hosts.FlushDns); ok {
+				commonLogger.Println("Successfully added IP mappings")
 			} else {
 				errorCode := internal.ErrIpMapAdd
 				if trustedCertificate {
@@ -68,7 +73,7 @@ var setUpCmd = &cobra.Command{
 						errorCode = internal.ErrIpMapAddRevert
 					}
 				}
-				fmt.Println("Failed to add IP mappings")
+				commonLogger.Println("Failed to add IP mappings")
 				os.Exit(errorCode)
 			}
 		}
@@ -77,5 +82,6 @@ var setUpCmd = &cobra.Command{
 
 func initSetUp() {
 	cmd.InitSetUp(setUpCmd)
+	commonCmd.LogRootCommand(setUpCmd.Flags(), &logRoot)
 	rootCmd.AddCommand(setUpCmd)
 }

@@ -3,7 +3,6 @@ package process
 import (
 	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -11,6 +10,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 )
+
+var waitDuration = 3 * time.Second
 
 func steamProcess(gameId string) string {
 	switch gameId {
@@ -63,12 +64,13 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	var pid int
 	for _, pidPath = range pidPaths {
 		var data []byte
-		data, err = os.ReadFile(pidPath)
-		if err != nil {
+		var localErr error
+		data, localErr = os.ReadFile(pidPath)
+		if localErr != nil {
 			continue
 		}
-		pid, err = strconv.Atoi(string(data))
-		if err != nil {
+		pid, localErr = strconv.Atoi(string(data))
+		if localErr != nil {
 			continue
 		}
 		proc, err = FindProcess(pid)
@@ -87,40 +89,27 @@ func KillPidProc(pidPath string, proc *os.Process) (err error) {
 }
 
 func KillProc(proc *os.Process) (err error) {
+	if err = proc.Signal(os.Interrupt); err == nil && WaitForProcess(proc, &waitDuration) {
+		return
+	}
 	err = proc.Kill()
 	if err != nil {
 		return
 	}
-	done := make(chan error, 1)
-	go func() {
-		_, err = proc.Wait()
-		done <- err
-	}()
-
-	select {
-	case <-time.After(3 * time.Second):
+	if !WaitForProcess(proc, &waitDuration) {
 		err = errors.New("timeout")
-		return
-
-	case err = <-done:
-		if err != nil {
-			var e *exec.ExitError
-			if !errors.As(err, &e) {
-				return
-			}
-		}
-		return
 	}
+	return
 }
 
-func Kill(exe string) (proc *os.Process, err error) {
-	var pidPath string
-	pidPath, proc, err = Process(exe)
+func Kill(exe string) error {
+	pidPath, proc, err := Process(exe)
 	if err != nil {
-		return
+		return err
+	} else if proc != nil {
+		return KillPidProc(pidPath, proc)
 	}
-	err = KillPidProc(pidPath, proc)
-	return
+	return nil
 }
 
 func GameProcesses(gameId string, steam bool, xbox bool) []string {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -65,7 +64,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	currentSession := middleware.SessionOrPanic(r)
+	currentSession := models.SessionOrPanic(r)
 	currentUser, ok := game.Users().GetUserById(currentSession.GetUserId())
 	if !ok {
 		whisperResult(&w, gameTitle, 2)
@@ -90,7 +89,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		finalMessage := i.A{
-			currentUser.GetProfileInfo(false, gameTitle, receiverSession.GetClientLibVersion()),
+			currentUser.GetProfileInfo(false, receiverSession.GetClientLibVersion()),
 		}
 		finalMessage = append(finalMessage, message...)
 		wss.SendOrStoreMessage(

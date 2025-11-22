@@ -4,13 +4,50 @@ package process
 
 import (
 	"fmt"
-	"mvdan.cc/sh/v3/shell"
 	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
+
+	"mvdan.cc/sh/v3/shell"
 )
+
+func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
+	t := 100 * time.Millisecond
+	if duration == nil {
+		t *= 10
+	}
+	procPath := fmt.Sprintf("/proc/%d", proc.Pid)
+	processExists := func(path string) bool {
+		if _, err := os.Stat(procPath); os.IsNotExist(err) {
+			return true
+		}
+		return false
+	}
+	if duration == nil {
+		for {
+			if processExists(procPath) {
+				return true
+			}
+			time.Sleep(t)
+		}
+	} else {
+		timeout := time.After(*duration)
+		for {
+			select {
+			case <-timeout:
+				return false
+			default:
+				if processExists(procPath) {
+					return true
+				}
+				time.Sleep(t)
+			}
+		}
+	}
+}
 
 func ProcessesPID(names []string) map[string]uint32 {
 	processesPid := make(map[string]uint32)

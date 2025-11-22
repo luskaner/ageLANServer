@@ -5,7 +5,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -25,15 +24,21 @@ type wanQuery struct {
 	Offset int `schema:"start"`
 }
 
+func findAdvResp(errorCode int, advs []i.A) i.A {
+	resp := getAdvResp(errorCode, advs)
+	resp = append(resp, i.A{})
+	return resp
+}
+
 func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(*models.MainAdvertisement) bool) {
 	var q searchQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, i.A{}, i.A{}})
+		i.JSON(&w, findAdvResp(2, []i.A{}))
 		return
 	}
 	game := models.G(r)
 	title := game.Title()
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	var battleServers *models.MainBattleServers
 	if len(lanRegions) == 0 {
@@ -72,20 +77,16 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			(extraCheck == nil || extraCheck(adv))
 	})
 	if advs == nil {
-		i.JSON(&w,
-			i.A{0, i.A{}, i.A{}},
-		)
+		i.JSON(&w, findAdvResp(0, []i.A{}))
 	} else {
-		i.JSON(&w,
-			i.A{0, advs, i.A{}},
-		)
+		i.JSON(&w, findAdvResp(0, advs))
 	}
 }
 
 func FindAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var q wanQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, i.A{}, i.A{}})
+		i.JSON(&w, findAdvResp(2, []i.A{}))
 		return
 	}
 	findAdvertisements(w, r, q.Length, q.Offset, false, nil, nil)

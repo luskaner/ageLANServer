@@ -18,28 +18,27 @@ const WorldsEdgeMainDomain = "worldsedge" + linkMainDomainSuffix
 const worldsEdge = "." + WorldsEdgeMainDomain
 const apiWorldsEdge = ApiSubdomainSuffix + worldsEdge + dotTld
 const PlayFabDomain = "playfabapi"
-const ApiAgeOfEmpiresDomain = "ageofempires"
+const AgeOfEmpires = "ageofempires"
 const ApiAgeOfEmpiresSubdomain = "api"
-const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + ApiAgeOfEmpiresDomain + dotTld
+const CdnAgeOfEmpiresSubdomain = "cdn"
+const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
+const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
 const SubDomainReleasePart = "-live-release"
 
-var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld}
+var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + AgeOfEmpires + dotTld}
 
 var hostsCache = make(map[string][]string)
-var DomainToGameIds = make(map[string][]string)
 
 func CertDomains() []string {
-	domains := []string{"*" + playFabSuffix, ApiAgeOfEmpires}
+	domains := []string{"*" + playFabSuffix}
 	domains = append(domains, SelfSignedCertDomains...)
 	return domains
 }
 
-func CacheAllHosts() {
-	for _, gameId := range SupportedGames.ToSlice() {
-		AllHosts(gameId)
-	}
+func SelfSignedCertGame(game string) bool {
+	return game != GameAoM
 }
 
 func AllHosts(gameId string) (domains []string) {
@@ -52,14 +51,12 @@ func AllHosts(gameId string) (domains []string) {
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
 	}
+	domains = append(domains, CdnAgeOfEmpires)
+	if gameId == GameAoE3 {
+		domains = append(domains, ApiAgeOfEmpires)
+	}
 	domains = append(domains, generateDomains(gameId)...)
 	hostsCache[gameId] = domains
-	for _, domain := range domains {
-		if _, ok := DomainToGameIds[domain]; !ok {
-			DomainToGameIds[domain] = []string{}
-		}
-		DomainToGameIds[domain] = append(DomainToGameIds[gameId], gameId)
-	}
 	return
 }
 
@@ -80,7 +77,7 @@ func generateDomains(gameId string) (domains []string) {
 		releaseMin = 2
 	case GameAoM:
 		prefix = "andromeda"
-		releaseMin = 12
+		releaseMin = 13
 	default:
 		return
 	}

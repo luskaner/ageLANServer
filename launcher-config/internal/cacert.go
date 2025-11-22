@@ -1,56 +1,34 @@
 package internal
 
 import (
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/logger"
 	launcherCommonCert "github.com/luskaner/ageLANServer/launcher-common/cert"
 )
 
 type CACert struct {
-	gamePath string
+	launcherCommonCert.CA
 }
 
 func NewCACert(gameId string, gamePath string) *CACert {
-	if gameId == common.GameAoE2 {
-		gamePath = filepath.Join(gamePath, "certificates")
-	}
-	return &CACert{gamePath: gamePath}
-}
-
-func (c *CACert) name() string {
-	return "cacert.pem"
-}
-
-func (c *CACert) originalPath() string {
-	return filepath.Join(c.gamePath, c.name())
-}
-
-func (c *CACert) tmpPath() string {
-	return filepath.Join(c.gamePath, c.name()+".lan")
-}
-
-func (c *CACert) backupPath() string {
-	return filepath.Join(c.gamePath, c.name()+".bak")
+	return &CACert{launcherCommonCert.NewCA(gameId, gamePath)}
 }
 
 func (c *CACert) Backup() (err error) {
-	originalPath := c.originalPath()
+	originalPath := c.OriginalPath()
 	if _, err = os.Stat(originalPath); err != nil {
 		return
 	}
-	backupPath := c.backupPath()
+	backupPath := c.BackupPath()
 	if _, err = os.Stat(backupPath); err == nil {
 		return
 	}
+	commonLogger.Printf("Opening %s\n", originalPath)
 	originalFile, err := os.Open(originalPath)
 	if err != nil {
 		return
@@ -58,7 +36,7 @@ func (c *CACert) Backup() (err error) {
 	defer func(originalFile *os.File) {
 		_ = originalFile.Close()
 	}(originalFile)
-
+	commonLogger.Printf("Creating %s\n", backupPath)
 	backupFile, err := os.Create(backupPath)
 	if err != nil {
 		return
@@ -66,7 +44,7 @@ func (c *CACert) Backup() (err error) {
 	defer func(backupFile *os.File) {
 		_ = backupFile.Close()
 	}(backupFile)
-
+	commonLogger.Printf("Copying data from %s to %s\n", backupPath, originalPath)
 	_, err = io.Copy(backupFile, originalFile)
 	if err != nil {
 		_ = backupFile.Close()
@@ -78,66 +56,26 @@ func (c *CACert) Backup() (err error) {
 	return
 }
 
-func readCertsFromFile(filePath string) (keys []string, keyToIndex map[string]int, values []*x509.Certificate, err error) {
-	var pemData []byte
-	pemData, err = os.ReadFile(filePath)
-	if err != nil {
-		return
-	}
-
-	keys = make([]string, 0)
-	values = make([]*x509.Certificate, 0)
-	keyToIndex = make(map[string]int)
-	var cert *x509.Certificate
-	for {
-		var block *pem.Block
-		block, pemData = pem.Decode(pemData)
-		if block == nil {
-			break
-		}
-
-		if block.Type != "CERTIFICATE" {
-			continue
-		}
-
-		cert, err = x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return
-		}
-
-		hash := sha256.Sum256(cert.Raw)
-		fingerprint := hex.EncodeToString(hash[:])
-
-		keys = append(keys, fingerprint)
-		values = append(values, cert)
-		keyToIndex[fingerprint] = len(keys) - 1
-
-		if len(pemData) == 0 {
-			break
-		}
-	}
-
-	return
-}
-
 func (c *CACert) Restore() (err error, removedCerts []*x509.Certificate) {
-	originalPath := c.originalPath()
+	originalPath := c.OriginalPath()
 	if _, err = os.Stat(originalPath); err != nil {
 		return
 	}
-	backupPath := c.backupPath()
+	backupPath := c.BackupPath()
 	if _, err = os.Stat(backupPath); err != nil {
 		return
 	}
-	tmpPath := c.tmpPath()
+	tmpPath := c.TmpPath()
 	if _, err = os.Stat(tmpPath); err == nil {
 		err = fmt.Errorf("temporary file %s already exists", tmpPath)
 		return
 	}
+	commonLogger.Printf("Renaming/Moving %s to %s\n", originalPath, tmpPath)
 	err = os.Rename(originalPath, tmpPath)
 	if err != nil {
 		return
 	}
+	commonLogger.Printf("Renaming/Moving %s to %s\n", backupPath, originalPath)
 	err = os.Rename(backupPath, originalPath)
 	if err != nil {
 		_ = os.Rename(tmpPath, originalPath)
@@ -148,16 +86,19 @@ func (c *CACert) Restore() (err error, removedCerts []*x509.Certificate) {
 		_ = os.Rename(tmpPath, originalPath)
 		return
 	}
-	backupHashes, backupHashToIndex, backupCerts, err := readCertsFromFile(tmpPath)
+	commonLogger.Printf("Reading %s certificates\n", tmpPath)
+	backupHashes, backupHashToIndex, backupCerts, err := launcherCommonCert.ReadFromFile(tmpPath)
 	if err != nil {
 		revert()
 		return
 	}
-	originalHashes, _, _, err := readCertsFromFile(originalPath)
+	commonLogger.Printf("Reading %s certificates\n", originalPath)
+	originalHashes, _, _, err := launcherCommonCert.ReadFromFile(originalPath)
 	if err != nil {
 		revert()
 		return
 	}
+	commonLogger.Printf("Deleting %s\n", tmpPath)
 	if err = os.Remove(tmpPath); err != nil {
 		revert()
 		return
@@ -174,11 +115,11 @@ func (c *CACert) Restore() (err error, removedCerts []*x509.Certificate) {
 }
 
 func (c *CACert) Append(certs []*x509.Certificate) (err error) {
-	originalPath := c.originalPath()
+	originalPath := c.OriginalPath()
 	if _, err = os.Stat(originalPath); err != nil {
 		return
 	}
-
+	commonLogger.Printf("Opening %s\n", originalPath)
 	file, err := os.OpenFile(originalPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return
@@ -186,6 +127,7 @@ func (c *CACert) Append(certs []*x509.Certificate) (err error) {
 	defer func(file *os.File) {
 		_ = file.Close()
 	}(file)
+	commonLogger.Println("Writing certs data")
 	for _, cert := range certs {
 		if err = launcherCommonCert.WriteAsPem(cert.Raw, file); err != nil {
 			return
