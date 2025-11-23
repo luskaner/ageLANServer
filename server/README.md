@@ -25,6 +25,24 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 </details>
 
+## Domains
+
+### Main
+
+* `aoe-api.reliclink.com`: legacy domain for AoE I: DE, AoE II: DE and AoE III: DE.
+* `*.worldsedgelink.com`: current domain for all games.
+
+### Playfab
+
+* `*.playfabapi.com`: currently used in AoM for Arena of the Gods content.
+
+### Partially proxied
+
+- `api.ageofempires.com`: except text moderation so it works normally even without internet.
+- `cdn.ageofempires.com`: except server status so it always shows online.
+
+Note proxied domains only override part of the official functionality but retain the rest of it.
+
 ## Configuration
 
 ### Certificate
@@ -65,14 +83,6 @@ The game connects to a static cloud to download assets. The server is configured
 itself. The configuration file is `cloudfilesIndex.json` inside the game subdirectory in `resources/config` and the
 corresponding
 files reside in the [`cloud`](resources/responses/cloud) directory.
-
-### api.ageofempires.com
-
-For AoM it acts as a proxy for all non implemented requests.
-
-### *.playfab
-
-For AoM it reimplements it partially.
 
 ### Age of Empires III: Definitive Edition only
 
@@ -115,6 +125,8 @@ the [`responses`](resources/responses) base directory.
 
 #### Age of Mythology: Retold
 
+##### Main
+
 - [`Achievements`](resources/responses/athens/achievements.json): List of achievements.
 - [`Leaderboards`](resources/responses/athens/leaderboards.json): List of leaderboards.
 - [`Challenges`](resources/responses/athens/challenges.json): List of challenges.
@@ -126,6 +138,23 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 - [`Item Bundle Items`](resources/responses/athens/itemBundleItems.json): Grouping of items into bundles.
+
+##### Playfab
+
+* [`public-production`](resources/responses/athens/playfab/public-production):
+    * [`1`](resources/responses/athens/playfab/public-production/1): all files here are for testing purposes, or for
+      pre-release game versions.
+    * [`2`](resources/responses/athens/playfab/public-production/2): current version of the files:
+        * [`manifest.json`](resources/responses/athens/playfab/public-production/2/manifest.json): Specifies this folder
+          paths.
+        * [`seasons/seasons0.json`](resources/responses/athens/playfab/public-production/2/seasons/season0.json):
+          left-over when they were planning to add seasons to AotG story mode.
+        * [`daily_skirmish_plus.json`](resources/responses/athens/playfab/public-production/2/daily_skirmish_plus.json):
+          Specifies the settings and order for the Daily Celestial Challenges.
+        * [`feature_flags.json`](resources/responses/athens/playfab/public-production/2/feature_flags.json): Feature
+          flags, currently just disabling the beta tag for AotG.
+        * [`feature_flags.json`](resources/responses/athens/playfab/public-production/2/known_blessings.json): Listing
+          of all blessings, even blessings or levels not used. Used by the server to grant them all to the users.
 
 ## Starting and configuring Online-like Battle Servers
 

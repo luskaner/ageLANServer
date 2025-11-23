@@ -11,7 +11,7 @@ GeneratePlatformUserId = false
 Enabled = []
 
 # Games.<game>.Hosts is the hosts/IPs the server will bind to for that game. Only IPv4 is supported.
-# Must be unique within enabled games.
+# Must be *unique* within enabled games.
 # *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
 
 [Games.age1]
