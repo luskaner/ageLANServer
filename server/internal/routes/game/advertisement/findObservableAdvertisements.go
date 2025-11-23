@@ -9,7 +9,7 @@ import (
 )
 
 func findObsAdvErr(w *http.ResponseWriter) {
-	i.JSON(w, i.A{2, nil, i.A{}, i.A{}})
+	i.JSON(w, i.A{2, i.A{}, i.A{}})
 }
 
 func FindObservableAdvertisements(w http.ResponseWriter, r *http.Request) {

@@ -9,10 +9,9 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
-func getAdvResp(errorCode int, advs []i.A) i.A {
+func getAdvResp(errorCode int, advs i.A) i.A {
 	return i.A{
 		errorCode,
-		nil,
 		advs,
 	}
 }
@@ -22,7 +21,7 @@ func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var advsIds []int32
 	err := json.Unmarshal([]byte(matchIdsStr), &advsIds)
 	if err != nil {
-		i.JSON(&w, getAdvResp(2, []i.A{}))
+		i.JSON(&w, getAdvResp(2, i.A{}))
 		return
 	}
 	game := models.G(r)
@@ -32,7 +31,7 @@ func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
 		return slices.Contains(advsIds, adv.GetId())
 	})
 	if advs == nil {
-		i.JSON(&w, getAdvResp(0, []i.A{}))
+		i.JSON(&w, getAdvResp(0, i.A{}))
 	} else {
 		i.JSON(&w, getAdvResp(0, advs))
 	}

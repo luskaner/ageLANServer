@@ -56,7 +56,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 			adv.UnsafeGetVisible() &&
 			adv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum &&
 			adv.UnsafeGetDataChecksum() != q.DataChecksum &&
-			adv.UnsafeGetMatchType() != q.MatchType &&
+			(q.MatchType == nil || adv.UnsafeGetMatchType() != *q.MatchType) &&
 			adv.UnsafeGetModDllFile() != q.ModDllFile &&
 			adv.UnsafeGetModDllChecksum() != q.ModDllChecksum &&
 			adv.UnsafeGetModName() != q.ModName &&

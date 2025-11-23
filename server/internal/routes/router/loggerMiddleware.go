@@ -52,8 +52,7 @@ func (w *ResponseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, fmt.Errorf("ResponseWriter does not implement http.Hijacker")
 }
 
-func NewLoggingMiddleware(next http.Handler, t time.Time) http.Handler {
-	logger.StartTime = t
+func NewLoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestStart := time.Now()
 		requestBody, _ := io.ReadAll(r.Body)

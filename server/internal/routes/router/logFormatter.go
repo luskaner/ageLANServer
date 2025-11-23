@@ -13,16 +13,20 @@ import (
 )
 
 func formatDurationWithDays(d time.Duration) string {
-	days := int(d.Hours()) / 24
-	hours := int(d.Hours()) % 24
-	minutes := int(d.Minutes()) % 60
-	seconds := int(d.Seconds()) % 60
+	d = d.Truncate(time.Second)
+	day := 24 * time.Hour
+	days := d / day
+	d -= days * day
+	hours := d / time.Hour
+	d -= hours * time.Hour
+	minutes := d / time.Minute
+	d -= minutes * time.Minute
+	seconds := d / time.Second
+	result := fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 	if days > 0 {
-		return fmt.Sprintf("%dd %02d:%02d:%02d",
-			days, hours, minutes, seconds)
+		result = fmt.Sprintf("%dd %s", days, result)
 	}
-	return fmt.Sprintf("%02d:%02d:%02d",
-		hours, minutes, seconds)
+	return result
 }
 
 func logFormatter(writer io.Writer, params handlers.LogFormatterParams) {

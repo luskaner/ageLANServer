@@ -10,6 +10,10 @@ import (
 
 var StartTime time.Time
 
+func init() {
+	StartTime = time.Now().UTC()
+}
+
 func OpenMainFileLog(root string) error {
 	if viper.GetBool("Config.Log") {
 		err := commonLogger.NewOwnFileLogger("server", root, "", true)

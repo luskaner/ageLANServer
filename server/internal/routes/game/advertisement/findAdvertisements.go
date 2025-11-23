@@ -9,14 +9,15 @@ import (
 )
 
 type searchQuery struct {
-	AppBinaryChecksum int32  `schema:"appBinaryChecksum"`
-	DataChecksum      int32  `schema:"dataChecksum"`
-	MatchType         uint8  `schema:"matchType_id"`
-	ModDllFile        string `schema:"modDLLFile"`
-	ModDllChecksum    int32  `schema:"modDLLChecksum"`
-	ModName           string `schema:"modName"`
-	ModVersion        string `schema:"modVersion"`
-	VersionFlags      uint32 `schema:"versionFlags"`
+	AppBinaryChecksum int32 `schema:"appBinaryChecksum"`
+	DataChecksum      int32 `schema:"dataChecksum"`
+	// AoE3 does not send match type when searching for observable games
+	MatchType      *uint8 `schema:"matchType_id"`
+	ModDllFile     string `schema:"modDLLFile"`
+	ModDllChecksum int32  `schema:"modDLLChecksum"`
+	ModName        string `schema:"modName"`
+	ModVersion     string `schema:"modVersion"`
+	VersionFlags   uint32 `schema:"versionFlags"`
 }
 
 type wanQuery struct {
@@ -24,7 +25,7 @@ type wanQuery struct {
 	Offset int `schema:"start"`
 }
 
-func findAdvResp(errorCode int, advs []i.A) i.A {
+func findAdvResp(errorCode int, advs i.A) i.A {
 	resp := getAdvResp(errorCode, advs)
 	resp = append(resp, i.A{})
 	return resp
@@ -33,7 +34,7 @@ func findAdvResp(errorCode int, advs []i.A) i.A {
 func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(*models.MainAdvertisement) bool) {
 	var q searchQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, findAdvResp(2, []i.A{}))
+		i.JSON(&w, findAdvResp(2, i.A{}))
 		return
 	}
 	game := models.G(r)
@@ -67,7 +68,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			(adv.UnsafeGetJoinable() != ongoing || adv.UnsafeGetVisible() != ongoing) &&
 			adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
 			adv.UnsafeGetDataChecksum() == q.DataChecksum &&
-			adv.UnsafeGetMatchType() == q.MatchType &&
+			(q.MatchType == nil || adv.UnsafeGetMatchType() == *q.MatchType) &&
 			adv.UnsafeGetModDllFile() == q.ModDllFile &&
 			adv.UnsafeGetModDllChecksum() == q.ModDllChecksum &&
 			adv.UnsafeGetModName() == q.ModName &&
@@ -76,17 +77,13 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			matchesBattleServer &&
 			(extraCheck == nil || extraCheck(adv))
 	})
-	if advs == nil {
-		i.JSON(&w, findAdvResp(0, []i.A{}))
-	} else {
-		i.JSON(&w, findAdvResp(0, advs))
-	}
+	i.JSON(&w, findAdvResp(0, advs))
 }
 
 func FindAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var q wanQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, findAdvResp(2, []i.A{}))
+		i.JSON(&w, findAdvResp(2, i.A{}))
 		return
 	}
 	findAdvertisements(w, r, q.Length, q.Offset, false, nil, nil)

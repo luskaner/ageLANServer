@@ -205,7 +205,7 @@ var (
 						exitCode = internal.ErrCreateLogFile
 					} else {
 						closables = append(closables, logger.NewBuffer(f))
-						mux = router.NewLoggingMiddleware(mux, time.Now().UTC())
+						mux = router.NewLoggingMiddleware(mux)
 					}
 				}
 				for addr := range addrs.Iter() {

@@ -20,10 +20,13 @@ import (
 
 type connectionWrapper struct {
 	writeLock *sync.Mutex
+	connLock  *sync.RWMutex
 	conn      *websocket.Conn
 }
 
 func (c *connectionWrapper) withConn(fn func(conn *websocket.Conn)) {
+	c.connLock.RLock()
+	defer c.connLock.RUnlock()
 	if c.conn != nil {
 		fn(c.conn)
 	}
@@ -143,6 +146,8 @@ func (c *connectionWrapper) logClose(sender string, receiver string) {
 
 func (c *connectionWrapper) Close() error {
 	defer func() {
+		c.connLock.Lock()
+		defer c.connLock.Unlock()
 		c.conn = nil
 		c.writeLock = nil
 	}()
@@ -220,6 +225,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	connWrapper := &connectionWrapper{
+		connLock:  &sync.RWMutex{},
 		writeLock: &sync.Mutex{},
 		conn:      conn,
 	}
