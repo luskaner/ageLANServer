@@ -121,9 +121,9 @@ var (
 				exitCode = internal.ErrCertDirectory
 				return
 			}
+			announceEnabled := viper.GetBool("Announcement.Enabled")
 			multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
-			multicast := viper.GetBool("Announcement.Multicast")
-			if multicast {
+			if announceEnabled && viper.GetBool("Announcement.Multicast") {
 				multicastIP, err := netip.ParseAddr(viper.GetString("Announcement.MulticastGroup"))
 				if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
 					logger.Println("Invalid multicast IP")
@@ -135,7 +135,6 @@ var (
 				}
 				multicastGroups.Add(multicastIP)
 			}
-			broadcast := viper.GetBool("Announcement.Broadcast")
 			announcePort := viper.GetInt("Announcement.Port")
 			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 			var servers []*http.Server
@@ -219,7 +218,7 @@ var (
 						keyFile = filepath.Join(certificatePairFolder, common.Key)
 					}
 					var listenConns []*net.UDPConn
-					if broadcast || multicast {
+					if announceEnabled {
 						err, listenConns = ip.QueryConnections(addr, multicastGroups, announcePort)
 						if err != nil {
 							logger.Println("\tFailed to listen to UDP connections for address", addr.String())
@@ -286,11 +285,10 @@ func Execute() error {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.Flags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	rootCmd.Flags().StringP("announce", "a", "true", "Announce 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
-	rootCmd.Flags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
-	rootCmd.Flags().StringP("announceMulticast", "m", "true", "Whether to announce the 'server' using Multicast.")
-	rootCmd.Flags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
-	rootCmd.Flags().StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Whether to announce the 'server' using Multicast or Broadcast.")
+	rootCmd.Flags().StringP("announce", "a", "true", "Respond to discove 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
+	rootCmd.Flags().IntP("announcePort", "p", common.AnnouncePort, "Port to respond to discovery requests. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
+	rootCmd.Flags().StringP("announceMulticast", "m", "true", "Whether to respond to discovery queries using Multicast.")
+	rootCmd.Flags().StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Multicast address to respond to discovery queries if 'announce' is enabled.")
 	rootCmd.Flags().Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
 	rootCmd.Flags().BoolVar(&flatLog, "flatLog", false, "Whether to log in a flat structure in --logRoot. Only applicable if --log is passed.")
 	rootCmd.Flags().BoolVar(&deterministic, "deterministic", false, "Whether to be as deterministic as possible.")
@@ -305,9 +303,6 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.Port", rootCmd.Flags().Lookup("announcePort")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("Announcement.Broadcast", rootCmd.Flags().Lookup("announceBroadcast")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.Multicast", rootCmd.Flags().Lookup("announceMulticast")); err != nil {

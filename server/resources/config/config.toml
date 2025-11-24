@@ -30,14 +30,12 @@ Hosts = ['0.0.0.0']
 # See the complete information in BattleServers.md
 [Announcement]
 
-# Whether to announce the server in LAN. When disabled, the launcher will not automatically detect it.
+# Whether to respond discovery queries in LAN. When disabled, the launcher will not automatically detect it.
 Enabled = true
-# Whether to announce the server using Multicast. More efficient but less compatible than Broadcast.
+# Whether to respond discovery queries in the Multicast address.
 Multicast = true
-# Whether to announce the server using Broadcast.
-Broadcast = true
 # Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
 Port = 31978
-# Multicast group to announce to (IPv4 only).
-# If changed, the launchers will need to specify the address in Server.AnnounceMulticastGroups to receive multicasts.
+# Multicast group to respond to (IPv4 only).
+# If changed, the launchers will need to specify the address in Server.AnnounceMulticastGroups.
 MulticastGroup = '239.31.97.8'
