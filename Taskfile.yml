@@ -10,7 +10,10 @@ tasks:
       - goreleaser build --clean --snapshot
   release:
     cmds:
-      - goreleaser release --clean --snapshot
+      - goreleaser release --clean --snapshot --fail-fast
+  release-no-sign:
+    cmds:
+      - goreleaser release --clean --snapshot --fail-fast --skip=sign
   debug-prepare-server:
     deps: [ debug:prepare-server-base ]
     cmds:
