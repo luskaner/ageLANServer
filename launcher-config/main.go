@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd"
 )
 
-const version = "development"
+var version = "development"
 
 func main() {
 	commonLogger.Initialize(os.Stdout)

@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "development"
+var version = "development"
 
 func main() {
 	cobra.MousetrapHelpText = ""

@@ -5,7 +5,7 @@ import (
 	"github.com/luskaner/ageLANServer/server-replay/internal/cmd"
 )
 
-const version = "development"
+var version = "development"
 
 func main() {
 	cmd.Version = version
