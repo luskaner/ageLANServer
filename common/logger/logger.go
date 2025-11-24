@@ -54,14 +54,6 @@ func NewFileLogger(name string, root string, gameId string, finalRoot bool) (fil
 	return
 }
 
-func Buffer(name string, root string, gameId string, finalRoot bool, fn func(writer io.Writer)) error {
-	err, fileLogger := NewFile(root, gameId, finalRoot)
-	if err != nil {
-		return err
-	}
-	return fileLogger.Buffer(name, fn)
-}
-
 func Initialize(writer io.Writer) {
 	var flags int
 	if writer == nil {

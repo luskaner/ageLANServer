@@ -7,11 +7,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/process"
 )
 
-type lock interface {
-	Lock() error
-	Unlock() error
-}
-
 type Data struct {
 	file *os.File
 }

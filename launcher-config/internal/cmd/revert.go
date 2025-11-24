@@ -270,7 +270,6 @@ var doRestoreMetadata bool
 var doRestoreProfiles bool
 var doRestoreCaStoreCert bool
 var stopAgent bool
-var gameId string
 
 // State
 var removedUserCerts []*x509.Certificate
