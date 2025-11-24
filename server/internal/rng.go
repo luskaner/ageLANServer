@@ -3,16 +3,37 @@ package internal
 import (
 	"math/rand/v2"
 	"sync"
-	"time"
+
+	"github.com/google/uuid"
 )
 
-var seed = uint64(time.Now().UnixNano())
-var src = rand.NewPCG(seed, seed)
-var rng = rand.New(src)
-var rngLock = sync.Mutex{}
+var rng RandReader
 
-func WithRng(action func(rand *rand.Rand)) {
-	rngLock.Lock()
-	defer rngLock.Unlock()
-	action(rng)
+type RandReader struct {
+	*rand.Rand
+	mu sync.Mutex
+}
+
+func (rr *RandReader) Read(p []byte) (int, error) {
+	rr.mu.Lock()
+	defer rr.mu.Unlock()
+	for i := range p {
+		p[i] = byte(rr.UintN(256))
+	}
+	return len(p), nil
+}
+
+func WithRng(action func(rand *RandReader)) {
+	rng.WithRng(action)
+}
+
+func (rr *RandReader) WithRng(action func(rand *RandReader)) {
+	rr.mu.Lock()
+	defer rr.mu.Unlock()
+	action(&rng)
+}
+
+func InitializeRng(seed uint64) {
+	rng.Rand = rand.New(rand.NewPCG(seed, seed))
+	uuid.SetRand(&rng)
 }

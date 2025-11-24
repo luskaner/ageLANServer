@@ -13,7 +13,6 @@ const (
 	ErrGameAlreadyRunning
 	ErrGameLauncherNotFound
 	ErrGameLauncherStart
-	ErrListenServerAnnouncements
 	ErrServerExecutable
 	ErrServerConnectSecure
 	ErrServerUnreachable
@@ -38,7 +37,6 @@ const (
 	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
 	ErrSetupCommand
-	ErrConfigCDNMap
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch

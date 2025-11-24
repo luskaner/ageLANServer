@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -39,7 +38,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 		joinReturnStartObservingError(battleServers, r, w)
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	advertisements := game.Advertisements()
 
@@ -57,7 +56,7 @@ func StartObserving(w http.ResponseWriter, r *http.Request) {
 			adv.UnsafeGetVisible() &&
 			adv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum &&
 			adv.UnsafeGetDataChecksum() != q.DataChecksum &&
-			adv.UnsafeGetMatchType() != q.MatchType &&
+			(q.MatchType == nil || adv.UnsafeGetMatchType() != *q.MatchType) &&
 			adv.UnsafeGetModDllFile() != q.ModDllFile &&
 			adv.UnsafeGetModDllChecksum() != q.ModDllChecksum &&
 			adv.UnsafeGetModName() != q.ModName &&

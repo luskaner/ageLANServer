@@ -1,20 +1,20 @@
 package userData
 
 import (
-	"path/filepath"
-
-	"github.com/luskaner/ageLANServer/common"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 func Metadata(gameId string) Data {
-	var path string
-	switch gameId {
-	case common.GameAoE2:
-		path = "metadata"
-	case common.GameAoE3:
-		path = filepath.Join("Common", "RLink")
-	case common.GameAoM:
-		path = filepath.Join("temp", "RLink")
+	data := Data{}
+	err, metadatas := commonUserData.Metadatas(gameId)
+	if err != nil {
+		return data
 	}
-	return Data{Path: path}
+	for metadata := range metadatas.Iter() {
+		if metadata.Type == commonUserData.TypeActive {
+			data.Path = metadata.Path
+			break
+		}
+	}
+	return data
 }

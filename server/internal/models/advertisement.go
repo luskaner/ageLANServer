@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"time"
 
 	"github.com/google/uuid"
@@ -201,7 +200,7 @@ func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, *MainPeer] {
 
 func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) *MainAdvertisement {
 	adv := &MainAdvertisement{}
-	i.WithRng(func(rand *rand.Rand) {
+	i.WithRng(func(rand *i.RandReader) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
 	})
 	adv.relayRegion = advFrom.RelayRegion
@@ -255,7 +254,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 	exists := true
 	var storedAdv *MainAdvertisement
 	for exists {
-		i.WithRng(func(rand *rand.Rand) {
+		i.WithRng(func(rand *i.RandReader) {
 			adv.id = rand.Int32()
 		})
 		exists, storedAdv = advs.store.Store(adv.id, adv, func(_ *MainAdvertisement) bool {
@@ -491,8 +490,8 @@ func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainA
 	return nil
 }
 
-func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) []i.A {
-	var res []i.A
+func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) i.A {
+	var res i.A
 	_, iter := advs.store.Values()
 	for adv := range iter {
 		advId := adv.GetId()
@@ -511,7 +510,7 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, l
 		}
 	}
 	if offset >= len(res) {
-		return []i.A{}
+		return i.A{}
 	}
 	if length == 0 {
 		length = len(res)

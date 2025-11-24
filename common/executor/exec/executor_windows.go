@@ -1,9 +1,9 @@
 package exec
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/sys/windows"
@@ -16,24 +16,14 @@ func fixArgs(arg ...string) []string {
 	return arg
 }
 
-func shellExecute(verb string, file string, executableWorkingPath bool, showWindow int32, arg ...string) error {
-	verbPtr, _ := windows.UTF16PtrFromString(verb)
-	exe, _ := windows.UTF16PtrFromString(file)
-	args, _ := windows.UTF16PtrFromString(strings.Join(fixArgs(arg...), " "))
-	var workingDirPtr *uint16
-	if executableWorkingPath {
-		workingDirPtr, _ = windows.UTF16PtrFromString(filepath.Dir(file))
-	} else {
-		workingDirPtr = nil
-	}
-
-	return windows.ShellExecute(0, verbPtr, exe, args, workingDirPtr, showWindow)
-}
-
 func (options Options) exec() (result *Result) {
-	shell := options.Shell || options.ShowWindow || options.AsAdmin || !options.Wait
+	shell := options.Shell || options.AsAdmin
 	if shell {
 		result = &Result{}
+		if options.Stdout != nil || options.Stderr != nil {
+			result.Err = errors.New("shell or elevating as admin are not compatible with capturing stdout/stderr")
+			return
+		}
 		var showWindowInt int32
 
 		if options.ShowWindow {
@@ -50,17 +40,13 @@ func (options Options) exec() (result *Result) {
 			verb = "open"
 		}
 
-		if options.Wait || options.Pid || options.ExitCode {
-			err, pid, exitCode := shellExecuteEx(verb, !options.Wait, options.File, !options.UseWorkingPath, options.Pid, showWindowInt, options.Args...)
-			result.Err = err
-			if options.Pid {
-				result.Pid = pid
-			}
-			if options.ExitCode {
-				result.ExitCode = exitCode
-			}
-		} else {
-			result.Err = shellExecute(verb, options.File, !options.UseWorkingPath, showWindowInt, options.Args...)
+		err, pid, exitCode := shellExecuteEx(verb, !options.Wait, options.File, !options.UseWorkingPath, options.Pid, showWindowInt, options.Args...)
+		result.Err = err
+		if options.Pid {
+			result.Pid = pid
+		}
+		if options.ExitCode {
+			result.ExitCode = exitCode
 		}
 	} else {
 		return options.standardExec()
@@ -68,6 +54,25 @@ func (options Options) exec() (result *Result) {
 	return
 }
 
-func startCmd(cmd *exec.Cmd) error {
-	return cmd.Start()
+func configureCmd(cmd *exec.Cmd, wait bool, show bool, gui bool) {
+	if gui {
+		if !wait {
+			cmd.SysProcAttr = &windows.SysProcAttr{
+				CreationFlags: windows.DETACHED_PROCESS,
+			}
+		}
+	} else if show {
+		cmd.SysProcAttr = &windows.SysProcAttr{
+			NoInheritHandles: true,
+			CreationFlags:    windows.CREATE_NEW_CONSOLE,
+		}
+	} else if !wait {
+		cmd.SysProcAttr = &windows.SysProcAttr{
+			CreationFlags: windows.DETACHED_PROCESS | windows.CREATE_NO_WINDOW,
+		}
+	} else {
+		cmd.SysProcAttr = &windows.SysProcAttr{
+			CreationFlags: windows.CREATE_NO_WINDOW,
+		}
+	}
 }

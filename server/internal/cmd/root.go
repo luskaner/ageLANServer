@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -11,202 +10,274 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
-	"syscall"
+	"sync"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/gorilla/handlers"
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/pidLock"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/ip"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
+	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
-	"github.com/luskaner/ageLANServer/server/internal/routes"
+	"github.com/luskaner/ageLANServer/server/internal/routes/router"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var configPaths = []string{path.Join("resources", "config"), "."}
+var id string
+var logRoot string
+var flatLog bool
+var deterministic bool
 
 var (
 	Version string
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service for LAN features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
+		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &pidLock.Lock{}
+			exitCode := common.ErrSuccess
 			if err := lock.Lock(); err != nil {
-				fmt.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
-				fmt.Println(err.Error())
+				logger.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
+				logger.Println(err.Error())
+				commonLogger.CloseFileLog()
 				os.Exit(common.ErrPidLock)
 			}
+			commonLogger.Initialize(nil)
+			if logRoot == "" {
+				logRoot = commonLogger.LogRootDate("")
+			}
+			if err := logger.OpenMainFileLog(logRoot); err != nil {
+				logger.Printf("Failed to open main log file: %v", err)
+				os.Exit(common.ErrFileLog)
+			}
+			var seed uint64
+			if !deterministic {
+				seed = uint64(time.Now().UnixNano())
+			}
+			internal.InitializeRng(seed)
+			if id == "" {
+				id = uuid.NewString()
+			}
+			var closables []io.Closer
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Println(r)
+					logger.Println(string(debug.Stack()))
+					exitCode = common.ErrGeneral
+				}
+				commonLogger.CloseFileLog()
+				for _, file := range closables {
+					_ = file.Close()
+				}
+				_ = lock.Unlock()
+				os.Exit(exitCode)
+			}()
+			var err error
+			if internal.Id, err = uuid.Parse(id); err != nil {
+				logger.Println("Invalid server instance ID")
+				exitCode = internal.ErrInvalidId
+				return
+			}
+			logger.Println("Server instance ID:", internal.Id)
 			if viper.GetBool("GeneratePlatformUserId") {
-				fmt.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
+				logger.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
 			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games.Enabled")...)
 			if gameSet.IsEmpty() {
-				fmt.Println("No games specified")
-				_ = lock.Unlock()
-				os.Exit(internal.ErrGames)
+				logger.Println("No games specified")
+				exitCode = internal.ErrGames
+				return
 			}
 			for game := range gameSet.Iter() {
 				if !common.SupportedGames.ContainsOne(game) {
-					fmt.Println("Invalid game specified:", game)
-					_ = lock.Unlock()
-					os.Exit(internal.ErrGames)
+					logger.Println("Invalid game specified:", game)
+					exitCode = internal.ErrGames
+					return
 				}
 			}
-			fmt.Printf("Games: %s\n", strings.Join(gameSet.ToSlice(), ", "))
 			if executor.IsAdmin() {
-				fmt.Println("Running as administrator, this is not recommended for security reasons.")
+				logger.Println("Running as administrator, this is not recommended for security reasons.")
 				if runtime.GOOS == "linux" {
-					fmt.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
+					logger.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
 				}
-			}
-			hosts := viper.GetStringSlice("Hosts")
-			addrs := ip.ResolveHosts(hosts)
-			if addrs == nil || len(addrs) == 0 {
-				fmt.Println("Failed to resolve host (or it was an Ipv6 address)")
-				_ = lock.Unlock()
-				os.Exit(internal.ErrResolveHost)
-			}
-			common.CacheAllHosts()
-			mux := http.NewServeMux()
-			initializer.InitializeGames(gameSet)
-			routes.Initialize(mux, gameSet)
-			gameMux := middleware.GameMiddleware(mux)
-			sessionMux := middleware.SessionMiddleware(gameMux)
-			var finalMux http.Handler
-			if gameSet.ContainsOne(common.GameAoM) {
-				playfabMux := middleware.PlayfabMiddleware(sessionMux)
-				apiAgeOfEmpiresMux := middleware.ApiAgeOfEmpiresMiddleware(playfabMux)
-				finalMux = apiAgeOfEmpiresMux
-			} else {
-				finalMux = sessionMux
-			}
-
-			logToConsole := viper.GetBool("LogToConsole")
-			var writer io.Writer
-			if logToConsole {
-				writer = os.Stdout
-			} else {
-				err := os.MkdirAll("logs", 0755)
-				if err != nil {
-					fmt.Println("Failed to create logs directory")
-					_ = lock.Unlock()
-					os.Exit(internal.ErrCreateLogsDir)
-				}
-				t := time.Now()
-				fileName := fmt.Sprintf("logs/access_log_%d-%02d-%02dT%02d-%02d-%02d.txt", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
-				file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
-				if err != nil {
-					fmt.Println("Failed to create log file")
-					_ = lock.Unlock()
-					os.Exit(internal.ErrCreateLogFile)
-				}
-				writer = file
 			}
 			certificatePairFolder := common.CertificatePairFolder(os.Args[0])
 			if certificatePairFolder == "" {
-				fmt.Println("Failed to determine certificate pair folder")
-				_ = lock.Unlock()
-				os.Exit(internal.ErrCertDirectory)
+				logger.Println("Failed to determine certificate pair folder")
+				exitCode = internal.ErrCertDirectory
+				return
 			}
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-			handler := handlers.LoggingHandler(writer, finalMux)
-			cert, err := tls.LoadX509KeyPair(
-				filepath.Join(certificatePairFolder, common.Cert), filepath.Join(certificatePairFolder, common.Key),
-			)
-			if err != nil {
-				panic(err)
-			}
-			selfSignedCert, err := tls.LoadX509KeyPair(
-				filepath.Join(certificatePairFolder, common.SelfSignedCert),
-				filepath.Join(certificatePairFolder, common.SelfSignedKey),
-			)
-			if err != nil {
-				panic(err)
-			}
-			tlsConfig := &tls.Config{
-				GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					if internal.SelfSignedCertificate(hello.ServerName) {
-						return &selfSignedCert, nil
-					}
-					return &cert, nil
-				},
-			}
-			var servers []*http.Server
-			customLogger := log.New(&internal.CustomWriter{OriginalWriter: os.Stderr}, "", log.LstdFlags)
-			var multicastIP net.IP
+			multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
 			multicast := viper.GetBool("Announcement.Multicast")
 			if multicast {
-				multicastIP = net.ParseIP(viper.GetString("Announcement.MulticastGroup"))
-				if multicastIP == nil || multicastIP.To4() == nil || !multicastIP.IsMulticast() {
-					fmt.Println("Invalid multicast IP")
-					_ = lock.Unlock()
-					os.Exit(internal.ErrMulticastGroup)
+				multicastIP, err := netip.ParseAddr(viper.GetString("Announcement.MulticastGroup"))
+				if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
+					logger.Println("Invalid multicast IP")
+					if err != nil {
+						logger.Println(err.Error())
+					}
+					exitCode = internal.ErrMulticastGroup
+					return
 				}
+				multicastGroups.Add(multicastIP)
 			}
 			broadcast := viper.GetBool("Announcement.Broadcast")
 			announcePort := viper.GetInt("Announcement.Port")
-			if broadcast || multicast {
-				fmt.Println("Announcing on port", announcePort)
-			}
-			for _, addr := range addrs {
-				server := &http.Server{
-					Addr:         addr.String() + ":443",
-					Handler:      handler,
-					ErrorLog:     customLogger,
-					IdleTimeout:  time.Second * 30,
-					ReadTimeout:  time.Second * 5,
-					WriteTimeout: time.Second * 30,
-					TLSConfig:    tlsConfig,
+			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
+			var servers []*http.Server
+			internal.InitializeStopSignal()
+			for gameId := range gameSet.Iter() {
+				logger.Printf("Game %s:\n", gameId)
+				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
+				addrs := ip.ResolveHosts(mapset.NewThreadUnsafeSet[string](hosts...))
+				if addrs.IsEmpty() {
+					logger.Println("\tFailed to resolve host (or it was an IPv6 address)")
+					exitCode = internal.ErrResolveHost
+					return
 				}
-
-				fmt.Println("Listening on " + server.Addr)
-				go func() {
+				if err = initializer.InitializeGame(gameId); err != nil {
+					logger.Printf("\tFailed to initialize game: %v\n", err)
+					exitCode = internal.ErrGame
+					return
+				}
+				if battlesServers, ok := models.BattleServers[gameId]; ok && len(battlesServers) > 0 {
+					logger.Println("\tBattle Servers:")
+					for _, battleServer := range battlesServers {
+						logger.Println("\t\t" + battleServer.String())
+					}
+				}
+				var writer io.Writer
+				var root *commonLogger.Root
+				gameLogRoot := logRoot
+				var filePrefix string
+				if flatLog {
+					filePrefix = fmt.Sprintf("%s_", gameId)
+				} else {
+					gameLogRoot = filepath.Join(gameLogRoot, gameId)
+				}
+				customLoggerWriters := []io.Writer{os.Stderr}
+				if commonLogger.FileLogger == nil {
+					writer = os.Stdout
+				} else {
+					customLoggerWriters = append(customLoggerWriters, &commonLogger.Buf)
+					if err, root = commonLogger.NewFile(gameLogRoot, "", true); err != nil {
+						logger.Printf("\tFailed to prepare log folder: %v\n", err)
+						exitCode = internal.ErrCreateLogFile
+						return
+					} else if f, err := root.Open(filePrefix + "access_log"); err != nil {
+						logger.Printf("\tFailed to open access log file: %v\n", err)
+						exitCode = internal.ErrCreateLogFile
+						return
+					} else {
+						closables = append(closables, f)
+						writer = f
+					}
+				}
+				customLogger := log.New(
+					&internal.CustomWriter{OriginalWriter: io.MultiWriter(customLoggerWriters...)},
+					"|SERVER| ",
+					log.Ltime|log.Lmicroseconds,
+				)
+				internal.AnnounceMessageData[gameId] = internal.AnnounceMessageDataLatest{
+					GameTitle: gameId,
+					Version:   Version,
+				}
+				general := &router.General{Writer: writer}
+				mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
+				mux = router.TitleMiddleware(gameId, mux)
+				if root != nil {
+					if f, err := root.Open(filePrefix + "communication_log"); err != nil {
+						logger.Printf("\tFailed to open communication log file: %v\n", err)
+						exitCode = internal.ErrCreateLogFile
+					} else {
+						closables = append(closables, logger.NewBuffer(f))
+						mux = router.NewLoggingMiddleware(mux)
+					}
+				}
+				for addr := range addrs.Iter() {
+					var certFile string
+					var keyFile string
+					if common.SelfSignedCertGame(gameId) {
+						certFile = filepath.Join(certificatePairFolder, common.SelfSignedCert)
+						keyFile = filepath.Join(certificatePairFolder, common.SelfSignedKey)
+					} else {
+						certFile = filepath.Join(certificatePairFolder, common.Cert)
+						keyFile = filepath.Join(certificatePairFolder, common.Key)
+					}
+					var listenConns []*net.UDPConn
 					if broadcast || multicast {
-						go func() {
-							ip.Announce(addr, multicastIP, announcePort, broadcast, multicast)
-						}()
+						err, listenConns = ip.QueryConnections(addr, multicastGroups, announcePort)
+						if err != nil {
+							logger.Println("\tFailed to listen to UDP connections for address", addr.String())
+							exitCode = internal.ErrAnnounce
+							return
+						}
 					}
-					err := server.ListenAndServeTLS("", "")
-					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						fmt.Println("Failed to start 'server'")
-						fmt.Println(err)
-						os.Exit(internal.ErrStartServer)
+					server := &http.Server{
+						Addr:         addr.String() + ":443",
+						Handler:      mux,
+						ErrorLog:     customLogger,
+						IdleTimeout:  time.Second * 30,
+						ReadTimeout:  time.Second * 5,
+						WriteTimeout: time.Second * 30,
 					}
-				}()
-				servers = append(servers, server)
+
+					logger.Println("\tListening on " + server.Addr)
+					go func() {
+						if len(listenConns) > 0 {
+							for _, conn := range listenConns {
+								logger.Printf(
+									"\tListening for query connections on %s\n",
+									conn.LocalAddr(),
+								)
+							}
+							ip.ListenQueryConnections(listenConns)
+						}
+						err := server.ListenAndServeTLS(certFile, keyFile)
+						if err != nil && !errors.Is(err, http.ErrServerClosed) {
+							logger.Println("\tFailed to start 'server'")
+							logger.Printf("%s\n", err)
+							exitCode = internal.ErrStartServer
+							return
+						}
+					}()
+					servers = append(servers, server)
+				}
 			}
 
-			<-stop
+			<-internal.StopSignal
 
-			fmt.Println("'Servers' are shutting down...")
+			logger.Println("'Servers' are shutting down...")
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			var wg sync.WaitGroup
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 
 			for _, server := range servers {
-				if err := server.Shutdown(ctx); err != nil {
-					fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
-				}
-
-				fmt.Println("'Server'", server.Addr, "stopped")
+				wg.Add(1)
+				go func(s *http.Server) {
+					defer wg.Done()
+					if err := s.Shutdown(ctx); err != nil {
+						fmt.Printf("'Server' %s forced to shutdown: %v\n", s.Addr, err)
+					}
+					logger.Println("'Server'", s.Addr, "stopped")
+				}(server)
 			}
-
-			_ = lock.Unlock()
+			wg.Wait()
 		},
 	}
 )
@@ -219,11 +290,17 @@ func Execute() error {
 	rootCmd.Flags().IntP("announcePort", "p", common.AnnouncePort, "Port to announce to. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
 	rootCmd.Flags().StringP("announceMulticast", "m", "true", "Whether to announce the 'server' using Multicast.")
 	rootCmd.Flags().BoolP("announceBroadcast", "b", false, "Whether to announce the 'server' using Broadcast.")
-	rootCmd.Flags().StringP("announceMulticastGroup", "i", "239.31.97.8", "Whether to announce the 'server' using Multicast or Broadcast.")
+	rootCmd.Flags().StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Whether to announce the 'server' using Multicast or Broadcast.")
+	rootCmd.Flags().Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
+	rootCmd.Flags().BoolVar(&flatLog, "flatLog", false, "Whether to log in a flat structure in --logRoot. Only applicable if --log is passed.")
+	rootCmd.Flags().BoolVar(&deterministic, "deterministic", false, "Whether to be as deterministic as possible.")
 	cmd.GamesCommand(rootCmd.Flags())
-	rootCmd.Flags().StringArrayP("host", "n", []string{netip.IPv4Unspecified().String()}, "The host the 'server' will bind to. Can be set multiple times.")
-	rootCmd.Flags().BoolP("logToConsole", "l", false, "Log the requests to the console (stdout) or not.")
+	cmd.LogRootCommand(rootCmd.Flags(), &logRoot)
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
+	rootCmd.Flags().StringVar(&id, "id", "", "Server instance ID to identify it.")
+	if err := viper.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
+		return err
+	}
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
 		return err
 	}
@@ -239,13 +316,7 @@ func Execute() error {
 	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.Flags().Lookup("announceMulticastGroup")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Hosts", rootCmd.Flags().Lookup("host")); err != nil {
-		return err
-	}
 	if err := viper.BindPFlag("Games.Enabled", rootCmd.Flags().Lookup("games")); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag("LogToConsole", rootCmd.Flags().Lookup("logToConsole")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("GeneratePlatformUserId", rootCmd.Flags().Lookup("generatePlatformUserId")); err != nil {
@@ -266,6 +337,6 @@ func initConfig() {
 	}
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		logger.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

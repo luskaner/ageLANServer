@@ -18,7 +18,7 @@ import (
 var updateStoreBinaries = []string{
 	// Debian, OpenSUSE
 	"update-ca-certificates",
-	// Fedora, Arch Linux
+	// Fedora, Arch
 	"update-ca-trust",
 }
 
@@ -31,6 +31,17 @@ var certStorePaths = []string{
 	"/etc/pki/ca-trust/source/anchors",
 	// OpenSUSE
 	"/etc/pki/trust/anchors",
+}
+
+var certStoreBundlePaths = []string{
+	// Debian, Arch
+	"/etc/ssl/certs/ca-certificates.crt",
+	// Fedora
+	"/etc/pki/tls/certs/ca-bundle.crt",
+	// OpenSUSE
+	"/etc/pki/tls/certs/ca-bundle.pem",
+	// Other
+	"/etc/ssl/ca-bundle.pem",
 }
 
 func updateStore() error {
@@ -182,4 +193,32 @@ func UntrustCertificates(_ bool) (certs []*x509.Certificate, err error) {
 	}
 
 	return
+}
+
+func EnumCertificates(_ bool) (certs []*x509.Certificate, err error) {
+	for _, path := range certStoreBundlePaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		certs = []*x509.Certificate{}
+		for len(data) > 0 {
+			var block *pem.Block
+			block, data = pem.Decode(data)
+			if block == nil {
+				break
+			}
+			if block.Type != "CERTIFICATE" || len(block.Headers) != 0 {
+				continue
+			}
+			cert, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				continue
+			}
+			certs = append(certs, cert)
+		}
+		return certs, nil
+	}
+
+	return nil, fmt.Errorf("no cert bundle found")
 }

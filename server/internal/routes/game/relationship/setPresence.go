@@ -5,14 +5,13 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func ChangePresence(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser, presence int32) {
+func ChangePresence(clientLibVersion uint16, users *models.MainUsers, user *models.MainUser, presence int32) {
 	user.SetPresence(presence)
-	profileInfo := i.A{user.GetProfileInfo(true, gameTitle, clientLibVersion)}
+	profileInfo := i.A{user.GetProfileInfo(true, clientLibVersion)}
 	for u := range users.GetUserIds() {
 		sess, ok := models.GetSessionByUserId(u)
 		if ok {
@@ -36,12 +35,12 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		ChangePresence(game.Title(), sess.GetClientLibVersion(), users, u, int32(presence))
+		ChangePresence(sess.GetClientLibVersion(), users, u, int32(presence))
 		i.JSON(&w, i.A{0})
 	} else {
 		i.JSON(&w, i.A{2})

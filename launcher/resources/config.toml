@@ -18,9 +18,11 @@ CanBroadcastBattleServer = 'auto'
 # Linux Note: Only supported when not using a custom launcher.
 IsolateMetadata = true
 # (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version).
+# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
 # Linux Note: Only supported when not using a custom launcher.
 IsolateProfiles = false
+# Whether to log all the info the terminal plus more info to a file. Enable it for errors.
+Log = false
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
@@ -34,10 +36,11 @@ Start = 'auto'
 Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
-# Also, by default, override the IPs address to bind to the server to ensure we can connect if it was changed.
+# {Id} will be replaced by a random unique server id (UUID v4).
+# When 'Config.Log' is true '-l', '--flatLog', '--logRoot' and '--deterministic' arguments will be passed.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '-n', '0.0.0.0']
+ExecutableArgs = ['-e', '{Game}', '--id', '{Id}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
 # The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
 # Note: See the server config to set the interface to bind to.

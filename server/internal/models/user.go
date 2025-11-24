@@ -145,11 +145,11 @@ func (users *MainUsers) GetUserIds() func(func(int32) bool) {
 	}
 }
 
-func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool, gameId string, clientLibVersion uint16) []i.A {
+func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool, clientLibVersion uint16) []i.A {
 	var presenceData = make([]i.A, 0)
 	for u := range users.store.Values() {
 		if matches(u) {
-			presenceData = append(presenceData, u.GetProfileInfo(includePresence, gameId, clientLibVersion))
+			presenceData = append(presenceData, u.GetProfileInfo(includePresence, clientLibVersion))
 		}
 	}
 	return presenceData
@@ -206,7 +206,7 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i.A {
+func (u *MainUser) GetExtraProfileInfo(clientLibVersion uint16) i.A {
 	info := i.A{
 		u.statId,
 		0,
@@ -227,25 +227,21 @@ func (u *MainUser) GetExtraProfileInfo(gameId string, clientLibVersion uint16) i
 		0,
 		0,
 	}
-	if (gameId == common.GameAoE2 || gameId == common.GameAoM) && clientLibVersion >= 190 {
+	if clientLibVersion >= 190 {
 		info = append(info, 0, 0)
 	}
 	return info
 }
 
-func (u *MainUser) GetProfileInfo(includePresence bool, gameId string, clientLibVersion uint16) i.A {
-	var randomTimeDiff int64
-	i.WithRng(func(rand *rand.Rand) {
-		randomTimeDiff = rand.Int64N(300-50+1) + 50
-	})
+func (u *MainUser) GetProfileInfo(includePresence bool, clientLibVersion uint16) i.A {
 	profileInfo := i.A{
-		time.Now().UTC().Unix() - randomTimeDiff,
+		time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix(),
 		u.GetId(),
 		u.GetPlatformPath(),
 		u.GetProfileMetadata(),
 		u.GetAlias(),
 	}
-	if (gameId == common.GameAoE2 || gameId == common.GameAoM) && clientLibVersion >= 190 {
+	if clientLibVersion >= 190 {
 		profileInfo = append(profileInfo, u.GetAlias())
 	}
 	profileInfo = append(

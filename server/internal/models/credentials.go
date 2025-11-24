@@ -3,7 +3,8 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"math/rand/v2"
+	"slices"
+	"sync"
 	"time"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -12,7 +13,9 @@ import (
 const expiry = time.Minute * 5
 
 type Credentials struct {
-	store *i.SafeMap[string, *Credential]
+	store              *i.SafeMap[string, *Credential]
+	sweeperTaskMu      sync.Mutex
+	sweeperTaskStarted bool
 }
 
 type Credential struct {
@@ -27,7 +30,7 @@ func (creds *Credentials) Initialize() {
 
 func (creds *Credentials) generateSignature() string {
 	b := make([]byte, 32)
-	i.WithRng(func(rand *rand.Rand) {
+	i.WithRng(func(rand *i.RandReader) {
 		for j := 0; j < len(b); j++ {
 			b[j] = byte(rand.UintN(256))
 		}
@@ -48,10 +51,60 @@ func (creds *Credentials) CreateCredentials(key string) *Credential {
 			return false
 		})
 	}
-	time.AfterFunc(expiry, func() {
-		creds.store.Delete(storedCred.signature)
-	})
+	creds.sweeperTaskMu.Lock()
+	defer creds.sweeperTaskMu.Unlock()
+	if !creds.sweeperTaskStarted {
+		go creds.startSweeper()
+		creds.sweeperTaskStarted = true
+	}
 	return storedCred
+}
+
+func (creds *Credentials) nextExpiration() (alreadyExpired []string, nextExpiration time.Duration) {
+	var expirationTimes []time.Time
+	now := time.Now().UTC()
+	for cred := range creds.store.Values() {
+		if cred.expiry.Before(now) {
+			alreadyExpired = append(alreadyExpired, cred.signature)
+		} else {
+			expirationTimes = append(expirationTimes, cred.expiry)
+		}
+	}
+	if len(expirationTimes) > 0 {
+		slices.SortFunc(expirationTimes, func(a, b time.Time) int {
+			switch {
+			case a.Before(b):
+				return -1
+			case a.After(b):
+				return 1
+			default:
+				return 0
+			}
+		})
+		nextExpiration = expirationTimes[0].Sub(now)
+	} else {
+		nextExpiration = expiry
+	}
+	return
+}
+
+func (creds *Credentials) startSweeper() {
+	go func() {
+		var alreadyExpired []string
+		_, nextExpiration := creds.nextExpiration()
+		ticker := time.NewTicker(nextExpiration)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				alreadyExpired, nextExpiration = creds.nextExpiration()
+				ticker.Reset(nextExpiration)
+				for _, expired := range alreadyExpired {
+					creds.store.Delete(expired)
+				}
+			}
+		}
+	}()
 }
 
 func (creds *Credentials) GetCredentials(signature string) (*Credential, bool) {

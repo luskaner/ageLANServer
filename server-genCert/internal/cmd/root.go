@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/server-genCert/internal"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ var (
 				fmt.Println("Could not get executable path")
 				os.Exit(common.ErrGeneral)
 			}
-			serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), common.GetExeFileName(true, common.Server))
+			serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), executables.Filename(true, executables.Server))
 			serverFolder := common.CertificatePairFolder(serverExe)
 			if serverFolder == "" {
 				fmt.Println("Failed to determine certificate pairs folder")
@@ -47,6 +48,6 @@ var (
 
 func Execute() error {
 	rootCmd.Version = Version
-	rootCmd.PersistentFlags().BoolVarP(&replace, "replace", "r", false, "Overwrite existing certificate pair.")
+	rootCmd.Flags().BoolVarP(&replace, "replace", "r", false, "Overwrite existing certificate pair.")
 	return rootCmd.Execute()
 }

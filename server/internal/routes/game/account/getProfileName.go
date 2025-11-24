@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -26,11 +25,10 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 		profileIdsMap[platformId] = struct{}{}
 	}
 	game := models.G(r)
-	gameTitle := game.Title()
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	profileInfo := game.Users().GetProfileInfo(false, func(currentUser *models.MainUser) bool {
 		_, ok := profileIdsMap[currentUser.GetId()]
 		return ok
-	}, gameTitle, sess.GetClientLibVersion())
+	}, sess.GetClientLibVersion())
 	i.JSON(&w, i.A{0, profileInfo})
 }

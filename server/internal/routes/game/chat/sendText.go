@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -32,7 +31,7 @@ func SendText(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	user, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok || !chatChannel.HasUser(user) {
 		i.JSON(&w, i.A{2})

@@ -7,10 +7,11 @@ import (
 const (
 	ErrCertDirectory = iota + common.ErrLast
 	ErrResolveHost
-	ErrCreateLogsDir
 	ErrCreateLogFile
 	ErrStartServer
 	ErrMulticastGroup
 	ErrGames
-	MissingBattleServer
+	ErrGame
+	ErrAnnounce
+	ErrInvalidId
 )

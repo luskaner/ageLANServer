@@ -3,13 +3,14 @@ package executor
 import (
 	"crypto/x509"
 	"encoding/base64"
+	"io"
 	"net"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, CDN bool) (result *exec.Result) {
+func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "setup", "-e", gameId)
 	if len(IP) > 0 {
@@ -20,14 +21,20 @@ func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, CDN bool)
 		args = append(args, "-l")
 		args = append(args, base64.StdEncoding.EncodeToString(certificate.Raw))
 	}
-	if CDN {
-		args = append(args, "-c")
+	if logRoot != "" {
+		args = append(args, "--logRoot", logRoot)
 	}
-	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	optionsFn(options)
+	if out != nil {
+		options.Stdout = out
+		options.Stderr = out
+	}
+	result = options.Exec()
 	return
 }
 
-func RunRevert(IPs bool, certificate bool, failfast bool) (result *exec.Result) {
+func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := make([]string, 0)
 	args = append(args, "revert")
 	if failfast {
@@ -40,6 +47,15 @@ func RunRevert(IPs bool, certificate bool, failfast bool) (result *exec.Result) 
 	} else {
 		args = append(args, "-a")
 	}
-	result = exec.Options{File: common.GetExeFileName(true, common.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}.Exec()
+	if logRoot != "" {
+		args = append(args, "--logRoot", logRoot)
+	}
+	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	optionsFn(options)
+	if out != nil {
+		options.Stdout = out
+		options.Stderr = out
+	}
+	result = options.Exec()
 	return
 }

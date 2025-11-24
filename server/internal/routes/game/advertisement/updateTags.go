@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/middleware"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -89,7 +88,7 @@ func UpdateTags(w http.ResponseWriter, r *http.Request) {
 		updateTagsReturnError(&w)
 		return
 	}
-	sess := middleware.SessionOrPanic(r)
+	sess := models.SessionOrPanic(r)
 	advertisements.WithWriteLock(matchingAdv.GetId(), func() {
 		if matchingAdv.GetHostId() != sess.GetUserId() {
 			updateTagsReturnError(&w)

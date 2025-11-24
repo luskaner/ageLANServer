@@ -8,10 +8,14 @@ import (
 	"net/http"
 )
 
+func findObsAdvErr(w *http.ResponseWriter) {
+	i.JSON(w, i.A{2, i.A{}, i.A{}})
+}
+
 func FindObservableAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var q wanQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, i.A{2, i.A{}, i.A{}})
+		findObsAdvErr(&w)
 		return
 	}
 	game := models.G(r)
@@ -19,7 +23,7 @@ func FindObservableAdvertisements(w http.ResponseWriter, r *http.Request) {
 	if title == common.GameAoE3 {
 		observerGroupID := r.URL.Query().Get("observerGroupID")
 		if observerGroupID != "0" {
-			i.JSON(&w, i.A{2, i.A{}, i.A{}})
+			findObsAdvErr(&w)
 			return
 		}
 	}

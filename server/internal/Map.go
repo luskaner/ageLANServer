@@ -11,7 +11,7 @@ import (
 type SafeMap[K comparable, V any] struct {
 	lock sync.Mutex
 	wo   map[K]V
-	ro   atomic.Value
+	ro   atomic.Pointer[map[K]V]
 }
 
 func NewSafeMap[K comparable, V any]() *SafeMap[K, V] {
@@ -23,12 +23,13 @@ func NewSafeMap[K comparable, V any]() *SafeMap[K, V] {
 }
 
 func (m *SafeMap[K, V]) updateReadOnly() {
-	m.ro.Store(maps.Clone(m.wo))
+	clone := maps.Clone(m.wo)
+	m.ro.Store(&clone)
 }
 
 func (m *SafeMap[K, V]) Load(key K) (value V, ok bool) {
-	ro := m.ro.Load().(map[K]V)
-	value, ok = ro[key]
+	ro := m.ro.Load()
+	value, ok = (*ro)[key]
 	return
 }
 
@@ -92,8 +93,8 @@ func (m *SafeMap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
 
 func (m *SafeMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		roMap := m.ro.Load().(map[K]V)
-		for _, value := range roMap {
+		roMap := m.ro.Load()
+		for _, value := range *roMap {
 			if !yield(value) {
 				break
 			}
@@ -102,7 +103,7 @@ func (m *SafeMap[K, V]) Values() iter.Seq[V] {
 }
 
 func (m *SafeMap[K, V]) Len() int {
-	return len(m.ro.Load().(map[K]V))
+	return len(*m.ro.Load())
 }
 
 type SafeSet[V comparable] struct {

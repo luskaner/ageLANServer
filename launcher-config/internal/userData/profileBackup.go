@@ -1,51 +1,36 @@
 package userData
 
 import (
-	"os"
-	"strconv"
-	"strings"
-
-	"github.com/luskaner/ageLANServer/common"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 var profiles []Data
 
 func setProfileData(gameId string) bool {
 	profiles = make([]Data, 0)
-	entries, err := os.ReadDir(path(gameId))
+	err, commonProfiles := commonUserData.Profiles(gameId)
 	if err != nil {
 		return false
 	}
-	var valid bool
-	for _, entry := range entries {
-		if entry.IsDir() {
-			if strings.HasSuffix(entry.Name(), ".bak") || strings.HasSuffix(entry.Name(), ".lan") {
-				valid = false
-			} else if gameId == common.GameAoE1 {
-				valid = true
-			} else {
-				_, err = strconv.ParseUint(entry.Name(), 10, 64)
-				valid = err == nil
-			}
-			if valid {
-				profiles = append(profiles, Data{entry.Name()})
-			}
+	for entry := range commonProfiles.Iter() {
+		if entry.Type == commonUserData.TypeActive {
+			profiles = append(profiles, Data{entry.Path})
 		}
 	}
 	return true
 }
 
-func runProfileMethod(gameId string, mainMethod func(gameId string, data Data) bool, cleanMethod func(gameId string, data Data) bool, stopOnFailed bool) bool {
+func runProfileMethod(gameId string, mainMethod func(data Data) bool, cleanMethod func(data Data) bool, stopOnFailed bool) bool {
 	if !setProfileData(gameId) {
 		return false
 	}
 	for i := range profiles {
-		if !mainMethod(gameId, profiles[i]) {
+		if !mainMethod(profiles[i]) {
 			if !stopOnFailed {
 				continue
 			}
 			for j := i - 1; j >= 0; j-- {
-				_ = cleanMethod(gameId, profiles[j])
+				_ = cleanMethod(profiles[j])
 			}
 			return false
 		}
@@ -53,12 +38,12 @@ func runProfileMethod(gameId string, mainMethod func(gameId string, data Data) b
 	return true
 }
 
-func backupProfile(gameId string, data Data) bool {
-	return data.Backup(gameId)
+func backupProfile(data Data) bool {
+	return data.Backup()
 }
 
-func restoreProfile(gameId string, data Data) bool {
-	return data.Restore(gameId)
+func restoreProfile(data Data) bool {
+	return data.Restore()
 }
 
 func BackupProfiles(gameId string) bool {

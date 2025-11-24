@@ -3,12 +3,12 @@
 package exec
 
 import (
-	"golang.org/x/term"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func (options Options) exec() (result *Result) {
@@ -45,15 +45,16 @@ func shellArgs() []string {
 	return []string{"sh", "-c"}
 }
 
-func startCmd(cmd *exec.Cmd) error {
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
+func configureCmd(cmd *exec.Cmd, wait bool, _ bool, _ bool) {
+	if wait {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Setsid: true,
+		}
 	}
-	return cmd.Start()
 }
 
 func adminArgs(wait bool) []string {
-	if !wait || !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
+	if !wait || !common.Interactive() {
 		return visualAdminArgs()
 	}
 	return []string{"sudo", "-EH"}
