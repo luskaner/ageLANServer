@@ -23,8 +23,8 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/pidLock"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/ip"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
@@ -48,7 +48,7 @@ var (
 		Use:   filepath.Base(os.Args[0]),
 		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
 		Run: func(_ *cobra.Command, _ []string) {
-			lock := &pidLock.Lock{}
+			lock := &fileLock.PidLock{}
 			exitCode := common.ErrSuccess
 			if err := lock.Lock(); err != nil {
 				logger.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
