@@ -65,6 +65,7 @@ var (
 				logger.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			initConfig()
 			if err := logger.OpenMainFileLog(gameId); err != nil {
 				logger.Println("Failed to open file log")
 				logger.Println(err.Error())
@@ -86,7 +87,6 @@ var (
 				os.Exit(errorCode)
 			}()
 			logger.WriteFileLog(gameId, "start")
-			initConfig()
 			isAdmin := commonExecutor.IsAdmin()
 			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
 			if runtime.GOOS != "windows" {

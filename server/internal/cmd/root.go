@@ -296,7 +296,7 @@ func Execute() error {
 	cmd.LogRootCommand(rootCmd.Flags(), &logRoot)
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	rootCmd.Flags().StringVar(&id, "id", "", "Server instance ID to identify it.")
-	if err := viper.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
+	if err := viper.BindPFlag("Log", rootCmd.Flags().Lookup("log")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {

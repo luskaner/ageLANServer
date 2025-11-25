@@ -15,7 +15,7 @@ func init() {
 }
 
 func OpenMainFileLog(root string) error {
-	if viper.GetBool("Config.Log") {
+	if viper.GetBool("Log") {
 		err := commonLogger.NewOwnFileLogger("server", root, "", true)
 		if err != nil {
 			return err
