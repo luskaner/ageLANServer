@@ -21,11 +21,11 @@ func decodeUserData[T any](f *os.File) (data T, err error) {
 }
 
 func openFile(p string) (existed bool, f *os.File, err error) {
-	if f, err = os.OpenFile(p, os.O_RDWR, 0); err == nil {
+	if f, err = os.OpenFile(p, os.O_RDWR, 0644); err == nil {
 		existed = true
 		return
 	} else if errors.Is(err, fs.ErrNotExist) {
-		f, err = os.Create(p)
+		f, err = os.OpenFile(p, os.O_RDWR|os.O_CREATE, 0644)
 	}
 	return
 }
