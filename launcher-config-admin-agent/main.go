@@ -8,8 +8,8 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/fileLock"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/pidLock"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal/ipc"
@@ -23,7 +23,7 @@ func main() {
 	} else {
 		logRoot = ""
 	}
-	lock := &pidLock.Lock{}
+	lock := &fileLock.PidLock{}
 	if err := lock.Lock(); err != nil {
 		commonLogger.Println("Failed to lock pid file. Kill process 'config-admin-agent' if it is running in your task manager.")
 		commonLogger.CloseFileLog()

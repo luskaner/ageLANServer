@@ -1,4 +1,4 @@
-package pidLock
+package fileLock
 
 import (
 	"os"
@@ -6,10 +6,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/process"
 )
-
-type Data struct {
-	file *os.File
-}
 
 func openFile() (err error, f *os.File) {
 	var exe string
@@ -49,5 +45,39 @@ func removeFile(f *os.File) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+type PidLock struct {
+	fileLock Lock
+}
+
+func (l *PidLock) Lock() error {
+	err, file := openFile()
+	if err != nil {
+		return err
+	}
+	err = l.fileLock.Lock(file)
+	if err != nil {
+		return err
+	}
+	err = writePid(file)
+	if err != nil {
+		l.fileLock.Clean()
+		return err
+	}
+	return nil
+}
+
+func (l *PidLock) Unlock() error {
+	err := l.fileLock.Unlock()
+	if err != nil {
+		return err
+	}
+	err = removeFile(l.fileLock.BaseLock.File)
+	if err != nil {
+		return err
+	}
+	l.fileLock.Clean()
 	return nil
 }
