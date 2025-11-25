@@ -97,7 +97,6 @@ func (d *PersistentJsonData[T]) Close() {
 	defer d.lock.Unlock()
 	if d.fileLock != nil {
 		_ = d.fileLock.Unlock()
-		_ = d.fileLock.File.Close()
 		d.fileLock = nil
 		d.data = nil
 	}
@@ -120,12 +119,10 @@ func NewPersistentJsonData[T Equalable[T]](path string) (userData *PersistentJso
 		data, err = decodeUserData[T](f)
 		if err != nil {
 			_ = lock.Unlock()
-			_ = f.Close()
 			return
 		}
 		if _, err = f.Seek(0, 0); err != nil {
 			_ = lock.Unlock()
-			_ = f.Close()
 			return
 		}
 	}

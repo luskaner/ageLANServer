@@ -63,7 +63,7 @@ func (l *PidLock) Lock() error {
 	}
 	err = writePid(file)
 	if err != nil {
-		l.fileLock.Clean()
+		l.fileLock.clean()
 		return err
 	}
 	return nil
@@ -78,6 +78,6 @@ func (l *PidLock) Unlock() error {
 	if err != nil {
 		return err
 	}
-	l.fileLock.Clean()
+	l.fileLock.clean()
 	return nil
 }
