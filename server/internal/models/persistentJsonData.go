@@ -97,7 +97,6 @@ func (d *PersistentJsonData[T]) Close() {
 	defer d.lock.Unlock()
 	if d.fileLock != nil {
 		_ = d.fileLock.Unlock()
-		_ = d.fileLock.File.Close()
 		d.fileLock = nil
 		d.data = nil
 	}
