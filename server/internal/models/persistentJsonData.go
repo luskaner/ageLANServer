@@ -71,10 +71,10 @@ func (d *PersistentJsonData[T]) Update(data *T) (err error) {
 	if (*data).Equals(d.data) {
 		return
 	}
-	if err = d.fileLock.File.Truncate(0); err != nil {
+	if _, err = d.fileLock.File.Seek(0, 0); err != nil {
 		return
 	}
-	if _, err = d.fileLock.File.Seek(0, 0); err != nil {
+	if err = d.fileLock.File.Truncate(0); err != nil {
 		return
 	}
 	encoder := json.NewEncoder(d.fileLock.File)
