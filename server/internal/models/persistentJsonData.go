@@ -126,6 +126,7 @@ func NewPersistentJsonData[T Equalable[T]](path string) (userData *PersistentJso
 		if _, err = f.Seek(0, 0); err != nil {
 			_ = lock.Unlock()
 			_ = f.Close()
+			return
 		}
 	}
 	userData = &PersistentJsonData[T]{
