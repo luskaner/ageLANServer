@@ -68,20 +68,21 @@ type PersistentJsonData[T Equalable[T]] struct {
 func (d *PersistentJsonData[T]) Update(data *T) (err error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	if !(*data).Equals(d.data) {
-		if err = d.fileLock.File.Truncate(0); err != nil {
-			return
-		} else if _, err = d.fileLock.File.Seek(0, 0); err != nil {
-			return
-		} else {
-			encoder := json.NewEncoder(d.fileLock.File)
-			if err = encoder.Encode(data); err != nil {
-				return
-			}
-			_ = d.fileLock.File.Sync()
-			*d.data = *data
-		}
+	if (*data).Equals(d.data) {
+		return
 	}
+	if err = d.fileLock.File.Truncate(0); err != nil {
+		return
+	}
+	if _, err = d.fileLock.File.Seek(0, 0); err != nil {
+		return
+	}
+	encoder := json.NewEncoder(d.fileLock.File)
+	if err = encoder.Encode(data); err != nil {
+		return
+	}
+	_ = d.fileLock.File.Sync()
+	*d.data = *data
 	return
 }
 
