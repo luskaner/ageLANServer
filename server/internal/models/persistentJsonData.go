@@ -102,7 +102,7 @@ func (d *PersistentJsonData[T]) Close() {
 	}
 }
 
-func NewPersistentJsonData[T Equalable[T]](path string) (userData *PersistentJsonData[T], err error) {
+func NewPersistentJsonData[T Equalable[T]](path string) (persistentData *PersistentJsonData[T], err error) {
 	var existed bool
 	var f *os.File
 	existed, f, err = openFile(path)
@@ -126,7 +126,7 @@ func NewPersistentJsonData[T Equalable[T]](path string) (userData *PersistentJso
 			return
 		}
 	}
-	userData = &PersistentJsonData[T]{
+	persistentData = &PersistentJsonData[T]{
 		&PersistentJsonROData[T]{&data},
 		&sync.RWMutex{},
 		&lock,
