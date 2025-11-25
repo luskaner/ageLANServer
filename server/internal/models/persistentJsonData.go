@@ -14,7 +14,7 @@ type Equalable[T any] interface {
 	Equals(other *T) bool
 }
 
-func decodeUserData[T any](f *os.File) (data T, err error) {
+func decodeData[T any](f *os.File) (data T, err error) {
 	decoder := json.NewDecoder(f)
 	err = decoder.Decode(&data)
 	return
@@ -50,7 +50,7 @@ func NewPersistentJsonROData[T any](path string) (userData *PersistentJsonROData
 	}()
 	var data T
 	if existed {
-		data, err = decodeUserData[T](f)
+		data, err = decodeData[T](f)
 		if err != nil {
 			return
 		}
@@ -116,7 +116,7 @@ func NewPersistentJsonData[T Equalable[T]](path string) (persistentData *Persist
 	}
 	var data T
 	if existed {
-		data, err = decodeUserData[T](f)
+		data, err = decodeData[T](f)
 		if err != nil {
 			_ = lock.Unlock()
 			return
