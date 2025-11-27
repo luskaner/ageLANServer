@@ -11,26 +11,39 @@ type MainPeerMutable struct {
 	Team int32
 }
 
+type Peer interface {
+	GetUserId() int32
+	Encode() i.A
+	Invite(user User) bool
+	Uninvite(user User) bool
+	GetMutable() *MainPeerMutable
+	UpdateMutable(race int32, team int32)
+}
+
 type MainPeer struct {
 	advertisementId int32
 	advertisementIp string
 	userId          int32
 	userStatId      int32
 	mutable         *atomic.Value
-	invites         *i.SafeSet[*MainUser]
+	invites         *i.SafeSet[User]
 }
 
-func NewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) *MainPeer {
+func NewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer {
 	peer := &MainPeer{
 		advertisementId: advertisementId,
 		advertisementIp: advertisementIp,
 		userId:          userId,
 		userStatId:      userStatId,
 		mutable:         &atomic.Value{},
-		invites:         i.NewSafeSet[*MainUser](),
+		invites:         i.NewSafeSet[User](),
 	}
 	peer.UpdateMutable(race, team)
 	return peer
+}
+
+func (peer *MainPeer) GetUserId() int32 {
+	return peer.userId
 }
 
 func (peer *MainPeer) GetMutable() *MainPeerMutable {
@@ -50,11 +63,11 @@ func (peer *MainPeer) Encode() i.A {
 	}
 }
 
-func (peer *MainPeer) Invite(user *MainUser) bool {
+func (peer *MainPeer) Invite(user User) bool {
 	return peer.invites.Store(user)
 }
 
-func (peer *MainPeer) Uninvite(user *MainUser) bool {
+func (peer *MainPeer) Uninvite(user User) bool {
 	return peer.invites.Delete(user)
 }
 

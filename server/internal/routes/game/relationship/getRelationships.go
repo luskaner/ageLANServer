@@ -21,8 +21,8 @@ func relationshipResponse(errorCode int, friends []i.A, lastConnection []i.A) i.
 	}
 }
 
-func Relationships(gameTitle string, clientLibVersion uint16, users *models.MainUsers, user *models.MainUser) i.A {
-	profileInfo := users.GetProfileInfo(true, func(u *models.MainUser) bool {
+func Relationships(gameTitle string, clientLibVersion uint16, users models.Users, user models.User) i.A {
+	profileInfo := users.GetProfileInfo(true, func(u models.User) bool {
 		return u != user && u.GetPresence() > 0
 	}, clientLibVersion)
 	friends := profileInfo

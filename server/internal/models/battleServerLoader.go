@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var BattleServers = make(map[string][]*MainBattleServer)
+var BattleServersStore = make(map[string][]BattleServer)
 
 func InitializeBattleServers(gameId string) error {
-	var battleServers []*MainBattleServer
+	var battleServers []BattleServer
 	key := fmt.Sprintf("Games.%s.BattleServers", gameId)
 	if viper.IsSet(key) {
 		err := viper.UnmarshalKey(key, &battleServers)
@@ -31,6 +31,6 @@ func InitializeBattleServers(gameId string) error {
 	if gameId == common.GameAoM && len(battleServers) == 0 {
 		return fmt.Errorf("no battle server for AoM")
 	}
-	BattleServers[gameId] = battleServers
+	BattleServersStore[gameId] = battleServers
 	return nil
 }

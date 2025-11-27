@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func ChangePresence(clientLibVersion uint16, users *models.MainUsers, user *models.MainUser, presence int32) {
+func ChangePresence(clientLibVersion uint16, users models.Users, user models.User, presence int32) {
 	user.SetPresence(presence)
 	profileInfo := i.A{user.GetProfileInfo(true, clientLibVersion)}
 	for u := range users.GetUserIds() {

@@ -31,7 +31,7 @@ func findAdvResp(errorCode int, advs i.A) i.A {
 	return resp
 }
 
-func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(*models.MainAdvertisement) bool) {
+func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(models.Advertisement) bool) {
 	var q searchQuery
 	if err := i.Bind(r, &q); err != nil {
 		i.JSON(&w, findAdvResp(2, i.A{}))
@@ -41,20 +41,20 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 	title := game.Title()
 	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
-	var battleServers *models.MainBattleServers
+	var battleServers models.BattleServers
 	if len(lanRegions) == 0 {
 		battleServers = game.BattleServers()
 	}
-	var tagsCheck func(*models.MainAdvertisement) bool
+	var tagsCheck func(models.Advertisement) bool
 	if battleServers != nil && (title == common.GameAoE2 || title == common.GameAoM) {
 		ok, numericTags, stringTags := parseTags(r)
 		if ok {
-			tagsCheck = func(adv *models.MainAdvertisement) bool {
+			tagsCheck = func(adv models.Advertisement) bool {
 				return adv.UnsafeMatchesTags(numericTags, stringTags)
 			}
 		}
 	}
-	advs := game.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv *models.MainAdvertisement) bool {
+	advs := game.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv models.Advertisement) bool {
 		peers := adv.GetPeers()
 		_, isPeer := peers.Load(currentUserId)
 		var matchesBattleServer bool

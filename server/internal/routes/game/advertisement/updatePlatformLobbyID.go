@@ -34,7 +34,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 	}
 	idValueUint := uint64(idValue)
 	advertisements.WithWriteLock(req.MatchID, func() {
-		var adv *models.MainAdvertisement
+		var adv models.Advertisement
 		adv, ok = advertisements.GetAdvertisement(req.MatchID)
 		if !ok {
 			return

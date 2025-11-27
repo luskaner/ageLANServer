@@ -20,7 +20,7 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
 	for _, id := range ids {
-		var u *models.MainUser
+		var u models.User
 		var ok bool
 		if isProfileId {
 			u, ok = users.GetUserById(id)

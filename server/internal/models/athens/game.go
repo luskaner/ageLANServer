@@ -11,7 +11,7 @@ import (
 )
 
 type Game struct {
-	models.MainGame
+	models.Game
 	Blessings    []playfab.Blessings
 	CatalogItems map[string]commonPlayfab.CatalogItem
 	// All users have the same fixed items
@@ -21,11 +21,16 @@ type Game struct {
 func CreateGame() models.Game {
 	mainGame := models.CreateMainGame(
 		common.GameAoM,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"),
 		true,
 		"true",
 	)
-	g := &Game{MainGame: *mainGame, Blessings: playfab.ReadBlessings()}
+	g := &Game{Game: mainGame, Blessings: playfab.ReadBlessings()}
 	g.CatalogItems, g.InventoryItems = playfab.Items(g.Blessings)
 	communityEvent.Initialize()
 	return g

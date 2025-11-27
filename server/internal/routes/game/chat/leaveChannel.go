@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func NotifyLeaveChannel(users *models.MainUsers, user *models.MainUser, chatChannelId int32, clientLibVersion uint16) {
+func NotifyLeaveChannel(users models.Users, user models.User, chatChannelId int32, clientLibVersion uint16) {
 	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, clientLibVersion)}
 	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {

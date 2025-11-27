@@ -27,7 +27,7 @@ func FindObservableAdvertisements(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	findAdvertisements(w, r, q.Length, q.Offset, true, nil, func(advertisement *models.MainAdvertisement) bool {
+	findAdvertisements(w, r, q.Length, q.Offset, true, nil, func(advertisement models.Advertisement) bool {
 		return advertisement.UnsafeGetObserversEnabled()
 	})
 }

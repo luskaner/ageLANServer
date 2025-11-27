@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
 
-func returnError(battleServers *models.MainBattleServers, gameId string, r *http.Request, w *http.ResponseWriter) {
+func returnError(battleServers models.BattleServers, gameId string, r *http.Request, w *http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
 	response := encodeHostResponse(
 		gameId,
@@ -25,7 +25,7 @@ func returnError(battleServers *models.MainBattleServers, gameId string, r *http
 	i.JSON(w, response)
 }
 
-func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServer *models.MainBattleServer, r *http.Request, relayRegion string, encodedPeers []i.A, metadata string, description string) i.A {
+func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServer models.BattleServer, r *http.Request, relayRegion string, encodedPeers []i.A, metadata string, description string) i.A {
 	response := i.A{
 		errorCode,
 		advId,

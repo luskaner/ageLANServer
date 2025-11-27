@@ -103,12 +103,12 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	servers := battleServers.Encode(r)
 	if len(servers) == 0 {
 		server := battleServers.NewBattleServer("")
-		server.IPv4 = "127.0.0.1"
-		server.BsPort = 27012
-		server.WebSocketPort = 27112
+		server.SetIPv4("127.0.0.1")
+		server.SetBsPort(27012)
+		server.SetWebSocketPort(27112)
 		if title != common.GameAoE1 {
-			server.Name = "localhost"
-			server.OutOfBandPort = 27212
+			server.SetName("localhost")
+			server.SetOutOfBandPort(27212)
 		}
 		servers = append(servers, server.EncodeLogin(r))
 	}
@@ -154,7 +154,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		allProfileInfo = append(allProfileInfo, -1)
 	}
 	response = append(response,
-		game.Resources().LoginData,
+		game.Resources().LoginData(),
 		allProfileInfo,
 		i.A{},
 		0,

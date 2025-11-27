@@ -153,7 +153,7 @@ var (
 					exitCode = internal.ErrGame
 					return
 				}
-				if battlesServers, ok := models.BattleServers[gameId]; ok && len(battlesServers) > 0 {
+				if battlesServers, ok := models.BattleServersStore[gameId]; ok && len(battlesServers) > 0 {
 					logger.Println("\tBattle Servers:")
 					for _, battleServer := range battlesServers {
 						logger.Println("\t\t" + battleServer.String())
