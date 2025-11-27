@@ -27,14 +27,14 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var inviter *models.MainUser
+	var inviter models.User
 	inviter, ok = game.Users().GetUserById(q.InviterId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	peers := adv.GetPeers()
-	var peer *models.MainPeer
+	var peer models.Peer
 	sess := models.SessionOrPanic(r)
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {

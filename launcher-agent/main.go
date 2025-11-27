@@ -10,8 +10,8 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/fileLock"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
@@ -20,7 +20,7 @@ import (
 
 func main() {
 	commonLogger.Initialize(os.Stdout)
-	lock := &pidLock.Lock{}
+	lock := &fileLock.PidLock{}
 	exitCode := common.ErrSuccess
 	if err := lock.Lock(); err != nil {
 		commonLogger.Println("Failed to lock pid file. Kill process 'agent' if it is running in your task manager.")

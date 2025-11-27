@@ -22,7 +22,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 	descriptions := make(i.A, len(names))
 	gameTitle := game.Title()
 	for j, name := range names {
-		fileData, ok := game.Resources().CloudFiles.Value[name]
+		fileData, ok := game.Resources().CloudFiles().Value[name]
 		if !ok {
 			i.JSON(&w, i.A{2, i.A{nil}})
 			return

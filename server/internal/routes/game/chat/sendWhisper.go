@@ -54,7 +54,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		targetUserIds = append(targetUserIds, int32(targetUserId))
 	}
 	users := game.Users()
-	receivers := make([]*models.MainUser, len(targetUserIds))
+	receivers := make([]models.User, len(targetUserIds))
 	var ok bool
 
 	for j, profileId := range targetUserIds {

@@ -9,13 +9,13 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
 
-func joinReturnStartObservingError(battleServers *models.MainBattleServers, r *http.Request, w http.ResponseWriter) {
+func joinReturnStartObservingError(battleServers models.BattleServers, r *http.Request, w http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
 	response := encodeStartObservingResponse(2, battleServer, r, i.A{}, i.A{}, 0)
 	i.JSON(&w, response)
 }
 
-func encodeStartObservingResponse(errorCode int, battleServer *models.MainBattleServer, r *http.Request, userIdsInt i.A, userIdsStr i.A, startTime int64) i.A {
+func encodeStartObservingResponse(errorCode int, battleServer models.BattleServer, r *http.Request, userIdsInt i.A, userIdsStr i.A, startTime int64) i.A {
 	response := i.A{
 		errorCode,
 		battleServer.ResolveIPv4(r),

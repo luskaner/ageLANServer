@@ -27,7 +27,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	peers := adv.GetPeers()
-	var peer *models.MainPeer
+	var peer models.Peer
 	sess := models.SessionOrPanic(r)
 	u, ok := game.Users().GetUserById(sess.GetUserId())
 	if !ok {
@@ -39,7 +39,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	var invitee *models.MainUser
+	var invitee models.User
 	invitee, ok = game.Users().GetUserById(q.UserId)
 	if !ok {
 		i.JSON(&w, i.A{2})

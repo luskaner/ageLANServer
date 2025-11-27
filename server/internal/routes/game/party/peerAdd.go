@@ -29,9 +29,9 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 		if hostId := adv.GetHostId(); hostId != currentUserId {
 			return
 		}
-		users := make([]*models.MainUser, length)
+		users := make([]models.User, length)
 		for j := 0; j < length; j++ {
-			var u *models.MainUser
+			var u models.User
 			u, ok = gameUsers.GetUserById(profileIds[j])
 			if !ok {
 				return
