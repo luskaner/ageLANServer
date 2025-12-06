@@ -153,7 +153,7 @@ the [`responses`](resources/responses) base directory.
           Specifies the settings and order for the Daily Celestial Challenges.
         * [`feature_flags.json`](resources/responses/athens/playfab/public-production/2/feature_flags.json): Feature
           flags, currently just disabling the beta tag for AotG.
-        * [`feature_flags.json`](resources/responses/athens/playfab/public-production/2/known_blessings.json): Listing
+        * [`known_blessings.json`](resources/responses/athens/playfab/public-production/2/known_blessings.json): Listing
           of all blessings, even blessings or levels not used. Used by the server to grant them all to the users.
 
 ## Starting and configuring Online-like Battle Servers
