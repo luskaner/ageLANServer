@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	_ "time/tzdata"
+
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
