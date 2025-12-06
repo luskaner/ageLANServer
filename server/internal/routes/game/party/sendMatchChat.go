@@ -69,7 +69,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	if game.Title() == common.GameAoM {
 		toProfileIds = slices.DeleteFunc(toProfileIds, func(id int32) bool { return id == currentUserId })
 	}
-	receivers := make([]*models.MainUser, len(toProfileIds))
+	receivers := make([]models.User, len(toProfileIds))
 
 	for j, profileId := range toProfileIds {
 		receivers[j], ok = users.GetUserById(profileId)

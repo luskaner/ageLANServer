@@ -15,7 +15,7 @@ func GetTempCredentials(w http.ResponseWriter, r *http.Request) {
 	fullKey := r.URL.Query().Get("key")
 	key := strings.TrimPrefix(fullKey, "/cloudfiles/")
 	game := models.G(r)
-	cloudfiles := game.Resources().CloudFiles
+	cloudfiles := game.Resources().CloudFiles()
 	cred := cloudfiles.Credentials.CreateCredentials(key)
 	t := cred.GetExpiry()
 	tUnix := t.Unix()

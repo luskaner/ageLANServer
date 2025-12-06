@@ -8,5 +8,5 @@ import (
 )
 
 func GetAutomatchMap(w http.ResponseWriter, r *http.Request) {
-	i.JSON(&w, models.G(r).Resources().ArrayFiles["automatchMaps.json"])
+	i.JSON(&w, models.G(r).Resources().ArrayFiles()["automatchMaps.json"])
 }
