@@ -6,19 +6,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal/models/athens/playfab/cloudScriptFunction"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/playfab/cloudScriptFunction"
+	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
 )
 
-type executeFunctionRequestInitial struct {
+type executeFunctionRequest struct {
 	CustomTags              struct{}
 	Entity                  *struct{}
 	FunctionName            string
 	GeneratePlayStreamEvent *struct{}
-}
-
-type executeFunctionRequestEnd[T any] struct {
-	FunctionParameter T
+	FunctionParameter       json.RawMessage
 }
 
 type executeFunctionResponse struct {
@@ -29,7 +28,7 @@ type executeFunctionResponse struct {
 }
 
 func ExecuteFunction(w http.ResponseWriter, r *http.Request) {
-	var req executeFunctionRequestInitial
+	var req executeFunctionRequest
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		shared.RespondBadRequest(&w)
@@ -41,20 +40,26 @@ func ExecuteFunction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fn, ok := cloudScriptFunction.Store[req.FunctionName]; ok {
-		var reqPar executeFunctionRequestEnd[cloudScriptFunction.AwardMissionRewardsParameters]
-		err = json.Unmarshal(bodyBytes, &reqPar)
-		if err != nil || req.FunctionName == "" {
-			shared.RespondBadRequest(&w)
-			return
-		}
-		t := time.Now()
-		result := fn.Run(reqPar.FunctionParameter)
-		duration := time.Since(t).Milliseconds()
-		var resultBytes []byte
-		resultBytes, err = json.Marshal(result)
+		reqPar := fn.NewParameters()
+		err = json.Unmarshal(req.FunctionParameter, &reqPar)
 		if err != nil {
 			shared.RespondBadRequest(&w)
 			return
+		}
+		u := playfab.SessionOrPanic(r).User()
+		game := models.G(r)
+		t := time.Now()
+		result := fn.Run(game, u, reqPar)
+		duration := time.Since(t).Milliseconds()
+		var resultSize uint32
+		var resultBytes []byte
+		if result != nil {
+			resultBytes, err = json.Marshal(result)
+			if err != nil {
+				shared.RespondBadRequest(&w)
+				return
+			}
+			resultSize = uint32(len(resultBytes))
 		}
 		shared.RespondOK(
 			&w,
@@ -62,7 +67,7 @@ func ExecuteFunction(w http.ResponseWriter, r *http.Request) {
 				ExecutionTimeMilliseconds: duration,
 				FunctionName:              req.FunctionName,
 				FunctionResult:            resultBytes,
-				FunctionResultSize:        uint32(len(resultBytes)),
+				FunctionResultSize:        resultSize,
 			},
 		)
 	} else {

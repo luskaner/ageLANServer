@@ -17,6 +17,7 @@ import (
 
 type User interface {
 	GetId() int32
+	GetXbox() bool
 	GetStatId() int32
 	GetProfileId() int32
 	GetReliclink() int32
@@ -54,14 +55,19 @@ type Users interface {
 	GetUserById(id int32) (User, bool)
 	GetUserIds() func(func(int32) bool)
 	GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A
+	GetUserByPlatformUserId(xbox bool, id uint64) (User, bool)
 }
 
 type MainUsers struct {
-	store *i.SafeMap[string, User]
+	store      *i.SafeMap[string, User]
+	GenerateFn func(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User
 }
 
 func (users *MainUsers) Initialize() {
 	users.store = i.NewSafeMap[string, User]()
+	if users.GenerateFn == nil {
+		users.GenerateFn = users.Generate
+	}
 }
 
 func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
@@ -139,23 +145,26 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remote
 		profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		profileUIntFlag1 = 1
 	}
-	newUser := users.Generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
+	newUser := users.GenerateFn(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
 	mainUser, _ := users.store.LoadOrStore(identifier, newUser)
 	return mainUser
 }
 
 func (users *MainUsers) GetUserByStatId(id int32) (User, bool) {
-	for u := range users.store.Values() {
-		if u.GetStatId() == id {
-			return u, true
-		}
-	}
-	return nil, false
+	return users.getFirst(func(u User) bool { return u.GetStatId() == id })
 }
 
 func (users *MainUsers) GetUserById(id int32) (User, bool) {
+	return users.getFirst(func(u User) bool { return u.GetId() == id })
+}
+
+func (users *MainUsers) GetUserByPlatformUserId(xbox bool, id uint64) (User, bool) {
+	return users.getFirst(func(u User) bool { return u.GetXbox() == xbox && u.GetPlatformUserID() == id })
+}
+
+func (users *MainUsers) getFirst(fn func(u User) bool) (User, bool) {
 	for u := range users.store.Values() {
-		if u.GetId() == id {
+		if fn(u) {
 			return u, true
 		}
 	}
@@ -184,6 +193,10 @@ func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user U
 
 func (u *MainUser) GetId() int32 {
 	return u.id
+}
+
+func (u *MainUser) GetXbox() bool {
+	return u.isXbox
 }
 
 func (u *MainUser) GetStatId() int32 {

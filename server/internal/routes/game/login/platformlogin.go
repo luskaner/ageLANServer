@@ -37,19 +37,20 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
+	sessions := game.Sessions()
 	u := users.GetOrCreateUser(title, r.RemoteAddr, req.MacAddress, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
-	sess, ok := models.GetSessionByUserId(u.GetId())
+	sess, ok := sessions.GetByUserId(u.GetId())
 	if ok {
-		sess.Delete()
+		sessions.Delete(sess.Id())
 	}
-	sessionId := models.CreateSession(req.GameId, u.GetId(), req.ClientLibVersion)
-	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(req.ClientLibVersion, users, u, 1)
+	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
+	sess, _ = sessions.GetById(sessionId)
+	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, 1)
 	profileInfo := u.GetProfileInfo(false, req.ClientLibVersion)
 	if title == common.GameAoE3 || title == common.GameAoM {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
-				currentSess, currentOk := models.GetSessionByUserId(user)
+				currentSess, currentOk := sessions.GetByUserId(user)
 				if currentOk {
 					wss.SendOrStoreMessage(
 						currentSess,

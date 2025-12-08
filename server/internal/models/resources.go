@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -17,6 +18,7 @@ const resourceFolder = "resources"
 
 var configFolder = filepath.Join(resourceFolder, "config")
 var ResponsesFolder = filepath.Join(resourceFolder, "responses")
+var userDataFolder = filepath.Join(resourceFolder, "userData")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
 type Resources interface {
@@ -43,6 +45,7 @@ func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[stri
 	r.keyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
+	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
@@ -152,4 +155,16 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 		ret = append(ret, serverSignature)
 		i.JSON(w, ret)
 	}
+}
+
+func (r *MainResources) initializeUserData(gameId string) {
+	if gameId == common.GameAoM {
+		if err := os.MkdirAll(filepath.Join(userDataFolder, common.GameAoM), os.ModePerm); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func UserDataPath(gameId string, platform string, platformUserid string) string {
+	return filepath.Join(userDataFolder, gameId, fmt.Sprintf("%s_%s.json", platform, platformUserid))
 }

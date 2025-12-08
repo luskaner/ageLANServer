@@ -9,11 +9,11 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func ChangePresence(clientLibVersion uint16, users models.Users, user models.User, presence int32) {
+func ChangePresence(clientLibVersion uint16, sessions models.Sessions, users models.Users, user models.User, presence int32) {
 	user.SetPresence(presence)
 	profileInfo := i.A{user.GetProfileInfo(true, clientLibVersion)}
 	for u := range users.GetUserIds() {
-		sess, ok := models.GetSessionByUserId(u)
+		sess, ok := sessions.GetByUserId(u)
 		if ok {
 			wss.SendOrStoreMessage(
 				sess,
@@ -40,7 +40,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		ChangePresence(sess.GetClientLibVersion(), users, u, int32(presence))
+		ChangePresence(sess.GetClientLibVersion(), game.Sessions(), users, u, int32(presence))
 		i.JSON(&w, i.A{0})
 	} else {
 		i.JSON(&w, i.A{2})

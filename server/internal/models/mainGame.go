@@ -10,11 +10,12 @@ type MainGame struct {
 	users          Users
 	advertisements Advertisements
 	chatChannels   ChatChannels
+	sessions       Sessions
 	title          string
 }
 
 func CreateMainGame(gameId string, battleServers BattleServers, resources Resources, users Users,
-	advertisements Advertisements, chatChannels ChatChannels, rssKeyedFilenames mapset.Set[string],
+	advertisements Advertisements, chatChannels ChatChannels, sessions Sessions, rssKeyedFilenames mapset.Set[string],
 	battleServerHaveOobPort bool, battleServerName string) Game {
 	if battleServers == nil {
 		battleServers = &MainBattleServers{}
@@ -31,12 +32,16 @@ func CreateMainGame(gameId string, battleServers BattleServers, resources Resour
 	if chatChannels == nil {
 		chatChannels = &MainChatChannels{}
 	}
+	if sessions == nil {
+		sessions = &MainSessions{}
+	}
 	game := &MainGame{
 		battleServers:  battleServers,
 		resources:      resources,
 		users:          users,
 		advertisements: advertisements,
 		chatChannels:   chatChannels,
+		sessions:       sessions,
 		title:          gameId,
 	}
 	game.battleServers.Initialize(BattleServersStore[gameId], battleServerHaveOobPort, battleServerName)
@@ -44,12 +49,13 @@ func CreateMainGame(gameId string, battleServers BattleServers, resources Resour
 	game.users.Initialize()
 	game.advertisements.Initialize(game.users, game.battleServers)
 	game.chatChannels.Initialize(game.resources.ChatChannels())
+	game.sessions.Initialize()
 	return game
 }
 
 func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServerHaveOobPort bool, battleServerName string) Game {
 	return CreateMainGame(gameId, nil, nil, nil, nil, nil,
-		rssKeyedFilenames, battleServerHaveOobPort, battleServerName)
+		nil, rssKeyedFilenames, battleServerHaveOobPort, battleServerName)
 }
 
 func (g *MainGame) Resources() Resources {
@@ -74,4 +80,8 @@ func (g *MainGame) Title() string {
 
 func (g *MainGame) BattleServers() BattleServers {
 	return g.battleServers
+}
+
+func (g *MainGame) Sessions() Sessions {
+	return g.sessions
 }

@@ -10,10 +10,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/fileLock"
 )
 
-type Equalable[T any] interface {
-	Equals(other *T) bool
-}
-
 func decodeData[T any](f *os.File) (data T, err error) {
 	decoder := json.NewDecoder(f)
 	err = decoder.Decode(&data)
@@ -38,7 +34,7 @@ func (d *PersistentJsonROData[T]) Data() T {
 	return *d.data
 }
 
-func NewPersistentJsonROData[T any](path string) (userData *PersistentJsonROData[T], err error) {
+func NewPersistentJsonROData[T any](path string, defaultDataFn func() T) (userData *PersistentJsonROData[T], err error) {
 	var existed bool
 	var f *os.File
 	existed, f, err = openFile(path)
@@ -54,23 +50,22 @@ func NewPersistentJsonROData[T any](path string) (userData *PersistentJsonROData
 		if err != nil {
 			return
 		}
+	} else {
+		data = defaultDataFn()
 	}
 	userData = &PersistentJsonROData[T]{&data}
 	return
 }
 
-type PersistentJsonData[T Equalable[T]] struct {
+type PersistentJsonData[T any] struct {
 	*PersistentJsonROData[T]
 	lock     *sync.RWMutex
 	fileLock *fileLock.Lock
 }
 
-func (d *PersistentJsonData[T]) Update(data *T) (err error) {
+func (d *PersistentJsonData[T]) Save() (err error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	if (*data).Equals(d.data) {
-		return
-	}
 	if _, err = d.fileLock.File.Seek(0, 0); err != nil {
 		return
 	}
@@ -78,11 +73,10 @@ func (d *PersistentJsonData[T]) Update(data *T) (err error) {
 		return
 	}
 	encoder := json.NewEncoder(d.fileLock.File)
-	if err = encoder.Encode(data); err != nil {
+	if err = encoder.Encode(d.data); err != nil {
 		return
 	}
 	_ = d.fileLock.File.Sync()
-	*d.data = *data
 	return
 }
 
@@ -102,7 +96,7 @@ func (d *PersistentJsonData[T]) Close() {
 	}
 }
 
-func NewPersistentJsonData[T Equalable[T]](path string) (persistentData *PersistentJsonData[T], err error) {
+func NewPersistentJsonData[T any](path string, defaultDataFn func() T) (persistentData *PersistentJsonData[T], err error) {
 	var existed bool
 	var f *os.File
 	existed, f, err = openFile(path)
@@ -125,11 +119,18 @@ func NewPersistentJsonData[T Equalable[T]](path string) (persistentData *Persist
 			_ = lock.Unlock()
 			return
 		}
+	} else {
+		data = defaultDataFn()
 	}
 	persistentData = &PersistentJsonData[T]{
 		&PersistentJsonROData[T]{&data},
 		&sync.RWMutex{},
 		&lock,
+	}
+	if !existed {
+		if err = persistentData.Save(); err != nil {
+			return
+		}
 	}
 	return
 }

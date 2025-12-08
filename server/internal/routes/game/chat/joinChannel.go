@@ -40,10 +40,11 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
+	sessions := game.Sessions()
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false, sess.GetClientLibVersion())}}
 	for userId := range users.GetUserIds() {
-		var existingUserSession *models.Session
-		existingUserSession, ok = models.GetSessionByUserId(userId)
+		var existingUserSession models.Session
+		existingUserSession, ok = sessions.GetByUserId(userId)
 		if ok {
 			wss.SendOrStoreMessage(
 				existingUserSession,

@@ -1,10 +1,14 @@
 package Client
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
 )
@@ -32,6 +36,10 @@ type settingsForUserResponse struct {
 	GatherFocusInfo  bool
 }
 
+type loginWithSteamRequest struct {
+	SteamTicket string
+}
+
 type loginWithSteamResponse struct {
 	SessionTicket               string
 	PlayFabId                   string
@@ -42,10 +50,26 @@ type loginWithSteamResponse struct {
 	treatmentAssignmentResponse `json:"TreatmentAssignment"`
 }
 
-func LoginWithSteam(w http.ResponseWriter, _ *http.Request) {
+func LoginWithSteam(w http.ResponseWriter, r *http.Request) {
+	var req loginWithSteamRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(r.Body)
+	if err != nil {
+		shared.RespondBadRequest(&w)
+		return
+	}
+	var steamId uint64
+	steamId, err = playfab.ParseSteamIDHex(req.SteamTicket)
+	if err != nil {
+		shared.RespondBadRequest(&w)
+		return
+	}
 	now := time.Now().UTC()
-	entityToken := uuid.NewString()
-	id := playfab.AddSession(entityToken)
+	game := models.Gg[*athens.Game](r)
+	sessions := game.PlayfabSessions
+	id := sessions.Create(game.Users(), steamId)
 	shared.RespondOK(
 		&w,
 		loginWithSteamResponse{
@@ -59,7 +83,7 @@ func LoginWithSteam(w http.ResponseWriter, _ *http.Request) {
 			},
 			LastLoginTime: shared.FormatDate(time.Date(2025, 11, 12, 3, 34, 0, 0, time.UTC)),
 			entityTokenResponse: entityTokenResponse{
-				EntityToken:     entityToken,
+				EntityToken:     id,
 				TokenExpiration: shared.FormatDate(now.AddDate(0, 0, 1)),
 				entityResponse: entityResponse{
 					Id:         uuid.NewString(),

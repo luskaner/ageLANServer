@@ -8,6 +8,7 @@ type Game interface {
 	Users() Users
 	Advertisements() Advertisements
 	ChatChannels() ChatChannels
+	Sessions() Sessions
 	Title() string
 }
 

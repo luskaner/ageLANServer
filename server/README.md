@@ -174,7 +174,7 @@ self-explanatory.
 
 ## Docker
 
-See [Docker](../server-docker) for information.
+See [Docker](../tools/server-docker) for information.
 
 ## Exit Codes
 

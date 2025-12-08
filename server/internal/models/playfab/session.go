@@ -4,11 +4,68 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"net/http"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
-var sessions *internal.SafeMap[string, string]
+const sessionDuration = 24 * time.Hour
+
+type SessionKey = string
+
+type SessionData struct {
+	playfabId   string
+	entityToken string
+	user        models.User
+}
+
+func (s *SessionData) PlayfabId() string {
+	return s.playfabId
+}
+
+func (s *SessionData) EntityToken() string {
+	return s.entityToken
+}
+
+func (s *SessionData) User() models.User {
+	return s.user
+}
+
+type MainSessions struct {
+	baseSessions *models.BaseSessions[SessionKey, SessionData]
+}
+
+func (s *MainSessions) Initialize() {
+	s.baseSessions = models.NewBaseSessions[SessionKey, SessionData](sessionDuration)
+}
+
+func (s *MainSessions) Create(users models.Users, steamUserId uint64) SessionKey {
+	if user, found := users.GetUserByPlatformUserId(false, steamUserId); !found {
+		return ""
+	} else {
+		sess := &SessionData{
+			entityToken: uuid.NewString(),
+			user:        user,
+		}
+		stored := s.baseSessions.CreateSession(generateId, sess)
+		sess.playfabId = stored.Id()
+		return sess.playfabId
+	}
+}
+
+func (s *MainSessions) GetById(entityToken string) (*SessionData, bool) {
+	baseSess, exists := s.baseSessions.Get(entityToken)
+	if !exists {
+		return nil, false
+	}
+	return baseSess.Data(), true
+}
+
+func (s *MainSessions) ResetExpiry(entityToken string) {
+	s.baseSessions.ResetExpiryTimer(entityToken)
+}
 
 func generateId() string {
 	bytes := make([]byte, 8)
@@ -18,20 +75,15 @@ func generateId() string {
 	return hex.EncodeToString(bytes)
 }
 
-func init() {
-	sessions = internal.NewSafeMap[string, string]()
+func SessionOrPanic(r *http.Request) *SessionData {
+	sessAny, ok := session(r)
+	if !ok {
+		panic("Session should have been set already")
+	}
+	return sessAny
 }
 
-func Id(session string) (playfabId string, ok bool) {
-	return sessions.Load(session)
-}
-
-func AddSession(session string) string {
-	id := generateId()
-	sessions.Store(session, id, nil)
-	return id
-}
-
-func Session(r *http.Request) string {
-	return r.Header.Get("X-Entitytoken")
+func session(r *http.Request) (*SessionData, bool) {
+	sess, ok := r.Context().Value("session").(*SessionData)
+	return sess, ok
 }

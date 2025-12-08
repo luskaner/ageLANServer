@@ -82,9 +82,10 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 	message = append(message, text)
-	var receiverSession *models.Session
+	sessions := game.Sessions()
+	var receiverSession models.Session
 	for _, receiver := range receivers {
-		receiverSession, ok = models.GetSessionByUserId(receiver.GetId())
+		receiverSession, ok = sessions.GetByUserId(receiver.GetId())
 		if !ok {
 			continue
 		}

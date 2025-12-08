@@ -4,37 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
+	"github.com/luskaner/ageLANServer/server/internal/models/playfab/data"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
 )
 
-type punchCardProgress struct {
-	Holes                     uint8
-	DateOfMostRecentHolePunch playfab.CustomTime
-}
-
-type punchCardProgressValue struct {
-	playfab.Value[punchCardProgress]
-}
-
-type missionProgress struct {
-	State                 string
-	RewardsAwarded        string
-	CompletionCountEasy   uint32
-	CompletionCountMedium uint32
-	CompletionCountHard   uint32
-}
-
-type missionProgressValue struct {
-	playfab.Value[missionProgress]
-	name string
-}
-
 type getUserReadOnlyDataResponse struct {
-	DataVersion int32
-	Data        map[string]playfab.ValueLike
+	DataVersion uint32
+	Data        map[string]any
 }
 
 type getUserReadonlyDataRequest struct {
@@ -43,42 +22,24 @@ type getUserReadonlyDataRequest struct {
 	PlayFabId                *string
 }
 
-func getType(key string) string {
-	switch {
-	case key == "PunchCardProgress":
-		return "punchCardProgress"
-	case strings.HasPrefix(key, "Mission_"):
-		return "missionProgress"
-	default:
-		return ""
+func nullableData[T any](val *data.Value[T]) any {
+	if val == nil {
+		return nil
 	}
+	return val
 }
 
-func getValue(key string) playfab.ValueLike {
-	switch getType(key) {
-	case "punchCardProgress":
-		return &punchCardProgressValue{
-			playfab.Value[punchCardProgress]{
-				Val: &punchCardProgress{
-					Holes: 0,
-					DateOfMostRecentHolePunch: playfab.CustomTime{
-						Time:   time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC),
-						Format: time.RFC3339,
-					},
-				},
-			},
-		}
-	case "missionProgress":
-		return &missionProgressValue{
-			playfab.Value[missionProgress]{
-				Val: &missionProgress{
-					State:               "Completed",
-					RewardsAwarded:      "Hard",
-					CompletionCountHard: 1,
-				},
-			},
-			key,
-		}
+func getValue(key string, userData *user.Data) any {
+	switch {
+	case key == "PunchCardProgress":
+		return userData.PunchCardProgress.ToValue()
+	case key == "CurrentGauntletProgress":
+		return nullableData(userData.Challenge.Progress.ToValue())
+	case key == "CurrentGauntletLabyrinth":
+		return nullableData(userData.Challenge.Labyrinth.ToValue())
+	case strings.HasPrefix(key, "Mission_Season0_"):
+		storyMission := userData.StoryMissions[key]
+		return storyMission.ToValue()
 	default:
 		return nil
 	}
@@ -91,15 +52,18 @@ func GetUserReadOnlyData(w http.ResponseWriter, r *http.Request) {
 		shared.RespondBadRequest(&w)
 		return
 	}
-	var response getUserReadOnlyDataResponse
-	response.Data = make(map[string]playfab.ValueLike)
-	for _, key := range req.Keys {
-		if val := getValue(key); val != nil {
-			if err = val.Prepare(); err != nil {
-				shared.RespondBadRequest(&w)
-				return
+	sess := playfab.SessionOrPanic(r)
+	u := sess.User()
+	d := u.(*user.User).Data.Data()
+	response := getUserReadOnlyDataResponse{
+		DataVersion: d.DataVersion,
+		Data:        make(map[string]any),
+	}
+	if req.IfChangedFromDataVersion == nil || *req.IfChangedFromDataVersion < d.DataVersion {
+		for _, key := range req.Keys {
+			if val := getValue(key, d); val != nil {
+				response.Data[key] = val
 			}
-			response.Data[key] = val
 		}
 	}
 	shared.RespondOK(&w, response)
