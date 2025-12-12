@@ -33,7 +33,7 @@ func generateRequestId() string {
 
 func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 	key := strings.Join(strings.Split(r.URL.Path, "/")[2:], "/")
-	cloudfiles := models.G(r).Resources().CloudFiles
+	cloudfiles := models.G(r).Resources().CloudFiles()
 	info, exists := cloudfiles.Credentials.GetCredentials(r.URL.Query().Get("sig"))
 
 	if !exists {

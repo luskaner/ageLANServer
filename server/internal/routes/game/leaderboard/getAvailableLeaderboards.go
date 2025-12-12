@@ -8,5 +8,5 @@ import (
 )
 
 func GetAvailableLeaderboards(w http.ResponseWriter, r *http.Request) {
-	i.JSON(&w, models.G(r).Resources().ArrayFiles["leaderboards.json"])
+	i.JSON(&w, models.G(r).Resources().ArrayFiles()["leaderboards.json"])
 }

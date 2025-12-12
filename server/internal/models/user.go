@@ -15,6 +15,24 @@ import (
 	"github.com/spf13/viper"
 )
 
+type User interface {
+	GetId() int32
+	GetStatId() int32
+	GetProfileId() int32
+	GetReliclink() int32
+	GetAlias() string
+	GetPlatformPath() string
+	GetPlatformId() int
+	GetPlatformUserID() uint64
+	GetExtraProfileInfo(clientLibVersion uint16) i.A
+	GetProfileInfo(includePresence bool, clientLibVersion uint16) i.A
+	GetPresence() int32
+	SetPresence(presence int32)
+	GetProfileMetadata() string
+	GetProfileUintFlag1() uint8
+	GetProfileUintFlag2() uint8
+}
+
 type MainUser struct {
 	id               int32
 	statId           int32
@@ -29,15 +47,24 @@ type MainUser struct {
 	presence atomic.Int32
 }
 
+type Users interface {
+	Initialize()
+	GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
+	GetUserByStatId(id int32) (User, bool)
+	GetUserById(id int32) (User, bool)
+	GetUserIds() func(func(int32) bool)
+	GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A
+}
+
 type MainUsers struct {
-	store *i.SafeMap[string, *MainUser]
+	store *i.SafeMap[string, User]
 }
 
 func (users *MainUsers) Initialize() {
-	users.store = i.NewSafeMap[string, *MainUser]()
+	users.store = i.NewSafeMap[string, User]()
 }
 
-func (users *MainUsers) generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) *MainUser {
+func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
 	hasher := fnv.New64a()
 	_, _ = hasher.Write([]byte(identifier))
 	hsh := hasher.Sum(nil)
@@ -77,7 +104,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) *MainUser {
+func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
 	if viper.GetBool("GeneratePlatformUserId") {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
@@ -112,23 +139,23 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remote
 		profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		profileUIntFlag1 = 1
 	}
-	newUser := users.generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
+	newUser := users.Generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
 	mainUser, _ := users.store.LoadOrStore(identifier, newUser)
 	return mainUser
 }
 
-func (users *MainUsers) GetUserByStatId(id int32) (*MainUser, bool) {
+func (users *MainUsers) GetUserByStatId(id int32) (User, bool) {
 	for u := range users.store.Values() {
-		if u.statId == id {
+		if u.GetStatId() == id {
 			return u, true
 		}
 	}
 	return nil, false
 }
 
-func (users *MainUsers) GetUserById(id int32) (*MainUser, bool) {
+func (users *MainUsers) GetUserById(id int32) (User, bool) {
 	for u := range users.store.Values() {
-		if u.id == id {
+		if u.GetId() == id {
 			return u, true
 		}
 	}
@@ -145,7 +172,7 @@ func (users *MainUsers) GetUserIds() func(func(int32) bool) {
 	}
 }
 
-func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user *MainUser) bool, clientLibVersion uint16) []i.A {
+func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A {
 	var presenceData = make([]i.A, 0)
 	for u := range users.store.Values() {
 		if matches(u) {

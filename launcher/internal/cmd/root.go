@@ -23,8 +23,8 @@ import (
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/pidLock"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
@@ -59,7 +59,7 @@ var (
 		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, and AoM: RT to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
 		Run: func(_ *cobra.Command, _ []string) {
-			lock := &pidLock.Lock{}
+			lock := &fileLock.PidLock{}
 			if err := lock.Lock(); err != nil {
 				logger.Println("Failed to lock pid file. Kill process 'launcher' if it is running in your task manager.")
 				logger.Println(err.Error())

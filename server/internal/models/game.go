@@ -3,11 +3,11 @@ package models
 import "net/http"
 
 type Game interface {
-	BattleServers() *MainBattleServers
-	Resources() *MainResources
-	Users() *MainUsers
-	Advertisements() *MainAdvertisements
-	ChatChannels() *MainChatChannels
+	BattleServers() BattleServers
+	Resources() Resources
+	Users() Users
+	Advertisements() Advertisements
+	ChatChannels() ChatChannels
 	Title() string
 }
 
