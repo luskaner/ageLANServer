@@ -53,6 +53,7 @@ type PidLock struct {
 }
 
 func (l *PidLock) Lock() error {
+	//goland:noinspection ALL
 	err, file := openFile()
 	if err != nil {
 		return err

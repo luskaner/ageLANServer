@@ -12,6 +12,10 @@ type CustomTime struct {
 	Format string
 }
 
+func (ct CustomTime) Update() {
+	ct.Time = time.Now()
+}
+
 func (ct CustomTime) MarshalJSON() ([]byte, error) {
 	formatted := ct.Time.UTC().Format(CustomTimeFormat)
 	return json.Marshal(formatted)
@@ -20,10 +24,32 @@ func (ct CustomTime) MarshalJSON() ([]byte, error) {
 type Value[T any] struct {
 	LastUpdated CustomTime
 	Permission  string
-	Value       T
+	Value       *T
+}
+
+func (v *Value[T]) MarshalJSON() ([]byte, error) {
+	if val, err := json.Marshal(v.Value); err == nil {
+		stringVal := string(val)
+		return json.Marshal(BaseValue[string]{
+			LastUpdated: v.LastUpdated,
+			Permission:  v.Permission,
+			Value:       &stringVal,
+		})
+	} else {
+		return nil, err
+	}
 }
 
 type BaseValue[T any] Value[T]
+
+func (b *BaseValue[T]) UpdateLastUpdated() {
+	b.LastUpdated.Update()
+}
+
+func (b *BaseValue[T]) Update(updateFn func(*T)) {
+	updateFn(b.Value)
+	b.UpdateLastUpdated()
+}
 
 func (b *BaseValue[T]) ToValue() *Value[T] {
 	if b == nil {
@@ -36,14 +62,14 @@ func (b *BaseValue[T]) ToValue() *Value[T] {
 	}
 }
 
-func (v *Value[T]) MarshalJSON() ([]byte, error) {
-	if val, err := json.Marshal(v.Value); err == nil {
-		return json.Marshal(BaseValue[string]{
-			LastUpdated: v.LastUpdated,
-			Permission:  v.Permission,
-			Value:       string(val),
-		})
-	} else {
-		return nil, err
+func NewBaseValue[T any](permission string, value T) *BaseValue[T] {
+	return &BaseValue[T]{
+		LastUpdated: CustomTime{Time: time.Now(), Format: "2006-01-02T15:04:05.000Z"},
+		Permission:  permission,
+		Value:       &value,
 	}
+}
+
+func NewPrivateBaseValue[T any](value T) *BaseValue[T] {
+	return NewBaseValue("Private", value)
 }

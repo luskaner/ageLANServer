@@ -27,18 +27,14 @@ func NotifyLeaveChannel(sessions models.Sessions, users models.Users, user model
 }
 
 func LeaveChannel(w http.ResponseWriter, r *http.Request) {
-	chatChannelIdStr := r.FormValue("chatroomID")
-	if chatChannelIdStr == "" {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	chatChannelId, err := strconv.ParseInt(chatChannelIdStr, 10, 32)
+	var req chatroomRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	game := models.G(r)
-	chatChannel, ok := game.ChatChannels().GetById(int32(chatChannelId))
+	chatChannel, ok := game.ChatChannels().GetById(req.ChatroomID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return

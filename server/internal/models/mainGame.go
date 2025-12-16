@@ -5,16 +5,17 @@ import (
 )
 
 type MainGame struct {
-	battleServers  BattleServers
-	resources      Resources
-	users          Users
-	advertisements Advertisements
-	chatChannels   ChatChannels
-	sessions       Sessions
-	title          string
+	battleServers          BattleServers
+	resources              Resources
+	users                  Users
+	advertisements         Advertisements
+	chatChannels           ChatChannels
+	sessions               Sessions
+	leaderboardDefinitions LeaderboardDefinitions
+	title                  string
 }
 
-func CreateMainGame(gameId string, battleServers BattleServers, resources Resources, users Users,
+func CreateMainGame(gameId string, battleServers BattleServers, resources Resources, leaderboardDefinitions LeaderboardDefinitions, users Users,
 	advertisements Advertisements, chatChannels ChatChannels, sessions Sessions, rssKeyedFilenames mapset.Set[string],
 	battleServerHaveOobPort bool, battleServerName string) Game {
 	if battleServers == nil {
@@ -50,11 +51,18 @@ func CreateMainGame(gameId string, battleServers BattleServers, resources Resour
 	game.advertisements.Initialize(game.users, game.battleServers)
 	game.chatChannels.Initialize(game.resources.ChatChannels())
 	game.sessions.Initialize()
+	if leaderboards, ok := game.resources.ArrayFiles()["leaderboards.json"]; ok {
+		if leaderboardDefinitions == nil {
+			leaderboardDefinitions = &MainLeaderboardDefinitions{}
+		}
+		game.leaderboardDefinitions = leaderboardDefinitions
+		game.leaderboardDefinitions.Initialize(leaderboards)
+	}
 	return game
 }
 
 func CreateGame(gameId string, rssKeyedFilenames mapset.Set[string], battleServerHaveOobPort bool, battleServerName string) Game {
-	return CreateMainGame(gameId, nil, nil, nil, nil, nil,
+	return CreateMainGame(gameId, nil, nil, nil, nil, nil, nil,
 		nil, rssKeyedFilenames, battleServerHaveOobPort, battleServerName)
 }
 
@@ -84,4 +92,8 @@ func (g *MainGame) BattleServers() BattleServers {
 
 func (g *MainGame) Sessions() Sessions {
 	return g.sessions
+}
+
+func (g *MainGame) LeaderboardDefinitions() LeaderboardDefinitions {
+	return g.leaderboardDefinitions
 }

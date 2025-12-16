@@ -2,10 +2,10 @@ package CloudScript
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/playfab/cloudScriptFunction"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -23,18 +23,13 @@ type executeFunctionRequest struct {
 type executeFunctionResponse struct {
 	ExecutionTimeMilliseconds int64
 	FunctionName              string
-	FunctionResult            json.RawMessage
+	FunctionResult            json.RawMessage `json:",omitempty"`
 	FunctionResultSize        uint32
 }
 
 func ExecuteFunction(w http.ResponseWriter, r *http.Request) {
 	var req executeFunctionRequest
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		shared.RespondBadRequest(&w)
-		return
-	}
-	err = json.Unmarshal(bodyBytes, &req)
+	err := i.Bind(r, &req)
 	if err != nil || req.FunctionName == "" {
 		shared.RespondBadRequest(&w)
 		return
@@ -51,25 +46,24 @@ func ExecuteFunction(w http.ResponseWriter, r *http.Request) {
 		t := time.Now()
 		result := fn.Run(game, u, reqPar)
 		duration := time.Since(t).Milliseconds()
+		var tmpResultBytes []byte
+		tmpResultBytes, err = json.Marshal(result)
+		if err != nil {
+			shared.RespondBadRequest(&w)
+			return
+		}
 		var resultSize uint32
 		var resultBytes []byte
-		if result != nil {
-			resultBytes, err = json.Marshal(result)
-			if err != nil {
-				shared.RespondBadRequest(&w)
-				return
-			}
+		if string(tmpResultBytes) != "null" {
+			resultBytes = tmpResultBytes
 			resultSize = uint32(len(resultBytes))
 		}
-		shared.RespondOK(
-			&w,
-			&executeFunctionResponse{
-				ExecutionTimeMilliseconds: duration,
-				FunctionName:              req.FunctionName,
-				FunctionResult:            resultBytes,
-				FunctionResultSize:        resultSize,
-			},
-		)
+		shared.RespondOK(&w, &executeFunctionResponse{
+			ExecutionTimeMilliseconds: duration,
+			FunctionName:              req.FunctionName,
+			FunctionResultSize:        resultSize,
+			FunctionResult:            resultBytes,
+		})
 	} else {
 		shared.RespondBadRequest(&w)
 		return

@@ -29,6 +29,7 @@ func CreateGame() models.Game {
 		common.GameAoM,
 		nil,
 		nil,
+		nil,
 		&user.Users{},
 		nil,
 		nil,

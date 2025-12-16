@@ -18,8 +18,8 @@ func ParsedGameIds(gameIds *[]string) (games mapset.Set[string], err error) {
 	} else if !common.SupportedGames.IsSuperset(mapset.NewThreadUnsafeSet[string](*gameIds...)) {
 		err = fmt.Errorf("game(s) not supported")
 		return
-	} else {
-		games = mapset.NewSet[string](*gameIds...)
 	}
+
+	games = mapset.NewSet[string](*gameIds...)
 	return
 }

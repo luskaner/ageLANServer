@@ -1,8 +1,6 @@
 package buildGauntletLabyrinth
 
 import (
-	"time"
-
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
@@ -41,38 +39,29 @@ func (b *Function) RunTyped(game models.Game, u models.User, parameters *Paramet
 	var id int
 	data := athensUser.Data.Data()
 	if labyrinth := data.Challenge.Labyrinth; labyrinth != nil {
-		id = labyrinth.Value.Id + 1
+		id = (*labyrinth.Value).Id + 1
 	} else {
 		id = 1
 	}
-	now := time.Now()
 	data.Challenge = user.Challenge{
-		Labyrinth: &userData.BaseValue[user.Labyrinth]{
-			LastUpdated: userData.CustomTime{Time: now, Format: "2006-01-02T15:04:05.000Z"},
-			Permission:  "Private",
-			Value: user.Labyrinth{
-				Id:        id,
-				Dfficulty: parameters.GauntletDifficulty,
-				Missions:  missions,
-			},
-		},
-		Progress: &userData.BaseValue[user.Progress]{
-			LastUpdated: userData.CustomTime{Time: now, Format: "2006-01-02T15:04:05.000Z"},
-			Permission:  "Private",
-			Value: user.Progress{
-				Lives:             3,
-				CompletedMissions: []string{},
-				Inventory:         []user.ProgressInventory{},
-			},
-		},
+		Labyrinth: userData.NewPrivateBaseValue(user.Labyrinth{
+			Id:        id,
+			Dfficulty: parameters.GauntletDifficulty,
+			Missions:  missions,
+		}),
+		Progress: userData.NewPrivateBaseValue(user.Progress{
+			Lives:             3,
+			CompletedMissions: []string{},
+			Inventory:         []user.ProgressInventory{},
+		}),
 	}
-	data.DataVersion += 1
+	data.DataVersion++
 	go func() {
 		_ = athensUser.Data.Save()
 	}()
 	return &Result{
-		Labyrinth: &data.Challenge.Labyrinth.Value,
-		Progress:  &data.Challenge.Progress.Value,
+		Labyrinth: data.Challenge.Labyrinth.Value,
+		Progress:  data.Challenge.Progress.Value,
 	}
 }
 

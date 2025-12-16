@@ -1,7 +1,11 @@
 package cloudScriptFunction
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 )
 
@@ -25,11 +29,53 @@ type AwardMissionRewardsFunction struct {
 	*playfab.CloudScriptFunctionBase[AwardMissionRewardsParameters, AwardMissionRewardsResult]
 }
 
-func (a *AwardMissionRewardsFunction) RunTyped(game models.Game, user models.User, parameters *AwardMissionRewardsParameters) *AwardMissionRewardsResult {
-	// TODO: Implement only for Challenge
-	return &AwardMissionRewardsResult{
+func (a *AwardMissionRewardsFunction) RunTyped(_ models.Game, u models.User, parameters *AwardMissionRewardsParameters) *AwardMissionRewardsResult {
+	result := &AwardMissionRewardsResult{
 		ItemsAdded: []AwardMissionRewardsResultItemsAdded{},
 	}
+	if elements := strings.Split(parameters.MissionId, "_"); elements[1] == "Gauntlet" {
+		actualMissionId := strings.Join(elements[2:], "_")
+		athensUser := u.(*user.User)
+		baseData := athensUser.Data
+		d := baseData.Data()
+		challenge := d.Challenge
+		progress := challenge.Progress
+		if progress == nil {
+			return result
+		}
+		progressValue := progress.Value
+		if progressValue.MissionBeingPlayedRightNow != parameters.MissionId {
+			return result
+		}
+		if parameters.Won {
+			progressValue.CompletedMissions = append(progressValue.CompletedMissions, parameters.MissionId)
+			for _, mission := range (*challenge.Labyrinth.Value).Missions {
+				if mission.Id != actualMissionId {
+					continue
+				}
+				for _, reward := range mission.Rewards {
+					elements = strings.Split(reward.ItemId, "_")
+					rarity, _ := strconv.Atoi(elements[3])
+					progressValue.Inventory = append(progressValue.Inventory, user.ProgressInventory{
+						SeasonId: "Gauntlet",
+						Item:     elements[2],
+						Rarity:   rarity,
+					})
+					result.ItemsAdded = append(result.ItemsAdded, AwardMissionRewardsResultItemsAdded{
+						Amount:         reward.Amount,
+						ItemFriendlyId: reward.ItemId,
+					})
+				}
+			}
+			progressValue.MissionBeingPlayedRightNow = ""
+			progress.UpdateLastUpdated()
+			d.DataVersion++
+			go func() {
+				_ = baseData.Save()
+			}()
+		}
+	}
+	return result
 }
 
 func (a *AwardMissionRewardsFunction) Name() string {

@@ -29,9 +29,9 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 					logger.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
 					errorCode = internal.ErrConfigIpMap
 					return
-				} else {
-					mapIP = true
 				}
+
+				mapIP = true
 			} else if !server.CheckConnectionFromServer(domain, true) {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
 				errorCode = internal.ErrServerUnreachable

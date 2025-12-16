@@ -1,27 +1,25 @@
 package account
 
 import (
-	"encoding/json"
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+type findProfilesByPlatformIDRequest struct {
+	PlatformIDs i.Json[[]uint64] `schema:"platformIDs"`
+}
+
 func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
-	platformIdsStr := r.PostFormValue("platformIDs")
-	if len(platformIdsStr) < 1 {
-		i.JSON(&w, i.A{2, i.A{}})
-		return
-	}
-	var platformIds []uint64
-	err := json.Unmarshal([]byte(platformIdsStr), &platformIds)
+	var req findProfilesByPlatformIDRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	platformIdsMap := make(map[uint64]interface{}, len(platformIds))
-	for _, platformId := range platformIds {
+	platformIdsMap := make(map[uint64]any, len(req.PlatformIDs.Data))
+	for _, platformId := range req.PlatformIDs.Data {
 		platformIdsMap[platformId] = struct{}{}
 	}
 	game := models.G(r)

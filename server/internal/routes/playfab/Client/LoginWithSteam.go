@@ -1,12 +1,12 @@
 package Client
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -52,7 +52,7 @@ type loginWithSteamResponse struct {
 
 func LoginWithSteam(w http.ResponseWriter, r *http.Request) {
 	var req loginWithSteamRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(r.Body)

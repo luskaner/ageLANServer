@@ -28,17 +28,19 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
-	var t2 int64
-	var t3 int64
-	i.WithRng(func(rand *i.RandReader) {
-		t2 = t - rand.Int64N(3600*2-3600+1) + 3600
-		t3 = t - rand.Int64N(3600*2-3600+1) + 3600
-	})
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
 	sessions := game.Sessions()
-	u := users.GetOrCreateUser(title, r.RemoteAddr, req.MacAddress, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
+	u := users.GetOrCreateUser(
+		title,
+		game.LeaderboardDefinitions().AvatarStatDefinitions(),
+		r.RemoteAddr,
+		req.MacAddress,
+		req.AccountType == "XBOXLIVE",
+		req.PlatformUserId,
+		req.Alias,
+	)
 	sess, ok := sessions.GetByUserId(u.GetId())
 	if ok {
 		sessions.Delete(sess.Id())
@@ -65,40 +67,6 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	extraProfileInfoList := i.A{}
 	if title == common.GameAoE2 {
 		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.ClientLibVersion))
-	}
-	var unknownProfileInfoList i.A
-	switch title {
-	case common.GameAoE2:
-		unknownProfileInfoList = i.A{
-			i.A{2, profileId, 0, "", t2},
-			i.A{39, profileId, 671, "", t2},
-			i.A{41, profileId, 191, "", t2},
-			i.A{42, profileId, 480, "", t2},
-			i.A{44, profileId, 0, "", t2},
-			i.A{45, profileId, 0, "", t2},
-			i.A{46, profileId, 0, "", t2},
-			i.A{47, profileId, 0, "", t2},
-			i.A{48, profileId, 0, "", t2},
-			i.A{50, profileId, 0, "", t2},
-			i.A{60, profileId, 1, "", t2},
-			i.A{142, profileId, 1, "", t3},
-			i.A{171, profileId, 1, "", t2},
-			i.A{172, profileId, 4, "", t2},
-			i.A{173, profileId, 1, "", t2},
-		}
-	case common.GameAoE3, common.GameAoM:
-		unknownProfileInfoList = i.A{
-			i.A{291, u.GetId(), 16, "", t2},
-		}
-	default:
-		unknownProfileInfoList = i.A{}
-	}
-	if title == common.GameAoM {
-		unknownProfileInfoList = append(
-			unknownProfileInfoList,
-			// 10k of favour stash (the maximum)
-			i.A{117, u.GetId(), 10_000, "", t2},
-		)
 	}
 	battleServers := game.BattleServers()
 	servers := battleServers.Encode(r)
@@ -142,7 +110,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		profileInfo,
 		relationship.Relationships(title, req.ClientLibVersion, users, u),
 		extraProfileInfoList,
-		unknownProfileInfoList,
+		u.EncodeAvatarStats(),
 		nil,
 		i.A{},
 		nil,

@@ -1,15 +1,21 @@
 package chat
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
+
+type recipientIDs struct {
+	IDs i.Json[[]int32] `schema:"recipientIDs"`
+}
+
+type recipientID struct {
+	ID int32 `schema:"recipientID"`
+}
 
 func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 	response := i.A{code}
@@ -22,42 +28,32 @@ func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	game := models.G(r)
 	gameTitle := game.Title()
-	text := r.FormValue("message")
-	if text == "" {
+	var req textRequest
+	err := i.Bind(r, &req)
+	if err != nil {
 		whisperResult(&w, gameTitle, 2)
 		return
 	}
 
-	var targetUserIds []int32
+	var targetUserIds recipientIDs
 	if gameTitle == common.GameAoM {
-		targetUserIdsStr := r.FormValue("recipientIDs")
-		if targetUserIdsStr == "" {
-			whisperResult(&w, gameTitle, 2)
-			return
-		}
-		err := json.Unmarshal([]byte(targetUserIdsStr), &targetUserIds)
-		if err != nil {
+		if err := i.Bind(r, &targetUserIds); err != nil {
 			whisperResult(&w, gameTitle, 2)
 			return
 		}
 	} else {
-		targetUserIdStr := r.FormValue("recipientID")
-		if targetUserIdStr == "" {
+		var recpId recipientID
+		if err = i.Bind(r, &recpId); err != nil {
 			whisperResult(&w, gameTitle, 2)
 			return
 		}
-		targetUserId, err := strconv.ParseInt(targetUserIdStr, 10, 32)
-		if err != nil {
-			whisperResult(&w, gameTitle, 2)
-			return
-		}
-		targetUserIds = append(targetUserIds, int32(targetUserId))
+		targetUserIds.IDs.Data = append(targetUserIds.IDs.Data, recpId.ID)
 	}
 	users := game.Users()
-	receivers := make([]models.User, len(targetUserIds))
+	receivers := make([]models.User, len(targetUserIds.IDs.Data))
 	var ok bool
 
-	for j, profileId := range targetUserIds {
+	for j, profileId := range targetUserIds.IDs.Data {
 		receivers[j], ok = users.GetUserById(profileId)
 		if !ok {
 			whisperResult(&w, gameTitle, 2)
@@ -77,11 +73,11 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			message,
 			i.A{
 				"",
-				text,
+				req.Message,
 			}...,
 		)
 	}
-	message = append(message, text)
+	message = append(message, req.Message)
 	sessions := game.Sessions()
 	var receiverSession models.Session
 	for _, receiver := range receivers {

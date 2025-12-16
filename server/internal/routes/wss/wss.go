@@ -204,9 +204,9 @@ func parseMessage(sessions models.Sessions, message i.H, currentSession models.S
 			sess, ok = sessions.GetById(sessionToken.(string))
 			if ok {
 				return 0, sess
-			} else {
-				return 0, nil
 			}
+
+			return 0, nil
 		}
 	}
 	if currentSession != nil {
@@ -285,11 +285,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			}
 		} else if errors.Is(pingErr, websocket.ErrCloseSent) {
 			return nil
-		} else {
-			var e net.Error
-			if errors.As(pingErr, &e) && e.Temporary() {
-				return nil
-			}
+		}
+
+		var e net.Error
+		if errors.As(pingErr, &e) && e.Temporary() {
+			return nil
 		}
 		return pingErr
 	})

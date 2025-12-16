@@ -2,7 +2,6 @@ package relationship
 
 import (
 	"net/http"
-	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -24,14 +23,13 @@ func ChangePresence(clientLibVersion uint16, sessions models.Sessions, users mod
 	}
 }
 
+type setPresenceRequest struct {
+	PresenceId int32 `schema:"presence_id"`
+}
+
 func SetPresence(w http.ResponseWriter, r *http.Request) {
-	presenceId := r.PostFormValue("presence_id")
-	if presenceId == "" {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	presence, err := strconv.ParseInt(presenceId, 10, 8)
-	if err != nil {
+	var req setPresenceRequest
+	if err := i.Bind(r, &req); err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
@@ -40,7 +38,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 	users := game.Users()
 	u, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		ChangePresence(sess.GetClientLibVersion(), game.Sessions(), users, u, int32(presence))
+		ChangePresence(sess.GetClientLibVersion(), game.Sessions(), users, u, req.PresenceId)
 		i.JSON(&w, i.A{0})
 	} else {
 		i.JSON(&w, i.A{2})

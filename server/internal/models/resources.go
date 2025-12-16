@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -158,13 +157,23 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 }
 
 func (r *MainResources) initializeUserData(gameId string) {
-	if gameId == common.GameAoM {
-		if err := os.MkdirAll(filepath.Join(userDataFolder, common.GameAoM), os.ModePerm); err != nil {
-			panic(err)
-		}
+	ensureFolder(filepath.Join(userDataFolder, gameId))
+}
+
+func ensureFolder(path string) {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		panic(err)
 	}
 }
 
-func UserDataPath(gameId string, platform string, platformUserid string) string {
-	return filepath.Join(userDataFolder, gameId, fmt.Sprintf("%s_%s.json", platform, platformUserid))
+func UserDataPath(gameId string, steam bool, platformUserid string, name string) string {
+	var platform string
+	if steam {
+		platform = "STEAM"
+	} else {
+		platform = "XBOX"
+	}
+	folder := filepath.Join(userDataFolder, gameId, fmt.Sprintf("%s_%s", platform, platformUserid))
+	ensureFolder(folder)
+	return filepath.Join(folder, name+".json")
 }

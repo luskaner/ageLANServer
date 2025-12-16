@@ -110,9 +110,9 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 				str += "invalid"
 			}
 			return internal.ErrCertInvalid
-		} else {
-			str += "OK"
 		}
+
+		str += "OK"
 		commonLogger.Println(str)
 	} else {
 		commonLogger.Println("No certificate")

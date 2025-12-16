@@ -1,10 +1,10 @@
 package Client
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab/data"
@@ -47,7 +47,7 @@ func getValue(key string, userData *user.Data) any {
 
 func GetUserReadOnlyData(w http.ResponseWriter, r *http.Request) {
 	var req getUserReadonlyDataRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	if err != nil || len(req.Keys) == 0 {
 		shared.RespondBadRequest(&w)
 		return

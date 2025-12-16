@@ -53,13 +53,13 @@ func ResolvePath(gameId string) (resolvedPath string, err error) {
 		}
 		err = fmt.Errorf("could not find battle server executable")
 		return
-	} else {
-		var pathErr error
-		_, path, pathErr = common.ParsePath(viper.GetStringSlice("Executable.Path"), nil)
-		if pathErr != nil {
-			err = fmt.Errorf("invalid battle server executable path")
-			return
-		}
+	}
+
+	var pathErr error
+	_, path, pathErr = common.ParsePath(viper.GetStringSlice("Executable.Path"), nil)
+	if pathErr != nil {
+		err = fmt.Errorf("invalid battle server executable path")
+		return
 	}
 	if validPath(path) {
 		resolvedPath = path

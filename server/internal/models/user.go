@@ -32,6 +32,8 @@ type User interface {
 	GetProfileMetadata() string
 	GetProfileUintFlag1() uint8
 	GetProfileUintFlag2() uint8
+	GetAvatarStats() *PersistentJsonData[*AvatarStats]
+	EncodeAvatarStats() i.A
 }
 
 type MainUser struct {
@@ -44,13 +46,36 @@ type MainUser struct {
 	profileUintFlag1 uint8
 	reliclink        int32
 	isXbox           bool
-	// Only presence is dynamic
-	presence atomic.Int32
+	// Dynamic from here
+	presence    atomic.Int32
+	avatarStats *PersistentJsonData[*AvatarStats]
+}
+
+// EncodeAvatarStats must only be called in the same goroutine it is created in
+func (u *MainUser) EncodeAvatarStats() i.A {
+	return u.GetAvatarStats().Data().Encode(u.GetProfileId())
+}
+
+func newAvatarStats(values map[int32]int64) *AvatarStats {
+	avatarStats := &AvatarStats{
+		values: i.NewSafeMap[int32, AvatarStat](),
+		locks:  i.NewKeyRWMutex[int32](),
+	}
+	for id, value := range values {
+		avatarStats.values.Store(id, AvatarStat{
+			Id:          id,
+			Value:       value,
+			LastUpdated: time.Now().UTC(),
+		}, func(stored AvatarStat) bool {
+			return true
+		})
+	}
+	return avatarStats
 }
 
 type Users interface {
 	Initialize()
-	GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
+	GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
 	GetUserByStatId(id int32) (User, bool)
 	GetUserById(id int32) (User, bool)
 	GetUserIds() func(func(int32) bool)
@@ -60,7 +85,7 @@ type Users interface {
 
 type MainUsers struct {
 	store      *i.SafeMap[string, User]
-	GenerateFn func(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User
+	GenerateFn func(gameId string, avatarStatsDefinitions AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User
 }
 
 func (users *MainUsers) Initialize() {
@@ -70,12 +95,58 @@ func (users *MainUsers) Initialize() {
 	}
 }
 
-func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
+func (users *MainUsers) Generate(gameId string, avatarStatsDefinitions AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
 	hasher := fnv.New64a()
 	_, _ = hasher.Write([]byte(identifier))
 	hsh := hasher.Sum(nil)
 	seed := binary.BigEndian.Uint64(hsh)
 	rng := rand.New(rand.NewPCG(seed, seed))
+	avatarStats, _ := NewPersistentJsonData[*AvatarStats](
+		UserDataPath(gameId, !isXbox, strconv.FormatUint(platformUserId, 10), "avatarStats"),
+		func() *AvatarStats {
+			var values map[string]int64
+			switch gameId {
+			case common.GameAoE2:
+				// TODO: Remove the ones not needed
+				values = map[string]int64{
+					"STAT_NUM_MVP_AWARDS":           0,
+					"STAT_HIGHEST_SCORE_TOTAL":      0,
+					"STAT_HIGHEST_SCORE_ECONOMIC":   0,
+					"STAT_HIGHEST_SCORE_TECHNOLOGY": 0,
+					"STAT_CAREER_UNITS_KILLED":      0,
+					"STAT_CAREER_UNITS_LOST":        0,
+					"STAT_CAREER_UNITS_CONVERTED":   0,
+					"STAT_CAREER_BUILDINGS_RAZED":   0,
+					"STAT_CAREER_BUILDINGS_LOST":    0,
+					"STAT_CAREER_NUM_CASTLES":       0,
+					"STAT_GAMES_PLAYED_ONLINE":      0,
+					"STAT_ELO_XRM_WINS":             0,
+					"STAT_POP_CAP_200_MP":           0,
+					"STAT_POP_PEAK_200_MP":          0,
+					"STAT_TOTAL_GAMES":              0,
+				}
+			case common.GameAoE3:
+				// FIXME: Is this even needed?
+				values = map[string]int64{
+					"STAT_EVENT_EXPLORER_SKIN_CHALLENGE_14c": 16,
+				}
+			case common.GameAoM:
+				values = map[string]int64{
+					"STAT_GAUNTLET_REWARD_XP":     2_147_483_647,
+					"STAT_GAUNTLET_REWARD_FAVOUR": 19_500,
+				}
+			default:
+				values = map[string]int64{}
+			}
+			intValues := make(map[int32]int64, len(values))
+			for k, v := range values {
+				if id, ok := avatarStatsDefinitions.GetIdByName(k); ok {
+					intValues[id] = v
+				}
+			}
+			return newAvatarStats(intValues)
+		},
+	)
 	return &MainUser{
 		id:               rng.Int32(),
 		statId:           rng.Int32(),
@@ -86,6 +157,7 @@ func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId 
 		alias:            alias,
 		platformUserId:   platformUserId,
 		isXbox:           isXbox,
+		avatarStats:      avatarStats,
 	}
 }
 
@@ -110,7 +182,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
+func (users *MainUsers) GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
 	if viper.GetBool("GeneratePlatformUserId") {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
@@ -145,7 +217,7 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remote
 		profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		profileUIntFlag1 = 1
 	}
-	newUser := users.GenerateFn(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
+	newUser := users.GenerateFn(gameId, avatarStatsDefinitions, identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
 	mainUser, _ := users.store.LoadOrStore(identifier, newUser)
 	return mainUser
 }
@@ -189,6 +261,10 @@ func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user U
 		}
 	}
 	return presenceData
+}
+
+func (u *MainUser) GetAvatarStats() *PersistentJsonData[*AvatarStats] {
+	return u.avatarStats
 }
 
 func (u *MainUser) GetId() int32 {

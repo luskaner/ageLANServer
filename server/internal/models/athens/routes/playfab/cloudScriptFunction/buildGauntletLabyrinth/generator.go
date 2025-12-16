@@ -33,27 +33,23 @@ func (r Range) RandomValue() int {
 	return rand.Intn(r.Max-r.Min+1) + r.Min
 }
 
-/*
-Obtained from 46 samples - 3 minimum per difficulty
-The number of nodes will ultimately be further constrained by the
-possible parent nodes in the previous column
-*/
 var nodesPerColumn = []Range{
-	// Initial levels
+	// Initial column
 	{Min: 2, Max: 3},
-	// Middle levels
-	{Min: 2, Max: 5},
-	{Min: 2, Max: 5},
-	{Min: 2, Max: 5},
-	{Min: 3, Max: 5},
-	{Min: 3, Max: 5},
+	// Middle columns
 	{Min: 2, Max: 6},
 	{Min: 2, Max: 6},
-	{Min: 3, Max: 6},
-	// Boss level
+	{Min: 2, Max: 6},
+	{Min: 2, Max: 6},
+	{Min: 2, Max: 6},
+	{Min: 2, Max: 6},
+	{Min: 2, Max: 6},
+	{Min: 2, Max: 6},
+	// Boss column
 	{Min: 1, Max: 1},
 }
 
+// blessingLevelPerColumn indicates the blessing level for each columm
 var blessingLevelPerColumn = []int{0, 0, 1, 1, 2, 2, 3, 3, 4, 5}
 
 func GenerateNumberOfNodes() []int {

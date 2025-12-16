@@ -9,24 +9,24 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
+type textRequest struct {
+	Message string `schema:"message"`
+}
+
+type sendTextRequest struct {
+	chatroomRequest
+	textRequest
+}
+
 func SendText(w http.ResponseWriter, r *http.Request) {
-	text := r.FormValue("message")
-	if text == "" {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	chatChannelIdStr := r.FormValue("chatroomID")
-	if chatChannelIdStr == "" {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	chatChannelId, err := strconv.ParseInt(chatChannelIdStr, 10, 32)
+	var req sendTextRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	game := models.G(r)
-	chatChannel, ok := game.ChatChannels().GetById(int32(chatChannelId))
+	chatChannel, ok := game.ChatChannels().GetById(req.ChatroomID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -39,7 +39,7 @@ func SendText(w http.ResponseWriter, r *http.Request) {
 	}
 	i.JSON(&w, i.A{0})
 	sessions := game.Sessions()
-	staticResponse := i.A{chatChannelIdStr, strconv.Itoa(int(user.GetId())), "", text}
+	staticResponse := i.A{strconv.Itoa(int(req.ChatroomID)), strconv.Itoa(int(user.GetId())), "", req.Message}
 	for existingUser := range chatChannel.GetUsers() {
 		var existingUserSession models.Session
 		existingUserSession, ok = sessions.GetByUserId(existingUser.GetId())
