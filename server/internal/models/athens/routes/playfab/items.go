@@ -44,7 +44,7 @@ func addItem(name string, catalogItems map[string]playfab.CatalogItem, inventory
 		}
 }
 
-func itemName(category string, effectName string, rarity int) string {
+func ItemName(category string, effectName string, rarity int) string {
 	return fmt.Sprintf("Item_%s_%s_%d", category, effectName, rarity)
 }
 
@@ -53,9 +53,9 @@ func Items(blessings []Blessings) (catalogItems map[string]playfab.CatalogItem, 
 	for _, b := range blessings {
 		for _, r := range b.KnownRarities {
 			if r > -1 {
-				addItem(itemName("Season0", b.EffectName, r), catalogItems, &inventoryItems)
+				addItem(ItemName("Season0", b.EffectName, r), catalogItems, &inventoryItems)
 				if strings.HasPrefix(b.EffectName, "GrantLegend") {
-					addItem(itemName("", b.EffectName, r), catalogItems, &inventoryItems)
+					addItem(ItemName("", b.EffectName, r), catalogItems, &inventoryItems)
 				}
 			}
 		}

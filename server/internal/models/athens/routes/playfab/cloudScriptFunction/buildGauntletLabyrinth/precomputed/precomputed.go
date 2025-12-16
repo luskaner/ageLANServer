@@ -1,8 +1,6 @@
 package precomputed
 
 import (
-	"fmt"
-
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/playfab"
 )
@@ -13,7 +11,7 @@ type Blessing struct {
 }
 
 func (a Blessing) GauntletItem() string {
-	return fmt.Sprintf("Item_Gauntlet_%s_%d", a.EffectName, a.Rarity)
+	return playfab.ItemName("Gauntlet", a.EffectName, a.Rarity)
 }
 
 func blessingKeys(blessings []playfab.Blessings) (keys mapset.Set[Blessing]) {
