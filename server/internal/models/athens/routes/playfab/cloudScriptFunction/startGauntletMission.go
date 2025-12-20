@@ -1,6 +1,8 @@
 package cloudScriptFunction
 
 import (
+	"fmt"
+
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -19,21 +21,20 @@ type StartGauntletMissionFunction struct {
 
 func (s *StartGauntletMissionFunction) RunTyped(_ models.Game, u models.User, parameters *StartGauntletMissionParameters) *StartGauntletMissionResult {
 	athensUser := u.(*user.User)
-	d := athensUser.Data
-	finalData := d.Data()
-	progress := finalData.Challenge.Progress
-	if progress == nil {
-		return nil
-	}
-	if (*progress.Value).MissionBeingPlayedRightNow != parameters.MissionId {
-		progress.Update(func(progress *user.Progress) {
-			progress.MissionBeingPlayedRightNow = parameters.MissionId
-		})
-		finalData.DataVersion++
-		defer func() {
-			_ = d.Save()
-		}()
-	}
+	_ = athensUser.PlayfabData.WithReadWrite(func(data *user.Data) error {
+		progress := data.Challenge.Progress
+		if progress == nil {
+			return fmt.Errorf("no progress found")
+		}
+		if (*progress.Value).MissionBeingPlayedRightNow != parameters.MissionId {
+			progress.Update(func(progress *user.Progress) {
+				progress.MissionBeingPlayedRightNow = parameters.MissionId
+			})
+			data.DataVersion++
+			return nil
+		}
+		return fmt.Errorf("no updates needed")
+	})
 	return nil
 }
 

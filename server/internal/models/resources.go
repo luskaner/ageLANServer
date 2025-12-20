@@ -166,14 +166,14 @@ func ensureFolder(path string) {
 	}
 }
 
-func UserDataPath(gameId string, steam bool, platformUserid string, name string) string {
+func UserDataPath(gameId string, steam bool, platformUserid string) string {
 	var platform string
 	if steam {
 		platform = "STEAM"
 	} else {
 		platform = "XBOX"
 	}
-	folder := filepath.Join(userDataFolder, gameId, fmt.Sprintf("%s_%s", platform, platformUserid))
+	folder := filepath.Join(userDataFolder, gameId)
 	ensureFolder(folder)
-	return filepath.Join(folder, name+".json")
+	return filepath.Join(folder, fmt.Sprintf("%s_%s", platform, platformUserid)+".json")
 }

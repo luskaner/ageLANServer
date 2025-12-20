@@ -54,17 +54,21 @@ func GetUserReadOnlyData(w http.ResponseWriter, r *http.Request) {
 	}
 	sess := playfab.SessionOrPanic(r)
 	u := sess.User()
-	d := u.(*user.User).Data.Data()
-	response := getUserReadOnlyDataResponse{
-		DataVersion: d.DataVersion,
-		Data:        make(map[string]any),
-	}
-	if req.IfChangedFromDataVersion == nil || *req.IfChangedFromDataVersion < d.DataVersion {
-		for _, key := range req.Keys {
-			if val := getValue(key, d); val != nil {
-				response.Data[key] = val
+	d := u.(*user.User).PlayfabData
+	var response getUserReadOnlyDataResponse
+	_ = d.WithReadOnly(func(d *user.Data) error {
+		response = getUserReadOnlyDataResponse{
+			DataVersion: d.DataVersion,
+			Data:        make(map[string]any),
+		}
+		if req.IfChangedFromDataVersion == nil || *req.IfChangedFromDataVersion < d.DataVersion {
+			for _, key := range req.Keys {
+				if val := getValue(key, d); val != nil {
+					response.Data[key] = val
+				}
 			}
 		}
-	}
+		return nil
+	})
 	shared.RespondOK(&w, response)
 }

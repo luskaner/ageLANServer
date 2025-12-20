@@ -1,6 +1,9 @@
 package user
 
 import (
+	"time"
+
+	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab/data"
 )
 
@@ -91,4 +94,43 @@ type Data struct {
 	StoryMissions     map[string]data.BaseValue[StoryMission]
 	PunchCardProgress data.BaseValue[PunchCardProgress]
 	DataVersion       uint32
+}
+
+type PlayfabUpgradableDefaultData struct {
+	models.InitialUpgradableDefaultData[*Data]
+}
+
+func NewAvatarStatsUpgradableDefaultData() *PlayfabUpgradableDefaultData {
+	return &PlayfabUpgradableDefaultData{}
+}
+
+func (p *PlayfabUpgradableDefaultData) Default() *Data {
+	lastUpdated := data.CustomTime{Time: time.Now(), Format: "2006-01-02T15:04:05.000Z"}
+	permission := "Private"
+	missions := make(map[string]data.BaseValue[StoryMission], len(storyMissions))
+	for _, missionId := range storyMissions {
+		missions[missionId] = data.BaseValue[StoryMission]{
+			LastUpdated: lastUpdated,
+			Permission:  permission,
+			Value: &StoryMission{
+				State:               "Completed",
+				RewardsAwarded:      "Hard",
+				CompletionCountHard: 1,
+			},
+		}
+	}
+	return &Data{
+		StoryMissions: missions,
+		PunchCardProgress: data.BaseValue[PunchCardProgress]{
+			LastUpdated: lastUpdated,
+			Permission:  permission,
+			Value: &PunchCardProgress{
+				DateOfMostRecentHolePunch: data.CustomTime{
+					Time:   time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC),
+					Format: time.RFC3339,
+				},
+			},
+		},
+		DataVersion: 0,
+	}
 }

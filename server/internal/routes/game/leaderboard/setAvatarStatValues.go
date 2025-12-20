@@ -37,7 +37,7 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 	var encodedAvatarStats i.A
 	var currentGameFixedAvatarNames mapset.Set[string]
 	avatarStatDefinitions := game.LeaderboardDefinitions().AvatarStatDefinitions()
-	data := u.GetAvatarStats().Data()
+	data := u.GetAvatarStats()
 	fixedAvatarIds := mapset.NewThreadUnsafeSet[int32]()
 	if currentGameFixedAvatarNames, ok = fixedAvatarNames[game.Title()]; ok {
 		for name := range currentGameFixedAvatarNames.Iter() {
@@ -46,25 +46,32 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	values := make(map[int32]int64)
 	for j := 0; j < len(req.AvatarStatIds.Data); j++ {
 		avatarStatId := req.AvatarStatIds.Data[j]
 		if fixedAvatarIds.ContainsOne(avatarStatId) {
 			continue
 		}
-		avatarStatValue := req.Values.Data[j]
-		data.WithWriteLock(avatarStatId, func() {
-			var avatarStat models.AvatarStat
-			if avatarStat, ok = data.GetStat(avatarStatId); ok {
-				avatarStat.UnsafeSetValue(req.Values.Data[j])
-			} else {
-				avatarStat = models.NewAvatarStat(avatarStatId, avatarStatValue)
-				data.AddStat(avatarStat)
+		values[avatarStatId] = req.Values.Data[j]
+	}
+	if len(values) > 0 {
+		_ = data.WithReadWrite(func(avatarStats *models.AvatarStats) error {
+			for avatarStatId, value := range values {
+				var avatarStat models.AvatarStat
+				if avatarStat, ok = avatarStats.GetStat(avatarStatId); ok {
+					avatarStat.SetValue(value)
+				} else {
+					avatarStat = models.NewAvatarStat(avatarStatId, value)
+					avatarStats.AddStat(avatarStat)
+				}
+				encodedAvatarStats = append(encodedAvatarStats, avatarStat.Encode(u.GetProfileId()))
 			}
-			encodedAvatarStats = append(encodedAvatarStats, avatarStat.UnsafeEncode(u.GetProfileId()))
+			return nil
 		})
 	}
 	if len(encodedAvatarStats) > 0 {
-		// TODO: Likely others such as friends or people within the same party need to be notified too
+		// TODO: Do others need to be notified?
+		// TODO: Does client support multiple AvatarStats in one message?
 		wss.SendOrStoreMessage(
 			sess,
 			"AvatarStatsUpdatedMessage",
@@ -72,9 +79,6 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 				encodedAvatarStats,
 			},
 		)
-		go func() {
-			_ = u.GetAvatarStats().Save()
-		}()
 	}
 	i.JSON(&w, i.A{0})
 }

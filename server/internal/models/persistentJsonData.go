@@ -3,17 +3,43 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"sync"
 
 	"github.com/luskaner/ageLANServer/common/fileLock"
+	"github.com/luskaner/ageLANServer/server/internal"
 )
 
-func decodeData[T any](f *os.File) (data T, err error) {
-	decoder := json.NewDecoder(f)
-	err = decoder.Decode(&data)
-	return
+type UpgradableData[T any] interface {
+	ObjectOfVersion(version uint32) any
+	CurrentVersion() uint32
+	UpgradeToNextVersion(oldVersion uint32, oldObject any) T
+}
+
+type InitialUpgradableData[T any] struct {
+}
+
+func (i *InitialUpgradableData[T]) ObjectOfVersion(_ uint32) any {
+	panic("should not have been called")
+}
+
+func (i *InitialUpgradableData[T]) CurrentVersion() uint32 {
+	return 0
+}
+
+func (i *InitialUpgradableData[T]) UpgradeToNextVersion(_ uint32, _ any) T {
+	panic("should not have been called")
+}
+
+type DefaultUpgradableData[T any] interface {
+	UpgradableData[T]
+	Default() T
+}
+
+type InitialUpgradableDefaultData[T any] struct {
+	InitialUpgradableData[T]
 }
 
 func openFile(p string) (existed bool, f *os.File, err error) {
@@ -26,79 +52,53 @@ func openFile(p string) (existed bool, f *os.File, err error) {
 	return
 }
 
-type PersistentJsonROData[T any] struct {
-	data *T
+type PersistentFile struct {
+	lock     *sync.Mutex
+	fileLock *fileLock.Lock
+	existed  bool
 }
 
-func (d *PersistentJsonROData[T]) Data() T {
-	return *d.data
+func (d *PersistentFile) Existed() bool {
+	return d.existed
 }
 
-func NewPersistentJsonROData[T any](path string, defaultDataFn func() T) (userData *PersistentJsonROData[T], err error) {
-	var existed bool
-	var f *os.File
-	existed, f, err = openFile(path)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	var data T
-	if existed {
-		data, err = decodeData[T](f)
-		if err != nil {
-			return
-		}
-	} else {
-		data = defaultDataFn()
-	}
-	userData = &PersistentJsonROData[T]{&data}
+func (d *PersistentFile) unsafeSeekTop() (err error) {
+	_, err = d.fileLock.File.Seek(0, 0)
 	return
 }
 
-type PersistentJsonData[T any] struct {
-	*PersistentJsonROData[T]
-	lock     *sync.RWMutex
-	fileLock *fileLock.Lock
-}
-
-func (d *PersistentJsonData[T]) Save() (err error) {
+func (d *PersistentFile) WithWriter(fn func(writer io.Writer) error) (err error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	if _, err = d.fileLock.File.Seek(0, 0); err != nil {
+	if err = d.unsafeSeekTop(); err != nil {
 		return
 	}
 	if err = d.fileLock.File.Truncate(0); err != nil {
 		return
 	}
-	encoder := json.NewEncoder(d.fileLock.File)
-	if err = encoder.Encode(d.data); err != nil {
-		return
-	}
+	err = fn(d.fileLock.File)
 	_ = d.fileLock.File.Sync()
-	return
+	return err
 }
 
-func (d *PersistentJsonData[T]) Data() T {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	return d.PersistentJsonROData.Data()
-}
-
-func (d *PersistentJsonData[T]) Close() {
+func (d *PersistentFile) WithReader(fn func(writer io.Reader) error) (err error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	if d.fileLock != nil {
-		_ = d.fileLock.Unlock()
-		d.fileLock = nil
-		d.data = nil
+	if err = d.unsafeSeekTop(); err != nil {
+		return
 	}
+	return fn(d.fileLock.File)
 }
 
-func NewPersistentJsonData[T any](path string, defaultDataFn func() T) (persistentData *PersistentJsonData[T], err error) {
-	var existed bool
+func (d *PersistentFile) Close() (err error) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	return d.fileLock.Unlock()
+}
+
+func NewPersistentData(path string) (data *PersistentFile, err error) {
 	var f *os.File
+	var existed bool
 	existed, f, err = openFile(path)
 	if err != nil {
 		return
@@ -108,29 +108,194 @@ func NewPersistentJsonData[T any](path string, defaultDataFn func() T) (persiste
 		_ = f.Close()
 		return
 	}
-	var data T
-	if existed {
-		data, err = decodeData[T](f)
-		if err != nil {
-			_ = lock.Unlock()
+	data = &PersistentFile{
+		&sync.Mutex{},
+		&lock,
+		existed,
+	}
+	return
+}
+
+type jsonMetadata struct {
+	Version uint32 `json:"version"`
+}
+
+type jsonDataWithMetadata[T any] struct {
+	Metadata jsonMetadata `json:"metadata"`
+	Data     T            `json:"data"`
+}
+
+type jsonAnyDataWithMetadata struct {
+	Metadata jsonMetadata `json:"metadata"`
+	Data     any          `json:"data"`
+}
+
+func readPersistentData(persistentFile *PersistentFile, data any) (err error) {
+	return persistentFile.WithReader(func(reader io.Reader) error {
+		return json.NewDecoder(reader).Decode(data)
+	})
+}
+
+type PersistentStringJsonMapRaw = internal.SafeMap[string, jsonDataWithMetadata[json.RawMessage]]
+type PersistentStringJsonMapDataMap = internal.SafeMap[string, jsonAnyDataWithMetadata]
+
+type PersistentStringJsonMap struct {
+	file            *PersistentFile
+	cachedRawValues *PersistentStringJsonMapRaw
+	currentData     jsonDataWithMetadata[*PersistentStringJsonMapDataMap]
+	currentDataLock *internal.KeyRWMutex[string]
+}
+
+func NewPersistentStringMap(path string, upgrader UpgradableData[*PersistentStringJsonMapRaw]) (persistentMap *PersistentStringJsonMap, err error) {
+	var file *PersistentFile
+	file, err = NewPersistentData(path)
+	if err != nil {
+		return
+	}
+	var initialRawData *PersistentStringJsonMapRaw
+	if file.Existed() {
+		var metadata jsonMetadata
+		if err = readPersistentData(file, &metadata); err != nil {
 			return
 		}
-		if _, err = f.Seek(0, 0); err != nil {
-			_ = lock.Unlock()
+		if metadata.Version > upgrader.CurrentVersion() {
+			_ = file.fileLock.Unlock()
+			err = errors.New("data version is newer than current version")
 			return
+		} else if versionsToUpgrade := upgrader.CurrentVersion() - metadata.Version; versionsToUpgrade > 0 {
+			currentData := upgrader.ObjectOfVersion(metadata.Version)
+			if err = readPersistentData(file, &currentData); err != nil {
+				return
+			}
+			for versionsUpgraded := uint32(0); versionsUpgraded < versionsToUpgrade; versionsUpgraded++ {
+				currentData = upgrader.UpgradeToNextVersion(metadata.Version+versionsUpgraded, currentData)
+			}
+			initialRawData = currentData.(*PersistentStringJsonMapRaw)
+		} else {
+			if err = readPersistentData(file, &initialRawData); err != nil {
+				return
+			}
 		}
 	} else {
-		data = defaultDataFn()
+		initialRawData = internal.NewSafeMap[string, jsonDataWithMetadata[json.RawMessage]]()
 	}
-	persistentData = &PersistentJsonData[T]{
-		&PersistentJsonROData[T]{&data},
-		&sync.RWMutex{},
-		&lock,
+	persistentMap = &PersistentStringJsonMap{
+		file,
+		initialRawData,
+		jsonDataWithMetadata[*PersistentStringJsonMapDataMap]{
+			Metadata: jsonMetadata{Version: upgrader.CurrentVersion()},
+			Data:     internal.NewSafeMap[string, jsonAnyDataWithMetadata](),
+		},
+		internal.NewKeyRWMutex[string](),
 	}
-	if !existed {
-		if err = persistentData.Save(); err != nil {
+	return
+}
+
+func psmjSet[T any](p *PersistentStringJsonMap, key string, value DefaultUpgradableData[T]) (err error) {
+	p.currentDataLock.Lock(key)
+	defer p.currentDataLock.Unlock(key)
+	var data T
+	var saveToCache bool
+	if currentVal, ok := (*p.cachedRawValues).Load(key); !ok {
+		data = value.Default()
+		saveToCache = true
+	} else if valueCurrentVersion := value.CurrentVersion(); currentVal.Metadata.Version > valueCurrentVersion {
+		return errors.New("data version is newer than current version")
+	} else if currentVal.Metadata.Version < valueCurrentVersion {
+		oldData := value.ObjectOfVersion(currentVal.Metadata.Version)
+		if err = json.Unmarshal(currentVal.Data, &oldData); err != nil {
 			return
 		}
+		data = value.UpgradeToNextVersion(currentVal.Metadata.Version, oldData)
+		saveToCache = true
+	} else if err = json.Unmarshal(currentVal.Data, &data); err != nil {
+		return
+	}
+	finalData := jsonAnyDataWithMetadata{
+		jsonMetadata{value.CurrentVersion()},
+		data,
+	}
+	if _, exists := (*p.currentData.Data).Store(key, finalData, func(_ jsonAnyDataWithMetadata) bool {
+		return false
+	}); exists {
+		return errors.New("key already exists")
+	}
+	if saveToCache {
+		cacheData := jsonDataWithMetadata[json.RawMessage]{
+			Metadata: jsonMetadata{value.CurrentVersion()},
+		}
+		if cacheData.Data, err = json.Marshal(data); err != nil {
+			return
+		}
+		(*p.cachedRawValues).Store(key, cacheData, func(stored jsonDataWithMetadata[json.RawMessage]) bool {
+			return false
+		})
+	}
+	return nil
+}
+
+func psmjFn[T any](p *PersistentStringJsonMap, key string, fn func(data T) error) (fullData jsonAnyDataWithMetadata, err error) {
+	var ok bool
+	fullData, ok = (*p.currentData.Data).Load(key)
+	if !ok {
+		err = errors.New("key does not exist")
+		return
+	}
+	err = fn(fullData.Data.(T))
+	return
+}
+
+func psmjWithReadOnly[T any](p *PersistentStringJsonMap, key string, fn func(data T) error) error {
+	p.currentDataLock.RLock(key)
+	defer p.currentDataLock.RUnlock(key)
+	_, err := psmjFn(p, key, fn)
+	return err
+}
+
+func psmjWithReadWrite[T any](p *PersistentStringJsonMap, key string, fn func(data T) error) error {
+	p.currentDataLock.Lock(key)
+	defer p.currentDataLock.Unlock(key)
+	var fullData jsonAnyDataWithMetadata
+	var err error
+	if fullData, err = psmjFn(p, key, fn); err != nil {
+		return err
+	}
+	var dataBytes []byte
+	if dataBytes, err = json.Marshal(fullData.Data); err == nil {
+		_, _ = (*p.cachedRawValues).Store(key, jsonDataWithMetadata[json.RawMessage]{
+			Metadata: fullData.Metadata,
+			Data:     dataBytes,
+		}, func(_ jsonDataWithMetadata[json.RawMessage]) bool {
+			return true
+		})
+		return p.file.WithWriter(func(writer io.Writer) error {
+			return json.NewEncoder(writer).Encode(p.cachedRawValues)
+		})
+	} else {
+		return err
+	}
+}
+
+type PersistentJsonData[T any] struct {
+	persistentMap *PersistentStringJsonMap
+	key           string
+}
+
+func (p *PersistentJsonData[T]) WithReadOnly(fn func(data T) error) error {
+	return psmjWithReadOnly[T](p.persistentMap, p.key, fn)
+}
+
+func (p *PersistentJsonData[T]) WithReadWrite(fn func(data T) error) error {
+	return psmjWithReadWrite[T](p.persistentMap, p.key, fn)
+}
+
+func NewPersistentJsonData[T any](persistentMap *PersistentStringJsonMap, key string, upgrader DefaultUpgradableData[T]) (data *PersistentJsonData[T], err error) {
+	if err = psmjSet(persistentMap, key, upgrader); err != nil {
+		return
+	}
+	data = &PersistentJsonData[T]{
+		persistentMap: persistentMap,
+		key:           key,
 	}
 	return
 }

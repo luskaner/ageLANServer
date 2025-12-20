@@ -36,33 +36,34 @@ func (b *Function) RunTyped(game models.Game, u models.User, parameters *Paramet
 			missions = append(missions, *mission)
 		}
 	}
-	var id int
-	data := athensUser.Data.Data()
-	if labyrinth := data.Challenge.Labyrinth; labyrinth != nil {
-		id = (*labyrinth.Value).Id + 1
-	} else {
-		id = 1
-	}
-	data.Challenge = user.Challenge{
-		Labyrinth: userData.NewPrivateBaseValue(user.Labyrinth{
-			Id:        id,
-			Dfficulty: parameters.GauntletDifficulty,
-			Missions:  missions,
-		}),
-		Progress: userData.NewPrivateBaseValue(user.Progress{
-			Lives:             3,
-			CompletedMissions: []string{},
-			Inventory:         []user.ProgressInventory{},
-		}),
-	}
-	data.DataVersion++
-	go func() {
-		_ = athensUser.Data.Save()
-	}()
-	return &Result{
-		Labyrinth: data.Challenge.Labyrinth.Value,
-		Progress:  data.Challenge.Progress.Value,
-	}
+	var result *Result
+	_ = athensUser.PlayfabData.WithReadWrite(func(data *user.Data) error {
+		var id int
+		if labyrinth := data.Challenge.Labyrinth; labyrinth != nil {
+			id = (*labyrinth.Value).Id + 1
+		} else {
+			id = 1
+		}
+		data.Challenge = user.Challenge{
+			Labyrinth: userData.NewPrivateBaseValue(user.Labyrinth{
+				Id:        id,
+				Dfficulty: parameters.GauntletDifficulty,
+				Missions:  missions,
+			}),
+			Progress: userData.NewPrivateBaseValue(user.Progress{
+				Lives:             3,
+				CompletedMissions: []string{},
+				Inventory:         []user.ProgressInventory{},
+			}),
+		}
+		data.DataVersion++
+		result = &Result{
+			Labyrinth: data.Challenge.Labyrinth.Value,
+			Progress:  data.Challenge.Progress.Value,
+		}
+		return nil
+	})
+	return result
 }
 
 func (b *Function) Name() string {

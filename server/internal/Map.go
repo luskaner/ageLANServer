@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"iter"
 	"maps"
 	"slices"
@@ -80,10 +81,11 @@ func (m *SafeMap[K, V]) CompareAndDelete(key K, compareFunc func(stored V) bool)
 	return
 }
 
-func (m *SafeMap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
+func (m *SafeMap[K, V]) LoadOrStoreFn(key K, valueFn func() V) (actual V, loaded bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if actual, loaded = m.wo[key]; !loaded {
+		value := valueFn()
 		m.wo[key] = value
 		m.updateReadOnly()
 		actual = value
@@ -102,8 +104,35 @@ func (m *SafeMap[K, V]) Values() iter.Seq[V] {
 	}
 }
 
+func (m *SafeMap[K, V]) Iter() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		roMap := m.ro.Load()
+		for key, value := range *roMap {
+			if !yield(key, value) {
+				break
+			}
+		}
+	}
+}
+
 func (m *SafeMap[K, V]) Len() int {
 	return len(*m.ro.Load())
+}
+
+func (m *SafeMap[K, V]) MarshalJSON() (b []byte, err error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return json.Marshal(m.wo)
+}
+
+func (m *SafeMap[K, V]) UnmarshalJSON(b []byte) (err error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if err = json.Unmarshal(b, &m.wo); err != nil {
+		return err
+	}
+	m.updateReadOnly()
+	return nil
 }
 
 type SafeSet[V comparable] struct {

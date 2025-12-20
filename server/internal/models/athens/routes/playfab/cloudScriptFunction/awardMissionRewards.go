@@ -1,6 +1,7 @@
 package cloudScriptFunction
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -36,44 +37,43 @@ func (a *AwardMissionRewardsFunction) RunTyped(_ models.Game, u models.User, par
 	if elements := strings.Split(parameters.MissionId, "_"); elements[1] == "Gauntlet" {
 		actualMissionId := strings.Join(elements[2:], "_")
 		athensUser := u.(*user.User)
-		baseData := athensUser.Data
-		d := baseData.Data()
-		challenge := d.Challenge
-		progress := challenge.Progress
-		if progress == nil {
-			return result
-		}
-		progressValue := progress.Value
-		if progressValue.MissionBeingPlayedRightNow != parameters.MissionId {
-			return result
-		}
-		if parameters.Won {
-			progressValue.CompletedMissions = append(progressValue.CompletedMissions, parameters.MissionId)
-			for _, mission := range (*challenge.Labyrinth.Value).Missions {
-				if mission.Id != actualMissionId {
-					continue
-				}
-				for _, reward := range mission.Rewards {
-					elements = strings.Split(reward.ItemId, "_")
-					rarity, _ := strconv.Atoi(elements[3])
-					progressValue.Inventory = append(progressValue.Inventory, user.ProgressInventory{
-						SeasonId: "Gauntlet",
-						Item:     elements[2],
-						Rarity:   rarity,
-					})
-					result.ItemsAdded = append(result.ItemsAdded, AwardMissionRewardsResultItemsAdded{
-						Amount:         reward.Amount,
-						ItemFriendlyId: reward.ItemId,
-					})
-				}
+		_ = athensUser.PlayfabData.WithReadWrite(func(data *user.Data) error {
+			challenge := data.Challenge
+			progress := challenge.Progress
+			if progress == nil {
+				return fmt.Errorf("no challenge progress found")
 			}
-			progressValue.MissionBeingPlayedRightNow = ""
-			progress.UpdateLastUpdated()
-			d.DataVersion++
-			go func() {
-				_ = baseData.Save()
-			}()
-		}
+			progressValue := progress.Value
+			if progressValue.MissionBeingPlayedRightNow != parameters.MissionId {
+				return fmt.Errorf("challenge progress not correct")
+			}
+			if parameters.Won {
+				progressValue.CompletedMissions = append(progressValue.CompletedMissions, parameters.MissionId)
+				for _, mission := range (*challenge.Labyrinth.Value).Missions {
+					if mission.Id != actualMissionId {
+						continue
+					}
+					for _, reward := range mission.Rewards {
+						elements = strings.Split(reward.ItemId, "_")
+						rarity, _ := strconv.Atoi(elements[3])
+						progressValue.Inventory = append(progressValue.Inventory, user.ProgressInventory{
+							SeasonId: "Gauntlet",
+							Item:     elements[2],
+							Rarity:   rarity,
+						})
+						result.ItemsAdded = append(result.ItemsAdded, AwardMissionRewardsResultItemsAdded{
+							Amount:         reward.Amount,
+							ItemFriendlyId: reward.ItemId,
+						})
+					}
+				}
+				progressValue.MissionBeingPlayedRightNow = ""
+				progress.UpdateLastUpdated()
+				data.DataVersion++
+				return nil
+			}
+			return fmt.Errorf("no rewards awarded for lost mission")
+		})
 	}
 	return result
 }
