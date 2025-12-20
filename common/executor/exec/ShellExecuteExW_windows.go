@@ -57,9 +57,9 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	ret, _, err = procShellExecuteEx.Call(uintptr(unsafe.Pointer(info)))
 	if ret == 0 {
 		return
-	} else {
-		err = nil
 	}
+
+	err = nil
 
 	if !start {
 		_, err = windows.WaitForSingleObject(info.hProcess, windows.INFINITE)

@@ -271,6 +271,7 @@ func AddHosts(gameId string, hostFilePath string, lineEnding string, flushFn fun
 	}
 	var hostsFile *os.File
 	mappings := Mappings(gameId)
+	//goland:noinspection ALL
 	err, hostsFile = missingIpMappings(&mappings, hostFilePath)
 	if err != nil {
 		return

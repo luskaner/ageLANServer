@@ -1,7 +1,6 @@
 package cloud
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,18 +9,21 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+type getFileURLRequest struct {
+	Names i.Json[[]string] `json:"names"`
+}
+
 func GetFileURL(w http.ResponseWriter, r *http.Request) {
-	namesStr := r.URL.Query().Get("names")
-	var names []string
-	err := json.Unmarshal([]byte(namesStr), &names)
+	var req getFileURLRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2, i.A{nil}})
 		return
 	}
 	game := models.G(r)
-	descriptions := make(i.A, len(names))
+	descriptions := make(i.A, len(req.Names.Data))
 	gameTitle := game.Title()
-	for j, name := range names {
+	for j, name := range req.Names.Data {
 		fileData, ok := game.Resources().CloudFiles().Value[name]
 		if !ok {
 			i.JSON(&w, i.A{2, i.A{nil}})

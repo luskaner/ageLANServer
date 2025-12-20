@@ -56,9 +56,10 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		i.JSON(w, i.A{2})
 		return
 	}
+	sessions := game.Sessions()
 	message := i.A{req.MatchID, metadata, idValueUint}
 	for peerId := range peersId {
-		if currentSess, ok := models.GetSessionByUserId(peerId); ok {
+		if currentSess, ok := sessions.GetByUserId(peerId); ok {
 			wss.SendOrStoreMessage(
 				currentSess,
 				"PlatformSessionUpdateMessage",

@@ -21,10 +21,10 @@ func trustCertificates(certificates []*x509.Certificate) bool {
 	if err := cert.TrustCertificates(false, certificates); err == nil {
 		commonLogger.Println("Successfully added local certificate")
 		return true
-	} else {
-		commonLogger.Println("Failed to add local certificate")
-		return false
 	}
+
+	commonLogger.Println("Failed to add local certificate")
+	return false
 }
 
 var revertCmd = &cobra.Command{

@@ -27,21 +27,22 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 			game.Advertisements().UnsafeRemovePeer(adv.GetId(), u.GetId())
 		})
 	}
+	sessions := game.Sessions()
 	for channelId, channel := range game.ChatChannels().Iter() {
 		if channel.RemoveUser(u) {
-			chat.NotifyLeaveChannel(users, u, channelId, sess.GetClientLibVersion())
+			chat.NotifyLeaveChannel(sessions, users, u, channelId, sess.GetClientLibVersion())
 			// AoE3 only takes into account the first notify in a readSession return
 			// so delay each message by 100ms so they go in different responses
 			// otherwise, it would appear as it left the first channel only
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	relationship.ChangePresence(sess.GetClientLibVersion(), users, u, 0)
+	relationship.ChangePresence(sess.GetClientLibVersion(), sessions, users, u, 0)
 	if game.Title() == common.GameAoE3 || game.Title() == common.GameAoM {
 		profileInfo := u.GetProfileInfo(false, sess.GetClientLibVersion())
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
-				currentSess, currentOk := models.GetSessionByUserId(user)
+				currentSess, currentOk := sessions.GetByUserId(user)
 				if currentOk {
 					wss.SendOrStoreMessage(
 						currentSess,
@@ -52,6 +53,6 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	sess.Delete()
+	sessions.Delete(sess.Id())
 	i.JSON(&w, i.A{0})
 }

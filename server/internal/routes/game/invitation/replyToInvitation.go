@@ -50,8 +50,8 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{0})
 		return
 	}
-	var inviterSession *models.Session
-	inviterSession, ok = models.GetSessionByUserId(inviter.GetId())
+	var inviterSession models.Session
+	inviterSession, ok = game.Sessions().GetByUserId(inviter.GetId())
 	if ok {
 		var acceptStr string
 		if q.Accept {

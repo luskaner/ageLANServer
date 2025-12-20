@@ -51,11 +51,12 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		userIdStr := make([]i.A, peersLen)
 		races := make([]i.A, peersLen)
 		challengeProgress := make([]i.A, peersLen)
-		sessions := make([]*models.Session, peersLen)
+		sessions := make([]models.Session, peersLen)
+		gameSessions := game.Sessions()
 		j := 0
 		for userId, peer := range peers {
-			var sess *models.Session
-			sess, ok = models.GetSessionByUserId(userId)
+			var sess models.Session
+			sess, ok = gameSessions.GetByUserId(userId)
 			if !ok {
 				continue
 			}

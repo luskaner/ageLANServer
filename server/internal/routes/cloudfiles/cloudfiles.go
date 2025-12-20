@@ -34,7 +34,7 @@ func generateRequestId() string {
 func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 	key := strings.Join(strings.Split(r.URL.Path, "/")[2:], "/")
 	cloudfiles := models.G(r).Resources().CloudFiles()
-	info, exists := cloudfiles.Credentials.GetCredentials(r.URL.Query().Get("sig"))
+	info, exists := (*cloudfiles.Credentials).Get(r.URL.Query().Get("sig"))
 
 	if !exists {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -43,7 +43,7 @@ func Cloudfiles(w http.ResponseWriter, r *http.Request) {
 
 	filename, file, ok := cloudfiles.GetByKey(key)
 	if ok {
-		if file.Key != info.GetKey() {
+		if file.Key != *info.Data() {
 			http.Error(w, "Incorrect signature", http.StatusForbidden)
 			return
 		}

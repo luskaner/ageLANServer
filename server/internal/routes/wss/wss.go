@@ -194,24 +194,24 @@ func closeConn(conn *connectionWrapper, closeCode int, text string) {
 	_ = conn.Close()
 }
 
-func parseMessage(message i.H, currentSession *models.Session) (uint32, *models.Session) {
-	var sess *models.Session
+func parseMessage(sessions models.Sessions, message i.H, currentSession models.Session) (uint32, models.Session) {
+	var sess models.Session
 	sess = nil
 	op := uint32(message["operation"].(float64))
 	if op == 0 {
 		sessionToken, ok := message["sessionToken"]
 		if ok {
-			sess, ok = models.GetSessionById(sessionToken.(string))
+			sess, ok = sessions.GetById(sessionToken.(string))
 			if ok {
 				return 0, sess
-			} else {
-				return 0, nil
 			}
+
+			return 0, nil
 		}
 	}
 	if currentSession != nil {
 		var ok bool
-		sess, ok = models.GetSessionById(currentSession.GetId())
+		sess, ok = sessions.GetById(currentSession.Id())
 		if !ok {
 			return 0, nil
 		}
@@ -224,6 +224,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	sessions := models.G(r).Sessions()
 	connWrapper := &connectionWrapper{
 		connLock:  &sync.RWMutex{},
 		writeLock: &sync.Mutex{},
@@ -258,13 +259,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, sess := parseMessage(loginMsg, nil)
+	_, sess := parseMessage(sessions, loginMsg, nil)
 	if sess == nil {
 		closeConn(connWrapper, websocket.CloseNormalClosure, "Invalid login message data")
 		return
 	}
 
-	sessionToken := sess.GetId()
+	sessionToken := sess.Id()
 
 	connections.Store(
 		sessionToken,
@@ -272,7 +273,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 
-	sess.ResetExpiryTimer()
+	sessions.ResetExpiry(sess.Id())
 
 	connWrapper.SetPingHandler(func(message string) error {
 		var pingErr error
@@ -280,15 +281,15 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		if pingErr == nil {
 			pingErr = connWrapper.SetReadDeadline(time.Now().Add(time.Minute))
 			if pingErr == nil {
-				sess.ResetExpiryTimer()
+				sessions.ResetExpiry(sess.Id())
 			}
 		} else if errors.Is(pingErr, websocket.ErrCloseSent) {
 			return nil
-		} else {
-			var e net.Error
-			if errors.As(pingErr, &e) && e.Temporary() {
-				return nil
-			}
+		}
+
+		var e net.Error
+		if errors.As(pingErr, &e) && e.Temporary() {
+			return nil
 		}
 		return pingErr
 	})
@@ -305,19 +306,19 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			break
 		}
-		op, sess = parseMessage(msg, sess)
+		op, sess = parseMessage(sessions, msg, sess)
 		if op == 0 {
 			if sess == nil {
 				break
 			}
-			if sessId := sess.GetId(); sessId != sessionToken {
+			if sessId := sess.Id(); sessId != sessionToken {
 				connections.StoreAndDelete(sessId, connWrapper, sessionToken)
 				sessionToken = sessId
 			}
-		} else if _, ok := models.GetSessionById(sessionToken); !ok {
+		} else if _, ok := sessions.GetById(sessionToken); !ok {
 			break
 		}
-		sess.ResetExpiryTimer()
+		sessions.ResetExpiry(sess.Id())
 	}
 }
 
@@ -339,10 +340,10 @@ func sendMessage(sessionId string, message i.A) bool {
 	return true
 }
 
-func SendOrStoreMessage(session *models.Session, action string, message i.A) {
+func SendOrStoreMessage(session models.Session, action string, message i.A) {
 	finalMessage := i.A{0, action, session.GetUserId(), message}
-	go func(session *models.Session, finalMessage i.A) {
-		if ok := sendMessage(session.GetId(), finalMessage); !ok {
+	go func(session models.Session, finalMessage i.A) {
+		if ok := sendMessage(session.Id(), finalMessage); !ok {
 			session.AddMessage(finalMessage)
 		}
 	}(session, finalMessage)

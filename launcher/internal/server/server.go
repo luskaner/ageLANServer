@@ -92,11 +92,13 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 		}); !result.Success() {
 			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")
 			errorCode = internal.ErrServerCertCreate
-			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+			if result != nil {
+				if result.Err != nil {
+					logger.Println("Error message: " + result.Err.Error())
+				}
+				if result.ExitCode != common.ErrSuccess {
+					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				}
 			}
 			return
 		}
@@ -165,7 +167,8 @@ func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 				return
 			}
 			req.Host = serverName
-			if _, err = client.Do(req); err != nil {
+			if //goland:noinspection ALL
+			_, err = client.Do(req); err != nil {
 				return
 			}
 			latencyAccumulator += time.Since(start)
@@ -238,6 +241,7 @@ func QueryServers(
 	}
 	var connTargets []*connTarget
 	for source, targets := range sourceToTargetAddrs {
+		//goland:noinspection GoResourceLeak
 		conn, err := net.ListenUDP(
 			"udp4",
 			source,

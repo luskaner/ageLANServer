@@ -17,6 +17,7 @@ const resourceFolder = "resources"
 
 var configFolder = filepath.Join(resourceFolder, "config")
 var ResponsesFolder = filepath.Join(resourceFolder, "responses")
+var userDataFolder = filepath.Join(resourceFolder, "userData")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
 type Resources interface {
@@ -43,6 +44,7 @@ func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[stri
 	r.keyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
+	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
@@ -152,4 +154,26 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 		ret = append(ret, serverSignature)
 		i.JSON(w, ret)
 	}
+}
+
+func (r *MainResources) initializeUserData(gameId string) {
+	ensureFolder(filepath.Join(userDataFolder, gameId))
+}
+
+func ensureFolder(path string) {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		panic(err)
+	}
+}
+
+func UserDataPath(gameId string, steam bool, platformUserid string) string {
+	var platform string
+	if steam {
+		platform = "STEAM"
+	} else {
+		platform = "XBOX"
+	}
+	folder := filepath.Join(userDataFolder, gameId)
+	ensureFolder(folder)
+	return filepath.Join(folder, fmt.Sprintf("%s_%s", platform, platformUserid)+".json")
 }

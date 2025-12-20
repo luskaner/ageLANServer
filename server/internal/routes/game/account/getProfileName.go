@@ -1,27 +1,25 @@
 package account
 
 import (
-	"encoding/json"
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+type getProfileNameRequest struct {
+	ProfileIDs i.Json[[]int32] `schema:"profile_ids"`
+}
+
 func GetProfileName(w http.ResponseWriter, r *http.Request) {
-	profileIdsStr := r.URL.Query().Get("profile_ids")
-	if len(profileIdsStr) < 1 {
-		i.JSON(&w, i.A{2, i.A{}})
-		return
-	}
-	var profileIds []int32
-	err := json.Unmarshal([]byte(profileIdsStr), &profileIds)
+	var req getProfileNameRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	profileIdsMap := make(map[int32]interface{}, len(profileIds))
-	for _, platformId := range profileIds {
+	profileIdsMap := make(map[int32]any, len(req.ProfileIDs.Data))
+	for _, platformId := range req.ProfileIDs.Data {
 		profileIdsMap[platformId] = struct{}{}
 	}
 	game := models.G(r)

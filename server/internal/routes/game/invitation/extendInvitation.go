@@ -56,8 +56,8 @@ func ExtendInvitation(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{0})
 		return
 	}
-	var inviteeSession *models.Session
-	inviteeSession, ok = models.GetSessionByUserId(invitee.GetId())
+	var inviteeSession models.Session
+	inviteeSession, ok = game.Sessions().GetByUserId(invitee.GetId())
 	if ok {
 		wss.SendOrStoreMessage(
 			inviteeSession,

@@ -1,10 +1,8 @@
 package party
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
-	"strconv"
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -19,6 +17,14 @@ type request struct {
 	Message       string `schema:"message"`
 }
 
+type profileIds struct {
+	Ids i.Json[[]int32] `schema:"to_profile_ids"`
+}
+
+type profileId struct {
+	Id int32 `schema:"to_profile_id"`
+}
+
 func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	// FIXME: AoE3 duplicate messages/wrong total
 	var req request
@@ -27,26 +33,18 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var toProfileIds []int32
+	var toProfileIds profileIds
 	game := models.G(r)
 	if game.Title() == common.GameAoE3 {
-		profileIdStr := r.FormValue("to_profile_id")
-		if profileIdStr == "" {
-			i.JSON(&w, i.A{0})
-			return
-		}
-		profileId, err := strconv.ParseInt(profileIdStr, 10, 32)
-		if err != nil {
+		var toProfileId profileId
+		if err := i.Bind(r, &toProfileId); err != nil {
 			i.JSON(&w, i.A{2})
 			return
 		}
-		toProfileIds = append(toProfileIds, int32(profileId))
-	} else {
-		err := json.Unmarshal([]byte(r.FormValue("to_profile_ids")), &toProfileIds)
-		if err != nil {
-			i.JSON(&w, i.A{2})
-			return
-		}
+		toProfileIds.Ids.Data = append(toProfileIds.Ids.Data, toProfileId.Id)
+	} else if err := i.Bind(r, &toProfileIds); err != nil {
+		i.JSON(&w, i.A{2})
+		return
 	}
 
 	adv, ok := game.Advertisements().GetAdvertisement(req.MatchID)
@@ -67,12 +65,12 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 
 	users := game.Users()
 	if game.Title() == common.GameAoM {
-		toProfileIds = slices.DeleteFunc(toProfileIds, func(id int32) bool { return id == currentUserId })
+		toProfileIds.Ids.Data = slices.DeleteFunc(toProfileIds.Ids.Data, func(id int32) bool { return id == currentUserId })
 	}
-	receivers := make([]models.User, len(toProfileIds))
+	receivers := make([]models.User, len(toProfileIds.Ids.Data))
 
-	for j, profileId := range toProfileIds {
-		receivers[j], ok = users.GetUserById(profileId)
+	for j, profId := range toProfileIds.Ids.Data {
+		receivers[j], ok = users.GetUserById(profId)
 		if !ok {
 			i.JSON(&w, i.A{2})
 			return
@@ -93,9 +91,10 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	)
 
 	messageEncoded := message.Encode()
-	var receiverSession *models.Session
+	sessions := game.Sessions()
+	var receiverSession models.Session
 	for _, receiver := range receivers {
-		receiverSession, ok = models.GetSessionByUserId(receiver.GetId())
+		receiverSession, ok = sessions.GetByUserId(receiver.GetId())
 		if !ok {
 			continue
 		}

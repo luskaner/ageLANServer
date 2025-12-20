@@ -62,6 +62,7 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		ip = ips[0]
 	}
 	client := &http.Client{Transport: tr}
+	//goland:noinspection ALL
 	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem", ip))
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil

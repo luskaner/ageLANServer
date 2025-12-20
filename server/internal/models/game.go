@@ -3,12 +3,14 @@ package models
 import "net/http"
 
 type Game interface {
-	BattleServers() BattleServers
+	Title() string
 	Resources() Resources
+	LeaderboardDefinitions() LeaderboardDefinitions
+	BattleServers() BattleServers
 	Users() Users
 	Advertisements() Advertisements
 	ChatChannels() ChatChannels
-	Title() string
+	Sessions() Sessions
 }
 
 func G(r *http.Request) Game {

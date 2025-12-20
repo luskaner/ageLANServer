@@ -1,7 +1,6 @@
 package advertisement
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
 
@@ -16,19 +15,22 @@ func getAdvResp(errorCode int, advs i.A) i.A {
 	}
 }
 
+type getAdvertisementsRequest struct {
+	MatchIDs i.Json[[]int32] `schema:"match_ids"`
+}
+
 func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
-	matchIdsStr := r.URL.Query().Get("match_ids")
-	var advsIds []int32
-	err := json.Unmarshal([]byte(matchIdsStr), &advsIds)
+	var req getAdvertisementsRequest
+	err := i.Bind(r, &req)
 	if err != nil {
-		i.JSON(&w, getAdvResp(2, i.A{}))
+		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
 	game := models.G(r)
 	title := game.Title()
 	advertisements := game.Advertisements()
 	advs := advertisements.LockedFindAdvertisementsEncoded(title, 0, 0, false, func(adv models.Advertisement) bool {
-		return slices.Contains(advsIds, adv.GetId())
+		return slices.Contains(req.MatchIDs.Data, adv.GetId())
 	})
 	if advs == nil {
 		i.JSON(&w, getAdvResp(0, i.A{}))

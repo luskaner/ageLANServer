@@ -17,6 +17,7 @@ import (
 
 type User interface {
 	GetId() int32
+	GetXbox() bool
 	GetStatId() int32
 	GetProfileId() int32
 	GetReliclink() int32
@@ -31,6 +32,9 @@ type User interface {
 	GetProfileMetadata() string
 	GetProfileUintFlag1() uint8
 	GetProfileUintFlag2() uint8
+	GetAvatarStats() *PersistentJsonData[*AvatarStats]
+	GetPersistentData() *PersistentStringJsonMap
+	EncodeAvatarStats() i.A
 }
 
 type MainUser struct {
@@ -43,33 +47,64 @@ type MainUser struct {
 	profileUintFlag1 uint8
 	reliclink        int32
 	isXbox           bool
-	// Only presence is dynamic
-	presence atomic.Int32
+	persistentData   *PersistentStringJsonMap
+	// Dynamic from here
+	presence    atomic.Int32
+	avatarStats *PersistentJsonData[*AvatarStats]
+}
+
+func (u *MainUser) EncodeAvatarStats() i.A {
+	var result i.A
+	_ = u.GetAvatarStats().WithReadOnly(func(data *AvatarStats) error {
+		result = data.Encode(u.GetProfileId())
+		return nil
+	})
+	return result
 }
 
 type Users interface {
 	Initialize()
-	GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
+	GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
 	GetUserByStatId(id int32) (User, bool)
 	GetUserById(id int32) (User, bool)
 	GetUserIds() func(func(int32) bool)
 	GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A
+	GetUserByPlatformUserId(xbox bool, id uint64) (User, bool)
 }
 
 type MainUsers struct {
-	store *i.SafeMap[string, User]
+	store      *i.SafeMap[string, User]
+	GenerateFn func(
+		gameId string,
+		persistentData *PersistentStringJsonMap,
+		avatarStatsDefinitions AvatarStatDefinitions,
+		identifier string,
+		isXbox bool,
+		platformUserId uint64,
+		profileMetadata string,
+		profileUIntFlag1 uint8,
+		alias string,
+	) User
 }
 
 func (users *MainUsers) Initialize() {
 	users.store = i.NewSafeMap[string, User]()
+	if users.GenerateFn == nil {
+		users.GenerateFn = users.Generate
+	}
 }
 
-func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
+func (users *MainUsers) Generate(gameId string, persistentData *PersistentStringJsonMap, avatarStatsDefinitions AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, profileMetadata string, profileUIntFlag1 uint8, alias string) User {
 	hasher := fnv.New64a()
 	_, _ = hasher.Write([]byte(identifier))
 	hsh := hasher.Sum(nil)
 	seed := binary.BigEndian.Uint64(hsh)
 	rng := rand.New(rand.NewPCG(seed, seed))
+	avatarStats, _ := NewPersistentJsonData[*AvatarStats](
+		persistentData,
+		"AvatarStats",
+		NewAvatarStatsUpgradableDefaultData(gameId, avatarStatsDefinitions),
+	)
 	return &MainUser{
 		id:               rng.Int32(),
 		statId:           rng.Int32(),
@@ -80,6 +115,8 @@ func (users *MainUsers) Generate(identifier string, isXbox bool, platformUserId 
 		alias:            alias,
 		platformUserId:   platformUserId,
 		isXbox:           isXbox,
+		avatarStats:      avatarStats,
+		persistentData:   persistentData,
 	}
 }
 
@@ -104,7 +141,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
+func (users *MainUsers) GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
 	if viper.GetBool("GeneratePlatformUserId") {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
@@ -139,23 +176,44 @@ func (users *MainUsers) GetOrCreateUser(gameId string, remoteAddr string, remote
 		profileMetadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
 		profileUIntFlag1 = 1
 	}
-	newUser := users.Generate(identifier, isXbox, platformUserId, profileMetadata, profileUIntFlag1, alias)
-	mainUser, _ := users.store.LoadOrStore(identifier, newUser)
+	mainUser, _ := users.store.LoadOrStoreFn(
+		identifier,
+		func() User {
+			persistentData, _ := NewPersistentStringMap(
+				UserDataPath(common.GameAoM, !isXbox, strconv.FormatUint(platformUserId, 10)),
+				&InitialUpgradableData[*PersistentStringJsonMapRaw]{},
+			)
+			return users.GenerateFn(
+				gameId,
+				persistentData,
+				avatarStatsDefinitions,
+				identifier,
+				isXbox,
+				platformUserId,
+				profileMetadata,
+				profileUIntFlag1,
+				alias,
+			)
+		},
+	)
 	return mainUser
 }
 
 func (users *MainUsers) GetUserByStatId(id int32) (User, bool) {
-	for u := range users.store.Values() {
-		if u.GetStatId() == id {
-			return u, true
-		}
-	}
-	return nil, false
+	return users.getFirst(func(u User) bool { return u.GetStatId() == id })
 }
 
 func (users *MainUsers) GetUserById(id int32) (User, bool) {
+	return users.getFirst(func(u User) bool { return u.GetId() == id })
+}
+
+func (users *MainUsers) GetUserByPlatformUserId(xbox bool, id uint64) (User, bool) {
+	return users.getFirst(func(u User) bool { return u.GetXbox() == xbox && u.GetPlatformUserID() == id })
+}
+
+func (users *MainUsers) getFirst(fn func(u User) bool) (User, bool) {
 	for u := range users.store.Values() {
-		if u.GetId() == id {
+		if fn(u) {
 			return u, true
 		}
 	}
@@ -182,8 +240,20 @@ func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user U
 	return presenceData
 }
 
+func (u *MainUser) GetPersistentData() *PersistentStringJsonMap {
+	return u.persistentData
+}
+
+func (u *MainUser) GetAvatarStats() *PersistentJsonData[*AvatarStats] {
+	return u.avatarStats
+}
+
 func (u *MainUser) GetId() int32 {
 	return u.id
+}
+
+func (u *MainUser) GetXbox() bool {
+	return u.isXbox
 }
 
 func (u *MainUser) GetStatId() int32 {

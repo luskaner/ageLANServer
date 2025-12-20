@@ -14,7 +14,6 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	if err != nil {
 		return nil
 	}
-
 	message := i.A{0, i.A{}, i.A{}, i.A{}}
 	game := models.G(r)
 	users := game.Users()

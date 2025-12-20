@@ -102,22 +102,22 @@ func HostOrIpToIps(host string) []string {
 			}
 		}
 		return ips
-	} else {
-		cached, cachedIps := cachedHostToIps(host)
-		if cached {
-			return cachedIps.Clone().ToSlice()
-		}
-		var ips []string
-		ipsFromDns := HostToIps(host)
-		if ipsFromDns != nil {
-			for _, ipRaw := range ipsFromDns {
-				ipStr := ipRaw.String()
-				ips = append(ips, ipStr)
-				CacheMapping(host, ipStr)
-			}
-		}
-		return ips
 	}
+
+	cached, cachedIps := cachedHostToIps(host)
+	if cached {
+		return cachedIps.Clone().ToSlice()
+	}
+	var ips []string
+	ipsFromDns := HostToIps(host)
+	if ipsFromDns != nil {
+		for _, ipRaw := range ipsFromDns {
+			ipStr := ipRaw.String()
+			ips = append(ips, ipStr)
+			CacheMapping(host, ipStr)
+		}
+	}
+	return ips
 }
 
 func HostOrIpToIpsSet(host string) mapset.Set[string] {

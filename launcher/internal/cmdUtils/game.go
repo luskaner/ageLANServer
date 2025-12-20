@@ -78,9 +78,9 @@ func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor g
 				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
 			return
-		} else {
-			logger.Println("'Agent' started.")
 		}
+
+		logger.Println("'Agent' started.")
 	}
 	str := "Starting game"
 	if customExecutor.Executable != "" {

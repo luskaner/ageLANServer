@@ -25,12 +25,13 @@ func SessionMiddleware(next http.Handler) http.Handler {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			sess, ok := models.GetSessionById(sessionID)
+			sessions := models.G(r).Sessions()
+			sess, ok := sessions.GetById(sessionID)
 			if !ok {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			sess.ResetExpiryTimer()
+			sessions.ResetExpiry(sess.Id())
 			ctx := context.WithValue(r.Context(), "session", sess)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {

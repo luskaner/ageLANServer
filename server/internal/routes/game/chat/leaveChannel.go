@@ -9,13 +9,13 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func NotifyLeaveChannel(users models.Users, user models.User, chatChannelId int32, clientLibVersion uint16) {
+func NotifyLeaveChannel(sessions models.Sessions, users models.Users, user models.User, chatChannelId int32, clientLibVersion uint16) {
 	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, clientLibVersion)}
 	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {
 			continue
 		}
-		existingUserSession, ok := models.GetSessionByUserId(userId)
+		existingUserSession, ok := sessions.GetByUserId(userId)
 		if ok {
 			wss.SendOrStoreMessage(
 				existingUserSession,
@@ -27,18 +27,14 @@ func NotifyLeaveChannel(users models.Users, user models.User, chatChannelId int3
 }
 
 func LeaveChannel(w http.ResponseWriter, r *http.Request) {
-	chatChannelIdStr := r.FormValue("chatroomID")
-	if chatChannelIdStr == "" {
-		i.JSON(&w, i.A{2})
-		return
-	}
-	chatChannelId, err := strconv.ParseInt(chatChannelIdStr, 10, 32)
+	var req chatroomRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
 	game := models.G(r)
-	chatChannel, ok := game.ChatChannels().GetById(int32(chatChannelId))
+	chatChannel, ok := game.ChatChannels().GetById(req.ChatroomID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -51,5 +47,5 @@ func LeaveChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.JSON(&w, i.A{0})
-	NotifyLeaveChannel(users, user, chatChannel.GetId(), sess.GetClientLibVersion())
+	NotifyLeaveChannel(game.Sessions(), users, user, chatChannel.GetId(), sess.GetClientLibVersion())
 }

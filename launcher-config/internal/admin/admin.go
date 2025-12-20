@@ -28,42 +28,42 @@ func RunSetUp(logRoot string, ipToMap net.IP, addCertData []byte) (err error, ex
 	exitCode = common.ErrGeneral
 	if ipc != nil {
 		return runSetUpAgent(ipToMap, addCertData)
-	} else {
-		var certificate *x509.Certificate
-		if addCertData != nil {
-			certificate = cert.BytesToCertificate(addCertData)
-			if certificate == nil {
-				exitCode = internal.ErrUserCertAddParse
-				return
-			}
+	}
+
+	var certificate *x509.Certificate
+	if addCertData != nil {
+		certificate = cert.BytesToCertificate(addCertData)
+		if certificate == nil {
+			exitCode = internal.ErrUserCertAddParse
+			return
 		}
-		var result *exec.Result
-		var file *commonLogger.Root
-		if logRoot != "" {
-			if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
-				exitCode = common.ErrFileLog
-				return
-			}
-		}
-		var suffix string
-		if len(addCertData) > 0 {
-			suffix = "_cert"
-		} else {
-			suffix = "_hosts"
-		}
-		if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-			result = executor.RunSetUp(cmd.GameId, ipToMap, certificate, file.Folder(), writer, func(options exec.Options) {
-				if writer != nil {
-					options.Stdout = writer
-					options.Stderr = writer
-				}
-			})
-		}); bufferErr == nil {
-			err, exitCode = result.Err, result.ExitCode
-		} else {
-			err = bufferErr
+	}
+	var result *exec.Result
+	var file *commonLogger.Root
+	if logRoot != "" {
+		if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
+			return
 		}
+	}
+	var suffix string
+	if len(addCertData) > 0 {
+		suffix = "_cert"
+	} else {
+		suffix = "_hosts"
+	}
+	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
+		result = executor.RunSetUp(cmd.GameId, ipToMap, certificate, file.Folder(), writer, func(options exec.Options) {
+			if writer != nil {
+				options.Stdout = writer
+				options.Stderr = writer
+			}
+		})
+	}); bufferErr == nil {
+		err, exitCode = result.Err, result.ExitCode
+	} else {
+		err = bufferErr
+		exitCode = common.ErrFileLog
 	}
 	return
 }
@@ -179,9 +179,9 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	if err = encoder.Encode(commonIpc.Revert); err != nil {
 		commonLogger.Println(str + "Could not encode")
 		return
-	} else {
-		commonLogger.Println(str + "OK")
 	}
+
+	commonLogger.Println(str + "OK")
 	str = "<- Exit Code: "
 	if err = decoder.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
 		if err != nil {
