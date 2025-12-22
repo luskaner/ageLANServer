@@ -86,7 +86,7 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 	return processed
 }
 
-func DiscoverServersAndSelectBestIpAddr(gameTitle string, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
+func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
 	id = uuid.Nil
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
 	logger.Println("Looking for 'server's, you might need to allow the 'launcher' in the firewall...")
@@ -99,11 +99,16 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, multicastGroups mapset
 				for i := range procServers {
 					logger.Printf("%d. %s\n", i+1, procServers[i].description)
 				}
-				logger.Printf("Enter the number of the 'server' (1-%d): ", len(procServers))
-				_, err := fmt.Scan(&option)
-				if err != nil || option < 1 || option > len(procServers) {
-					logger.Println("Invalid (or error reading) option. Please enter a number from the list.")
-					continue
+				if singleAutoSelect && len(procServers) == 1 {
+					logger.Println("Auto-selecting the only found 'server'.")
+					option = 1
+				} else {
+					logger.Printf("Enter the number of the 'server' (1-%d): ", len(procServers))
+					_, err := fmt.Scan(&option)
+					if err != nil || option < 1 || option > len(procServers) {
+						logger.Println("Invalid (or error reading) option. Please enter a number from the list.")
+						continue
+					}
 				}
 				selectedServer := procServers[option-1]
 				ip = selectedServer.Ip

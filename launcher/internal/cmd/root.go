@@ -381,6 +381,7 @@ var (
 				var selectedServerIp net.IP
 				serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIpAddr(
 					gameId,
+					viper.GetBool("Server.SingleAutoSelect"),
 					multicastIPs,
 					ports,
 				)
@@ -553,6 +554,7 @@ func Execute() error {
 	rootCmd.Flags().StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
 	rootCmd.Flags().StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
 	rootCmd.Flags().StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
+	rootCmd.Flags().Bool("serverSingleAutoSelect", false, `Auto-select the server when a single one is discovered.`)
 	serverExe := executables.Filename(false, executables.Server)
 	rootCmd.Flags().StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
 	rootCmd.Flags().StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
@@ -606,6 +608,9 @@ func Execute() error {
 		return err
 	}
 	if err := viper.BindPFlag("Server.Stop", rootCmd.Flags().Lookup("serverStop")); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag("Server.SingleAutoSelect", rootCmd.Flags().Lookup("serverSingleAutoSelect")); err != nil {
 		return err
 	}
 	if err := viper.BindPFlag("Server.AnnouncePorts", rootCmd.Flags().Lookup("serverAnnouncePorts")); err != nil {
