@@ -38,6 +38,23 @@ type DefaultUpgradableData[T any] interface {
 	Default() T
 }
 
+func upgrade[T any](file *PersistentFile, version uint32, upgrader UpgradableData[T]) (err error, upgraded bool, data T) {
+	versionsToUpgrade := upgrader.CurrentVersion() - version
+	if versionsToUpgrade == 0 {
+		return
+	}
+	currentData := upgrader.ObjectOfVersion(version)
+	if err = readPersistentData(file, &currentData); err != nil {
+		return
+	}
+	for versionsUpgraded := uint32(0); versionsUpgraded < versionsToUpgrade; versionsUpgraded++ {
+		currentData = upgrader.UpgradeToNextVersion(version+versionsUpgraded, currentData)
+	}
+	data = currentData.(T)
+	upgraded = true
+	return
+}
+
 type InitialUpgradableDefaultData[T any] struct {
 	InitialUpgradableData[T]
 }
@@ -141,7 +158,7 @@ type PersistentStringJsonMapDataMap = internal.SafeMap[string, jsonAnyDataWithMe
 
 type PersistentStringJsonMap struct {
 	file            *PersistentFile
-	cachedRawValues *PersistentStringJsonMapRaw
+	cachedRawData   jsonDataWithMetadata[*PersistentStringJsonMapRaw]
 	currentData     jsonDataWithMetadata[*PersistentStringJsonMapDataMap]
 	currentDataLock *internal.KeyRWMutex[string]
 }
@@ -162,15 +179,12 @@ func NewPersistentStringMap(path string, upgrader UpgradableData[*PersistentStri
 			_ = file.fileLock.Unlock()
 			err = errors.New("data version is newer than current version")
 			return
-		} else if versionsToUpgrade := upgrader.CurrentVersion() - metadata.Version; versionsToUpgrade > 0 {
-			currentData := upgrader.ObjectOfVersion(metadata.Version)
-			if err = readPersistentData(file, &currentData); err != nil {
-				return
-			}
-			for versionsUpgraded := uint32(0); versionsUpgraded < versionsToUpgrade; versionsUpgraded++ {
-				currentData = upgrader.UpgradeToNextVersion(metadata.Version+versionsUpgraded, currentData)
-			}
-			initialRawData = currentData.(*PersistentStringJsonMapRaw)
+		} else if localErr, upgraded, data := upgrade(file, metadata.Version, upgrader); localErr == nil && upgraded {
+			initialRawData = data
+		} else if localErr != nil {
+			_ = file.fileLock.Unlock()
+			err = localErr
+			return
 		} else {
 			if err = readPersistentData(file, &initialRawData); err != nil {
 				return
@@ -181,12 +195,20 @@ func NewPersistentStringMap(path string, upgrader UpgradableData[*PersistentStri
 	}
 	persistentMap = &PersistentStringJsonMap{
 		file,
-		initialRawData,
+		jsonDataWithMetadata[*PersistentStringJsonMapRaw]{
+			Metadata: jsonMetadata{Version: upgrader.CurrentVersion()},
+			Data:     initialRawData,
+		},
 		jsonDataWithMetadata[*PersistentStringJsonMapDataMap]{
 			Metadata: jsonMetadata{Version: upgrader.CurrentVersion()},
 			Data:     internal.NewSafeMap[string, jsonAnyDataWithMetadata](),
 		},
 		internal.NewKeyRWMutex[string](),
+	}
+	if !file.Existed() {
+		err = file.WithWriter(func(writer io.Writer) error {
+			return json.NewEncoder(writer).Encode(persistentMap.cachedRawData)
+		})
 	}
 	return
 }
@@ -196,18 +218,17 @@ func psmjSet[T any](p *PersistentStringJsonMap, key string, value DefaultUpgrada
 	defer p.currentDataLock.Unlock(key)
 	var data T
 	var saveToCache bool
-	if currentVal, ok := (*p.cachedRawValues).Load(key); !ok {
+	if currentVal, ok := p.cachedRawData.Data.Load(key); !ok {
 		data = value.Default()
 		saveToCache = true
 	} else if valueCurrentVersion := value.CurrentVersion(); currentVal.Metadata.Version > valueCurrentVersion {
 		return errors.New("data version is newer than current version")
-	} else if currentVal.Metadata.Version < valueCurrentVersion {
-		oldData := value.ObjectOfVersion(currentVal.Metadata.Version)
-		if err = json.Unmarshal(currentVal.Data, &oldData); err != nil {
-			return
-		}
-		data = value.UpgradeToNextVersion(currentVal.Metadata.Version, oldData)
+	} else if localErr, upgraded, d := upgrade(p.file, valueCurrentVersion, value); localErr == nil && upgraded {
+		data = d
 		saveToCache = true
+	} else if localErr != nil {
+		err = localErr
+		return
 	} else if err = json.Unmarshal(currentVal.Data, &data); err != nil {
 		return
 	}
@@ -227,8 +248,11 @@ func psmjSet[T any](p *PersistentStringJsonMap, key string, value DefaultUpgrada
 		if cacheData.Data, err = json.Marshal(data); err != nil {
 			return
 		}
-		(*p.cachedRawValues).Store(key, cacheData, func(stored jsonDataWithMetadata[json.RawMessage]) bool {
-			return false
+		p.cachedRawData.Data.Store(key, cacheData, func(stored jsonDataWithMetadata[json.RawMessage]) bool {
+			return true
+		})
+		return p.file.WithWriter(func(writer io.Writer) error {
+			return json.NewEncoder(writer).Encode(p.cachedRawData)
 		})
 	}
 	return nil
@@ -262,14 +286,14 @@ func psmjWithReadWrite[T any](p *PersistentStringJsonMap, key string, fn func(da
 	}
 	var dataBytes []byte
 	if dataBytes, err = json.Marshal(fullData.Data); err == nil {
-		_, _ = (*p.cachedRawValues).Store(key, jsonDataWithMetadata[json.RawMessage]{
+		_, _ = p.cachedRawData.Data.Store(key, jsonDataWithMetadata[json.RawMessage]{
 			Metadata: fullData.Metadata,
 			Data:     dataBytes,
 		}, func(_ jsonDataWithMetadata[json.RawMessage]) bool {
 			return true
 		})
 		return p.file.WithWriter(func(writer io.Writer) error {
-			return json.NewEncoder(writer).Encode(p.cachedRawValues)
+			return json.NewEncoder(writer).Encode(p.cachedRawData)
 		})
 	} else {
 		return err
@@ -287,6 +311,14 @@ func (p *PersistentJsonData[T]) WithReadOnly(fn func(data T) error) error {
 
 func (p *PersistentJsonData[T]) WithReadWrite(fn func(data T) error) error {
 	return psmjWithReadWrite[T](p.persistentMap, p.key, fn)
+}
+
+func (p *PersistentJsonData[T]) MarshalJSON() (data []byte, err error) {
+	err = p.WithReadOnly(func(d T) error {
+		data, err = json.Marshal(d)
+		return err
+	})
+	return
 }
 
 func NewPersistentJsonData[T any](persistentMap *PersistentStringJsonMap, key string, upgrader DefaultUpgradableData[T]) (data *PersistentJsonData[T], err error) {

@@ -23,7 +23,7 @@ type MainChatChannel struct {
 	users *internal.SafeOrderedMap[int32, User]
 }
 
-func NewChatChannel(id int32, name string) ChatChannel {
+func NewChatChannel(id int32, name string) *MainChatChannel {
 	return &MainChatChannel{
 		Id:    id,
 		Name:  name,
@@ -81,19 +81,19 @@ func (channel *MainChatChannel) HasUser(user User) bool {
 }
 
 type ChatChannels interface {
-	Initialize(chatChannels map[string]ChatChannel)
+	Initialize(chatChannels map[string]*MainChatChannel)
 	Encode() internal.A
-	GetById(id int32) (ChatChannel, bool)
-	Iter() iter.Seq2[int32, ChatChannel]
+	GetById(id int32) (*MainChatChannel, bool)
+	Iter() iter.Seq2[int32, *MainChatChannel]
 }
 
 type MainChatChannels struct {
-	index *internal.ReadOnlyOrderedMap[int32, ChatChannel]
+	index *internal.ReadOnlyOrderedMap[int32, *MainChatChannel]
 }
 
-func (channels *MainChatChannels) Initialize(chatChannels map[string]ChatChannel) {
+func (channels *MainChatChannels) Initialize(chatChannels map[string]*MainChatChannel) {
 	keys := make([]int32, len(chatChannels))
-	values := make(map[int32]ChatChannel, len(chatChannels))
+	values := make(map[int32]*MainChatChannel, len(chatChannels))
 	j := 0
 	for id, channel := range chatChannels {
 		idInt, err := strconv.ParseInt(id, 10, 32)
@@ -105,7 +105,7 @@ func (channels *MainChatChannels) Initialize(chatChannels map[string]ChatChannel
 		values[c.GetId()] = c
 		j++
 	}
-	channels.index = internal.NewReadOnlyOrderedMap[int32, ChatChannel](keys, values)
+	channels.index = internal.NewReadOnlyOrderedMap[int32, *MainChatChannel](keys, values)
 }
 
 func (channels *MainChatChannels) Encode() internal.A {
@@ -118,10 +118,10 @@ func (channels *MainChatChannels) Encode() internal.A {
 	return c
 }
 
-func (channels *MainChatChannels) GetById(id int32) (ChatChannel, bool) {
+func (channels *MainChatChannels) GetById(id int32) (*MainChatChannel, bool) {
 	return channels.index.Load(id)
 }
 
-func (channels *MainChatChannels) Iter() iter.Seq2[int32, ChatChannel] {
+func (channels *MainChatChannels) Iter() iter.Seq2[int32, *MainChatChannel] {
 	return channels.index.Iter()
 }
