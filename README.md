@@ -108,7 +108,7 @@ is in maintenance or is eventually shutdown.
     * No rewards are gained, **all blessings and rarities are unlocked by default**, including those not available in
       the official server.
     * Favor stash is infinite.
-    * Story mode has all missiones unlocked by default.
+    * Story mode has all missions unlocked by default.
     * Challenge mode lifes are infinite, you have access to all legends and you are max level (99) by default.
 
 </details>
