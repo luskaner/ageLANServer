@@ -223,7 +223,7 @@ func psmjSet[T any](p *PersistentStringJsonMap, key string, value DefaultUpgrada
 		saveToCache = true
 	} else if valueCurrentVersion := value.CurrentVersion(); currentVal.Metadata.Version > valueCurrentVersion {
 		return errors.New("data version is newer than current version")
-	} else if localErr, upgraded, d := upgrade(p.file, valueCurrentVersion, value); localErr == nil && upgraded {
+	} else if localErr, upgraded, d := upgrade(p.file, currentVal.Metadata.Version, value); localErr == nil && upgraded {
 		data = d
 		saveToCache = true
 	} else if localErr != nil {
