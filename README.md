@@ -74,9 +74,7 @@ is in maintenance or is eventually shutdown.
 <summary>List of features</summary>
 
 - 🗣️ Whispering.
-- 🙏 Arena of the Gods:
-    * Story.
-    * Daily Celestial Challenge.
+- 🙏 Arena of the Gods.
 
 </details>
 
@@ -107,10 +105,11 @@ is in maintenance or is eventually shutdown.
 
 - ⚠️ **Friend list** will instead show all online users as if they were friends.
 - ℹ️ **Arena of Gods**:
-    * ⚠️ Challenge mode is [currently](https://github.com/luskaner/ageLANServer/issues/243) not supported.
     * No rewards are gained, **all blessings and rarities are unlocked by default**, including those not available in
       the official server.
-    * Story mode has all missiones unlocked by default.
+    * Favor stash is infinite.
+    * Story mode has all missions unlocked by default.
+    * Challenge mode lifes are infinite, you have access to all legends and you are max level (99) by default.
 
 </details>
 
@@ -125,9 +124,7 @@ is in maintenance or is eventually shutdown.
 - ❌ **Achievements**: only the official server should be able to. Meeting the requirements of an achievement during a
   match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
   for more details).
-- ❌ Changing **player profile icon**: the default, or empty, will always be used.
 - ❌ **Leaderboards**: will appear empty.
-- ❌ **Player stats**: will appear empty.
 - ❌ **Clans**: all players are outside clans. Browsing clan will appear empty and creating one will always result in
   error.
 - ❌ **Lobby ban player**: will appear like it works but doesn't.

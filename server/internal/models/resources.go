@@ -24,14 +24,14 @@ type Resources interface {
 	Initialize(gameId string, keyedFilenames mapset.Set[string])
 	ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool)
 	LoginData() []i.A
-	ChatChannels() map[string]ChatChannel
+	ChatChannels() map[string]*MainChatChannel
 	ArrayFiles() map[string]i.A
 	CloudFiles() CloudFiles
 }
 
 type MainResources struct {
 	keyedFilenames  mapset.Set[string]
-	chatChannels    map[string]ChatChannel
+	chatChannels    map[string]*MainChatChannel
 	loginData       []i.A
 	arrayFiles      map[string]i.A
 	keyedFiles      map[string][]byte
@@ -55,7 +55,7 @@ func (r *MainResources) LoginData() []i.A {
 	return r.loginData
 }
 
-func (r *MainResources) ChatChannels() map[string]ChatChannel {
+func (r *MainResources) ChatChannels() map[string]*MainChatChannel {
 	return r.chatChannels
 }
 

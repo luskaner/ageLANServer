@@ -32,9 +32,13 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	title := game.Title()
 	users := game.Users()
 	sessions := game.Sessions()
+	var avatarStatDefinitions models.AvatarStatDefinitions = nil
+	if title != common.GameAoE1 {
+		avatarStatDefinitions = game.LeaderboardDefinitions().AvatarStatDefinitions()
+	}
 	u := users.GetOrCreateUser(
 		title,
-		game.LeaderboardDefinitions().AvatarStatDefinitions(),
+		avatarStatDefinitions,
 		r.RemoteAddr,
 		req.MacAddress,
 		req.AccountType == "XBOXLIVE",
@@ -102,15 +106,18 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		nil,
 	}
+	var avatarStats i.A
 	if title == common.GameAoE1 {
 		response = append(response, i.A{})
+	} else {
+		avatarStats = u.EncodeAvatarStats()
 	}
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
 		relationship.Relationships(title, req.ClientLibVersion, users, u),
 		extraProfileInfoList,
-		u.EncodeAvatarStats(),
+		avatarStats,
 		nil,
 		i.A{},
 		nil,
