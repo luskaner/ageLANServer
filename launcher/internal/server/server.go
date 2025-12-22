@@ -114,12 +114,12 @@ func GetExecutablePath(executable string) string {
 }
 
 func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool) (ok bool) {
-	ipAddrs := common.HostToIps(host)
+	ipAddrs := common.HostOrIpToIps(host)
 	if len(ipAddrs) == 0 {
 		return
 	}
 	for _, ipAddr := range ipAddrs {
-		if ok, _, _, _ = lanServerIP(id, gameTitle, ipAddr, host, insecureSkipVerify, true); !ok {
+		if ok, _, _, _ = lanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, true); !ok {
 			return
 		}
 	}
