@@ -1,5 +1,5 @@
 [Config]
-# Whether or not to add a local dns entry if it's needed to connect to the server with the official domain.
+# Whether to add a local dns entry if it's needed to connect to the server with the official domain.
 # Including to avoid receiving that it's on maintenance.
 # If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 # Note: Will require admin privileges.
@@ -10,7 +10,7 @@ CanAddHost = true
 # user: trust the certificate in the user store. Requires user consent. Only on Windows.
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
-# Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
+# Whether to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
 # Either 'auto' or 'false'. This is only necessary in Windows when not running AoM, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
 # If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
@@ -48,6 +48,9 @@ Host = '0.0.0.0'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
 # This will also stop the Battle Server is one was started with the Battle Server Manager.
 Stop = 'auto'
+# Whether to select automatically the server if only one was discovered.
+# Not recommended to be set to true if users connect using the official game launcher.
+SingleAutoSelect = false
 # Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
 AnnouncePorts = [31978]
 # Announce multicast group adresses to join.
