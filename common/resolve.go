@@ -18,7 +18,7 @@ func init() {
 	ClearCache()
 }
 
-func HostToIps(host string) []net.IP {
+func domainToIps(host string) []net.IP {
 	ips, err := net.LookupIP(host)
 	if err != nil {
 		return nil
@@ -109,7 +109,7 @@ func HostOrIpToIps(host string) []string {
 		return cachedIps.Clone().ToSlice()
 	}
 	var ips []string
-	ipsFromDns := HostToIps(host)
+	ipsFromDns := domainToIps(host)
 	if ipsFromDns != nil {
 		for _, ipRaw := range ipsFromDns {
 			ipStr := ipRaw.String()
