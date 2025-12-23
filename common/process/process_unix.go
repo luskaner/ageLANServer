@@ -14,12 +14,13 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 	if duration == nil {
 		t *= 10
 	}
-	processExists := func() bool {
+	processGone := func() bool {
+		// Signal(0) returns nil if process exists, error if it doesn't
 		return proc.Signal(unix.Signal(0)) != nil
 	}
 	if duration == nil {
 		for {
-			if processExists() {
+			if processGone() {
 				return true
 			}
 			time.Sleep(t)
@@ -31,7 +32,7 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 			case <-timeout:
 				return false
 			default:
-				if processExists() {
+				if processGone() {
 					return true
 				}
 				time.Sleep(t)

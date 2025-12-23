@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"os"
 	"slices"
 	"time"
@@ -30,6 +31,8 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 	return err == nil && event == uint32(windows.WAIT_OBJECT_0)
 }
 
+// ProcessesPID returns a map of process names to their PIDs.
+// Note: If multiple processes share the same name, only one PID is stored per name.
 func ProcessesPID(names []string) map[string]uint32 {
 	name := func(entry *windows.ProcessEntry32) string {
 		return windows.UTF16ToString(entry.ExeFile[:])
@@ -115,8 +118,14 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	}
 	if expectedStartTime != 0 {
 		actualStartTime, startErr := GetProcessStartTime(pid)
-		if startErr != nil || actualStartTime != expectedStartTime {
+		if startErr != nil {
 			proc = nil
+			err = startErr
+			return
+		}
+		if actualStartTime != expectedStartTime {
+			proc = nil
+			err = errors.New("process start time mismatch")
 		}
 	}
 	return
