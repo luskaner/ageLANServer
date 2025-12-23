@@ -140,7 +140,7 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- **Windows**: 10 (or equivalent, not Arm32).
+- **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Big Sur (v11).
 
@@ -161,7 +161,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 ### Launcher and Battle Server Manager
 
 - Windows without S edition/mode (recommended):
-    - 10 on x86-64 (recommended).
+    - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
 - Linux with kernel 3.2:
     - x86-64 (recommended).
@@ -175,16 +175,16 @@ it will require admin rights elevation.**
 
 - Age of Empires: Definitive Edition
   on [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on
-  Windows*). Recommended version *100.2.31845.0* or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on a compatible
+  Windows version*). Recommended version *100.2.31845.0* or later.
 - Age of Empires II: Definitive Edition
   on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
-  Windows*). Recommended a late 2023 version or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
+  compatible Windows version*). Recommended a late 2023 version or later.
 - Age of Empires III: Definitive Edition
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
-  Windows*). Recommended a late 2023 version or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
+  Windows version*). Recommended a late 2023 version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
@@ -200,30 +200,42 @@ supported operating systems.
 
 * Full:
     * Windows:
-        * **10 on x86-64**: ...\_full\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_full\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_full\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_full\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_full\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 on x86-64**: ...\_launcher\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_launcher\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_launcher\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_launcher\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_launcher\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
 * Battle Server Manager:
     * Windows:
-        * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
-        * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
-        * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
+        * **7, Server 2008 R2, Home Server 2011, Embedded 7, 8, Server 2012, Embedded 8, 8.1, Server 2012 R2,
+          Embedded 8.1 on x86-64**:
+          ...\_server\_
+          *A.B.C*_
+          win7_x86-64.zip
+        * **7, Embedded 7, Thin PC, 8, Embedded 8, 8.1, Embedded 8.1 on x86-32**:
+          ...\_server\_
+          *A.B.C*_
+          win7_x86-32.zip
+        * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win10_arm64.zip
+        * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win10_x86-64.zip
+        * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win10_x86-32.zip
     * Linux:
         * **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
         * **ARM32**:
