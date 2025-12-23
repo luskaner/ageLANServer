@@ -5,7 +5,7 @@
 # Linux Note: Only supported when not using a custom launcher.
 IsolateMetadata = 'required'
 # If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
-# If it resolves to 'true', the launcher will isolate the user profiles of the game, otherwise, it will be shared
+# If it resolves to 'true', the launcher will isolate user profiles for the game, otherwise, it will be shared
 # May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
 # Linux Note: Only supported when not using a custom launcher.
 IsolateProfiles = 'required'
