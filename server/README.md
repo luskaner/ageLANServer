@@ -7,7 +7,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- **Windows**: 10 (or equivalent, not Arm32).
+- **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Big Sur (v11).
 
