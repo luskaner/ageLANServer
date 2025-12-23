@@ -46,15 +46,15 @@ var configPaths = []string{"resources", "."}
 var config = &cmdUtils.Config{}
 
 var (
-	Version                            string
-	cfgFile                            string
-	gameCfgFile                        string
-	gameId                             string
-	autoTrueFalseValues                = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues          = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
-	canBroadcastBattleServerValues     = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
-	serverBattleServerManagerRunValues = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
-	rootCmd                            = &cobra.Command{
+	Version                        string
+	cfgFile                        string
+	gameCfgFile                    string
+	gameId                         string
+	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
+	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
+	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
+	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
+	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, and AoM: RT to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
@@ -122,9 +122,21 @@ var (
 				return
 			}
 			battleServerManagerRun := viper.GetString("Server.BattleServerManager.Run")
-			if !serverBattleServerManagerRunValues.Contains(battleServerManagerRun) {
-				logger.Printf("Invalid value for Server.BattleServerManager.Run (%s): %s\n", strings.Join(serverBattleServerManagerRunValues.ToSlice(), "/"), battleServerManagerRun)
+			if !requiredTrueFalseValues.Contains(battleServerManagerRun) {
+				logger.Printf("Invalid value for Server.BattleServerManager.Run (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), battleServerManagerRun)
 				errorCode = internal.ErrInvalidServerBattleServerManagerRun
+				return
+			}
+			isolateMetadataStr := viper.GetString("Config.IsolateMetadata")
+			if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
+				logger.Printf("Invalid value for Config.IsolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
+				errorCode = internal.ErrInvalidIsolateMetadata
+				return
+			}
+			isolateProfilesStr := viper.GetString("Config.IsolateProfiles")
+			if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
+				logger.Printf("Invalid value for Config.IsolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
+				errorCode = internal.ErrInvalidIsolateProfiles
 				return
 			}
 			if !common.SupportedGames.ContainsOne(gameId) {
@@ -185,11 +197,16 @@ var (
 				return
 			}
 			canAddHost := viper.GetBool("Config.CanAddHost")
+			var clientExecutable string
+			var clientExecutableOfficial bool
+			if clientExecutable = viper.GetString("Client.Executable"); clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
+				clientExecutableOfficial = true
+			}
 			var isolateMetadata bool
 			if gameId != common.GameAoE1 {
-				isolateMetadata = viper.GetBool("Config.IsolateMetadata")
+				isolateMetadata = cmdUtils.ResolveIsolateValue(isolateMetadataStr, clientExecutableOfficial)
 			}
-			isolateProfiles := viper.GetBool("Config.IsolateProfiles")
+			isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
 			var serverExecutable string
 			if serverExecutable = viper.GetString("Server.Executable"); serverExecutable != "auto" {
 				var serverFile os.FileInfo
@@ -208,14 +225,19 @@ var (
 					return
 				}
 			}
-			var clientExecutable string
-			if clientExecutable = viper.GetString("Client.Executable"); clientExecutable != "auto" && clientExecutable != "steam" && clientExecutable != "msstore" {
+			if !clientExecutableOfficial {
 				var clientFile os.FileInfo
 				if clientFile, clientExecutable, err = common.ParsePath(viper.GetStringSlice("Client.Executable"), nil); err != nil || clientFile.IsDir() {
 					logger.Println("Invalid client executable")
 					errorCode = internal.ErrInvalidClientPath
 					return
 				}
+			} else if !isolateProfiles || (gameId != common.GameAoE1 && !isolateMetadata) {
+				logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
+				errorCode = internal.ErrRequiredIsolation
+				return
+			} else {
+				logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
 			}
 
 			serverHost := viper.GetString("Server.Host")
@@ -545,8 +567,8 @@ func Execute() error {
 	if runtime.GOOS == "linux" {
 		suffixIsolate = " Unsupported when using a custom launcher."
 	}
-	rootCmd.Flags().StringP("isolateMetadata", "m", "true", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE."+suffixIsolate)
-	rootCmd.Flags().BoolP("isolateProfiles", "p", false, "(Experimental) Isolate the users profile of the game, otherwise, it will be shared."+suffixIsolate)
+	rootCmd.Flags().StringP("isolateMetadata", "m", "required", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE. If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise."+suffixIsolate)
+	rootCmd.Flags().StringP("isolateProfiles", "p", "required", "Isolate the user's profile of the game, otherwise, it will be shared. If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise."+suffixIsolate)
 	rootCmd.Flags().String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	rootCmd.Flags().String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
 	rootCmd.Flags().StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)

@@ -13,14 +13,6 @@ CanTrustCertificate = 'local'
 # Whether to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
 # Either 'auto' or 'false'. This is only necessary in Windows when not running AoM, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
-# If true, the launcher will isolate the metadata cache of the game, if false, it will be shared
-# On AoE I this is always false as it does not store metadata.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateMetadata = true
-# (Experimental) If true, the launcher will isolate the user profiles of the game, if false, it will be shared.
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateProfiles = false
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
 Log = false
 

@@ -43,4 +43,7 @@ const (
 	ErrInvalidServerBattleServerManagerRun
 	ErrInvalidServerBattleServerManagerArgs
 	ErrBattleServerManagerRun
+	ErrInvalidIsolateMetadata
+	ErrInvalidIsolateProfiles
+	ErrRequiredIsolation
 )
