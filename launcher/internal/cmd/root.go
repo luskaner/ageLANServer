@@ -129,13 +129,13 @@ var (
 			}
 			isolateMetadataStr := viper.GetString("Config.IsolateMetadata")
 			if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
-				logger.Printf("Invalid value for isolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
+				logger.Printf("Invalid value for Config.IsolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
 				errorCode = internal.ErrInvalidIsolateMetadata
 				return
 			}
 			isolateProfilesStr := viper.GetString("Config.IsolateProfiles")
 			if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
-				logger.Printf("Invalid value for isolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
+				logger.Printf("Invalid value for Config.IsolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
 				errorCode = internal.ErrInvalidIsolateProfiles
 				return
 			}
