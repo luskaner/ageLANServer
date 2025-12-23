@@ -1,8 +1,8 @@
 package fileLock
 
 import (
+	"encoding/binary"
 	"os"
-	"strconv"
 
 	"github.com/luskaner/ageLANServer/common/process"
 )
@@ -24,12 +24,21 @@ func openFile() (err error, f *os.File) {
 }
 
 func writePid(f *os.File) error {
-	str := strconv.Itoa(os.Getpid())
-	err := f.Truncate(int64(len(str)))
+	pid := int64(os.Getpid())
+	startTime, err := process.GetProcessStartTime(os.Getpid())
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(str)
+
+	data := make([]byte, process.PidFileSize)
+	binary.LittleEndian.PutUint64(data[0:8], uint64(pid))
+	binary.LittleEndian.PutUint64(data[8:16], uint64(startTime))
+
+	err = f.Truncate(int64(len(data)))
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(data)
 	if err != nil {
 		return err
 	}

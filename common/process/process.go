@@ -1,15 +1,17 @@
 package process
 
 import (
+	"encoding/binary"
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 )
+
+const PidFileSize = 16 // int64 PID + int64 StartTime
 
 var waitDuration = 3 * time.Second
 
@@ -61,7 +63,6 @@ func getPidPaths(exePath string) (paths []string) {
 
 func Process(exe string) (pidPath string, proc *os.Process, err error) {
 	pidPaths := getPidPaths(exe)
-	var pid int
 	for _, pidPath = range pidPaths {
 		var data []byte
 		var localErr error
@@ -69,11 +70,19 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 		if localErr != nil {
 			continue
 		}
-		pid, localErr = strconv.Atoi(string(data))
-		if localErr != nil {
+		if len(data) != PidFileSize {
+			// Invalid format (old or corrupted), remove orphan file
+			_ = os.Remove(pidPath)
 			continue
 		}
-		proc, err = FindProcess(pid)
+		pid := int(binary.LittleEndian.Uint64(data[0:8]))
+		startTime := int64(binary.LittleEndian.Uint64(data[8:16]))
+		proc, err = FindProcessWithStartTime(pid, startTime)
+		if proc == nil && err == nil {
+			// Process doesn't exist or startTime doesn't match, remove orphan file
+			_ = os.Remove(pidPath)
+			continue
+		}
 		return
 	}
 	pidPath = pidPaths[0]
