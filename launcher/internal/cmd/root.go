@@ -232,7 +232,7 @@ var (
 					errorCode = internal.ErrInvalidClientPath
 					return
 				}
-			} else if !isolateProfiles || !isolateMetadata {
+			} else if !isolateProfiles || (gameId != common.GameAoE && !isolateMetadata) {
 				logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
 				errorCode = internal.ErrRequiredIsolation
 				return
