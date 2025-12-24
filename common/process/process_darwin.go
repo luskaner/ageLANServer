@@ -32,8 +32,12 @@ func parseProcessStartTime(timeStr string) (t time.Time, err error) {
 	// lstart format examples:
 	//   "Tue Dec  3 10:30:00 2024" (single-digit day, space-padded)
 	//   "Tue Dec 24 10:30:00 2024" (double-digit day)
-	// Note: lstart doesn't include timezone, so we parse in local timezone
-	// since the process started in the local timezone of this system.
+	//
+	// Note: lstart output is in local time without timezone info.
+	// We parse in local timezone and convert to Unix nanoseconds (UTC).
+	// Limitation: During DST transitions, local times can be ambiguous
+	// (e.g., 2:30 AM may occur twice when clocks fall back). This could
+	// cause rare false matches during the ~1 hour DST transition window.
 	t, err = time.ParseInLocation("Mon Jan _2 15:04:05 2006", timeStr, time.Local)
 	return
 }
