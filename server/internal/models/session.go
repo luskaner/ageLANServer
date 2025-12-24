@@ -2,7 +2,6 @@ package models
 
 import (
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/luskaner/ageLANServer/server/internal"
@@ -31,7 +30,6 @@ func generateSessionId() string {
 }
 
 type SessionData struct {
-	mu               sync.RWMutex
 	id               SessionKey
 	clientLibVersion uint16
 	userId           int32
@@ -39,20 +37,14 @@ type SessionData struct {
 }
 
 func (s *SessionData) Id() SessionKey {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	return s.id
 }
 
 func (s *SessionData) GetUserId() int32 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	return s.userId
 }
 
 func (s *SessionData) GetClientLibVersion() uint16 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	return s.clientLibVersion
 }
 
