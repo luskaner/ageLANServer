@@ -50,15 +50,26 @@ func ProcessesPID(names []string) map[string]uint32 {
 
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines[1:] { // Skip header
-		fields := strings.Fields(line)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Split only on first whitespace to handle process names with spaces
+		// Format: "  PID COMM" where COMM may contain spaces
+		fields := strings.SplitN(line, " ", 2)
 		if len(fields) < 2 {
 			continue
 		}
-		pid, err := strconv.ParseUint(fields[0], 10, 32)
+		pidStr := strings.TrimSpace(fields[0])
+		comm := strings.TrimSpace(fields[1])
+		if pidStr == "" || comm == "" {
+			continue
+		}
+		pid, err := strconv.ParseUint(pidStr, 10, 32)
 		if err != nil {
 			continue
 		}
-		cmdlineName := filepath.Base(fields[1])
+		cmdlineName := filepath.Base(comm)
 		if slices.Contains(names, cmdlineName) {
 			processesPid[cmdlineName] = uint32(pid)
 		}

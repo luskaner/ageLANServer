@@ -72,6 +72,7 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 		}
 		if len(data) != PidFileSize {
 			// Invalid format (old or corrupted), remove orphan file
+			// Error ignored: file may have been removed by concurrent process (race condition)
 			_ = os.Remove(pidPath)
 			continue
 		}
@@ -80,6 +81,7 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 		proc, err = FindProcessWithStartTime(pid, startTime)
 		if proc == nil {
 			// Process doesn't exist or startTime doesn't match, remove orphan file
+			// Error ignored: file may have been removed by concurrent process (race condition)
 			_ = os.Remove(pidPath)
 			continue
 		}

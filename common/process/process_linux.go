@@ -12,11 +12,16 @@ import (
 	"mvdan.cc/sh/v3/shell"
 )
 
-// GetProcessStartTime returns the process start time in clock ticks since system boot.
-// Note: Unlike Windows and Darwin which return absolute timestamps (nanoseconds since epoch),
-// Linux returns a relative value (clock ticks since boot). This means values are not
-// comparable across reboots, but this is actually beneficial for detecting PID reuse
-// after a reboot since all values will differ.
+// GetProcessStartTime returns the process start time as clock ticks since system boot.
+//
+// IMPORTANT: The returned value is NOT comparable across platforms:
+//   - Linux: clock ticks since boot (this implementation)
+//   - Windows: nanoseconds since epoch (absolute time)
+//   - Darwin: nanoseconds since epoch (absolute time)
+//
+// Values are only meaningful when compared within the same platform and boot session.
+// This is sufficient for detecting PID reuse, as the primary use case is comparing
+// a stored start time against the current start time of a process with the same PID.
 func GetProcessStartTime(pid int) (int64, error) {
 	statPath := fmt.Sprintf("/proc/%d/stat", pid)
 	data, err := os.ReadFile(statPath)

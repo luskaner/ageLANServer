@@ -26,6 +26,7 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	}
 	if err = proc.Signal(unix.Signal(0)); err != nil {
 		if errors.Is(err, unix.EPERM) {
+			// Process exists but we don't have permission to signal it
 			err = nil
 		} else {
 			proc = nil
@@ -35,6 +36,11 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	if expectedStartTime != 0 {
 		actualStartTime, startErr := GetProcessStartTime(pid)
 		if startErr != nil {
+			if errors.Is(startErr, unix.EPERM) {
+				// Process exists but we can't validate start time due to permissions
+				// Treat as valid since Signal(0) already confirmed existence
+				return
+			}
 			proc = nil
 			err = startErr
 			return
