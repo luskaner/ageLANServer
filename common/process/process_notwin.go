@@ -1,5 +1,11 @@
 //go:build !windows
 
+// This file provides FindProcess and FindProcessWithStartTime for all non-Windows systems.
+// It relies on GetProcessStartTime being defined in platform-specific files:
+//   - process_linux.go for Linux
+//   - process_darwin.go for Darwin
+//   - process_other.go for other Unix systems (fallback)
+
 package process
 
 import (
@@ -36,6 +42,7 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 		if actualStartTime != expectedStartTime {
 			proc = nil
 			err = errors.New("process start time mismatch")
+			return
 		}
 	}
 	return

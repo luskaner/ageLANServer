@@ -126,6 +126,7 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 		if actualStartTime != expectedStartTime {
 			proc = nil
 			err = errors.New("process start time mismatch")
+			return
 		}
 	}
 	return

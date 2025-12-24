@@ -1,5 +1,9 @@
 //go:build !windows && !darwin && !linux
 
+// This file provides fallback implementations for unsupported Unix systems.
+// It implements GetProcessStartTime, WaitForProcess, and ProcessesPID with
+// minimal functionality to allow the package to compile and run on any Unix system.
+
 package process
 
 import (

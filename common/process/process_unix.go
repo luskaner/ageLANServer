@@ -1,5 +1,11 @@
 //go:build linux || darwin
 
+// This file provides shared Unix implementations for Linux and Darwin.
+// It works in conjunction with:
+//   - process_linux.go: provides GetProcessStartTime and ProcessesPID for Linux
+//   - process_darwin.go: provides GetProcessStartTime and ProcessesPID for Darwin
+//   - process_notwin.go: provides FindProcess and FindProcessWithStartTime for all non-Windows
+
 package process
 
 import (
