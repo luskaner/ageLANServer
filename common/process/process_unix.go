@@ -1,17 +1,18 @@
-//go:build !windows && !darwin
+//go:build linux || darwin
+
+// This file provides shared Unix implementations for Linux and Darwin.
+// It works in conjunction with:
+//   - process_linux.go: provides GetProcessStartTime and ProcessesPID for Linux
+//   - process_darwin.go: provides GetProcessStartTime and ProcessesPID for Darwin
+//   - process_notwin.go: provides FindProcess and FindProcessWithStartTime for all non-Windows
 
 package process
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
-	"slices"
-	"strconv"
-	"strings"
 	"time"
 
-	"mvdan.cc/sh/v3/shell"
+	"golang.org/x/sys/unix"
 )
 
 func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
@@ -19,16 +20,13 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 	if duration == nil {
 		t *= 10
 	}
-	procPath := fmt.Sprintf("/proc/%d", proc.Pid)
-	processExists := func(path string) bool {
-		if _, err := os.Stat(procPath); os.IsNotExist(err) {
-			return true
-		}
-		return false
+	processGone := func() bool {
+		// Signal(0) returns nil if process exists, error if it doesn't
+		return proc.Signal(unix.Signal(0)) != nil
 	}
 	if duration == nil {
 		for {
-			if processExists(procPath) {
+			if processGone() {
 				return true
 			}
 			time.Sleep(t)
@@ -40,43 +38,11 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 			case <-timeout:
 				return false
 			default:
-				if processExists(procPath) {
+				if processGone() {
 					return true
 				}
 				time.Sleep(t)
 			}
 		}
 	}
-}
-
-func ProcessesPID(names []string) map[string]uint32 {
-	processesPid := make(map[string]uint32)
-	procs, err := os.ReadDir("/proc")
-	if err != nil {
-		return processesPid
-	}
-
-	for _, proc := range procs {
-		var pid uint64
-		if pid, err = strconv.ParseUint(proc.Name(), 10, 32); err == nil {
-			var cmdline []byte
-			cmdline, err = os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
-			if err != nil {
-				continue
-			}
-			cmdlineStr := strings.TrimSpace(
-				strings.ReplaceAll(strings.ReplaceAll(string(cmdline), "\x00", " "), "\\", "/"),
-			)
-			var args []string
-			args, err = shell.Fields(cmdlineStr, nil)
-			if err != nil || len(args) == 0 {
-				continue
-			}
-			cmdlineName := filepath.Base(args[0])
-			if slices.Contains(names, cmdlineName) {
-				processesPid[cmdlineName] = uint32(pid)
-			}
-		}
-	}
-	return processesPid
 }
