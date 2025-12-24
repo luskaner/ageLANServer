@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -70,20 +71,21 @@ var (
 				logger.Println(err.Error())
 				os.Exit(common.ErrFileLog)
 			}
-			var errorCode = common.ErrSuccess
+			var errorCode atomic.Int32
+			errorCode.Store(int32(common.ErrSuccess))
 			defer func() {
 				if r := recover(); r != nil {
 					logger.Println(r)
 					logger.Println(string(debug.Stack()))
-					errorCode = common.ErrGeneral
+					errorCode.Store(int32(common.ErrGeneral))
 				}
-				if errorCode != common.ErrSuccess {
+				if errorCode.Load() != int32(common.ErrSuccess) {
 					config.Revert()
 				}
 				logger.WriteFileLog(gameId, "before exit")
 				commonLogger.CloseFileLog()
 				_ = lock.Unlock()
-				os.Exit(errorCode)
+				os.Exit(int(errorCode.Load()))
 			}()
 			logger.WriteFileLog(gameId, "start")
 			initConfig()
@@ -94,7 +96,7 @@ var (
 			}
 			if !canTrustCertificateValues.Contains(canTrustCertificate) {
 				logger.Printf("Invalid value for canTrustCertificate (%s): %s\n", strings.Join(canTrustCertificateValues.ToSlice(), "/"), canTrustCertificate)
-				errorCode = internal.ErrInvalidCanTrustCertificate
+				errorCode.Store(int32(internal.ErrInvalidCanTrustCertificate))
 				return
 			}
 			canBroadcastBattleServer := "false"
@@ -102,14 +104,14 @@ var (
 				canBroadcastBattleServer = viper.GetString("Config.CanBroadcastBattleServer")
 				if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 					logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
-					errorCode = internal.ErrInvalidCanBroadcastBattleServer
+					errorCode.Store(int32(internal.ErrInvalidCanBroadcastBattleServer))
 					return
 				}
 			}
 			serverStart := viper.GetString("Server.Start")
 			if !autoTrueFalseValues.Contains(serverStart) {
 				logger.Printf("Invalid value for serverStart (auto/true/false): %s\n", serverStart)
-				errorCode = internal.ErrInvalidServerStart
+				errorCode.Store(int32(internal.ErrInvalidServerStart))
 				return
 			}
 			serverStop := viper.GetString("Server.Stop")
@@ -118,30 +120,30 @@ var (
 			}
 			if !autoTrueFalseValues.Contains(serverStop) {
 				logger.Printf("Invalid value for serverStop (%s): %s\n", strings.Join(autoTrueFalseValues.ToSlice(), "/"), serverStop)
-				errorCode = internal.ErrInvalidServerStop
+				errorCode.Store(int32(internal.ErrInvalidServerStop))
 				return
 			}
 			battleServerManagerRun := viper.GetString("Server.BattleServerManager.Run")
 			if !requiredTrueFalseValues.Contains(battleServerManagerRun) {
 				logger.Printf("Invalid value for Server.BattleServerManager.Run (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), battleServerManagerRun)
-				errorCode = internal.ErrInvalidServerBattleServerManagerRun
+				errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerRun))
 				return
 			}
 			isolateMetadataStr := viper.GetString("Config.IsolateMetadata")
 			if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
 				logger.Printf("Invalid value for Config.IsolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
-				errorCode = internal.ErrInvalidIsolateMetadata
+				errorCode.Store(int32(internal.ErrInvalidIsolateMetadata))
 				return
 			}
 			isolateProfilesStr := viper.GetString("Config.IsolateProfiles")
 			if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
 				logger.Printf("Invalid value for Config.IsolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
-				errorCode = internal.ErrInvalidIsolateProfiles
+				errorCode.Store(int32(internal.ErrInvalidIsolateProfiles))
 				return
 			}
 			if !common.SupportedGames.ContainsOne(gameId) {
 				logger.Println("Invalid game type")
-				errorCode = launcherCommon.ErrInvalidGame
+				errorCode.Store(int32(launcherCommon.ErrInvalidGame))
 				return
 			}
 			config.SetGameId(gameId)
@@ -163,12 +165,12 @@ var (
 				}
 				if serverId == uuid.Nil {
 					logger.Println("You must provide a valid UUID for the server ID using the '--id' argument in 'server' executable arguments")
-					errorCode = internal.ErrInvalidServerArgs
+					errorCode.Store(int32(internal.ErrInvalidServerArgs))
 					return
 				}
 			} else {
 				logger.Println("Failed to parse 'server' executable arguments")
-				errorCode = internal.ErrInvalidServerArgs
+				errorCode.Store(int32(internal.ErrInvalidServerArgs))
 				return
 			}
 			var battleServerManagerArgs []string
@@ -179,21 +181,21 @@ var (
 			)
 			if err != nil {
 				logger.Println("Failed to parse 'battle-server-manager' executable arguments")
-				errorCode = internal.ErrInvalidServerBattleServerManagerArgs
+				errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
 				return
 			}
 			var setupCommand []string
 			setupCommand, err = common.ParseCommandArgs("Config.SetupCommand", nil, true)
 			if err != nil {
 				logger.Println("Failed to parse setup command")
-				errorCode = internal.ErrInvalidSetupCommand
+				errorCode.Store(int32(internal.ErrInvalidSetupCommand))
 				return
 			}
 			var revertCommand []string
 			revertCommand, err = common.ParseCommandArgs("Config.RevertCommand", nil, true)
 			if err != nil {
 				logger.Println("Failed to parse revert command")
-				errorCode = internal.ErrInvalidRevertCommand
+				errorCode.Store(int32(internal.ErrInvalidRevertCommand))
 				return
 			}
 			canAddHost := viper.GetBool("Config.CanAddHost")
@@ -212,7 +214,7 @@ var (
 				var serverFile os.FileInfo
 				if serverFile, serverExecutable, err = common.ParsePath(viper.GetStringSlice("Server.Executable"), nil); err != nil || serverFile.IsDir() {
 					logger.Println("Invalid 'server' executable")
-					errorCode = internal.ErrInvalidServerPath
+					errorCode.Store(int32(internal.ErrInvalidServerPath))
 					return
 				}
 			}
@@ -221,7 +223,7 @@ var (
 				var battleServerManagerFile os.FileInfo
 				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(viper.GetStringSlice("Server.BattleServerManager.Executable"), nil); err != nil || battleServerManagerFile.IsDir() {
 					logger.Println("Invalid 'battle-server-manager' executable")
-					errorCode = internal.ErrInvalidClientPath
+					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
 				}
 			}
@@ -229,12 +231,12 @@ var (
 				var clientFile os.FileInfo
 				if clientFile, clientExecutable, err = common.ParsePath(viper.GetStringSlice("Client.Executable"), nil); err != nil || clientFile.IsDir() {
 					logger.Println("Invalid client executable")
-					errorCode = internal.ErrInvalidClientPath
+					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
 				}
 			} else if !isolateProfiles || (gameId != common.GameAoE1 && !isolateMetadata) {
 				logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
-				errorCode = internal.ErrRequiredIsolation
+				errorCode.Store(int32(internal.ErrRequiredIsolation))
 				return
 			} else {
 				logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
@@ -245,7 +247,7 @@ var (
 			logger.Printf("Game %s.\n", gameId)
 			if clientExecutable == "msstore" && gameId == common.GameAoM {
 				logger.Println("The Microsoft Store (Xbox) version of AoM: RT is not supported.")
-				errorCode = internal.ErrGameUnsupportedLauncherCombo
+				errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 				return
 			}
 
@@ -280,7 +282,7 @@ var (
 				if gameId != common.GameAoE1 {
 					if clientFile, clientPath, err := common.ParsePath(viper.GetStringSlice("Client.Path"), nil); err != nil || !clientFile.IsDir() {
 						logger.Println("Invalid client path")
-						errorCode = internal.ErrInvalidClientPath
+						errorCode.Store(int32(internal.ErrInvalidClientPath))
 						return
 					} else {
 						gamePath = clientPath
@@ -288,7 +290,7 @@ var (
 				}
 			default:
 				logger.Println("Game not found.")
-				errorCode = internal.ErrGameLauncherNotFound
+				errorCode.Store(int32(internal.ErrGameLauncherNotFound))
 				return
 			}
 			if gamePath != "" && commonLogger.FileLogger != nil {
@@ -305,12 +307,12 @@ var (
 
 			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
 				logger.Println("Steam cannot be run as administrator. Either run this as a normal user o set Client.Executable to a custom launcher.")
-				errorCode = internal.ErrSteamRoot
+				errorCode.Store(int32(internal.ErrSteamRoot))
 				return
 			}
 
 			if cmdUtils.GameRunning() {
-				errorCode = internal.ErrGameAlreadyRunning
+				errorCode.Store(int32(internal.ErrGameAlreadyRunning))
 				return
 			}
 
@@ -324,7 +326,7 @@ var (
 					config.Revert()
 					commonLogger.CloseFileLog()
 					_ = lock.Unlock()
-					os.Exit(errorCode)
+					os.Exit(int(errorCode.Load()))
 				}
 			}()
 			/*
@@ -339,7 +341,7 @@ var (
 					commonLogger.Println("run config revert", options.String())
 				}, executor.RunRevert)
 			}); err != nil {
-				errorCode = common.ErrFileLog
+				errorCode.Store(int32(common.ErrFileLog))
 				return
 			}
 			var proc *os.Process
@@ -355,14 +357,14 @@ var (
 					logger.Println("Error message: " + err.Error())
 				}
 			}); err != nil {
-				errorCode = common.ErrFileLog
+				errorCode.Store(int32(common.ErrFileLog))
 				return
 			}
 			logger.WriteFileLog(gameId, "post initial cleanup")
 			if len(revertCommand) > 0 {
 				if err := launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
 					logger.Println("Failed to store revert command")
-					errorCode = internal.ErrInvalidRevertCommand
+					errorCode.Store(int32(internal.ErrInvalidRevertCommand))
 					return
 				}
 			}
@@ -378,7 +380,7 @@ var (
 					if result.ExitCode != common.ErrSuccess {
 						logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 					}
-					errorCode = internal.ErrSetupCommand
+					errorCode.Store(int32(internal.ErrSetupCommand))
 					return
 				}
 			}
@@ -396,7 +398,7 @@ var (
 						multicastIPs.Add(IP)
 					} else {
 						logger.Printf("Invalid multicast group \"%s\"\n", str)
-						errorCode = internal.ErrAnnouncementMulticastGroup
+						errorCode.Store(int32(internal.ErrAnnouncementMulticastGroup))
 						return
 					}
 				}
@@ -427,12 +429,12 @@ var (
 				if serverIP == "" {
 					if serverHost == "" {
 						logger.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
-						errorCode = internal.ErrInvalidServerHost
+						errorCode.Store(int32(internal.ErrInvalidServerHost))
 						return
 					}
 					if addr, err := netip.ParseAddr(serverHost); err == nil && addr.Is6() {
 						logger.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
-						errorCode = internal.ErrInvalidServerHost
+						errorCode.Store(int32(internal.ErrInvalidServerHost))
 						return
 					}
 					if id, measuredServerIPAddrs, data := server.FilterServerIPs(
@@ -442,7 +444,7 @@ var (
 						common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(serverHost))),
 					); data == nil {
 						logger.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
-						errorCode = internal.ErrInvalidServerHost
+						errorCode.Store(int32(internal.ErrInvalidServerHost))
 						return
 					} else {
 						serverIP = measuredServerIPAddrs[0].Ip.String()
@@ -479,63 +481,67 @@ var (
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
 				if serverExecutablePath == "" {
 					logger.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
-					errorCode = internal.ErrServerExecutable
+					errorCode.Store(int32(internal.ErrServerExecutable))
 					return
 				}
 				if serverExecutable != serverExecutablePath {
 					logger.Println("Found 'server' executable path:", serverExecutablePath)
 				}
-				if errorCode = server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); errorCode != common.ErrSuccess {
+				if ec := server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); ec != common.ErrSuccess {
+					errorCode.Store(int32(ec))
 					return
 				}
 				if runBattleServerManager {
-					errorCode = config.RunBattleServerManager(
+					ec := config.RunBattleServerManager(
 						battleServerManagerExecutable,
 						battleServerManagerArgs,
 						serverStop == "true",
 					)
-					if errorCode != common.ErrSuccess {
+					if ec != common.ErrSuccess {
+						errorCode.Store(int32(ec))
 						return
 					}
 				}
-				errorCode, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true", serverId)
-				if errorCode != common.ErrSuccess {
+				var ec int
+				ec, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true", serverId)
+				if ec != common.ErrSuccess {
+					errorCode.Store(int32(ec))
 					return
 				}
 			}
 			serverCertificate := server.ReadCACertificateFromServer(serverIP)
 			if serverCertificate == nil {
 				logger.Println("Failed to read certificate from " + serverIP + ". Try to access it with your browser and checking the certificate.")
-				errorCode = internal.ErrReadCert
+				errorCode.Store(int32(internal.ErrReadCert))
 				return
 			}
-			errorCode = config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{HostFilePath}")
-			}))
-			if errorCode != common.ErrSuccess {
+			}))))
+			if errorCode.Load() != int32(common.ErrSuccess) {
 				return
 			}
 			logger.WriteFileLog(gameId, "post host mapping")
-			errorCode = config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
-			}))
-			if errorCode != common.ErrSuccess {
+			}))))
+			if errorCode.Load() != int32(common.ErrSuccess) {
 				return
 			}
 			logger.WriteFileLog(gameId, "post add cert")
-			errorCode = config.IsolateUserData(isolateMetadata, isolateProfiles)
-			if errorCode != common.ErrSuccess {
+			errorCode.Store(int32(config.IsolateUserData(isolateMetadata, isolateProfiles)))
+			if errorCode.Load() != int32(common.ErrSuccess) {
 				return
 			}
 			logger.WriteFileLog(gameId, "post isolate user data")
 			if gamePath != "" {
-				errorCode = config.AddCACertToGame(gameId, serverCertificate, gamePath)
-				if errorCode != common.ErrSuccess {
+				errorCode.Store(int32(config.AddCACertToGame(gameId, serverCertificate, gamePath)))
+				if errorCode.Load() != int32(common.ErrSuccess) {
 					return
 				}
 				logger.WriteFileLog(gameId, "post add game cert")
 			}
-			errorCode = config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)
+			errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)))
 		},
 	}
 )
