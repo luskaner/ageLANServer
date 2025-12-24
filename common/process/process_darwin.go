@@ -17,13 +17,10 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// lstart output format: "Mon Jan  2 15:04:05 2006"
-	// We parse it and convert to nanoseconds since epoch
 	timeStr := strings.TrimSpace(string(output))
 	if timeStr == "" {
 		return 0, errors.New("empty process start time")
 	}
-	// Parse the time string
 	t, err := parseProcessStartTime(timeStr)
 	if err != nil {
 		return 0, err
@@ -32,8 +29,12 @@ func GetProcessStartTime(pid int) (int64, error) {
 }
 
 func parseProcessStartTime(timeStr string) (t time.Time, err error) {
-	// lstart format: "Tue Dec 24 10:30:00 2024"
-	t, err = time.Parse("Mon Jan _2 15:04:05 2006", timeStr)
+	// lstart format examples:
+	//   "Tue Dec  3 10:30:00 2024" (single-digit day, space-padded)
+	//   "Tue Dec 24 10:30:00 2024" (double-digit day)
+	// Note: lstart doesn't include timezone, so we parse in local timezone
+	// since the process started in the local timezone of this system.
+	t, err = time.ParseInLocation("Mon Jan _2 15:04:05 2006", timeStr, time.Local)
 	return
 }
 

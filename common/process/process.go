@@ -11,7 +11,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 )
 
-const PidFileSize = 16 // int64 PID + int64 StartTime
+const PidFileSize = 16 // uint64 PID + uint64 StartTime
 
 var waitDuration = 3 * time.Second
 

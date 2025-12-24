@@ -12,6 +12,11 @@ import (
 	"mvdan.cc/sh/v3/shell"
 )
 
+// GetProcessStartTime returns the process start time in clock ticks since system boot.
+// Note: Unlike Windows and Darwin which return absolute timestamps (nanoseconds since epoch),
+// Linux returns a relative value (clock ticks since boot). This means values are not
+// comparable across reboots, but this is actually beneficial for detecting PID reuse
+// after a reboot since all values will differ.
 func GetProcessStartTime(pid int) (int64, error) {
 	statPath := fmt.Sprintf("/proc/%d/stat", pid)
 	data, err := os.ReadFile(statPath)
@@ -29,7 +34,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	// After (comm), fields are: state(0), ppid(1), pgrp(2), session(3), tty_nr(4), tpgid(5),
 	// flags(6), minflt(7), cminflt(8), majflt(9), cmajflt(10), utime(11), stime(12),
 	// cutime(13), cstime(14), priority(15), nice(16), num_threads(17), itrealvalue(18),
-	// starttime(19)
+	// starttime(19) - in clock ticks since boot
 	if len(fields) < 20 {
 		return 0, errors.New("insufficient stat fields")
 	}
