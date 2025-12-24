@@ -2,6 +2,7 @@ package models
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/luskaner/ageLANServer/server/internal"
@@ -30,6 +31,7 @@ func generateSessionId() string {
 }
 
 type SessionData struct {
+	mu               sync.RWMutex
 	id               SessionKey
 	clientLibVersion uint16
 	userId           int32
@@ -37,22 +39,32 @@ type SessionData struct {
 }
 
 func (s *SessionData) Id() SessionKey {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.id
 }
 
 func (s *SessionData) GetUserId() int32 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.userId
 }
 
 func (s *SessionData) GetClientLibVersion() uint16 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.clientLibVersion
 }
 
 func (s *SessionData) AddMessage(message internal.A) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	s.messageChan <- message
 }
 
 func (s *SessionData) WaitForMessages(ackNum uint) (uint, []internal.A) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	var results []internal.A
 	timer := time.NewTimer(19 * time.Second)
 	defer timer.Stop()
@@ -104,7 +116,9 @@ func (s *MainSessions) Create(userId int32, clientLibVersion uint16) string {
 		messageChan:      make(chan internal.A, 100),
 	}
 	stored := s.baseSessions.CreateSession(generateSessionId, sess)
+	sess.mu.Lock()
 	sess.id = stored.Id()
+	sess.mu.Unlock()
 	return sess.id
 }
 
