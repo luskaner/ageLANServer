@@ -98,14 +98,15 @@ func (s *MainSessions) Initialize() {
 }
 
 func (s *MainSessions) Create(userId int32, clientLibVersion uint16) string {
+	newId := generateSessionId()
 	sess := &SessionData{
+		id:               newId,
 		userId:           userId,
 		clientLibVersion: clientLibVersion,
 		messageChan:      make(chan internal.A, 100),
 	}
-	stored := s.baseSessions.CreateSession(generateSessionId, sess)
-	sess.id = stored.Id()
-	return sess.id
+	s.baseSessions.CreateSession(func() string { return newId }, sess)
+	return newId
 }
 
 func (s *MainSessions) GetById(id string) (Session, bool) {
