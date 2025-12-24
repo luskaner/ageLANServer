@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"os/exec"
 	"path/filepath"
 	"slices"
@@ -20,7 +21,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	// We parse it and convert to nanoseconds since epoch
 	timeStr := strings.TrimSpace(string(output))
 	if timeStr == "" {
-		return 0, err
+		return 0, errors.New("empty process start time")
 	}
 	// Parse the time string
 	t, err := parseProcessStartTime(timeStr)

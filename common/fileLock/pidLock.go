@@ -24,8 +24,8 @@ func openFile() (err error, f *os.File) {
 }
 
 func writePid(f *os.File) error {
-	pid := int64(os.Getpid())
-	startTime, err := process.GetProcessStartTime(os.Getpid())
+	pid := os.Getpid()
+	startTime, err := process.GetProcessStartTime(pid)
 	if err != nil {
 		return err
 	}

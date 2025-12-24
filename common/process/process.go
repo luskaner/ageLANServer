@@ -78,7 +78,7 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 		pid := int(binary.LittleEndian.Uint64(data[0:8]))
 		startTime := int64(binary.LittleEndian.Uint64(data[8:16]))
 		proc, err = FindProcessWithStartTime(pid, startTime)
-		if proc == nil && err == nil {
+		if proc == nil {
 			// Process doesn't exist or startTime doesn't match, remove orphan file
 			_ = os.Remove(pidPath)
 			continue
