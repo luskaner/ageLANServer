@@ -57,14 +57,10 @@ func (s *SessionData) GetClientLibVersion() uint16 {
 }
 
 func (s *SessionData) AddMessage(message internal.A) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	s.messageChan <- message
 }
 
 func (s *SessionData) WaitForMessages(ackNum uint) (uint, []internal.A) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	var results []internal.A
 	timer := time.NewTimer(19 * time.Second)
 	defer timer.Stop()
