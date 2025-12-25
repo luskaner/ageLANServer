@@ -46,4 +46,5 @@ const (
 	ErrInvalidIsolateMetadata
 	ErrInvalidIsolateProfiles
 	ErrRequiredIsolation
+	ErrGameConfigParse
 )

@@ -3,6 +3,7 @@ package cmd
 import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -245,7 +246,13 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		commonLogger.Println("Using config file:", viper.ConfigFileUsed())
 	} else {
-		commonLogger.Println("No config file found, using defaults.")
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if errors.As(err, &configFileNotFoundError) {
+			commonLogger.Println("No config file found, using defaults.")
+		} else {
+			commonLogger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			os.Exit(common.ErrConfigParse)
+		}
 	}
 	viper.AutomaticEnv()
 }

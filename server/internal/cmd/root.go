@@ -333,5 +333,11 @@ func initConfig() {
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
 		logger.Println("Using config file:", viper.ConfigFileUsed())
+	} else {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			logger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			os.Exit(common.ErrConfigParse)
+		}
 	}
 }
