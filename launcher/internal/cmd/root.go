@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -677,6 +678,12 @@ func initConfig() {
 	}
 	if err := viper.MergeInConfig(); err == nil {
 		logger.Println("Using main config file:", viper.ConfigFileUsed())
+	} else {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			logger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			os.Exit(common.ErrConfigParse)
+		}
 	}
 	if gameCfgFile != "" {
 		viper.SetConfigFile(gameCfgFile)
@@ -685,6 +692,12 @@ func initConfig() {
 	}
 	if err := viper.MergeInConfig(); err == nil {
 		logger.Println("Using game config file:", viper.ConfigFileUsed())
+	} else {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			logger.Println("Error parsing game config file:", viper.ConfigFileUsed()+":", err.Error())
+			os.Exit(internal.ErrGameConfigParse)
+		}
 	}
 	viper.AutomaticEnv()
 }
