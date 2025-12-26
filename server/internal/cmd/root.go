@@ -64,6 +64,7 @@ var (
 				logger.Printf("Failed to open main log file: %v", err)
 				os.Exit(common.ErrFileLog)
 			}
+			logger.PrintFile("config", viper.ConfigFileUsed())
 			var seed uint64
 			if !deterministic {
 				seed = uint64(time.Now().UnixNano())

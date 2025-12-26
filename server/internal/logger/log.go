@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/luskaner/ageLANServer/common/logger"
@@ -22,6 +23,13 @@ func OpenMainFileLog(root string) error {
 		}
 	}
 	return nil
+}
+
+func PrintFile(name string, path string) {
+	if commonLogger.FileLogger != nil && path != "" {
+		data, _ := os.ReadFile(path)
+		commonLogger.PrefixPrintln(name, string(data))
+	}
 }
 
 func Printf(format string, a ...any) {
