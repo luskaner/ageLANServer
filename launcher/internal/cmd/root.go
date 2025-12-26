@@ -678,6 +678,7 @@ func initConfig() {
 	}
 	if err := viper.MergeInConfig(); err == nil {
 		logger.Println("Using main config file:", viper.ConfigFileUsed())
+		logger.PrintFile("main config", viper.ConfigFileUsed())
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
@@ -692,6 +693,7 @@ func initConfig() {
 	}
 	if err := viper.MergeInConfig(); err == nil {
 		logger.Println("Using game config file:", viper.ConfigFileUsed())
+		logger.PrintFile("game config", viper.ConfigFileUsed())
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {

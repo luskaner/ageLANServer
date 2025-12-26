@@ -74,6 +74,13 @@ func WriteFileLog(gameId string, name string) {
 	}
 }
 
+func PrintFile(name string, path string) {
+	if commonLogger.FileLogger != nil {
+		data, _ := os.ReadFile(path)
+		commonLogger.PrefixPrintln(name, string(data))
+	}
+}
+
 func Printf(format string, a ...any) {
 	commonLogger.PrefixPrintf("main", format, a...)
 	fmt.Printf(format, a...)

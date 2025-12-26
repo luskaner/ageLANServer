@@ -245,6 +245,8 @@ func initConfig() {
 	}
 	if err := viper.ReadInConfig(); err == nil {
 		commonLogger.Println("Using config file:", viper.ConfigFileUsed())
+		data, _ := os.ReadFile(viper.ConfigFileUsed())
+		commonLogger.PrefixPrintln("config", string(data))
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if errors.As(err, &configFileNotFoundError) {
