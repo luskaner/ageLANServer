@@ -43,7 +43,7 @@ func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.C
 			logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
 			errorCode = internal.ErrCertMismatch
 			return
-		} else if !server.LanServerHost(serverId, gameId, host, false) {
+		} else if !server.LanServerHost(serverId, gameId, host, false, rootCAs) {
 			logger.Println("Something went wrong, " + host + " does not point to a lan server.")
 			errorCode = internal.ErrServerConnectSecure
 			return
@@ -125,7 +125,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 				logger.Println(host + " must have been trusted automatically at this point.")
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServerHost(serverId, gameId, host, false) {
+			} else if !server.LanServerHost(serverId, gameId, host, false, nil) {
 				logger.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return
