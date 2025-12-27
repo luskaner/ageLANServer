@@ -150,7 +150,7 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 
 func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify),
+		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify, nil),
 	}
 	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
 	u := url.URL{
