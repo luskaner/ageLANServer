@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"io"
 	"net"
@@ -113,13 +114,13 @@ func GetExecutablePath(executable string) string {
 	return executable
 }
 
-func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool) (ok bool) {
+func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {
 	ipAddrs := common.HostOrIpToIps(host)
 	if len(ipAddrs) == 0 {
 		return
 	}
 	for _, ipAddr := range ipAddrs {
-		if ok, _, _, _ = lanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, true); !ok {
+		if ok, _, _, _ = lanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, rootCAs, true); !ok {
 			return
 		}
 	}
@@ -132,7 +133,7 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 		var ok bool
 		var latency time.Duration
 		var tmpData *AnnounceMessageDataSupportedLatest
-		if ok, actualId, latency, tmpData = lanServerIP(id, gameTitle, ip, serverName, true, false); ok {
+		if ok, actualId, latency, tmpData = lanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
 			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
 				Ip:      ip,
 				Latency: latency,
@@ -148,9 +149,9 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 	return
 }
 
-func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
+func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify),
+		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify, rootCAs),
 	}
 	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
 	u := url.URL{

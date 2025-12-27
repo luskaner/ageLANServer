@@ -294,11 +294,14 @@ var (
 				errorCode.Store(int32(internal.ErrGameLauncherNotFound))
 				return
 			}
-			if gamePath != "" && commonLogger.FileLogger != nil {
+			var gameCaCertPath string
+			if gamePath != "" {
 				caCert := cert.NewCA(gameId, gamePath)
-				logger.Cacert = &caCert
+				gameCaCertPath = caCert.OriginalPath()
+				if commonLogger.FileLogger != nil {
+					logger.Cacert = &caCert
+				}
 			}
-
 			if isAdmin {
 				logger.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
 				if runtime.GOOS != "windows" {
@@ -536,7 +539,7 @@ var (
 			}
 			logger.WriteFileLog(gameId, "post isolate user data")
 			if gamePath != "" {
-				errorCode.Store(int32(config.AddCACertToGame(gameId, serverCertificate, gamePath)))
+				errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath)))
 				if errorCode.Load() != int32(common.ErrSuccess) {
 					return
 				}

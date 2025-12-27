@@ -17,14 +17,15 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-func TlsConfig(serverName string, insecureSkipVerify bool) *tls.Config {
+func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Config {
 	return &tls.Config{
 		InsecureSkipVerify: insecureSkipVerify,
 		ServerName:         serverName,
+		RootCAs:            rootCAs,
 	}
 }
 
-func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
+func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Conn {
 	ips := common.HostOrIpToIps(host)
 	var ip string
 	if len(ips) == 0 {
@@ -32,15 +33,15 @@ func connectToServer(host string, insecureSkipVerify bool) *tls.Conn {
 	} else {
 		ip = ips[0]
 	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify))
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify, rootCAs))
 	if err != nil {
 		return nil
 	}
 	return conn
 }
 
-func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
-	conn := connectToServer(host, insecureSkipVerify)
+func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) bool {
+	conn := connectToServer(host, insecureSkipVerify, rootCAs)
 	if conn == nil {
 		return false
 	}
@@ -52,7 +53,7 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool) bool {
 
 func ReadCACertificateFromServer(host string) *x509.Certificate {
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(host, true),
+		TLSClientConfig: TlsConfig(host, true, nil),
 	}
 	ips := common.HostOrIpToIps(host)
 	var ip string
