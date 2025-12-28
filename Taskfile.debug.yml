@@ -4,8 +4,20 @@ version: '3'
 
 tasks:
   # Start of prepare tasks
+  prepare-server-genCert:
+    sources:
+      - server/resources/**/*
+    generates:
+      - build/server/resources/**/*
+    method: checksum
+    cmds:
+      - task: :tools:run
+        vars: { PROGRAM: 'createServerResourcesFolder' }
+      - task: :tools:run
+        vars: { PROGRAM: 'copyServerResources' }
   prepare-server:
     deps:
+      - prepare-server-genCert
       - build-genCert
     sources:
       - common/**/*
@@ -14,10 +26,6 @@ tasks:
       - build/server/bin/genCert{{exeExt}}
     method: checksum
     cmds:
-      - task: :tools:run
-        vars: { PROGRAM: 'createServerResourcesFolder' }
-      - task: :tools:run
-        vars: { PROGRAM: 'copyServerResources' }
       - build/server/bin/genCert{{exeExt}} -r
   prepare-launcher:
     deps:
@@ -31,13 +39,19 @@ tasks:
       - launcher-common/**/*
       - launcher/**/*
     generates:
-      - build/launcher/resources/*
+      - build/launcher/resources/**/*
       - build/launcher/launcher{{exeExt}}
     cmds:
       - task: :tools:run
         vars: { PROGRAM: 'copyLauncherResources' }
   prepare-battle-server-manager:
     deps: [ build-battle-server-manager ]
+    sources:
+      - common/**/*
+      - battle-server-manager/**/*
+    generates:
+      - build/battle-server-manager/resources/**/*
+    method: checksum
     cmds:
       - task: :tools:run
         vars: { PROGRAM: 'copyBattleServerManagerResources' }
