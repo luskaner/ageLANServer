@@ -740,7 +740,8 @@ func initConfig() *internal.Configuration {
 	var c *internal.Configuration
 	err := v.Unmarshal(&c)
 	if err != nil {
-		logger.Println("unable to decode configuration, %v", err)
+		logger.Println("unable to decode configuration:", err.Error())
+		os.Exit(common.ErrConfigParse)
 	}
 	return c
 }
