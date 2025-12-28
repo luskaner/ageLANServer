@@ -735,7 +735,7 @@ func initConfig() *internal.Configuration {
 			os.Exit(internal.ErrGameConfigParse)
 		}
 	}
-	viper.AutomaticEnv()
+	v.AutomaticEnv()
 	viper.ExperimentalBindStruct()
 	var c *internal.Configuration
 	err := v.Unmarshal(&c)
