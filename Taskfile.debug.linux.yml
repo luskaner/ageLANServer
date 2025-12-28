@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  prepare-launcher:
+    platforms: [ linux ]
+    internal: true
+    deps: [ debug:build-server ]
+    cmds:
+      - pkexec --keep-cwd setcap 'CAP_NET_BIND_SERVICE=+ep' build/server/server

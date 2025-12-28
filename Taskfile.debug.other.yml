@@ -1,0 +1,6 @@
+version: '3'
+
+tasks:
+  # No-op
+  prepare-launcher:
+    internal: true

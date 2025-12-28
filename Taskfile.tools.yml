@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: '3'
+
+tasks:
+  build:
+    label: "Build {{.PROGRAM}}{{exeExt}}"
+    internal: true
+    sources:
+      - tools/scripts/**/*
+    generates:
+      - .tools/{{.PROGRAM}}{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o ./.tools/{{.PROGRAM}}{{exeExt}} tools/scripts/cmd/{{.PROGRAM}}.go
+  copyBattleServerManagerResources:
+    internal: true
+    cmds:
+      - task: build
+        vars: { PROGRAM: 'copyBattleServerManagerResources' }
+  copyLauncherResources:
+    internal: true
+    cmds:
+      - task: build
+        vars: { PROGRAM: 'copyLauncherResources' }
+  createServerResourcesFolder:
+    internal: true
+    cmds:
+      - task: build
+        vars: { PROGRAM: 'createServerResourcesFolder' }
+  copyServerResources:
+    internal: true
+    cmds:
+      - task: build
+        vars: { PROGRAM: 'copyServerResources' }
+  run:
+    deps:
+      - task: "{{.PROGRAM}}"
+    cmds:
+      - ./.tools/{{.PROGRAM}}{{exeExt}}
