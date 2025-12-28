@@ -54,3 +54,7 @@ func ParsePath(value []string, values map[string]string) (file os.FileInfo, path
 	file, err = os.Stat(path)
 	return
 }
+
+func EnhancedViperStringToStringSlice(value string) []string {
+	return []string{value}
+}

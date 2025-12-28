@@ -215,7 +215,7 @@ var (
 			var serverExecutable string
 			if serverExecutable = cfg.Server.Executable; serverExecutable != "auto" {
 				var serverFile os.FileInfo
-				if serverFile, serverExecutable, err = common.ParsePath(strings.Split(",", cfg.Server.Executable), nil); err != nil || serverFile.IsDir() {
+				if serverFile, serverExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable), nil); err != nil || serverFile.IsDir() {
 					logger.Println("Invalid 'server' executable")
 					errorCode.Store(int32(internal.ErrInvalidServerPath))
 					return
@@ -224,7 +224,7 @@ var (
 			var battleServerManagerExecutable string
 			if battleServerManagerExecutable = cfg.Server.BattleServerManager.Executable; battleServerManagerExecutable != "auto" {
 				var battleServerManagerFile os.FileInfo
-				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(strings.Split(",", cfg.Server.BattleServerManager.Executable), nil); err != nil || battleServerManagerFile.IsDir() {
+				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.BattleServerManager.Executable), nil); err != nil || battleServerManagerFile.IsDir() {
 					logger.Println("Invalid 'battle-server-manager' executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -232,7 +232,7 @@ var (
 			}
 			if !clientExecutableOfficial {
 				var clientFile os.FileInfo
-				if clientFile, clientExecutable, err = common.ParsePath(strings.Split(",", cfg.Client.Executable), nil); err != nil || clientFile.IsDir() {
+				if clientFile, clientExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Executable), nil); err != nil || clientFile.IsDir() {
 					logger.Println("Invalid client executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -283,7 +283,7 @@ var (
 					}
 				}
 				if gameId != common.GameAoE1 {
-					if clientFile, clientPath, err := common.ParsePath(strings.Split(",", cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
+					if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 						logger.Println("Invalid client path")
 						errorCode.Store(int32(internal.ErrInvalidClientPath))
 						return
