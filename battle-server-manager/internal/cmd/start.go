@@ -232,11 +232,22 @@ func InitStart() {
 }
 
 func initConfig() *internal.Configuration {
+	// Defaults
 	v.SetDefault("Region", "auto")
 	v.SetDefault("Name", "auto")
 	v.SetDefault("Host", "auto")
+	// Executable
 	v.SetDefault("Executable.Path", "auto")
+	v.SetDefault("Executable.ExtraArgs", []string{})
+	// Ports
+	v.SetDefault("Ports.Bs", 0)
+	v.SetDefault("Ports.WebSocket", 0)
+	v.SetDefault("Ports.OutOfBand", 0)
+	// SSL
 	v.SetDefault("SSL.Auto", true)
+	v.SetDefault("SSL.CertFile", "")
+	v.SetDefault("SSL.KeyFile", "")
+	
 	for _, configPath := range configPaths {
 		v.AddConfigPath(configPath)
 	}

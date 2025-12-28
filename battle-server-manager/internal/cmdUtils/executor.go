@@ -20,7 +20,7 @@ func ResolvePath(gameId string, executablePath string) (resolvedPath string, err
 		return false
 	}
 	var path string
-	if executablePath == "" || executablePath == "auto" {
+	if executablePath == "auto" {
 		commonLogger.Println("Auto resolving executable path...")
 		// TODO: Review if AoE: DE and AoE III: DE can also use AoE II: DE
 		// The Battle Server for AoM is buggy and the only one working is the AoE II one
