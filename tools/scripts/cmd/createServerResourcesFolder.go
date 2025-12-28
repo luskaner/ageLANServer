@@ -8,7 +8,5 @@ import (
 func main() {
 	dst := i.BuildResourcePath("server")
 
-	if err := i.MkdirP(dst); err != nil {
-		log.Fatal(err)
-	}
+	i.MkdirP(dst)
 }
