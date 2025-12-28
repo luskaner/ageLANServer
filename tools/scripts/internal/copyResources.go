@@ -26,9 +26,7 @@ func CopyMainConfig(module string) {
 
 func CopyGameConfigs(module string) {
 	dstPath := BuildResourcePath(module)
-	if err := MkdirP(dstPath); err != nil {
-		log.Fatal(err)
-	}
+	MkdirP(dstPath)
 	src := filepath.Join(ResourcePath(module), fmt.Sprintf(c.GameConfigFileName, "game"))
 	for game := range common.SupportedGames.Iter() {
 		dst := filepath.Join(dstPath, fmt.Sprintf(c.GameConfigFileName, game))
