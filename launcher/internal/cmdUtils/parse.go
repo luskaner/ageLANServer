@@ -6,14 +6,13 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/viper"
 	"mvdan.cc/sh/v3/shell"
 )
 
 var reWinToLinVar = regexp.MustCompile(`%(\w+)%`)
 
-func ParseCommandArgs(name string, values map[string]string) (args []string, err error) {
-	cmdArgs := strings.Join(viper.GetStringSlice(name), " ")
+func ParseCommandArgs(cmdSlice []string, values map[string]string) (args []string, err error) {
+	cmdArgs := strings.Join(cmdSlice, " ")
 	for key, value := range values {
 		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), value)
 	}

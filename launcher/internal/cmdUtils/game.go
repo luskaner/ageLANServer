@@ -27,7 +27,7 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor gameExecutor.CustomExec, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor gameExecutor.CustomExec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
 	if canBroadcastBattleServer != "false" {
 		if battleServerBroadcast.Required() {
 			canBroadcastBattleServer = "true"
@@ -106,7 +106,7 @@ func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor g
 			values["CertFilePath"] = strings.ReplaceAll(c.certFilePath, `\`, `\\`)
 		}
 	}
-	args, err := ParseCommandArgs("Client.ExecutableArgs", values)
+	args, err := ParseCommandArgs(clientExecutableArgs, values)
 	if err != nil {
 		logger.Println("Failed to parse client executable arguments")
 		errorCode = internal.ErrInvalidClientArgs
