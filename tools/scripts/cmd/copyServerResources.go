@@ -25,7 +25,7 @@ func main() {
 		}
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
-			return i.MkdirP(target)
+			i.MkdirP(target)
 		}
 		in, err := os.Open(path)
 		if err != nil {

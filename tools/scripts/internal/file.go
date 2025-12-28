@@ -15,9 +15,7 @@ func Cp(src, dst string) error {
 	defer func(in *os.File) {
 		_ = in.Close()
 	}(in)
-	if err := MkdirP(filepath.Dir(dst)); err != nil {
-		return err
-	}
+	MkdirP(filepath.Dir(dst))
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
@@ -30,9 +28,8 @@ func Cp(src, dst string) error {
 	return err
 }
 
-func MkdirP(path string) error {
+func MkdirP(path string) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		log.Fatal(err)
 	}
-	return nil
 }
