@@ -16,6 +16,7 @@ use (
 	server
 	server-genCert
 	tools/server-replay
+	tools/scripts
 )
 
 replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast

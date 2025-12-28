@@ -10,14 +10,12 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common/paths"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
-const resourceFolder = "resources"
-
-var configFolder = filepath.Join(resourceFolder, "config")
-var ResponsesFolder = filepath.Join(resourceFolder, "responses")
-var userDataFolder = filepath.Join(resourceFolder, "userData")
+var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")
+var userDataFolder = filepath.Join(paths.ResourcesDir, "userData")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
 type Resources interface {
@@ -68,7 +66,7 @@ func (r *MainResources) CloudFiles() CloudFiles {
 }
 
 func (r *MainResources) initializeChatChannels(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "chatChannels.json"))
+	data, err := os.ReadFile(filepath.Join(paths.ConfigsPath, gameId, "chatChannels.json"))
 	if err != nil {
 		return
 	}
@@ -79,7 +77,7 @@ func (r *MainResources) initializeChatChannels(gameId string) {
 }
 
 func (r *MainResources) initializeLogin(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "login.json"))
+	data, err := os.ReadFile(filepath.Join(paths.ConfigsPath, gameId, "login.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +118,7 @@ func (r *MainResources) initializeResponses(gameId string) {
 }
 
 func (r *MainResources) initializeCloud(gameId string) {
-	cloudfiles := BuildCloudfilesIndex(filepath.Join(configFolder, gameId), filepath.Join(CloudFolder, gameId))
+	cloudfiles := BuildCloudfilesIndex(filepath.Join(paths.ConfigsPath, gameId), filepath.Join(CloudFolder, gameId))
 	if cloudfiles != nil {
 		r.cloudFiles = *cloudfiles
 	}

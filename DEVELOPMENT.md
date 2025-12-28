@@ -20,12 +20,12 @@ the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go
 
 Depending on the module you want to debug, you will need to run the corresponding task **before**:
 
-- server: ```task debug-prepare-server```
+- server: ```task debug:prepare-server```
     - genCert: ```task debug:prepare-server-genCert```
 - launcher: ```task debug:prepare-launcher```
-    - config: ```task build-config-admin-agent```
-    - config-admin-agent: ```task build-config-admin```
-    - agent: ```task build-config-all```
+    - config: ```task debug:build-config-admin-agent```
+    - config-admin-agent: ```task debug:build-config-admin```
+    - agent: ```task debug:build-config-all```
 - battle-server-manager: ```task debug:prepare-battle-server-manager```
 
 ### Build

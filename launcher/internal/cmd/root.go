@@ -27,6 +27,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/paths"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
@@ -44,7 +45,7 @@ const autoValue = "auto"
 const trueValue = "true"
 const falseValue = "false"
 
-var configPaths = []string{"resources", "."}
+var configPaths = []string{paths.ResourcesDir, "."}
 var config = &cmdUtils.Config{}
 
 var (
