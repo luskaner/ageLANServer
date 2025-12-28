@@ -41,6 +41,7 @@ tasks:
     generates:
       - build/launcher/resources/**/*
       - build/launcher/launcher{{exeExt}}
+    method: checksum
     cmds:
       - task: :tools:run
         vars: { PROGRAM: 'copyLauncherResources' }
