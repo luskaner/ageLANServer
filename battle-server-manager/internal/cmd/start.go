@@ -20,6 +20,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var v = viper.New()
+
 var configPaths = []string{paths.ResourcesDir, "."}
 var hideWindow bool
 var gameId string
@@ -34,7 +36,7 @@ var (
 		Short: "Run Battle Server instances.",
 		Long:  "Run Battle Server instances and setup configurations.",
 		Run: func(_ *cobra.Command, _ []string) {
-			initConfig()
+			cfg := initConfig()
 			gameIds := []string{gameId}
 			games, err := cmdUtils.ParsedGameIds(&gameIds)
 			if err != nil {
@@ -47,8 +49,8 @@ var (
 			if isAdmin {
 				commonLogger.Println("Running as administrator, this is not needed and might cause issues.")
 			}
-			name := viper.GetString("Name")
-			region := viper.GetString("Region")
+			name := cfg.Name
+			region := cfg.Region
 			err, names, regions := cmdUtils.ExistingServers(gameId)
 			if err != nil {
 				commonLogger.Printf("could not get existing servers: %s\n", err.Error())
@@ -88,7 +90,7 @@ var (
 				commonLogger.Printf("a Battle Server with the name/region '%s' already exists\n", region)
 				os.Exit(internal.ErrAlreadyExists)
 			}
-			host := viper.GetString("Host")
+			host := cfg.Host
 			var ip string
 			if host != "auto" {
 				ips := common.HostOrIpToIps(host)
@@ -111,11 +113,11 @@ var (
 			} else {
 				ip = host
 			}
-			bsPort := viper.GetInt("Ports.BsPort")
-			websocketPort := viper.GetInt("Ports.WebSocketPort")
+			bsPort := cfg.Ports.Bs
+			websocketPort := cfg.Ports.WebSocket
 			outOfBandPort := -1
 			if gameId != common.GameAoE1 {
-				outOfBandPort = viper.GetInt("Ports.OutOfBandPort")
+				outOfBandPort = cfg.Ports.OutOfBand
 			}
 			if bsPort > 0 && !cmdUtils.Available(bsPort) {
 				commonLogger.Printf("bs port %d is already in use\n", bsPort)
@@ -145,18 +147,18 @@ var (
 			}
 			resolvedCertFile, resolvedKeyFile, err := cmdUtils.ResolveSSLFilesPath(
 				gameId,
-				viper.GetBool("SSL.Auto"),
+				cfg.SSL,
 			)
 			if err != nil {
 				commonLogger.Printf("could not resolve SSL files: %s\n", err)
 				os.Exit(internal.ErrResolveSSLFiles)
 			}
-			resolvedPath, err := cmdUtils.ResolvePath(gameId)
+			resolvedPath, err := cmdUtils.ResolvePath(gameId, cfg.Executable.Path)
 			if err != nil {
 				commonLogger.Printf("could not resolve path: %s\n", err)
 				os.Exit(internal.ErrResolvePath)
 			}
-			extraArgs, err := common.ParseCommandArgs("Executable.ExtraArgs", nil, true)
+			extraArgs, err := common.ParseCommandArgsFromSlice(cfg.Executable.ExtraArgs, nil, true)
 			if err != nil {
 				commonLogger.Printf("could not parse extra args: %s\n", err)
 				os.Exit(internal.ErrParseArgs)
@@ -229,33 +231,39 @@ func InitStart() {
 	RootCmd.AddCommand(startCmd)
 }
 
-func initConfig() {
-	viper.SetDefault("Region", "auto")
-	viper.SetDefault("Name", "auto")
-	viper.SetDefault("Host", "auto")
-	viper.SetDefault("Executable.Path", "auto")
-	viper.SetDefault("SSL.Auto", true)
+func initConfig() *internal.Configuration {
+	v.SetDefault("Region", "auto")
+	v.SetDefault("Name", "auto")
+	v.SetDefault("Host", "auto")
+	v.SetDefault("Executable.Path", "auto")
+	v.SetDefault("SSL.Auto", true)
 	for _, configPath := range configPaths {
-		viper.AddConfigPath(configPath)
+		v.AddConfigPath(configPath)
 	}
-	viper.SetConfigType("toml")
+	v.SetConfigType("toml")
 	if gameCfgFile != "" {
-		viper.SetConfigFile(gameCfgFile)
+		v.SetConfigFile(gameCfgFile)
 	} else {
-		viper.SetConfigName(fmt.Sprintf("config.%s", gameId))
+		v.SetConfigName(fmt.Sprintf("config.%s", gameId))
 	}
-	if err := viper.ReadInConfig(); err == nil {
-		commonLogger.Println("Using config file:", viper.ConfigFileUsed())
-		data, _ := os.ReadFile(viper.ConfigFileUsed())
+	if err := v.ReadInConfig(); err == nil {
+		commonLogger.Println("Using config file:", v.ConfigFileUsed())
+		data, _ := os.ReadFile(v.ConfigFileUsed())
 		commonLogger.PrefixPrintln("config", string(data))
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if errors.As(err, &configFileNotFoundError) {
 			commonLogger.Println("No config file found, using defaults.")
 		} else {
-			commonLogger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			commonLogger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}
 	}
-	viper.AutomaticEnv()
+	v.AutomaticEnv()
+	var c *internal.Configuration
+	if err := v.Unmarshal(&c); err != nil {
+		commonLogger.Printf("unable to decode configuration: %v\n", err)
+		os.Exit(common.ErrConfigParse)
+	}
+	return c
 }
