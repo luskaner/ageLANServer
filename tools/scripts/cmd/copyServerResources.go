@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -26,23 +25,9 @@ func main() {
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
 			i.MkdirP(target)
+			return nil
 		}
-		in, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer func(in *os.File) {
-			_ = in.Close()
-		}(in)
-		out, err := os.Create(target)
-		if err != nil {
-			return err
-		}
-		defer func(out *os.File) {
-			_ = out.Close()
-		}(out)
-		_, err = io.Copy(out, in)
-		return err
+		return i.Cp(path, target)
 	})
 	if err != nil {
 		log.Fatal(err)
