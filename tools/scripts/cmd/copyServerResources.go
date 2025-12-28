@@ -19,7 +19,10 @@ func main() {
 		if err != nil {
 			return err
 		}
-		rel, _ := filepath.Rel(src, path)
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
 			return i.MkdirP(target)
