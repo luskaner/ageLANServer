@@ -1,6 +1,6 @@
 package internal
 
-type executable struct {
+type Executable struct {
 	Executable     string
 	ExecutableArgs []string
 }
@@ -17,12 +17,12 @@ type Config struct {
 }
 
 type BattleServerManager struct {
-	executable `mapstructure:",squash"`
+	Executable `mapstructure:",squash"`
 	Run        string
 }
 
 type Server struct {
-	executable              `mapstructure:",squash"`
+	Executable              `mapstructure:",squash"`
 	Start                   string
 	Host                    string
 	Stop                    string
@@ -33,7 +33,7 @@ type Server struct {
 }
 
 type Client struct {
-	executable `mapstructure:",squash"`
+	Executable `mapstructure:",squash"`
 	Path       string
 }
 
