@@ -14,10 +14,15 @@ const ServerGenCert = "genCert"
 
 // Launcher
 
+const Launcher = "launcher"
 const LauncherAgent = "agent"
 const LauncherConfig = "config"
 const LauncherConfigAdmin = "config-admin"
 const LauncherConfigAdminAgent = "config-admin-agent"
+
+// Battle Server Manager
+
+const BattleServerManager = "battle-server-manager"
 
 var directories = []string{
 	fmt.Sprintf(`%c`, filepath.Separator),

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -25,6 +24,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/paths"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/ip"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
@@ -35,7 +35,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configPaths = []string{path.Join("resources", "config"), "."}
+var configPaths = []string{paths.ConfigsPath, "."}
 var id string
 var logRoot string
 var flatLog bool

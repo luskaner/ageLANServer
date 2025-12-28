@@ -7,7 +7,7 @@ Copy `go.work.example` to `go.work`
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
 - [Go 1.24](https://go.dev/dl/) or higher, except for Windows 7-8 (and equivalent) which need an unofficial fork
   like [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) (recommended)
-  or [XTLS/go-win7](https://github.com/XTLS/go-win7).
+  or [XTLS/go-win7](https://github.com/XTLS/go-win7) using Go 1.25.
 - [Git](https://git-scm.com/downloads), with the latest supported for Windows 7/8 being v2.46.2.
 - [Task](https://taskfile.dev/installation/).
 - [GoReleaser](https://goreleaser.com/).
@@ -20,12 +20,12 @@ the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go
 
 Depending on the module you want to debug, you will need to run the corresponding task **before**:
 
-- server: ```task debug-prepare-server```
+- server: ```task debug:prepare-server```
     - genCert: ```task debug:prepare-server-genCert```
 - launcher: ```task debug:prepare-launcher```
-    - config: ```task build-config-admin-agent```
-    - config-admin-agent: ```task build-config-admin```
-    - agent: ```task build-config-all```
+    - config: ```task debug:build-config-admin-agent```
+    - config-admin-agent: ```task debug:build-config-admin```
+    - agent: ```task debug:build-config-all```
 - battle-server-manager: ```task debug:prepare-battle-server-manager```
 
 ### Build

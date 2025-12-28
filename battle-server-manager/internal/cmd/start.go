@@ -14,12 +14,13 @@ import (
 	"github.com/luskaner/ageLANServer/common/cmd"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/paths"
 	"github.com/luskaner/ageLANServer/common/process"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var configPaths = []string{"resources", "."}
+var configPaths = []string{paths.ResourcesDir, "."}
 var hideWindow bool
 var gameId string
 var force bool

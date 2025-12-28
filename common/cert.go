@@ -3,6 +3,8 @@ package common
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common/paths"
 )
 
 func CertificatePairFolder(executablePath string) string {
@@ -13,7 +15,7 @@ func CertificatePairFolder(executablePath string) string {
 	if parentDir == "" {
 		return ""
 	}
-	folder := filepath.Join(parentDir, "resources", "certificates")
+	folder := filepath.Join(parentDir, paths.ResourcesDir, "certificates")
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		if os.Mkdir(folder, 0755) != nil {
 			return ""
