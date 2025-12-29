@@ -1,12 +1,12 @@
 module github.com/luskaner/ageLANServer/launcher-common
 
-go 1.24.0
+go 1.25.5
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/hairyhenderson/go-which v0.2.2
-	github.com/spf13/cobra v1.10.1
-	golang.org/x/sys v0.38.0
+	github.com/spf13/cobra v1.10.2
+	golang.org/x/sys v0.39.0
 )
 
 require (

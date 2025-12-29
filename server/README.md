@@ -9,7 +9,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 - **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Big Sur (v11).
+- **macOS**: Monterey (v12).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -21,7 +21,7 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.24.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.25.
 
 </details>
 
