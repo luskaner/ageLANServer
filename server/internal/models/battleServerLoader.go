@@ -5,19 +5,17 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
-	"github.com/spf13/viper"
+	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
 var BattleServersStore = make(map[string][]BattleServer)
 
-func InitializeBattleServers(gameId string) error {
+func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer) error {
 	var battleServers []BattleServer
-	key := fmt.Sprintf("Games.%s.BattleServers", gameId)
-	if viper.IsSet(key) {
-		err := viper.UnmarshalKey(key, &battleServers)
-		if err != nil {
-			return err
-		}
+	for _, bs := range configBattleServers {
+		battleServers = append(battleServers, &MainBattleServer{
+			BaseConfig: bs.BaseConfig,
+		})
 	}
 	tmpBattleServer, err := battleServerConfig.Configs(gameId, true)
 	if err != nil {

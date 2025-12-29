@@ -5,8 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/spf13/viper"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
 var StartTime time.Time
@@ -15,8 +14,8 @@ func init() {
 	StartTime = time.Now().UTC()
 }
 
-func OpenMainFileLog(root string) error {
-	if viper.GetBool("Config.Log") {
+func OpenMainFileLog(root string, logEnabled bool) error {
+	if logEnabled {
 		err := commonLogger.NewOwnFileLogger("server", root, "", true)
 		if err != nil {
 			return err

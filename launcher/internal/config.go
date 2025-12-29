@@ -1,8 +1,8 @@
 package internal
 
 type Executable struct {
-	Executable     string
-	ExecutableArgs []string
+	Path string   `mapstructure:"Executable"`
+	Args []string `mapstructure:"ExecutableArgs"`
 }
 
 type Config struct {

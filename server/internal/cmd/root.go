@@ -35,15 +35,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+var v = viper.New()
+
 var configPaths = []string{paths.ConfigsPath, "."}
 var id string
 var logRoot string
 var flatLog bool
 var deterministic bool
+var cfgFile string
 
 var (
 	Version string
-	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
@@ -56,15 +58,16 @@ var (
 				commonLogger.CloseFileLog()
 				os.Exit(common.ErrPidLock)
 			}
+			cfg := initConfig()
 			commonLogger.Initialize(nil)
 			if logRoot == "" {
 				logRoot = commonLogger.LogRootDate("")
 			}
-			if err := logger.OpenMainFileLog(logRoot); err != nil {
+			if err := logger.OpenMainFileLog(logRoot, cfg.Config.Log); err != nil {
 				logger.Printf("Failed to open main log file: %v", err)
 				os.Exit(common.ErrFileLog)
 			}
-			logger.PrintFile("config", viper.ConfigFileUsed())
+			logger.PrintFile("config", v.ConfigFileUsed())
 			var seed uint64
 			if !deterministic {
 				seed = uint64(time.Now().UnixNano())
@@ -94,10 +97,10 @@ var (
 				return
 			}
 			logger.Println("Server instance ID:", internal.Id)
-			if viper.GetBool("GeneratePlatformUserId") {
+			if cfg.Config.GeneratePlatformUserId {
 				logger.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
-			gameSet := mapset.NewThreadUnsafeSet[string](viper.GetStringSlice("Games.Enabled")...)
+			gameSet := mapset.NewThreadUnsafeSet[string](cfg.Games.Enabled...)
 			if gameSet.IsEmpty() {
 				logger.Println("No games specified")
 				exitCode = internal.ErrGames
@@ -122,10 +125,10 @@ var (
 				exitCode = internal.ErrCertDirectory
 				return
 			}
-			announceEnabled := viper.GetBool("Announcement.Enabled")
+			announceEnabled := cfg.Announcement.Enabled
 			multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
-			if announceEnabled && viper.GetBool("Announcement.Multicast") {
-				multicastIP, err := netip.ParseAddr(viper.GetString("Announcement.MulticastGroup"))
+			if announceEnabled && cfg.Announcement.Multicast {
+				multicastIP, err := netip.ParseAddr(cfg.Announcement.MulticastGroup)
 				if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
 					logger.Println("Invalid multicast IP")
 					if err != nil {
@@ -136,20 +139,21 @@ var (
 				}
 				multicastGroups.Add(multicastIP)
 			}
-			announcePort := viper.GetInt("Announcement.Port")
+			announcePort := cfg.Announcement.Port
 			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
+			internal.GeneratePlatformUserId = cfg.Config.GeneratePlatformUserId
 			var servers []*http.Server
 			internal.InitializeStopSignal()
 			for gameId := range gameSet.Iter() {
 				logger.Printf("Game %s:\n", gameId)
-				hosts := viper.GetStringSlice(fmt.Sprintf("Games.%s.Hosts", gameId))
+				hosts := cfg.GetGameHosts(gameId)
 				addrs := ip.ResolveHosts(mapset.NewThreadUnsafeSet[string](hosts...))
 				if addrs.IsEmpty() {
 					logger.Println("\tFailed to resolve host (or it was an IPv6 address)")
 					exitCode = internal.ErrResolveHost
 					return
 				}
-				if err = initializer.InitializeGame(gameId); err != nil {
+				if err = initializer.InitializeGame(gameId, cfg.GetGameBattleServers(gameId)); err != nil {
 					logger.Printf("\tFailed to initialize game: %v\n", err)
 					exitCode = internal.ErrGame
 					return
@@ -283,7 +287,6 @@ var (
 )
 
 func Execute() error {
-	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
 	rootCmd.Flags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.Flags().StringP("announce", "a", "true", "Respond to discove 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
@@ -297,48 +300,69 @@ func Execute() error {
 	cmd.LogRootCommand(rootCmd.Flags(), &logRoot)
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	rootCmd.Flags().StringVar(&id, "id", "", "Server instance ID to identify it.")
-	if err := viper.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
+	// Default Values
+	// Config
+	v.SetDefault("Config.Log", false)
+	v.SetDefault("Config.GeneratePlatformUserId", false)
+	// Announcement
+	v.SetDefault("Announcement.Enabled", true)
+	v.SetDefault("Announcement.Multicast", true)
+	v.SetDefault("Announcement.MulticastGroup", common.AnnounceMulticastGroup)
+	v.SetDefault("Announcement.Port", common.AnnouncePort)
+	// Games
+	v.SetDefault("Games.Enabled", []string{})
+	for game := range common.SupportedGames.Iter() {
+		v.SetDefault(fmt.Sprintf("Games.%s.Hosts", game), []string{netip.IPv4Unspecified().String()})
+	}
+	// Bindings
+	if err := v.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
+	if err := v.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Announcement.Port", rootCmd.Flags().Lookup("announcePort")); err != nil {
+	if err := v.BindPFlag("Announcement.Port", rootCmd.Flags().Lookup("announcePort")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Announcement.Multicast", rootCmd.Flags().Lookup("announceMulticast")); err != nil {
+	if err := v.BindPFlag("Announcement.Multicast", rootCmd.Flags().Lookup("announceMulticast")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Announcement.MulticastGroup", rootCmd.Flags().Lookup("announceMulticastGroup")); err != nil {
+	if err := v.BindPFlag("Announcement.MulticastGroup", rootCmd.Flags().Lookup("announceMulticastGroup")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Games.Enabled", rootCmd.Flags().Lookup("games")); err != nil {
+	if err := v.BindPFlag("Games.Enabled", rootCmd.Flags().Lookup("games")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("GeneratePlatformUserId", rootCmd.Flags().Lookup("generatePlatformUserId")); err != nil {
+	if err := v.BindPFlag("Config.GeneratePlatformUserId", rootCmd.Flags().Lookup("generatePlatformUserId")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
 }
 
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		for _, configPath := range configPaths {
-			viper.AddConfigPath(configPath)
-		}
-		viper.SetConfigType("toml")
-		viper.SetConfigName("config")
+func initConfig() *internal.Configuration {
+	for _, configPath := range configPaths {
+		v.AddConfigPath(configPath)
 	}
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err == nil {
-		logger.Println("Using config file:", viper.ConfigFileUsed())
+	v.SetConfigType("toml")
+	if cfgFile != "" {
+		v.SetConfigFile(cfgFile)
+	} else {
+		v.SetConfigName("config")
+	}
+	v.AutomaticEnv()
+	if err := v.ReadInConfig(); err == nil {
+		logger.Println("Using config file:", v.ConfigFileUsed())
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
-			logger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}
 	}
+	var c *internal.Configuration
+	if err := v.Unmarshal(&c); err != nil {
+		logger.Printf("unable to decode configuration: %v\n", err)
+		os.Exit(common.ErrConfigParse)
+	}
+	return c
 }

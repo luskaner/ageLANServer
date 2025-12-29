@@ -155,7 +155,7 @@ var (
 				"Game": gameId,
 				"Id":   uuid.NewString(),
 			}
-			serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.ExecutableArgs, serverValues)
+			serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues)
 			serverId := uuid.Nil
 			if err == nil {
 				// Find the actual ID in case the user missed it or passed another one
@@ -179,7 +179,7 @@ var (
 			}
 			var battleServerManagerArgs []string
 			battleServerManagerArgs, err = cmdUtils.ParseCommandArgs(
-				cfg.Server.BattleServerManager.ExecutableArgs,
+				cfg.Server.BattleServerManager.Args,
 				serverValues,
 			)
 			if err != nil {
@@ -204,7 +204,7 @@ var (
 			canAddHost := cfg.Config.CanAddHost
 			var clientExecutable string
 			var clientExecutableOfficial bool
-			if clientExecutable = cfg.Client.Executable; clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
+			if clientExecutable = cfg.Client.Executable.Path; clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
 				clientExecutableOfficial = true
 			}
 			var isolateMetadata bool
@@ -213,18 +213,18 @@ var (
 			}
 			isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
 			var serverExecutable string
-			if serverExecutable = cfg.Server.Executable; serverExecutable != "auto" {
+			if serverExecutable = cfg.Server.Executable.Path; serverExecutable != "auto" {
 				var serverFile os.FileInfo
-				if serverFile, serverExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable), nil); err != nil || serverFile.IsDir() {
+				if serverFile, serverExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable.Path), nil); err != nil || serverFile.IsDir() {
 					logger.Println("Invalid 'server' executable")
 					errorCode.Store(int32(internal.ErrInvalidServerPath))
 					return
 				}
 			}
 			var battleServerManagerExecutable string
-			if battleServerManagerExecutable = cfg.Server.BattleServerManager.Executable; battleServerManagerExecutable != "auto" {
+			if battleServerManagerExecutable = cfg.Server.BattleServerManager.Executable.Path; battleServerManagerExecutable != "auto" {
 				var battleServerManagerFile os.FileInfo
-				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.BattleServerManager.Executable), nil); err != nil || battleServerManagerFile.IsDir() {
+				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.BattleServerManager.Executable.Path), nil); err != nil || battleServerManagerFile.IsDir() {
 					logger.Println("Invalid 'battle-server-manager' executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -232,7 +232,7 @@ var (
 			}
 			if !clientExecutableOfficial {
 				var clientFile os.FileInfo
-				if clientFile, clientExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Executable), nil); err != nil || clientFile.IsDir() {
+				if clientFile, clientExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Executable.Path), nil); err != nil || clientFile.IsDir() {
 					logger.Println("Invalid client executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -312,7 +312,7 @@ var (
 			}
 
 			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
-				logger.Println("Steam cannot be run as administrator. Either run this as a normal user o set Client.Executable to a custom launcher.")
+				logger.Println("Steam cannot be run as administrator. Either run this as a normal user o set Client.Path to a custom launcher.")
 				errorCode.Store(int32(internal.ErrSteamRoot))
 				return
 			}
@@ -486,7 +486,7 @@ var (
 				}
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
 				if serverExecutablePath == "" {
-					logger.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
+					logger.Println("Cannot find 'server' executable path. Set it manually in Server.Path.")
 					errorCode.Store(int32(internal.ErrServerExecutable))
 					return
 				}
@@ -521,14 +521,14 @@ var (
 				errorCode.Store(int32(internal.ErrReadCert))
 				return
 			}
-			errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(cfg.Client.ExecutableArgs, func(s string) bool {
+			errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
 				return strings.Contains(s, "{HostFilePath}")
 			}))))
 			if errorCode.Load() != int32(common.ErrSuccess) {
 				return
 			}
 			logger.WriteFileLog(gameId, "post host mapping")
-			errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.ExecutableArgs, func(s string) bool {
+			errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
 			}))))
 			if errorCode.Load() != int32(common.ErrSuccess) {
@@ -547,7 +547,7 @@ var (
 				}
 				logger.WriteFileLog(gameId, "post add game cert")
 			}
-			errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.ExecutableArgs, canTrustCertificate, canBroadcastBattleServer)))
+			errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer)))
 		},
 	}
 )
@@ -625,12 +625,12 @@ func Execute() error {
 	v.SetDefault("Config.RevertCommand", []string{})
 	// Client
 	v.SetDefault("Client.Executable", "auto")
-	v.SetDefault("Client.ExecutableArgs", []string{})
+	v.SetDefault("Client.Args", []string{})
 	v.SetDefault("Client.Path", "auto")
 	// Server
 	v.SetDefault("Server.Start", "auto")
 	v.SetDefault("Server.Executable", "auto")
-	v.SetDefault("Server.ExecutableArgs", []string{"-e", "{Game}", "--id", "{Id}"})
+	v.SetDefault("Server.Args", []string{"-e", "{Game}", "--id", "{Id}"})
 	v.SetDefault("Server.Host", netip.IPv4Unspecified().String())
 	v.SetDefault("Server.Stop", "auto")
 	v.SetDefault("Server.SingleAutoSelect", false)
@@ -639,7 +639,7 @@ func Execute() error {
 	// Server.BattleServerManager
 	v.SetDefault("Server.BattleServerManager.Run", "true")
 	v.SetDefault("Server.BattleServerManager.Executable", "auto")
-	v.SetDefault("Server.BattleServerManager.ExecutableArgs", []string{"-e", "{Game}", "-r"})
+	v.SetDefault("Server.BattleServerManager.Args", []string{"-e", "{Game}", "-r"})
 	// Bindings
 	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
@@ -688,13 +688,13 @@ func Execute() error {
 	if err := v.BindPFlag("Server.Executable", rootCmd.Flags().Lookup("serverPath")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Server.ExecutableArgs", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
+	if err := v.BindPFlag("Server.Args", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
 		return err
 	}
 	if err := v.BindPFlag("Client.Executable", rootCmd.Flags().Lookup("clientExe")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Client.ExecutableArgs", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
+	if err := v.BindPFlag("Client.Args", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
