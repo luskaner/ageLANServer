@@ -241,6 +241,7 @@ func QueryServers(
 		target *net.UDPAddr
 	}
 	var connTargets []*connTarget
+	var conns []*net.UDPConn
 	for source, targets := range sourceToTargetAddrs {
 		//goland:noinspection GoResourceLeak
 		conn, err := net.ListenUDP(
@@ -255,9 +256,11 @@ func QueryServers(
 		}) {
 			p := ipv4.NewPacketConn(conn)
 			if err = p.SetMulticastLoopback(true); err != nil {
+				_ = conn.Close()
 				continue
 			}
 		}
+		conns = append(conns, conn)
 		for _, target := range targets {
 			connTargets = append(connTargets, &connTarget{
 				conn:   conn,
@@ -266,15 +269,15 @@ func QueryServers(
 		}
 	}
 
+	defer func(connections []*net.UDPConn) {
+		for _, conn := range connections {
+			_ = conn.Close()
+		}
+	}(conns)
+
 	if len(connTargets) == 0 {
 		return
 	}
-
-	defer func(connectionPairs []*connTarget) {
-		for _, connPair := range connectionPairs {
-			_ = connPair.conn.Close()
-		}
-	}(connTargets)
 
 	data := []byte(common.AnnounceHeader)
 	var serverLock sync.Mutex
@@ -320,16 +323,15 @@ func QueryServers(
 	for _, conn := range connTargets {
 		wg.Add(1)
 		go func(conn *connTarget) {
+			defer wg.Done()
+			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
+			sendAndReceive(&packetBuffer, conn, servers)
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
-			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
-			for i := 0; i < 3; i++ {
-				select {
-				case <-ticker.C:
-					sendAndReceive(&packetBuffer, conn, servers)
-				}
+			for i := 0; i < 2; i++ {
+				<-ticker.C
+				sendAndReceive(&packetBuffer, conn, servers)
 			}
-			wg.Done()
 		}(conn)
 	}
 	wg.Wait()
