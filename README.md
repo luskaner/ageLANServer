@@ -142,7 +142,7 @@ is in maintenance or is eventually shutdown.
 
 - **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Big Sur (v11).
+- **macOS**: Monterey (v12).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system and configuration.
@@ -243,7 +243,7 @@ supported operating systems.
             * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz
         * **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
         * **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Big Sur (v11): ...\_server\_*A.B.C*_mac.tar.gz
+    * macOS - Monterey (v12): ...\_server\_*A.B.C*_mac.tar.gz
 
 </details>
 
