@@ -8,17 +8,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/viper"
 	"mvdan.cc/sh/v3/shell"
 )
 
 var reWinToLinVar *regexp.Regexp
 
-func ParseCommandArgs(name string, values map[string]string, separateFields bool) (args []string, err error) {
-	return parseCommandArgs(viper.GetStringSlice(name), values, separateFields)
-}
-
-func parseCommandArgs(value []string, values map[string]string, separateFields bool) (args []string, err error) {
+func ParseCommandArgsFromSlice(value []string, values map[string]string, separateFields bool) (args []string, err error) {
 	cmdArgs := strings.Join(value, " ")
 	for key, val := range values {
 		cmdArgs = strings.ReplaceAll(cmdArgs, fmt.Sprintf(`{%s}`, key), val)
@@ -39,7 +34,7 @@ func parseCommandArgs(value []string, values map[string]string, separateFields b
 
 func ParsePath(value []string, values map[string]string) (file os.FileInfo, path string, err error) {
 	var args []string
-	args, err = parseCommandArgs(value, values, false)
+	args, err = ParseCommandArgsFromSlice(value, values, false)
 	if err != nil {
 		return
 	}
@@ -53,4 +48,8 @@ func ParsePath(value []string, values map[string]string) (file os.FileInfo, path
 	}
 	file, err = os.Stat(path)
 	return
+}
+
+func EnhancedViperStringToStringSlice(value string) []string {
+	return []string{value}
 }

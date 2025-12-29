@@ -21,7 +21,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
@@ -47,6 +47,7 @@ const falseValue = "false"
 
 var configPaths = []string{paths.ResourcesDir, "."}
 var config = &cmdUtils.Config{}
+var v = viper.New()
 
 var (
 	Version                        string
@@ -68,6 +69,8 @@ var (
 				logger.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+			cfg := initConfig()
+			logger.LogEnabled = cfg.Config.Log
 			if err := logger.OpenMainFileLog(gameId); err != nil {
 				logger.Println("Failed to open file log")
 				logger.Println(err.Error())
@@ -90,9 +93,8 @@ var (
 				os.Exit(int(errorCode.Load()))
 			}()
 			logger.WriteFileLog(gameId, "start")
-			initConfig()
 			isAdmin := commonExecutor.IsAdmin()
-			canTrustCertificate := viper.GetString("Config.CanTrustCertificate")
+			canTrustCertificate := cfg.Config.CanTrustCertificate
 			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")
 			}
@@ -103,20 +105,20 @@ var (
 			}
 			canBroadcastBattleServer := "false"
 			if runtime.GOOS == "windows" && gameId != common.GameAoM {
-				canBroadcastBattleServer = viper.GetString("Config.CanBroadcastBattleServer")
+				canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
 				if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 					logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
 					errorCode.Store(int32(internal.ErrInvalidCanBroadcastBattleServer))
 					return
 				}
 			}
-			serverStart := viper.GetString("Server.Start")
+			serverStart := cfg.Server.Start
 			if !autoTrueFalseValues.Contains(serverStart) {
 				logger.Printf("Invalid value for serverStart (auto/true/false): %s\n", serverStart)
 				errorCode.Store(int32(internal.ErrInvalidServerStart))
 				return
 			}
-			serverStop := viper.GetString("Server.Stop")
+			serverStop := cfg.Server.Stop
 			if runtime.GOOS != "windows" && isAdmin {
 				autoTrueFalseValues.Remove(falseValue)
 			}
@@ -125,19 +127,19 @@ var (
 				errorCode.Store(int32(internal.ErrInvalidServerStop))
 				return
 			}
-			battleServerManagerRun := viper.GetString("Server.BattleServerManager.Run")
+			battleServerManagerRun := cfg.Server.BattleServerManager.Run
 			if !requiredTrueFalseValues.Contains(battleServerManagerRun) {
 				logger.Printf("Invalid value for Server.BattleServerManager.Run (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), battleServerManagerRun)
 				errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerRun))
 				return
 			}
-			isolateMetadataStr := viper.GetString("Config.IsolateMetadata")
+			isolateMetadataStr := cfg.Config.IsolateMetadata
 			if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
 				logger.Printf("Invalid value for Config.IsolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
 				errorCode.Store(int32(internal.ErrInvalidIsolateMetadata))
 				return
 			}
-			isolateProfilesStr := viper.GetString("Config.IsolateProfiles")
+			isolateProfilesStr := cfg.Config.IsolateProfiles
 			if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
 				logger.Printf("Invalid value for Config.IsolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
 				errorCode.Store(int32(internal.ErrInvalidIsolateProfiles))
@@ -153,7 +155,7 @@ var (
 				"Game": gameId,
 				"Id":   uuid.NewString(),
 			}
-			serverArgs, err := common.ParseCommandArgs("Server.ExecutableArgs", serverValues, true)
+			serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues)
 			serverId := uuid.Nil
 			if err == nil {
 				// Find the actual ID in case the user missed it or passed another one
@@ -176,10 +178,9 @@ var (
 				return
 			}
 			var battleServerManagerArgs []string
-			battleServerManagerArgs, err = common.ParseCommandArgs(
-				"Server.BattleServerManager.ExecutableArgs",
+			battleServerManagerArgs, err = cmdUtils.ParseCommandArgs(
+				cfg.Server.BattleServerManager.Args,
 				serverValues,
-				true,
 			)
 			if err != nil {
 				logger.Println("Failed to parse 'battle-server-manager' executable arguments")
@@ -187,23 +188,23 @@ var (
 				return
 			}
 			var setupCommand []string
-			setupCommand, err = common.ParseCommandArgs("Config.SetupCommand", nil, true)
+			setupCommand, err = cmdUtils.ParseCommandArgs(cfg.Config.SetupCommand, nil)
 			if err != nil {
 				logger.Println("Failed to parse setup command")
 				errorCode.Store(int32(internal.ErrInvalidSetupCommand))
 				return
 			}
 			var revertCommand []string
-			revertCommand, err = common.ParseCommandArgs("Config.RevertCommand", nil, true)
+			revertCommand, err = cmdUtils.ParseCommandArgs(cfg.Config.RevertCommand, nil)
 			if err != nil {
 				logger.Println("Failed to parse revert command")
 				errorCode.Store(int32(internal.ErrInvalidRevertCommand))
 				return
 			}
-			canAddHost := viper.GetBool("Config.CanAddHost")
+			canAddHost := cfg.Config.CanAddHost
 			var clientExecutable string
 			var clientExecutableOfficial bool
-			if clientExecutable = viper.GetString("Client.Executable"); clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
+			if clientExecutable = cfg.Client.Executable.Path; clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
 				clientExecutableOfficial = true
 			}
 			var isolateMetadata bool
@@ -212,18 +213,18 @@ var (
 			}
 			isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
 			var serverExecutable string
-			if serverExecutable = viper.GetString("Server.Executable"); serverExecutable != "auto" {
+			if serverExecutable = cfg.Server.Executable.Path; serverExecutable != "auto" {
 				var serverFile os.FileInfo
-				if serverFile, serverExecutable, err = common.ParsePath(viper.GetStringSlice("Server.Executable"), nil); err != nil || serverFile.IsDir() {
+				if serverFile, serverExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable.Path), nil); err != nil || serverFile.IsDir() {
 					logger.Println("Invalid 'server' executable")
 					errorCode.Store(int32(internal.ErrInvalidServerPath))
 					return
 				}
 			}
 			var battleServerManagerExecutable string
-			if battleServerManagerExecutable = viper.GetString("Server.BattleServerManager.Executable"); battleServerManagerExecutable != "auto" {
+			if battleServerManagerExecutable = cfg.Server.BattleServerManager.Executable.Path; battleServerManagerExecutable != "auto" {
 				var battleServerManagerFile os.FileInfo
-				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(viper.GetStringSlice("Server.BattleServerManager.Executable"), nil); err != nil || battleServerManagerFile.IsDir() {
+				if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.BattleServerManager.Executable.Path), nil); err != nil || battleServerManagerFile.IsDir() {
 					logger.Println("Invalid 'battle-server-manager' executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -231,7 +232,7 @@ var (
 			}
 			if !clientExecutableOfficial {
 				var clientFile os.FileInfo
-				if clientFile, clientExecutable, err = common.ParsePath(viper.GetStringSlice("Client.Executable"), nil); err != nil || clientFile.IsDir() {
+				if clientFile, clientExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Executable.Path), nil); err != nil || clientFile.IsDir() {
 					logger.Println("Invalid client executable")
 					errorCode.Store(int32(internal.ErrInvalidClientPath))
 					return
@@ -244,7 +245,7 @@ var (
 				logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
 			}
 
-			serverHost := viper.GetString("Server.Host")
+			serverHost := cfg.Server.Host
 
 			logger.Printf("Game %s.\n", gameId)
 			if clientExecutable == "msstore" && gameId == common.GameAoM {
@@ -282,7 +283,7 @@ var (
 					}
 				}
 				if gameId != common.GameAoE1 {
-					if clientFile, clientPath, err := common.ParsePath(viper.GetStringSlice("Client.Path"), nil); err != nil || !clientFile.IsDir() {
+					if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 						logger.Println("Invalid client path")
 						errorCode.Store(int32(internal.ErrInvalidClientPath))
 						return
@@ -311,7 +312,7 @@ var (
 			}
 
 			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
-				logger.Println("Steam cannot be run as administrator. Either run this as a normal user o set Client.Executable to a custom launcher.")
+				logger.Println("Steam cannot be run as administrator. Either run this as a normal user or set Client.Executable to a custom launcher.")
 				errorCode.Store(int32(internal.ErrSteamRoot))
 				return
 			}
@@ -376,7 +377,7 @@ var (
 			// Setup
 			logger.Println("Setting up...")
 			if len(setupCommand) > 0 {
-				logger.Printf("Running setup command '%s' and waiting for it to exit...\n", viper.GetString("Config.SetupCommand"))
+				logger.Printf("Running setup command '%s' and waiting for it to exit...\n", cfg.Config.SetupCommand)
 				result := config.RunSetupCommand(setupCommand)
 				if !result.Success() {
 					if result.Err != nil {
@@ -391,12 +392,12 @@ var (
 			}
 			var serverIP string
 			if serverStart == "auto" {
-				announcePorts := viper.GetIntSlice("Server.AnnouncePorts")
+				announcePorts := cfg.Server.AnnouncePorts
 				ports := mapset.NewThreadUnsafeSetWithSize[uint16](len(announcePorts))
 				for _, portInt := range announcePorts {
 					ports.Add(uint16(portInt))
 				}
-				multicastIPsStr := viper.GetStringSlice("Server.AnnounceMulticastGroups")
+				multicastIPsStr := cfg.Server.AnnounceMulticastGroups
 				multicastIPs := mapset.NewThreadUnsafeSetWithSize[netip.Addr](len(multicastIPsStr))
 				for _, str := range multicastIPsStr {
 					if IP, err := netip.ParseAddr(str); err == nil && IP.Is4() && IP.IsMulticast() {
@@ -410,7 +411,7 @@ var (
 				var selectedServerIp net.IP
 				serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIpAddr(
 					gameId,
-					viper.GetBool("Server.SingleAutoSelect"),
+					cfg.Server.SingleAutoSelect,
 					multicastIPs,
 					ports,
 				)
@@ -475,7 +476,7 @@ var (
 					logger.Println("AoM: RT needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 				}
 				runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && gameId == common.GameAoM)
-				if viper.GetString("Server.Start") == "auto" {
+				if cfg.Server.Start == "auto" {
 					str := "No 'server's were found, proceeding to"
 					if runBattleServerManager {
 						str += " start a battle server (if needed) and then"
@@ -520,14 +521,14 @@ var (
 				errorCode.Store(int32(internal.ErrReadCert))
 				return
 			}
-			errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
 				return strings.Contains(s, "{HostFilePath}")
 			}))))
 			if errorCode.Load() != int32(common.ErrSuccess) {
 				return
 			}
 			logger.WriteFileLog(gameId, "post host mapping")
-			errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(viper.GetStringSlice("Client.ExecutableArgs"), func(s string) bool {
+			errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
 				return strings.Contains(s, "{CertFilePath}")
 			}))))
 			if errorCode.Load() != int32(common.ErrSuccess) {
@@ -546,13 +547,14 @@ var (
 				}
 				logger.WriteFileLog(gameId, "post add game cert")
 			}
-			errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, canTrustCertificate, canBroadcastBattleServer)))
+			errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer)))
 		},
 	}
 )
 
 func Execute() error {
 	rootCmd.Version = Version
+	// Flags
 	rootCmd.Flags().StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.Flags().StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	rootCmd.Flags().Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
@@ -570,7 +572,7 @@ func Execute() error {
 	if runtime.GOOS == "windows" {
 		pathNamesInfo += " Path names need to use double backslashes within single quotes or be within double quotes."
 	}
-	cmd.GameVarCommand(rootCmd.Flags(), &gameId)
+	commonCmd.GameVarCommand(rootCmd.Flags(), &gameId)
 	if err := rootCmd.MarkFlagRequired("game"); err != nil {
 		panic(err)
 	}
@@ -611,99 +613,135 @@ func Execute() error {
 	}
 	rootCmd.Flags().StringP("clientExe", "l", "auto", clientExeTip)
 	rootCmd.Flags().StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
-	if err := viper.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
+	// Default Values
+	// Config
+	v.SetDefault("Config.CanAddHost", "true")
+	v.SetDefault("Config.CanTrustCertificate", "local")
+	v.SetDefault("Config.CanBroadcastBattleServer", "auto")
+	v.SetDefault("Config.Log", false)
+	v.SetDefault("Config.IsolateMetadata", "required")
+	v.SetDefault("Config.IsolateProfiles", "required")
+	v.SetDefault("Config.SetupCommand", []string{})
+	v.SetDefault("Config.RevertCommand", []string{})
+	// Client
+	v.SetDefault("Client.Executable", "auto")
+	v.SetDefault("Client.ExecutableArgs", []string{})
+	v.SetDefault("Client.Executable", "auto")
+	// Server
+	v.SetDefault("Server.Start", "auto")
+	v.SetDefault("Server.Executable", "auto")
+	v.SetDefault("Server.ExecutableArgs", []string{"-e", "{Game}", "--id", "{Id}"})
+	v.SetDefault("Server.Host", netip.IPv4Unspecified().String())
+	v.SetDefault("Server.Stop", "auto")
+	v.SetDefault("Server.SingleAutoSelect", false)
+	v.SetDefault("Server.AnnouncePorts", []int{common.AnnouncePort})
+	v.SetDefault("Server.AnnounceMulticastGroups", []string{common.AnnounceMulticastGroup})
+	// Server.BattleServerManager
+	v.SetDefault("Server.BattleServerManager.Run", "true")
+	v.SetDefault("Server.BattleServerManager.Executable", "auto")
+	v.SetDefault("Server.BattleServerManager.ExecutableArgs", []string{"-e", "{Game}", "-r"})
+	// Bindings
+	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
+	if err := v.BindPFlag("Config.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {
-		if err := viper.BindPFlag("Config.CanBroadcastBattleServer", rootCmd.Flags().Lookup("canBroadcastBattleServer")); err != nil {
+		if err := v.BindPFlag("Config.CanBroadcastBattleServer", rootCmd.Flags().Lookup("canBroadcastBattleServer")); err != nil {
 			return err
 		}
 	}
-	if err := viper.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
+	if err := v.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.IsolateMetadata", rootCmd.Flags().Lookup("isolateMetadata")); err != nil {
+	if err := v.BindPFlag("Config.IsolateMetadata", rootCmd.Flags().Lookup("isolateMetadata")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.IsolateProfiles", rootCmd.Flags().Lookup("isolateProfiles")); err != nil {
+	if err := v.BindPFlag("Config.IsolateProfiles", rootCmd.Flags().Lookup("isolateProfiles")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.SetupCommand", rootCmd.Flags().Lookup("setupCommand")); err != nil {
+	if err := v.BindPFlag("Config.SetupCommand", rootCmd.Flags().Lookup("setupCommand")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Config.RevertCommand", rootCmd.Flags().Lookup("revertCommand")); err != nil {
+	if err := v.BindPFlag("Config.RevertCommand", rootCmd.Flags().Lookup("revertCommand")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Start", rootCmd.Flags().Lookup("serverStart")); err != nil {
+	if err := v.BindPFlag("Server.Start", rootCmd.Flags().Lookup("serverStart")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Stop", rootCmd.Flags().Lookup("serverStop")); err != nil {
+	if err := v.BindPFlag("Server.Stop", rootCmd.Flags().Lookup("serverStop")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.SingleAutoSelect", rootCmd.Flags().Lookup("serverSingleAutoSelect")); err != nil {
+	if err := v.BindPFlag("Server.SingleAutoSelect", rootCmd.Flags().Lookup("serverSingleAutoSelect")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.AnnouncePorts", rootCmd.Flags().Lookup("serverAnnouncePorts")); err != nil {
+	if err := v.BindPFlag("Server.AnnouncePorts", rootCmd.Flags().Lookup("serverAnnouncePorts")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.AnnounceMulticastGroups", rootCmd.Flags().Lookup("serverAnnounceMulticastGroups")); err != nil {
+	if err := v.BindPFlag("Server.AnnounceMulticastGroups", rootCmd.Flags().Lookup("serverAnnounceMulticastGroups")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Host", rootCmd.Flags().Lookup("server")); err != nil {
+	if err := v.BindPFlag("Server.Host", rootCmd.Flags().Lookup("server")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.Executable", rootCmd.Flags().Lookup("serverPath")); err != nil {
+	if err := v.BindPFlag("Server.Executable", rootCmd.Flags().Lookup("serverPath")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Server.ExecutableArgs", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
+	if err := v.BindPFlag("Server.ExecutableArgs", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Client.Executable", rootCmd.Flags().Lookup("clientExe")); err != nil {
+	if err := v.BindPFlag("Client.Executable", rootCmd.Flags().Lookup("clientExe")); err != nil {
 		return err
 	}
-	if err := viper.BindPFlag("Client.ExecutableArgs", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
+	if err := v.BindPFlag("Client.ExecutableArgs", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
 }
 
-func initConfig() {
+func initConfig() *internal.Configuration {
 	for _, configPath := range configPaths {
-		viper.AddConfigPath(configPath)
+		v.AddConfigPath(configPath)
 	}
-	viper.SetConfigType("toml")
+	v.SetConfigType("toml")
 	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
+		v.SetConfigFile(cfgFile)
 	} else {
-		viper.SetConfigName("config")
+		v.SetConfigName("config")
 	}
-	if err := viper.MergeInConfig(); err == nil {
-		logger.Println("Using main config file:", viper.ConfigFileUsed())
-		logger.PrintFile("main config", viper.ConfigFileUsed())
+	if err := v.MergeInConfig(); err == nil {
+		logger.Println("Using main config file:", v.ConfigFileUsed())
+		logger.PrintFile("main config", v.ConfigFileUsed())
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
-			logger.Println("Error parsing config file:", viper.ConfigFileUsed()+":", err.Error())
+			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}
 	}
 	if gameCfgFile != "" {
-		viper.SetConfigFile(gameCfgFile)
+		v.SetConfigFile(gameCfgFile)
 	} else {
-		viper.SetConfigName(fmt.Sprintf("config.%s", gameId))
+		v.SetConfigName(fmt.Sprintf("config.%s", gameId))
 	}
-	if err := viper.MergeInConfig(); err == nil {
-		logger.Println("Using game config file:", viper.ConfigFileUsed())
-		logger.PrintFile("game config", viper.ConfigFileUsed())
+	if err := v.MergeInConfig(); err == nil {
+		logger.Println("Using game config file:", v.ConfigFileUsed())
+		logger.PrintFile("game config", v.ConfigFileUsed())
 	} else {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
-			logger.Println("Error parsing game config file:", viper.ConfigFileUsed()+":", err.Error())
+			logger.Println("Error parsing game config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(internal.ErrGameConfigParse)
 		}
 	}
-	viper.AutomaticEnv()
+	v.AutomaticEnv()
+	viper.ExperimentalBindStruct()
+	var c *internal.Configuration
+	err := v.Unmarshal(&c)
+	if err != nil {
+		logger.Println("unable to decode configuration:", err.Error())
+		os.Exit(common.ErrConfigParse)
+	}
+	return c
 }

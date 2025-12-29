@@ -10,8 +10,9 @@ import (
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
+
+var region string
 
 var RemoveCmd = &cobra.Command{
 	Use:   "remove",
@@ -22,7 +23,6 @@ var RemoveCmd = &cobra.Command{
 			commonLogger.Println(err.Error())
 			os.Exit(internal.ErrGames)
 		}
-		region := viper.GetString("Region")
 		for gameId := range games.Iter() {
 			commonLogger.Printf("Game: %s\n", gameId)
 			commonLogger.Printf("\tRemoving '%s' region...\n", region)
@@ -42,7 +42,8 @@ var RemoveCmd = &cobra.Command{
 }
 
 func InitRemove() {
-	RemoveCmd.Flags().StringP(
+	RemoveCmd.Flags().StringVarP(
+		&region,
 		"region",
 		"r",
 		"",
@@ -51,9 +52,6 @@ func InitRemove() {
 	cmd.GamesVarCommand(RemoveCmd.Flags(), &cmdUtils.GameIds)
 	err := RemoveCmd.MarkFlagRequired("region")
 	if err != nil {
-		panic(err)
-	}
-	if err = viper.BindPFlag("Region", RemoveCmd.Flags().Lookup("region")); err != nil {
 		panic(err)
 	}
 	RootCmd.AddCommand(RemoveCmd)

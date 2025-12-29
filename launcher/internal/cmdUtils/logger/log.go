@@ -11,18 +11,18 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/logger"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher-common/userData"
-	"github.com/spf13/viper"
 )
 
 var processesLog = []string{executables.LauncherAgent, executables.LauncherConfigAdminAgent}
 var allHosts []string
 var Cacert *cert.CA
+var LogEnabled bool
 var dataTypeToString = map[int]string{
 	userData.TypeServer: "Own Backup",
 	userData.TypeBackup: "Original Backup",
@@ -30,7 +30,7 @@ var dataTypeToString = map[int]string{
 }
 
 func OpenMainFileLog(gameId string) error {
-	if viper.GetBool("Config.Log") {
+	if LogEnabled {
 		err := commonLogger.NewOwnFileLogger("launcher", "", gameId, false)
 		if err != nil {
 			return err
@@ -122,7 +122,7 @@ func writeHostInfo(_ string) error {
 				hostsSet.Add(strings.ToLower(host))
 			}
 			if hostsSet.ContainsAnyElement(allHostsSet) {
-				commonLogger.Printf(line.String())
+				commonLogger.Printf("%s", line.String())
 				addedSomeEntry = true
 			}
 		}

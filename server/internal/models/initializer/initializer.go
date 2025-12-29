@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"github.com/luskaner/ageLANServer/common"
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/age1"
 	"github.com/luskaner/ageLANServer/server/internal/models/age2"
@@ -11,8 +12,8 @@ import (
 
 var Games = map[string]models.Game{}
 
-func InitializeGame(gameId string) error {
-	if err := models.InitializeBattleServers(gameId); err != nil {
+func InitializeGame(gameId string, configBattleServers []i.BattleServer) error {
+	if err := models.InitializeBattleServers(gameId, configBattleServers); err != nil {
 		return err
 	}
 	var game models.Game

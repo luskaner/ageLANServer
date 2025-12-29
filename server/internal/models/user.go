@@ -11,7 +11,6 @@ import (
 	"time"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/spf13/viper"
 )
 
 type User interface {
@@ -147,7 +146,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 }
 
 func (users *MainUsers) GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
-	if viper.GetBool("GeneratePlatformUserId") {
+	if i.GeneratePlatformUserId {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
 		if err == nil {
