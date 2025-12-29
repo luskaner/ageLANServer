@@ -312,7 +312,7 @@ var (
 			}
 
 			if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
-				logger.Println("Steam cannot be run as administrator. Either run this as a normal user o set Client.Path to a custom launcher.")
+				logger.Println("Steam cannot be run as administrator. Either run this as a normal user or set Client.Executable to a custom launcher.")
 				errorCode.Store(int32(internal.ErrSteamRoot))
 				return
 			}
@@ -486,7 +486,7 @@ var (
 				}
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
 				if serverExecutablePath == "" {
-					logger.Println("Cannot find 'server' executable path. Set it manually in Server.Path.")
+					logger.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
 					errorCode.Store(int32(internal.ErrServerExecutable))
 					return
 				}
@@ -625,12 +625,12 @@ func Execute() error {
 	v.SetDefault("Config.RevertCommand", []string{})
 	// Client
 	v.SetDefault("Client.Executable", "auto")
-	v.SetDefault("Client.Args", []string{})
-	v.SetDefault("Client.Path", "auto")
+	v.SetDefault("Client.ExecutableArgs", []string{})
+	v.SetDefault("Client.Executable", "auto")
 	// Server
 	v.SetDefault("Server.Start", "auto")
 	v.SetDefault("Server.Executable", "auto")
-	v.SetDefault("Server.Args", []string{"-e", "{Game}", "--id", "{Id}"})
+	v.SetDefault("Server.ExecutableArgs", []string{"-e", "{Game}", "--id", "{Id}"})
 	v.SetDefault("Server.Host", netip.IPv4Unspecified().String())
 	v.SetDefault("Server.Stop", "auto")
 	v.SetDefault("Server.SingleAutoSelect", false)
@@ -639,7 +639,7 @@ func Execute() error {
 	// Server.BattleServerManager
 	v.SetDefault("Server.BattleServerManager.Run", "true")
 	v.SetDefault("Server.BattleServerManager.Executable", "auto")
-	v.SetDefault("Server.BattleServerManager.Args", []string{"-e", "{Game}", "-r"})
+	v.SetDefault("Server.BattleServerManager.ExecutableArgs", []string{"-e", "{Game}", "-r"})
 	// Bindings
 	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
@@ -688,13 +688,13 @@ func Execute() error {
 	if err := v.BindPFlag("Server.Executable", rootCmd.Flags().Lookup("serverPath")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Server.Args", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
+	if err := v.BindPFlag("Server.ExecutableArgs", rootCmd.Flags().Lookup("serverPathArgs")); err != nil {
 		return err
 	}
 	if err := v.BindPFlag("Client.Executable", rootCmd.Flags().Lookup("clientExe")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Client.Args", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
+	if err := v.BindPFlag("Client.ExecutableArgs", rootCmd.Flags().Lookup("clientExeArgs")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
