@@ -13,16 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Rename go.work
         shell: bash
         run: |
           cp go.work.example go.work
-
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '~1.24.0'
           cache-dependency-path: |
@@ -35,14 +34,13 @@ jobs:
             launcher-config/go.sum
             launcher-config-admin/go.sum
             launcher-config-admin-agent/go.sum
-
+            battle-server-manager/go.sum
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

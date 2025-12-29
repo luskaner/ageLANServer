@@ -88,7 +88,13 @@ jobs:
           go build -o build/launcher/bin/config.exe ./launcher-config
           go build -o build/launcher/bin/config-admin.exe ./launcher-config-admin
           go build -o build/launcher/bin/config-admin-agent.exe ./launcher-config-admin-agent
-
+          go build -o build/battle-server-manager/battle-server-manager.exe ./battle-server-manager
+          go build -o build/tools/server-replay.exe ./tools/server-replay
+          go build -o build/tools/scripts/copyBattleServerManagerResources.exe ./tools/scripts/cmd/copyBattleServerManagerResources.go
+          go build -o build/tools/scripts/copyLauncherResources.exe ./tools/scripts/cmd/copyLauncherResources.go
+          go build -o build/tools/scripts/copyServerResources.exe ./tools/scripts/cmd/copyServerResources.go
+          go build -o build/tools/scripts/createServerResourcesFolder.exe ./tools/scripts/cmd/createServerResourcesFolder.go
+          go build -o build/tools/scripts/generateGoreleaserConfig.exe ./tools/scripts/cmd/generateGoreleaserConfig.go
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
