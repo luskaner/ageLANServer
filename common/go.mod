@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/common
 
-go 1.24.0
+go 1.25.5
 
 require (
 	github.com/andygrunwald/vdf v1.1.0
@@ -12,3 +12,5 @@ require (
 	golang.org/x/term v0.38.0
 	mvdan.cc/sh/v3 v3.12.0
 )
+
+require github.com/stretchr/testify v1.11.1 // indirect
