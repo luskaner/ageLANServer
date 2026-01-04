@@ -14,13 +14,8 @@ func init() {
 	StartTime = time.Now().UTC()
 }
 
-<<<<<<< HEAD
 func OpenMainFileLog(root string, logEnabled bool) error {
 	if logEnabled {
-=======
-func OpenMainFileLog(root string) error {
-	if viper.GetBool("Log") {
->>>>>>> main
 		err := commonLogger.NewOwnFileLogger("server", root, "", true)
 		if err != nil {
 			return err

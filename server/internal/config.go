@@ -2,11 +2,6 @@ package internal
 
 import "github.com/luskaner/ageLANServer/common/battleServerConfig"
 
-type Config struct {
-	Log                    bool
-	GeneratePlatformUserId bool
-}
-
 type Announcement struct {
 	Enabled        bool
 	Multicast      bool
@@ -32,9 +27,10 @@ type Games struct {
 }
 
 type Configuration struct {
-	Config       Config
-	Announcement Announcement
-	Games        Games
+	Log                    bool
+	GeneratePlatformUserId bool
+	Announcement           Announcement
+	Games                  Games
 }
 
 func (cfg *Configuration) GetGameHosts(gameId string) []string {

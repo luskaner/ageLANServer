@@ -63,7 +63,7 @@ var (
 			if logRoot == "" {
 				logRoot = commonLogger.LogRootDate("")
 			}
-			if err := logger.OpenMainFileLog(logRoot, cfg.Config.Log); err != nil {
+			if err := logger.OpenMainFileLog(logRoot, cfg.Log); err != nil {
 				logger.Printf("Failed to open main log file: %v", err)
 				os.Exit(common.ErrFileLog)
 			}
@@ -97,7 +97,7 @@ var (
 				return
 			}
 			logger.Println("Server instance ID:", internal.Id)
-			if cfg.Config.GeneratePlatformUserId {
+			if cfg.GeneratePlatformUserId {
 				logger.Println("Generating platform User ID, this should only be used as a last resort and the custom launcher should be properly configured instead.")
 			}
 			gameSet := mapset.NewThreadUnsafeSet[string](cfg.Games.Enabled...)
@@ -141,7 +141,7 @@ var (
 			}
 			announcePort := cfg.Announcement.Port
 			internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
-			internal.GeneratePlatformUserId = cfg.Config.GeneratePlatformUserId
+			internal.GeneratePlatformUserId = cfg.GeneratePlatformUserId
 			var servers []*http.Server
 			internal.InitializeStopSignal()
 			for gameId := range gameSet.Iter() {
@@ -300,10 +300,9 @@ func Execute() error {
 	cmd.LogRootCommand(rootCmd.Flags(), &logRoot)
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	rootCmd.Flags().StringVar(&id, "id", "", "Server instance ID to identify it.")
-<<<<<<< HEAD
 	// Default Values
 	// Config
-	v.SetDefault("Config.Log", false)
+	v.SetDefault("Log", false)
 	v.SetDefault("Config.GeneratePlatformUserId", false)
 	// Announcement
 	v.SetDefault("Announcement.Enabled", true)
@@ -316,10 +315,7 @@ func Execute() error {
 		v.SetDefault(fmt.Sprintf("Games.%s.Hosts", game), []string{netip.IPv4Unspecified().String()})
 	}
 	// Bindings
-	if err := v.BindPFlag("Config.Log", rootCmd.Flags().Lookup("log")); err != nil {
-=======
 	if err := viper.BindPFlag("Log", rootCmd.Flags().Lookup("log")); err != nil {
->>>>>>> main
 		return err
 	}
 	if err := v.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
@@ -337,7 +333,7 @@ func Execute() error {
 	if err := v.BindPFlag("Games.Enabled", rootCmd.Flags().Lookup("games")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Config.GeneratePlatformUserId", rootCmd.Flags().Lookup("generatePlatformUserId")); err != nil {
+	if err := v.BindPFlag("GeneratePlatformUserId", rootCmd.Flags().Lookup("generatePlatformUserId")); err != nil {
 		return err
 	}
 	return rootCmd.Execute()
