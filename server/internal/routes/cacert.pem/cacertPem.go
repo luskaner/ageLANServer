@@ -19,18 +19,18 @@ func CacertPem(w http.ResponseWriter, r *http.Request) {
 	if folder == "" {
 		http.NotFound(w, r)
 		return
+	}
+
+	var file string
+	if common.SelfSignedCertGame(models.G(r).Title()) {
+		file = common.SelfSignedCert
 	} else {
-		var file string
-		if common.SelfSignedCertGame(models.G(r).Title()) {
-			file = common.SelfSignedCert
-		} else {
-			file = common.CACert
-		}
-		path := filepath.Join(folder, file)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			http.NotFound(w, r)
-		} else {
-			http.ServeFile(w, r, path)
-		}
+		file = common.CACert
+	}
+	path := filepath.Join(folder, file)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		http.NotFound(w, r)
+	} else {
+		http.ServeFile(w, r, path)
 	}
 }

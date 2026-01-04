@@ -1,9 +1,9 @@
 package Client
 
 import (
-	"encoding/json"
 	"net/http"
 
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
 )
 
@@ -17,7 +17,7 @@ type updateUserTitleDisplayNameResponse struct {
 
 func UpdateUserTitleDisplayName(w http.ResponseWriter, r *http.Request) {
 	var req updateUserTitleDisplayNameRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	if err != nil {
 		shared.RespondBadRequest(&w)
 		return

@@ -14,13 +14,12 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 	if err != nil {
 		return nil
 	}
-
 	message := i.A{0, i.A{}, i.A{}, i.A{}}
 	game := models.G(r)
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
 	for _, id := range ids {
-		var u *models.MainUser
+		var u models.User
 		var ok bool
 		if isProfileId {
 			u, ok = users.GetUserById(id)

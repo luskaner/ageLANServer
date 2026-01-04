@@ -1,9 +1,9 @@
 package Catalog
 
 import (
-	"encoding/json"
 	"net/http"
 
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -23,7 +23,7 @@ type getItemsResponse struct {
 
 func GetItems(w http.ResponseWriter, r *http.Request) {
 	var req getItemsRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	if err != nil || len(req.Ids) == 0 {
 		shared.RespondBadRequest(&w)
 		return

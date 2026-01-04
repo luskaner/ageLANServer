@@ -7,6 +7,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 )
 
 const (
@@ -15,11 +16,13 @@ const (
 )
 
 var (
-	modkernel32                        = windows.NewLazyDLL("kernel32.dll")
-	modkernelbase                      = windows.NewLazyDLL("kernelbase.dll")
-	procFindPackagesByPackageFamily    = modkernelbase.NewProc("FindPackagesByPackageFamily")
-	procGetStagedPackagePathByFullName = modkernel32.NewProc("GetStagedPackagePathByFullName")
+	modkernelbase                   = windows.NewLazyDLL("kernelbase.dll")
+	procFindPackagesByPackageFamily = modkernelbase.NewProc("FindPackagesByPackageFamily")
 )
+
+func appxAPIAvailable() bool {
+	return procFindPackagesByPackageFamily.Find() == nil
+}
 
 const (
 	PackageFilterHead       uint32 = 0x10
@@ -50,6 +53,9 @@ func FamilyName(gameTitle string) string {
 }
 
 func PackageFamilyNameToFullName(packageFamilyName string) (ok bool, fullName string) {
+	if !appxAPIAvailable() {
+		return
+	}
 	pfnUTF16, err := windows.UTF16PtrFromString(packageFamilyName)
 	if err != nil {
 		return
@@ -95,29 +101,22 @@ func PackageFamilyNameToFullName(packageFamilyName string) (ok bool, fullName st
 }
 
 func InstallLocation(packageFullName string) (ok bool, installLocation string) {
-	pfnUTF16, err := windows.UTF16PtrFromString(packageFullName)
+	key, err := registry.OpenKey(
+		registry.CURRENT_USER,
+		`SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\`+packageFullName,
+		registry.QUERY_VALUE,
+	)
 	if err != nil {
 		return
 	}
-	var bufferLength uint32
-	result, _, _ := procGetStagedPackagePathByFullName.Call(
-		uintptr(unsafe.Pointer(pfnUTF16)),
-		uintptr(unsafe.Pointer(&bufferLength)),
-		uintptr(0),
-	)
-
-	if uint32(result) == ErrorInsufficientBuffer {
-		buffer := make([]uint16, bufferLength)
-		result, _, _ = procGetStagedPackagePathByFullName.Call(
-			uintptr(unsafe.Pointer(pfnUTF16)),
-			uintptr(unsafe.Pointer(&bufferLength)),
-			uintptr(unsafe.Pointer(&buffer[0])),
-		)
-		if uint32(result) == ErrorSuccess {
-			installLocation = windows.UTF16ToString(buffer[:bufferLength-1])
-			ok = true
-		}
+	defer func(key registry.Key) {
+		_ = key.Close()
+	}(key)
+	installLocation, _, err = key.GetStringValue("PackageRootFolder")
+	if err != nil {
+		return
 	}
+	ok = true
 	return
 }
 

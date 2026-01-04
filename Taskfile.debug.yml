@@ -1,0 +1,133 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: '3'
+
+tasks:
+  # Start of prepare tasks
+  prepare-server-genCert:
+    sources:
+      - server/resources/**/*
+    generates:
+      - build/server/resources/**/*
+    method: checksum
+    cmds:
+      - task: :tools:run
+        vars: { PROGRAM: 'createServerResourcesFolder' }
+      - task: :tools:run
+        vars: { PROGRAM: 'copyServerResources' }
+  prepare-server:
+    deps:
+      - prepare-server-genCert
+      - build-genCert
+    sources:
+      - common/**/*
+      - server-genCert/**/*
+    generates:
+      - build/server/bin/genCert{{exeExt}}
+    method: checksum
+    cmds:
+      - build/server/bin/genCert{{exeExt}} -r
+  prepare-launcher:
+    deps:
+      - build-config-all
+      - prepare-server
+      - build-server
+      - build-launcher-agent
+      - os:prepare-launcher
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - launcher/**/*
+    generates:
+      - build/launcher/resources/**/*
+      - build/launcher/launcher{{exeExt}}
+    method: checksum
+    cmds:
+      - task: :tools:run
+        vars: { PROGRAM: 'copyLauncherResources' }
+  prepare-battle-server-manager:
+    deps: [ build-battle-server-manager ]
+    sources:
+      - common/**/*
+      - battle-server-manager/**/*
+    generates:
+      - build/battle-server-manager/resources/**/*
+    method: checksum
+    cmds:
+      - task: :tools:run
+        vars: { PROGRAM: 'copyBattleServerManagerResources' }
+  build-server:
+    sources:
+      - common/**/*
+      - server/**/*
+    generates:
+      - build/server/server{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/server/server{{exeExt}} ./server
+  build-genCert:
+    sources:
+      - common/**/*
+      - server-genCert/**/*
+    generates:
+      - build/server/bin/genCert{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/server/bin/genCert ./server-genCert
+  # Start of build tasks
+  build-battle-server-manager:
+    sources:
+      - common/**/*
+      - battle-server-manager/**/*
+    generates:
+      - build/battle-server-manager/battle-server-manager{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/battle-server-manager/battle-server-manager{{exeExt}} ./battle-server-manager
+  build-config:
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - launcher-config/**/*
+    generates:
+      - build/launcher/bin/config{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/launcher/bin/config{{exeExt}} ./launcher-config
+  build-launcher-agent:
+    deps:
+      - build-config-all
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - launcher-agent/**/*
+    method: checksum
+    generates:
+      - build/launcher/bin/agent{{exeExt}}
+    cmds:
+      - go build -o build/launcher/bin/agent{{exeExt}} ./launcher-agent
+  build-config-admin:
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - launcher-config-admin/**/*
+    generates:
+      - build/launcher/bin/config-admin{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/launcher/bin/config-admin{{exeExt}} ./launcher-config-admin
+  build-config-admin-agent:
+    deps: [ build-config-admin ]
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - launcher-config-admin-agent/**/*
+    generates:
+      - build/launcher/bin/config-admin-agent{{exeExt}}
+    method: checksum
+    cmds:
+      - go build -o build/launcher/bin/config-admin-agent{{exeExt}} ./launcher-config-admin-agent
+  build-config-all:
+    deps: [ build-config, build-config-admin, build-config-admin-agent ]
+includes:
+  os: ./Taskfile.debug.{{if eq OS "linux"}}linux{{else}}other{{end}}.yml

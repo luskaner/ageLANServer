@@ -39,6 +39,7 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 	if conn, err = net.ListenUDP("udp4", addr); err == nil {
 		var pckConn *ipv4.PacketConn
 		if !multicastGroups.IsEmpty() {
+			//goland:noinspection GoResourceLeak
 			pckConn = ipv4.NewPacketConn(conn)
 		}
 		for multicastGroup := range multicastGroups.Iter() {
@@ -47,7 +48,8 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 				Port: port,
 			}
 			for _, multicastIf := range multicastIfs {
-				if err = pckConn.JoinGroup(multicastIf, multicastAddr); err != nil {
+				if //goland:noinspection ALL
+				err = pckConn.JoinGroup(multicastIf, multicastAddr); err != nil {
 					continue
 				}
 			}

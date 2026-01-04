@@ -1,7 +1,6 @@
 package textmoderation
 
 import (
-	"encoding/json"
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -25,7 +24,7 @@ type textModerationResponse struct {
 
 func TextModeration(w http.ResponseWriter, r *http.Request) {
 	var req textModerationRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 	}

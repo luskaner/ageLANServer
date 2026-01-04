@@ -32,6 +32,42 @@ type Tags struct {
 	text    map[string]string
 }
 
+type Advertisement interface {
+	GetMetadata() string
+	UnsafeGetModDllChecksum() int32
+	UnsafeGetModDllFile() string
+	UnsafeGetPasswordValue() string
+	UnsafeGetStartTime() int64
+	UnsafeGetState() int8
+	UnsafeGetDescription() string
+	GetRelayRegion() string
+	UnsafeGetVisible() bool
+	UnsafeGetJoinable() bool
+	UnsafeGetAppBinaryChecksum() int32
+	UnsafeGetDataChecksum() int32
+	UnsafeGetMatchType() uint8
+	UnsafeGetModName() string
+	UnsafeGetModVersion() string
+	UnsafeGetVersionFlags() uint32
+	UnsafeGetPlatformSessionId() uint64
+	UnsafeGetObserversDelay() uint32
+	UnsafeGetObserversEnabled() bool
+	UnsafeUpdateState(state int8)
+	UnsafeUpdatePlatformSessionId(sessionId uint64)
+	UnsafeUpdateTags(integer map[string]int32, text map[string]string)
+	UnsafeMatchesTags(integer map[string]int32, text map[string]string) bool
+	UnsafeEncode(gameId string, battleServers BattleServers) i.A
+	UnsafeUpdate(advFrom *shared.AdvertisementUpdateRequest)
+	GetId() int32
+	GetIp() string
+	GetHostId() int32
+	GetPeers() *i.SafeOrderedMap[int32, Peer]
+	MakeMessage(broadcast bool, content string, typeId uint8, sender User, receivers []User) Message
+	StartObserving(userId int32)
+	StopObserving(userId int32)
+	EncodePeers() []i.A
+}
+
 type MainAdvertisement struct {
 	id                int32
 	ip                string
@@ -61,7 +97,7 @@ type MainAdvertisement struct {
 	platformSessionId uint64
 	state             int8
 	startTime         int64
-	peers             *i.SafeOrderedMap[int32, *MainPeer]
+	peers             *i.SafeOrderedMap[int32, Peer]
 	metadata          string
 	tags              Tags
 }
@@ -75,15 +111,29 @@ func containsFilter[M ~map[K]V, K, V comparable](filter M, tags M) bool {
 	return true
 }
 
-type MainAdvertisements struct {
-	store         *i.SafeOrderedMap[int32, *MainAdvertisement]
-	locks         *i.KeyRWMutex[int32]
-	users         *MainUsers
-	battleServers *MainBattleServers
+type Advertisements interface {
+	Initialize(users Users, battleServers BattleServers)
+	Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) Advertisement
+	WithReadLock(id int32, action func())
+	WithWriteLock(id int32, action func())
+	GetAdvertisement(id int32) (Advertisement, bool)
+	UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer
+	UnsafeRemovePeer(advertisementId int32, userId int32) bool
+	UnsafeDelete(adv Advertisement)
+	UnsafeFirstAdvertisement(matches func(adv Advertisement) bool) Advertisement
+	LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv Advertisement) bool) i.A
+	GetUserAdvertisement(userId int32) Advertisement
 }
 
-func (advs *MainAdvertisements) Initialize(users *MainUsers, battleServers *MainBattleServers) {
-	advs.store = i.NewSafeOrderedMap[int32, *MainAdvertisement]()
+type MainAdvertisements struct {
+	store         *i.SafeOrderedMap[int32, Advertisement]
+	locks         *i.KeyRWMutex[int32]
+	users         Users
+	battleServers BattleServers
+}
+
+func (advs *MainAdvertisements) Initialize(users Users, battleServers BattleServers) {
+	advs.store = i.NewSafeOrderedMap[int32, Advertisement]()
 	advs.locks = i.NewKeyRWMutex[int32]()
 	advs.users = users
 	advs.battleServers = battleServers
@@ -194,11 +244,11 @@ func (adv *MainAdvertisement) UnsafeGetObserversEnabled() bool {
 	return adv.observers.enabled
 }
 
-func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, *MainPeer] {
+func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, Peer] {
 	return adv.peers
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) *MainAdvertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) Advertisement {
 	adv := &MainAdvertisement{}
 	i.WithRng(func(rand *i.RandReader) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
@@ -226,8 +276,8 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 	adv.statGroup = advFrom.StatGroup
 	adv.tags.text = make(map[string]string)
 	adv.tags.integer = make(map[string]int32)
-	adv.peers = i.NewSafeOrderedMap[int32, *MainPeer]()
-	advs.UpdateUnsafe(adv, &shared.AdvertisementUpdateRequest{
+	adv.peers = i.NewSafeOrderedMap[int32, Peer]()
+	adv.UnsafeUpdate(&shared.AdvertisementUpdateRequest{
 		AppBinaryChecksum: advFrom.AppBinaryChecksum,
 		DataChecksum:      advFrom.DataChecksum,
 		ModDllChecksum:    advFrom.ModDllChecksum,
@@ -252,19 +302,19 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 		State:             advFrom.State,
 	})
 	exists := true
-	var storedAdv *MainAdvertisement
+	var storedAdv Advertisement
 	for exists {
 		i.WithRng(func(rand *i.RandReader) {
 			adv.id = rand.Int32()
 		})
-		exists, storedAdv = advs.store.Store(adv.id, adv, func(_ *MainAdvertisement) bool {
+		exists, storedAdv = advs.store.Store(adv.id, adv, func(_ Advertisement) bool {
 			return false
 		})
 	}
 	return storedAdv
 }
 
-func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, sender *MainUser, receivers []*MainUser) *MainMessage {
+func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, sender User, receivers []User) Message {
 	return &MainMessage{
 		advertisementId: adv.GetId(),
 		time:            time.Now().UTC().Unix(),
@@ -288,8 +338,8 @@ func (advs *MainAdvertisements) WithWriteLock(id int32, action func()) {
 	action()
 }
 
-// UpdateUnsafe is safe only if adv has not been stored yet
-func (advs *MainAdvertisements) UpdateUnsafe(adv *MainAdvertisement, advFrom *shared.AdvertisementUpdateRequest) {
+// UnsafeUpdate is safe only if adv has not been stored yet
+func (adv *MainAdvertisement) UnsafeUpdate(advFrom *shared.AdvertisementUpdateRequest) {
 	adv.automatchPollId = advFrom.AutomatchPollId
 	adv.appBinaryChecksum = advFrom.AppBinaryChecksum
 	adv.mapName = advFrom.MapName
@@ -314,18 +364,18 @@ func (advs *MainAdvertisements) UpdateUnsafe(adv *MainAdvertisement, advFrom *sh
 	adv.UnsafeUpdateState(advFrom.State)
 }
 
-func (advs *MainAdvertisements) GetAdvertisement(id int32) (*MainAdvertisement, bool) {
+func (advs *MainAdvertisements) GetAdvertisement(id int32) (Advertisement, bool) {
 	return advs.store.Load(id)
 }
 
 // UnsafeNewPeer requires advertisement write lock
-func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) *MainPeer {
+func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer {
 	adv, exists := advs.GetAdvertisement(advertisementId)
 	if !exists {
 		return nil
 	}
 	peer := NewPeer(advertisementId, advertisementIp, userId, userStatId, race, team)
-	_, storedPeer := adv.peers.Store(peer.userId, peer, func(_ *MainPeer) bool {
+	_, storedPeer := adv.GetPeers().Store(peer.GetUserId(), peer, func(_ Peer) bool {
 		return false
 	})
 	return storedPeer
@@ -337,18 +387,18 @@ func (advs *MainAdvertisements) UnsafeRemovePeer(advertisementId int32, userId i
 	if !exists {
 		return false
 	}
-	if !adv.peers.Delete(userId) {
+	if !adv.GetPeers().Delete(userId) {
 		return false
 	}
-	if adv.hostId == userId {
+	if adv.GetHostId() == userId {
 		advs.UnsafeDelete(adv)
 	}
 	return true
 }
 
 // UnsafeDelete requires advertisement write lock
-func (advs *MainAdvertisements) UnsafeDelete(adv *MainAdvertisement) {
-	advs.store.Delete(adv.id)
+func (advs *MainAdvertisements) UnsafeDelete(adv Advertisement) {
+	advs.store.Delete(adv.GetId())
 }
 
 // UnsafeUpdateState is only safe if advertisement has not been added yet
@@ -399,7 +449,7 @@ func (adv *MainAdvertisement) UnsafeMatchesTags(integer map[string]int32, text m
 }
 
 // UnsafeEncode requires advertisement read lock
-func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBattleServers) i.A {
+func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers BattleServers) i.A {
 	var visible uint8
 	if adv.visible {
 		visible = 1
@@ -447,7 +497,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBat
 		response = append(response, adv.description)
 	}
 	lan := 1
-	var battleServer *MainBattleServer
+	var battleServer BattleServer
 	var battleServerExists bool
 	if battleServer, battleServerExists = battleServers.Get(adv.relayRegion); battleServerExists {
 		lan = 0
@@ -480,7 +530,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers *MainBat
 }
 
 // UnsafeFirstAdvertisement requires advertisement read lock unless only safe advertisement properties are checked
-func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainAdvertisement) bool) *MainAdvertisement {
+func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv Advertisement) bool) Advertisement {
 	_, iter := advs.store.Values()
 	for adv := range iter {
 		if matches(adv) {
@@ -490,7 +540,7 @@ func (advs *MainAdvertisements) UnsafeFirstAdvertisement(matches func(adv *MainA
 	return nil
 }
 
-func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv *MainAdvertisement) bool) i.A {
+func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, length int, offset int, preMatchesLocking bool, matches func(adv Advertisement) bool) i.A {
 	var res i.A
 	_, iter := advs.store.Values()
 	for adv := range iter {
@@ -522,9 +572,9 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, l
 	return res[offset:end]
 }
 
-func (advs *MainAdvertisements) GetUserAdvertisement(userId int32) *MainAdvertisement {
-	return advs.UnsafeFirstAdvertisement(func(adv *MainAdvertisement) bool {
-		_, peerIter := adv.peers.Keys()
+func (advs *MainAdvertisements) GetUserAdvertisement(userId int32) Advertisement {
+	return advs.UnsafeFirstAdvertisement(func(adv Advertisement) bool {
+		_, peerIter := adv.GetPeers().Keys()
 		for usId := range peerIter {
 			if usId == userId {
 				return true

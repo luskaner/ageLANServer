@@ -22,7 +22,7 @@ type CloudfilesIndex struct {
 type CloudFiles struct {
 	baseFolder  string
 	Value       map[string]CloudfilesIndex
-	Credentials *Credentials
+	Credentials Credentials
 }
 
 func (m *CloudFiles) GetByKey(key string) (string, *CloudfilesIndex, bool) {
@@ -49,13 +49,12 @@ func BuildCloudfilesIndex(configFolder string, baseFolder string) *CloudFiles {
 	}
 	index := CloudFiles{
 		baseFolder:  baseFolder,
-		Credentials: &Credentials{},
+		Credentials: NewCredentials(),
 	}
 	err = json.Unmarshal(data, &index.Value)
 	if err != nil {
 		panic(err)
 	}
-	index.Credentials.Initialize()
 	for i, fileInfo := range index.Value {
 		data, err = index.ReadFile(i)
 		if err != nil {

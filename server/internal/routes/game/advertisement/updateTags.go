@@ -1,8 +1,6 @@
 package advertisement
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -11,17 +9,10 @@ import (
 )
 
 type tagRequest struct {
-	NumericTagNames  string `schema:"numericTagNames"`
-	NumericTagValues string `schema:"numericTagValues"`
-	StringTagNames   string `schema:"stringTagNames"`
-	StringTagValues  string `schema:"stringTagValues"`
-}
-
-type tags struct {
-	NumericTagNames  []string
-	NumericTagValues []int32
-	StringTagNames   []string
-	StringTagValues  []string
+	NumericTagNames  i.Json[[]string] `schema:"numericTagNames"`
+	NumericTagValues i.Json[[]int32]  `schema:"numericTagValues"`
+	StringTagNames   i.Json[[]string] `schema:"stringTagNames"`
+	StringTagValues  i.Json[[]string] `schema:"stringTagValues"`
 }
 
 func parseTags(r *http.Request) (ok bool, numericTags map[string]int32, stringTags map[string]string) {
@@ -29,38 +20,16 @@ func parseTags(r *http.Request) (ok bool, numericTags map[string]int32, stringTa
 	if err := i.Bind(r, &t); err != nil {
 		return
 	}
-	if t.NumericTagNames == "" {
-		t.NumericTagNames = "[]"
-	}
-	if t.NumericTagValues == "" {
-		t.NumericTagValues = "[]"
-	}
-	if t.StringTagNames == "" {
-		t.StringTagNames = "[]"
-	}
-	if t.StringTagValues == "" {
-		t.StringTagValues = "[]"
-	}
-	var at tags
-	jsonText := fmt.Sprintf(`{
-	"NumericTagNames": %s,
-	"NumericTagValues": %s,
-	"StringTagNames": %s,
-	"StringTagValues": %s
-}`, t.NumericTagNames, t.NumericTagValues, t.StringTagNames, t.StringTagValues)
-	if err := json.Unmarshal([]byte(jsonText), &at); err != nil {
+	if (len(t.StringTagNames.Data) != len(t.StringTagValues.Data)) || (len(t.NumericTagNames.Data) != len(t.NumericTagValues.Data)) {
 		return
 	}
-	if (len(at.StringTagNames) != len(at.StringTagValues)) || (len(at.NumericTagNames) != len(at.NumericTagValues)) {
-		return
+	numericTags = make(map[string]int32, len(t.NumericTagNames.Data))
+	stringTags = make(map[string]string, len(t.StringTagNames.Data))
+	for j := 0; j < len(t.NumericTagNames.Data); j++ {
+		numericTags[t.NumericTagNames.Data[j]] = t.NumericTagValues.Data[j]
 	}
-	numericTags = make(map[string]int32, len(at.NumericTagNames))
-	stringTags = make(map[string]string, len(at.StringTagNames))
-	for j := 0; j < len(at.NumericTagNames); j++ {
-		numericTags[at.NumericTagNames[j]] = at.NumericTagValues[j]
-	}
-	for j := 0; j < len(at.StringTagNames); j++ {
-		stringTags[at.StringTagNames[j]] = at.StringTagValues[j]
+	for j := 0; j < len(t.StringTagNames.Data); j++ {
+		stringTags[t.StringTagNames.Data[j]] = t.StringTagValues.Data[j]
 	}
 	ok = true
 	return

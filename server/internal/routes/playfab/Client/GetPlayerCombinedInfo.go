@@ -22,11 +22,11 @@ type getPlayerCombinedInfoRequest struct {
 }
 
 func GetPlayerCombinedInfo(w http.ResponseWriter, r *http.Request) {
-	playfabId, _ := playfab.Id(playfab.Session(r))
+	sess := playfab.SessionOrPanic(r)
 	shared.RespondOK(
 		&w,
 		getPlayerCombinedInfoRequest{
-			PlayFabId: playfabId,
+			PlayFabId: sess.PlayfabId(),
 			infoResultPayload: infoResultPayload{
 				UserInventory:        []any{},
 				CharacterInventories: []any{},

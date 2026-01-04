@@ -16,7 +16,7 @@ func FindProfiles(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	sess := models.SessionOrPanic(r)
-	profileInfo := game.Users().GetProfileInfo(true, func(currentUser *models.MainUser) bool {
+	profileInfo := game.Users().GetProfileInfo(true, func(currentUser models.User) bool {
 		return strings.Contains(strings.ToLower(currentUser.GetAlias()), name)
 	}, sess.GetClientLibVersion())
 	i.JSON(&w, i.A{0, profileInfo})

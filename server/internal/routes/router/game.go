@@ -17,7 +17,6 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/invitation"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/item"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/leaderboard/age3"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/login"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/news"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/party"
@@ -109,13 +108,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	}
 	leaderboardGroup := gameGroup.Subgroup("/leaderboard")
 	leaderboardGroup.HandleFunc("POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
-	var setStatValues func(http.ResponseWriter, *http.Request)
-	if gameId == common.GameAoE3 {
-		setStatValues = age3.SetAvatarStatValues
-	} else {
-		setStatValues = leaderboard.SetAvatarStatValues
-	}
-	leaderboardGroup.HandleFunc("POST", "/setAvatarStatValues", setStatValues)
+	leaderboardGroup.HandleFunc("POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
 
 	automatch2Group := gameGroup.Subgroup("/automatch2")
 	automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)

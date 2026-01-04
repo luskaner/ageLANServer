@@ -329,7 +329,7 @@ archives:
       - launcher-config-admin_full_windows_amd64
       - launcher-config-admin-agent_full_windows_amd64
       - battle-server-manager_full_windows_amd64
-    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win_x86-64"
+    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win10_x86-64"
     files:
       - src: LICENSE
         dst: docs/LICENSE.txt
@@ -403,7 +403,7 @@ archives:
       - launcher-config-admin_full_windows_arm64
       - launcher-config-admin-agent_full_windows_arm64
       - battle-server-manager_full_windows_arm64
-    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win_arm64"
+    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win11_arm64"
     files:
       - src: LICENSE
         dst: docs/LICENSE.txt
@@ -588,7 +588,7 @@ archives:
       - server-genCert_64_windows_arm64
     name_template: >-
       {{- .ProjectName }}_server_
-      {{- .RawVersion }}_win
+      {{- .RawVersion }}_win10
       {{- if eq .Arch "386" }}_x86-32
       {{- else if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
@@ -757,7 +757,7 @@ archives:
         dst: start_age3.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: start_athens.bat
-    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_x86-64"
+    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win10_x86-64"
     formats: zip
   - id: launcher_windows_arm64
     ids:
@@ -791,7 +791,7 @@ archives:
         dst: start_age3.bat
       - src: launcher/resources/windows/start_athens.bat
         dst: start_athens.bat
-    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win_arm64"
+    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win11_arm64"
     formats: tar.xz
   - id: launcher_linux
     ids:
@@ -840,16 +840,10 @@ archives:
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
     formats: tar.xz
-  - id: battle-server-manager_windows
+  - id: battle-server-manager_windows_amd64
     ids:
       - battle-server-manager_windows_amd64
-      - battle-server-manager_windows_arm64
-    name_template: >-
-      {{- .ProjectName }}_battle-server-manager_
-      {{- .RawVersion }}_win
-      {{- if eq .Arch "amd64" }}_x86-64
-      {{- else }}_arm64
-      {{- end }}
+    name_template: "{{ .ProjectName }}_battle-server-manager_{{ .RawVersion }}_win10_x86-64"
     files:
       - src: battle-server-manager/resources/windows/clean.bat
         dst: clean.bat
@@ -874,6 +868,34 @@ archives:
       - src: README.md
         dst: docs/README.txt
     formats: zip
+  - id: battle-server-manager_windows_arm64
+    ids:
+      - battle-server-manager_windows_arm64
+    name_template: "{{ .ProjectName }}_battle-server-manager_{{ .RawVersion }}_win11_arm64"
+    files:
+      - src: battle-server-manager/resources/windows/clean.bat
+        dst: clean.bat
+      - src: battle-server-manager/resources/windows/remove-all.bat
+        dst: remove-all.bat
+      - src: battle-server-manager/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: battle-server-manager/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: battle-server-manager/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: battle-server-manager/resources/windows/start_athens.bat
+        dst: start_athens.bat
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: README.md
+        dst: docs/README.txt
+    formats: tar.xz
   - id: battle-server-manager_linux
     ids:
       - battle-server-manager_linux

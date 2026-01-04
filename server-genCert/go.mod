@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/server-genCert
 
-go 1.24.0
+go 1.25.5
 
 require github.com/spf13/cobra v1.10.2
 

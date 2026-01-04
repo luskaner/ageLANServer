@@ -22,10 +22,10 @@ func untrustCertificate() bool {
 	if _, err := cert.UntrustCertificates(false); err == nil {
 		commonLogger.Println("Successfully removed local certificate")
 		return true
-	} else {
-		commonLogger.Println("Failed to remove local certificate")
-		return false
 	}
+
+	commonLogger.Println("Failed to remove local certificate")
+	return false
 }
 
 var setUpCmd = &cobra.Command{

@@ -28,11 +28,11 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 	battleServers := game.BattleServers()
 	var ok bool
 	var peersLen int
-	var peers iter.Seq2[int32, *models.MainPeer]
+	var peers iter.Seq2[int32, models.Peer]
 	var advStartTime int64
 	var advEncoded i.A
 	advertisements.WithWriteLock(q.AdvertisementId, func() {
-		var adv *models.MainAdvertisement
+		var adv models.Advertisement
 		adv, ok = game.Advertisements().GetAdvertisement(q.AdvertisementId)
 		if !ok {
 			i.JSON(&w, i.A{2})
@@ -51,11 +51,12 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		userIdStr := make([]i.A, peersLen)
 		races := make([]i.A, peersLen)
 		challengeProgress := make([]i.A, peersLen)
-		sessions := make([]*models.Session, peersLen)
+		sessions := make([]models.Session, peersLen)
+		gameSessions := game.Sessions()
 		j := 0
 		for userId, peer := range peers {
-			var sess *models.Session
-			sess, ok = models.GetSessionByUserId(userId)
+			var sess models.Session
+			sess, ok = gameSessions.GetByUserId(userId)
 			if !ok {
 				continue
 			}

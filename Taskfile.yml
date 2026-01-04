@@ -14,29 +14,6 @@ tasks:
   release-no-sign:
     cmds:
       - goreleaser release --clean --snapshot --fail-fast --skip=sign
-  debug-prepare-server:
-    deps: [ debug:prepare-server-base ]
-    cmds:
-      - build/server/bin/genCert{{exeExt}} -r
-  prepare-battle-server-manager:
-    deps: [ debug:prepare-battle-server-manager-base, build-battle-server-manager, debug:prepare-server-base ]
-    cmds:
-      - go build -o build/battle-server-manager/battle-server-manager{{exeExt}} ./battle-server-manager
-  build-battle-server-manager:
-    internal: true
-    cmds:
-      - go build -o build/battle-server-manager/battle-server-manager{{exeExt}} ./battle-server-manager
-  build-config:
-    cmds:
-      - go build -o build/launcher/bin/config{{exeExt}} ./launcher-config
-  build-config-admin:
-    cmds:
-      - go build -o build/launcher/bin/config-admin{{exeExt}} ./launcher-config-admin
-  build-config-admin-agent:
-    deps: [ build-config-admin ]
-    cmds:
-      - go build -o build/launcher/bin/config-admin-agent{{exeExt}} ./launcher-config-admin-agent
-  build-config-all:
-    deps: [ build-config, build-config-admin-agent ]
 includes:
-  debug: ./Taskfile.{{if eq OS "windows"}}windows{{else}}unix{{end}}.yml
+  debug: ./Taskfile.debug.yml
+  tools: ./Taskfile.tools.yml

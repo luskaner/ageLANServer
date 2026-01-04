@@ -2,20 +2,23 @@ package party
 
 import (
 	"net/http"
-	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+type advRequest struct {
+	MatchID int32 `schema:"match_id"`
+}
+
 func UpdateHost(w http.ResponseWriter, r *http.Request) {
-	advStr := r.PostFormValue("match_id")
-	advId, err := strconv.ParseInt(advStr, 10, 32)
+	var req advRequest
+	err := i.Bind(r, &req)
 	if err != nil {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	_, ok := models.G(r).Advertisements().GetAdvertisement(int32(advId))
+	_, ok := models.G(r).Advertisements().GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 	} else {

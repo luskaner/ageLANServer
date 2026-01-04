@@ -31,7 +31,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	var response i.A
 	var ok bool
 	advertisements.WithWriteLock(q.Id, func() {
-		var adv *models.MainAdvertisement
+		var adv models.Advertisement
 		adv, ok = advertisements.GetAdvertisement(q.Id)
 		if !ok {
 			return
@@ -40,7 +40,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		if gameTitle != common.GameAoE2 && gameTitle != common.GameAoM {
 			q.Joinable = true
 		}
-		advertisements.UpdateUnsafe(adv, &q)
+		adv.UnsafeUpdate(&q)
 		if gameTitle != common.GameAoE2 && gameTitle != common.GameAoM {
 			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
 		}

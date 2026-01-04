@@ -1,10 +1,10 @@
 package Inventory
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
+	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -27,7 +27,7 @@ type getInventoryItemsResponse struct {
 
 func GetInventoryItems(w http.ResponseWriter, r *http.Request) {
 	var req getInventoryItemsRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := i.Bind(r, &req)
 	if err != nil {
 		shared.RespondBadRequest(&w)
 		return

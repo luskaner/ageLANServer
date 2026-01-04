@@ -28,28 +28,35 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
 		return
 	}
-	var t2 int64
-	var t3 int64
-	i.WithRng(func(rand *i.RandReader) {
-		t2 = t - rand.Int64N(3600*2-3600+1) + 3600
-		t3 = t - rand.Int64N(3600*2-3600+1) + 3600
-	})
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
-	u := users.GetOrCreateUser(title, r.RemoteAddr, req.MacAddress, req.AccountType == "XBOXLIVE", req.PlatformUserId, req.Alias)
-	sess, ok := models.GetSessionByUserId(u.GetId())
-	if ok {
-		sess.Delete()
+	sessions := game.Sessions()
+	var avatarStatDefinitions models.AvatarStatDefinitions = nil
+	if title != common.GameAoE1 {
+		avatarStatDefinitions = game.LeaderboardDefinitions().AvatarStatDefinitions()
 	}
-	sessionId := models.CreateSession(req.GameId, u.GetId(), req.ClientLibVersion)
-	sess, _ = models.GetSessionById(sessionId)
-	relationship.ChangePresence(req.ClientLibVersion, users, u, 1)
+	u := users.GetOrCreateUser(
+		title,
+		avatarStatDefinitions,
+		r.RemoteAddr,
+		req.MacAddress,
+		req.AccountType == "XBOXLIVE",
+		req.PlatformUserId,
+		req.Alias,
+	)
+	sess, ok := sessions.GetByUserId(u.GetId())
+	if ok {
+		sessions.Delete(sess.Id())
+	}
+	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
+	sess, _ = sessions.GetById(sessionId)
+	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, 1)
 	profileInfo := u.GetProfileInfo(false, req.ClientLibVersion)
 	if title == common.GameAoE3 || title == common.GameAoM {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
-				currentSess, currentOk := models.GetSessionByUserId(user)
+				currentSess, currentOk := sessions.GetByUserId(user)
 				if currentOk {
 					wss.SendOrStoreMessage(
 						currentSess,
@@ -65,50 +72,16 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if title == common.GameAoE2 {
 		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.ClientLibVersion))
 	}
-	var unknownProfileInfoList i.A
-	switch title {
-	case common.GameAoE2:
-		unknownProfileInfoList = i.A{
-			i.A{2, profileId, 0, "", t2},
-			i.A{39, profileId, 671, "", t2},
-			i.A{41, profileId, 191, "", t2},
-			i.A{42, profileId, 480, "", t2},
-			i.A{44, profileId, 0, "", t2},
-			i.A{45, profileId, 0, "", t2},
-			i.A{46, profileId, 0, "", t2},
-			i.A{47, profileId, 0, "", t2},
-			i.A{48, profileId, 0, "", t2},
-			i.A{50, profileId, 0, "", t2},
-			i.A{60, profileId, 1, "", t2},
-			i.A{142, profileId, 1, "", t3},
-			i.A{171, profileId, 1, "", t2},
-			i.A{172, profileId, 4, "", t2},
-			i.A{173, profileId, 1, "", t2},
-		}
-	case common.GameAoE3, common.GameAoM:
-		unknownProfileInfoList = i.A{
-			i.A{291, u.GetId(), 16, "", t2},
-		}
-	default:
-		unknownProfileInfoList = i.A{}
-	}
-	if title == common.GameAoM {
-		unknownProfileInfoList = append(
-			unknownProfileInfoList,
-			// 10k of favour stash (the maximum)
-			i.A{117, u.GetId(), 10_000, "", t2},
-		)
-	}
 	battleServers := game.BattleServers()
 	servers := battleServers.Encode(r)
 	if len(servers) == 0 {
 		server := battleServers.NewBattleServer("")
-		server.IPv4 = "127.0.0.1"
-		server.BsPort = 27012
-		server.WebSocketPort = 27112
+		server.SetIPv4("127.0.0.1")
+		server.SetBsPort(27012)
+		server.SetWebSocketPort(27112)
 		if title != common.GameAoE1 {
-			server.Name = "localhost"
-			server.OutOfBandPort = 27212
+			server.SetName("localhost")
+			server.SetOutOfBandPort(27212)
 		}
 		servers = append(servers, server.EncodeLogin(r))
 	}
@@ -133,15 +106,18 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		nil,
 	}
+	var avatarStats i.A
 	if title == common.GameAoE1 {
 		response = append(response, i.A{})
+	} else {
+		avatarStats = u.EncodeAvatarStats()
 	}
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
 		relationship.Relationships(title, req.ClientLibVersion, users, u),
 		extraProfileInfoList,
-		unknownProfileInfoList,
+		avatarStats,
 		nil,
 		i.A{},
 		nil,
@@ -154,7 +130,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		allProfileInfo = append(allProfileInfo, -1)
 	}
 	response = append(response,
-		game.Resources().LoginData,
+		game.Resources().LoginData(),
 		allProfileInfo,
 		i.A{},
 		0,

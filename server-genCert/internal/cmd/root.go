@@ -39,9 +39,9 @@ var (
 			if !internal.GenerateCertificatePairs(serverFolder) {
 				fmt.Println("Could not generate certificate pair.")
 				os.Exit(internal.ErrCertCreate)
-			} else {
-				fmt.Println("Certificate pair generated successfully.")
 			}
+
+			fmt.Println("Certificate pair generated successfully.")
 		},
 	}
 )

@@ -18,7 +18,7 @@ func init() {
 	ClearCache()
 }
 
-func HostToIps(host string) []net.IP {
+func domainToIps(host string) []net.IP {
 	ips, err := net.LookupIP(host)
 	if err != nil {
 		return nil
@@ -102,22 +102,22 @@ func HostOrIpToIps(host string) []string {
 			}
 		}
 		return ips
-	} else {
-		cached, cachedIps := cachedHostToIps(host)
-		if cached {
-			return cachedIps.Clone().ToSlice()
-		}
-		var ips []string
-		ipsFromDns := HostToIps(host)
-		if ipsFromDns != nil {
-			for _, ipRaw := range ipsFromDns {
-				ipStr := ipRaw.String()
-				ips = append(ips, ipStr)
-				CacheMapping(host, ipStr)
-			}
-		}
-		return ips
 	}
+
+	cached, cachedIps := cachedHostToIps(host)
+	if cached {
+		return cachedIps.Clone().ToSlice()
+	}
+	var ips []string
+	ipsFromDns := domainToIps(host)
+	if ipsFromDns != nil {
+		for _, ipRaw := range ipsFromDns {
+			ipStr := ipRaw.String()
+			ips = append(ips, ipStr)
+			CacheMapping(host, ipStr)
+		}
+	}
+	return ips
 }
 
 func HostOrIpToIpsSet(host string) mapset.Set[string] {

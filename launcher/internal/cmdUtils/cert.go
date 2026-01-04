@@ -19,40 +19,48 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
+func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, errorCode int) {
+	for _, host := range hosts {
+		if !server.CheckConnectionFromServer(host, false, rootCAs) {
+			if fixable {
+				cert := server.ReadCACertificateFromServer(host)
+				if cert == nil {
+					logger.Println("Failed to read certificate from " + host + ".")
+					errorCode = internal.ErrReadCert
+					return
+				} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
+					logger.Println("The certificate for " + host + " does not match the server certificate.")
+					errorCode = internal.ErrCertMismatch
+					return
+				}
+				requiresFixing = true
+			} else {
+				logger.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
+				errorCode = internal.ErrConfigCert
+				return
+			}
+		} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
+			logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
+			errorCode = internal.ErrCertMismatch
+			return
+		} else if !server.LanServerHost(serverId, gameId, host, false, rootCAs) {
+			logger.Println("Something went wrong, " + host + " does not point to a lan server.")
+			errorCode = internal.ErrServerConnectSecure
+			return
+		}
+	}
+	return
+}
+
 func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
 	hosts := common.AllHosts(gameId)
 	var addCert bool
 	if customCertFile {
 		addCert = true
 	} else {
-		for _, host := range hosts {
-			if !server.CheckConnectionFromServer(host, false) {
-				if canAdd != "false" {
-					cert := server.ReadCACertificateFromServer(host)
-					if cert == nil {
-						logger.Println("Failed to read certificate from " + host + ".")
-						errorCode = internal.ErrReadCert
-						return
-					} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-						logger.Println("The certificate for " + host + " does not match the server certificate.")
-						errorCode = internal.ErrCertMismatch
-						return
-					}
-					addCert = true
-				} else {
-					logger.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
-					errorCode = internal.ErrConfigCert
-					return
-				}
-			} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
-				logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
-				errorCode = internal.ErrCertMismatch
-				return
-			} else if !server.LanServerHost(serverId, gameId, host, false) {
-				logger.Println("Something went wrong, " + host + " does not point to a lan server.")
-				errorCode = internal.ErrServerConnectSecure
-				return
-			}
+		addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, hosts, nil, canAdd != "false")
+		if errorCode != common.ErrSuccess {
+			return
 		}
 	}
 	if !addCert {
@@ -113,11 +121,11 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	if !customCertFile {
 		for _, host := range hosts {
-			if !server.CheckConnectionFromServer(host, false) {
+			if !server.CheckConnectionFromServer(host, false, nil) {
 				logger.Println(host + " must have been trusted automatically at this point.")
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServerHost(serverId, gameId, host, false) {
+			} else if !server.LanServerHost(serverId, gameId, host, false, nil) {
 				logger.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return

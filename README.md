@@ -74,9 +74,7 @@ is in maintenance or is eventually shutdown.
 <summary>List of features</summary>
 
 - 🗣️ Whispering.
-- 🙏 Arena of the Gods:
-    * Story.
-    * Daily Celestial Challenge.
+- 🙏 Arena of the Gods.
 
 </details>
 
@@ -107,10 +105,11 @@ is in maintenance or is eventually shutdown.
 
 - ⚠️ **Friend list** will instead show all online users as if they were friends.
 - ℹ️ **Arena of Gods**:
-    * ⚠️ Challenge mode is [currently](https://github.com/luskaner/ageLANServer/issues/243) not supported.
     * No rewards are gained, **all blessings and rarities are unlocked by default**, including those not available in
       the official server.
-    * Story mode has all missiones unlocked by default.
+    * Favor stash is infinite.
+    * Story mode has all missions unlocked by default.
+    * Challenge mode lifes are infinite, you have access to all legends and you are max level (99) by default.
 
 </details>
 
@@ -125,9 +124,7 @@ is in maintenance or is eventually shutdown.
 - ❌ **Achievements**: only the official server should be able to. Meeting the requirements of an achievement during a
   match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
   for more details).
-- ❌ Changing **player profile icon**: the default, or empty, will always be used.
 - ❌ **Leaderboards**: will appear empty.
-- ❌ **Player stats**: will appear empty.
 - ❌ **Clans**: all players are outside clans. Browsing clan will appear empty and creating one will always result in
   error.
 - ❌ **Lobby ban player**: will appear like it works but doesn't.
@@ -143,9 +140,9 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- **Windows**: 10 (or equivalent, not Arm32).
+- **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Big Sur (v11).
+- **macOS**: Monterey (v12).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system and configuration.
@@ -157,14 +154,14 @@ system and configuration.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.24.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.25.
 
 </details>
 
 ### Launcher and Battle Server Manager
 
 - Windows without S edition/mode (recommended):
-    - 10 on x86-64 (recommended).
+    - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
 - Linux with kernel 3.2:
     - x86-64 (recommended).
@@ -178,16 +175,16 @@ it will require admin rights elevation.**
 
 - Age of Empires: Definitive Edition
   on [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on
-  Windows*). Recommended version *100.2.31845.0* or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on a compatible
+  Windows version*). Recommended version *100.2.31845.0* or later.
 - Age of Empires II: Definitive Edition
   on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on
-  Windows*). Recommended a late 2023 version or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
+  compatible Windows version*). Recommended a late 2023 version or later.
 - Age of Empires III: Definitive Edition
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on
-  Windows*). Recommended a late 2023 version or later.
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
+  Windows version*). Recommended a late 2023 version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
@@ -203,30 +200,42 @@ supported operating systems.
 
 * Full:
     * Windows:
-        * **10 on x86-64**: ...\_full\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_full\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_full\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_full\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_full\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.xz
 * Launcher:
     * Windows:
-        * **10 on x86-64**: ...\_launcher\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_launcher\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_launcher\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_launcher\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_launcher\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
 * Battle Server Manager:
     * Windows:
-        * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win_x86-64.zip
-        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win_arm64.tar.xz
+        * **7 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win7_x86-64.zip
+        * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win10_x86-64.zip
+        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win11_arm64.tar.xz
     * Linux:
         * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.xz
         * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.xz
 * Server:
     * Windows:
-        * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win_arm64.zip
-        * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win_x86-64.zip
-        * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win_x86-32.zip
+        * **7, Server 2008 R2, Home Server 2011, Embedded 7, 8, Server 2012, Embedded 8, 8.1, Server 2012 R2,
+          Embedded 8.1 on x86-64**:
+          ...\_server\_
+          *A.B.C*_
+          win7_x86-64.zip
+        * **7, Embedded 7, Thin PC, 8, Embedded 8, 8.1, Embedded 8.1 on x86-32**:
+          ...\_server\_
+          *A.B.C*_
+          win7_x86-32.zip
+        * **10 (IoT), Server (IoT) 2025 on ARM64**: ...\_server\_*A.B.C*_win10_arm64.zip
+        * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win10_x86-64.zip
+        * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win10_x86-32.zip
     * Linux:
         * **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
         * **ARM32**:
@@ -234,7 +243,7 @@ supported operating systems.
             * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz
         * **x86-64**: ...\_server\_*A.B.C*_linux_x86-64.tar.gz
         * **x86-32**: ...\_server\_*A.B.C*_linux_x86-32.tar.gz
-    * macOS - Big Sur (v11): ...\_server\_*A.B.C*_mac.tar.gz
+    * macOS - Monterey (v12): ...\_server\_*A.B.C*_mac.tar.gz
 
 </details>
 

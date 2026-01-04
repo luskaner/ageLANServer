@@ -31,6 +31,8 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 	return err == nil && event == uint32(windows.WAIT_OBJECT_0)
 }
 
+// ProcessesPID returns a map of process names to their PIDs.
+// Note: If multiple processes share the same name, only one PID is stored per name.
 func ProcessesPID(names []string) map[string]uint32 {
 	name := func(entry *windows.ProcessEntry32) string {
 		return windows.UTF16ToString(entry.ExeFile[:])
@@ -80,7 +82,28 @@ func processesEntry(matches func(entry *windows.ProcessEntry32) bool, firstOnly 
 	return entries
 }
 
+func GetProcessStartTime(pid int) (int64, error) {
+	handle, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return 0, err
+	}
+	defer func(handle windows.Handle) {
+		_ = windows.CloseHandle(handle)
+	}(handle)
+
+	var creationTime, exitTime, kernelTime, userTime windows.Filetime
+	err = windows.GetProcessTimes(handle, &creationTime, &exitTime, &kernelTime, &userTime)
+	if err != nil {
+		return 0, err
+	}
+	return creationTime.Nanoseconds(), nil
+}
+
 func FindProcess(pid int) (proc *os.Process, err error) {
+	return FindProcessWithStartTime(pid, 0)
+}
+
+func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Process, err error) {
 	proc, err = os.FindProcess(pid)
 	if errors.Is(err, windows.ERROR_INVALID_PARAMETER) {
 		err = nil
@@ -90,9 +113,24 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 	}, true)
 	if len(entries) == 0 {
 		proc = nil
-	} else if err != nil {
+		return
+	}
+	if err != nil {
 		proc = &os.Process{Pid: pid}
 		err = nil
+	}
+	if expectedStartTime != 0 {
+		actualStartTime, startErr := GetProcessStartTime(pid)
+		if startErr != nil {
+			proc = nil
+			err = startErr
+			return
+		}
+		if actualStartTime != expectedStartTime {
+			proc = nil
+			err = errors.New("process start time mismatch")
+			return
+		}
 	}
 	return
 }

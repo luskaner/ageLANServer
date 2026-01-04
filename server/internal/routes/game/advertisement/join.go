@@ -13,13 +13,13 @@ type JoinRequest struct {
 	Password string `schema:"password"`
 }
 
-func joinReturnError(battleServers *models.MainBattleServers, r *http.Request, w http.ResponseWriter) {
+func joinReturnError(battleServers models.BattleServers, r *http.Request, w http.ResponseWriter) {
 	battleServer := battleServers.NewBattleServer("")
 	response := encodeJoinResponse(2, "", battleServer, r, i.A{})
 	i.JSON(&w, response)
 }
 
-func encodeJoinResponse(errorCode int, ip string, battleServer *models.MainBattleServer, r *http.Request, peerEncoded i.A) i.A {
+func encodeJoinResponse(errorCode int, ip string, battleServer models.BattleServer, r *http.Request, peerEncoded i.A) i.A {
 	response := i.A{
 		errorCode,
 		ip,

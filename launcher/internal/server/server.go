@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"io"
 	"net"
@@ -92,11 +93,13 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 		}); !result.Success() {
 			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")
 			errorCode = internal.ErrServerCertCreate
-			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
-			}
-			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+			if result != nil {
+				if result.Err != nil {
+					logger.Println("Error message: " + result.Err.Error())
+				}
+				if result.ExitCode != common.ErrSuccess {
+					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				}
 			}
 			return
 		}
@@ -111,13 +114,13 @@ func GetExecutablePath(executable string) string {
 	return executable
 }
 
-func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool) (ok bool) {
-	ipAddrs := common.HostToIps(host)
+func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {
+	ipAddrs := common.HostOrIpToIps(host)
 	if len(ipAddrs) == 0 {
 		return
 	}
 	for _, ipAddr := range ipAddrs {
-		if ok, _, _, _ = lanServerIP(id, gameTitle, ipAddr, host, insecureSkipVerify, true); !ok {
+		if ok, _, _, _ = lanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, rootCAs, true); !ok {
 			return
 		}
 	}
@@ -130,7 +133,7 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 		var ok bool
 		var latency time.Duration
 		var tmpData *AnnounceMessageDataSupportedLatest
-		if ok, actualId, latency, tmpData = lanServerIP(id, gameTitle, ip, serverName, true, false); ok {
+		if ok, actualId, latency, tmpData = lanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
 			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
 				Ip:      ip,
 				Latency: latency,
@@ -146,9 +149,9 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 	return
 }
 
-func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
+func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify),
+		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify, rootCAs),
 	}
 	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
 	u := url.URL{
@@ -165,7 +168,8 @@ func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 				return
 			}
 			req.Host = serverName
-			if _, err = client.Do(req); err != nil {
+			if //goland:noinspection ALL
+			_, err = client.Do(req); err != nil {
 				return
 			}
 			latencyAccumulator += time.Since(start)
@@ -237,7 +241,9 @@ func QueryServers(
 		target *net.UDPAddr
 	}
 	var connTargets []*connTarget
+	var conns []*net.UDPConn
 	for source, targets := range sourceToTargetAddrs {
+		//goland:noinspection GoResourceLeak
 		conn, err := net.ListenUDP(
 			"udp4",
 			source,
@@ -250,9 +256,11 @@ func QueryServers(
 		}) {
 			p := ipv4.NewPacketConn(conn)
 			if err = p.SetMulticastLoopback(true); err != nil {
+				_ = conn.Close()
 				continue
 			}
 		}
+		conns = append(conns, conn)
 		for _, target := range targets {
 			connTargets = append(connTargets, &connTarget{
 				conn:   conn,
@@ -261,15 +269,15 @@ func QueryServers(
 		}
 	}
 
+	defer func(connections []*net.UDPConn) {
+		for _, conn := range connections {
+			_ = conn.Close()
+		}
+	}(conns)
+
 	if len(connTargets) == 0 {
 		return
 	}
-
-	defer func(connectionPairs []*connTarget) {
-		for _, connPair := range connectionPairs {
-			_ = connPair.conn.Close()
-		}
-	}(connTargets)
 
 	data := []byte(common.AnnounceHeader)
 	var serverLock sync.Mutex
@@ -315,16 +323,15 @@ func QueryServers(
 	for _, conn := range connTargets {
 		wg.Add(1)
 		go func(conn *connTarget) {
+			defer wg.Done()
+			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
+			sendAndReceive(&packetBuffer, conn, servers)
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
-			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
-			for i := 0; i < 3; i++ {
-				select {
-				case <-ticker.C:
-					sendAndReceive(&packetBuffer, conn, servers)
-				}
+			for i := 0; i < 2; i++ {
+				<-ticker.C
+				sendAndReceive(&packetBuffer, conn, servers)
 			}
-			wg.Done()
 		}(conn)
 	}
 	wg.Wait()

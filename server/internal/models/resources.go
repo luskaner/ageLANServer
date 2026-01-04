@@ -10,56 +10,81 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common/paths"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
-const resourceFolder = "resources"
-
-var configFolder = filepath.Join(resourceFolder, "config")
-var ResponsesFolder = filepath.Join(resourceFolder, "responses")
+var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")
+var userDataFolder = filepath.Join(paths.ResourcesDir, "userData")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
+
+type Resources interface {
+	Initialize(gameId string, keyedFilenames mapset.Set[string])
+	ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool)
+	LoginData() []i.A
+	ChatChannels() map[string]*MainChatChannel
+	ArrayFiles() map[string]i.A
+	CloudFiles() CloudFiles
+}
 
 type MainResources struct {
 	keyedFilenames  mapset.Set[string]
-	ChatChannels    map[string]MainChatChannel
-	LoginData       []i.A
-	ArrayFiles      map[string]i.A
-	KeyedFiles      map[string][]byte
+	chatChannels    map[string]*MainChatChannel
+	loginData       []i.A
+	arrayFiles      map[string]i.A
+	keyedFiles      map[string][]byte
 	nameToSignature map[string]string
-	CloudFiles      CloudFiles
+	cloudFiles      CloudFiles
 }
 
 func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[string]) {
-	r.ArrayFiles = make(map[string]i.A)
-	r.KeyedFiles = make(map[string][]byte)
+	r.arrayFiles = make(map[string]i.A)
+	r.keyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
 	r.keyedFilenames = keyedFilenames
+	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
 	r.initializeResponses(gameId)
 	r.initializeCloud(gameId)
 }
 
+func (r *MainResources) LoginData() []i.A {
+	return r.loginData
+}
+
+func (r *MainResources) ChatChannels() map[string]*MainChatChannel {
+	return r.chatChannels
+}
+
+func (r *MainResources) ArrayFiles() map[string]i.A {
+	return r.arrayFiles
+}
+
+func (r *MainResources) CloudFiles() CloudFiles {
+	return r.cloudFiles
+}
+
 func (r *MainResources) initializeChatChannels(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "chatChannels.json"))
+	data, err := os.ReadFile(filepath.Join(paths.ConfigsPath, gameId, "chatChannels.json"))
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(data, &r.ChatChannels)
+	err = json.Unmarshal(data, &r.chatChannels)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (r *MainResources) initializeLogin(gameId string) {
-	data, err := os.ReadFile(filepath.Join(configFolder, gameId, "login.json"))
+	data, err := os.ReadFile(filepath.Join(paths.ConfigsPath, gameId, "login.json"))
 	if err != nil {
 		panic(err)
 	}
 	re := regexp.MustCompile(`"([^"]*)"`)
 	matches := re.FindAllStringSubmatch(string(data), -1)
 	for j := 0; j < len(matches)-1; j += 2 {
-		r.LoginData = append(r.LoginData, i.A{matches[j][1], matches[j+1][1]})
+		r.loginData = append(r.loginData, i.A{matches[j][1], matches[j+1][1]})
 	}
 }
 
@@ -79,23 +104,23 @@ func (r *MainResources) initializeResponses(gameId string) {
 			matches := re.FindStringSubmatch(string(data))
 			if len(matches) == 1 {
 				serverSignature := matches[1]
-				r.KeyedFiles[name] = data
+				r.keyedFiles[name] = data
 				r.nameToSignature[name] = serverSignature
 			}
 		} else {
 			var result i.A
 			err = json.Unmarshal(data, &result)
 			if err == nil {
-				r.ArrayFiles[name] = result
+				r.arrayFiles[name] = result
 			}
 		}
 	}
 }
 
 func (r *MainResources) initializeCloud(gameId string) {
-	cloudfiles := BuildCloudfilesIndex(filepath.Join(configFolder, gameId), filepath.Join(CloudFolder, gameId))
+	cloudfiles := BuildCloudfilesIndex(filepath.Join(paths.ConfigsPath, gameId), filepath.Join(CloudFolder, gameId))
 	if cloudfiles != nil {
-		r.CloudFiles = *cloudfiles
+		r.cloudFiles = *cloudfiles
 	}
 }
 
@@ -103,10 +128,10 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 	var serverSignature string
 	var response any
 	if keyedResponse {
-		response = r.KeyedFiles[name]
+		response = r.keyedFiles[name]
 		serverSignature = r.nameToSignature[name]
 	} else {
-		response = r.ArrayFiles[name]
+		response = r.arrayFiles[name]
 		arrayResponse := response.(i.A)
 		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
 	}
@@ -127,4 +152,26 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 		ret = append(ret, serverSignature)
 		i.JSON(w, ret)
 	}
+}
+
+func (r *MainResources) initializeUserData(gameId string) {
+	ensureFolder(filepath.Join(userDataFolder, gameId))
+}
+
+func ensureFolder(path string) {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		panic(err)
+	}
+}
+
+func UserDataPath(gameId string, steam bool, platformUserid string) string {
+	var platform string
+	if steam {
+		platform = "STEAM"
+	} else {
+		platform = "XBOX"
+	}
+	folder := filepath.Join(userDataFolder, gameId)
+	ensureFolder(folder)
+	return filepath.Join(folder, fmt.Sprintf("%s_%s", platform, platformUserid)+".json")
 }

@@ -12,6 +12,19 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
+func ResolveIsolateValue(value string, officialLauncher bool) bool {
+	switch value {
+	case "true":
+		return true
+	case "false":
+		return false
+	case "required":
+		return officialLauncher
+	default:
+		return false
+	}
+}
+
 func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 	if metadata || profiles {
 		var isolateItems []string

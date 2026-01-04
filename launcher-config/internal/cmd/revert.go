@@ -27,10 +27,10 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 	if err := wrapper.AddUserCerts(removedUserCerts); err == nil {
 		commonLogger.Println("Successfully added user certificate")
 		return true
-	} else {
-		commonLogger.Println("Failed to add user certificate")
-		return false
 	}
+
+	commonLogger.Println("Failed to add user certificate")
+	return false
 }
 
 func backupMetadata() bool {
@@ -38,10 +38,10 @@ func backupMetadata() bool {
 	if userData.Metadata(cmd.GameId).Backup() {
 		commonLogger.Println("Successfully backed up metadata")
 		return true
-	} else {
-		commonLogger.Println("Failed to back up metadata")
-		return false
 	}
+
+	commonLogger.Println("Failed to back up metadata")
+	return false
 }
 
 func backupProfiles() bool {
@@ -49,10 +49,10 @@ func backupProfiles() bool {
 	if userData.BackupProfiles(cmd.GameId) {
 		commonLogger.Println("Successfully backed up profiles")
 		return true
-	} else {
-		commonLogger.Println("Failed to back up profiles")
-		return false
 	}
+
+	commonLogger.Println("Failed to back up profiles")
+	return false
 }
 
 func addCaCerts(removedCaCerts []*x509.Certificate) bool {
@@ -60,10 +60,10 @@ func addCaCerts(removedCaCerts []*x509.Certificate) bool {
 	if err := internal.NewCACert(cmd.GameId, gamePath).Append(removedCaCerts); err == nil {
 		commonLogger.Println("Successfully restored game's certificate store.")
 		return true
-	} else {
-		commonLogger.Println("Failed to restore game's certificate store.")
-		return false
 	}
+
+	commonLogger.Println("Failed to restore game's certificate store.")
+	return false
 }
 
 func undoRevert() {

@@ -1,5 +1,7 @@
 go.work
 go.work.sum
+.tools
+.task
 .env
 .idea/
 dist/

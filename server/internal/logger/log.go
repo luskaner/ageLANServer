@@ -2,10 +2,10 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/spf13/viper"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
 var StartTime time.Time
@@ -14,14 +14,21 @@ func init() {
 	StartTime = time.Now().UTC()
 }
 
-func OpenMainFileLog(root string) error {
-	if viper.GetBool("Log") {
+func OpenMainFileLog(root string, logEnabled bool) error {
+	if logEnabled {
 		err := commonLogger.NewOwnFileLogger("server", root, "", true)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func PrintFile(name string, path string) {
+	if commonLogger.FileLogger != nil && path != "" {
+		data, _ := os.ReadFile(path)
+		commonLogger.PrefixPrintln(name, string(data))
+	}
 }
 
 func Printf(format string, a ...any) {

@@ -1,0 +1,215 @@
+{
+  "LabyrinthConfigs": [
+    {
+      "ForGauntletDifficulties": [
+        "Standard",
+        "Moderate"
+      ],
+      "ColumnConfigs": [
+        {
+          "MissionPool": "Pool1"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool3"
+        },
+        {
+          "MissionPool": "Pool3"
+        },
+        {
+          "MissionPool": "Pool3"
+        },
+        {
+          "MissionPool": "Pool4"
+        },
+        {
+          "MissionPool": "Pool4"
+        }
+      ],
+      "BossMissionPool": "Pool5"
+    },
+    {
+      "ForGauntletDifficulties": [
+        "Hard"
+      ],
+      "ColumnConfigs": [
+        {
+          "MissionPool": "Pool6"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool2"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool5"
+        },
+        {
+          "MissionPool": "Pool5"
+        }
+      ],
+      "BossMissionPool": "Pool9"
+    },
+    {
+      "ForGauntletDifficulties": [
+        "Titan"
+      ],
+      "ColumnConfigs": [
+        {
+          "MissionPool": "Pool6"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool9"
+        },
+        {
+          "MissionPool": "Pool9"
+        }
+      ],
+      "BossMissionPool": "Pool9"
+    },
+    {
+      "ForGauntletDifficulties": [
+        "Extreme",
+        "Legendary"
+      ],
+      "ColumnConfigs": [
+        {
+          "MissionPool": "Pool6"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool7"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool8"
+        },
+        {
+          "MissionPool": "Pool9"
+        },
+        {
+          "MissionPool": "Pool9"
+        }
+      ],
+      "BossMissionPool": "Pool10"
+    }
+  ],
+  "Rewards": {
+    "ExcludeFromRegularRewards": [
+      {
+        "EffectName": "HouseVillSpawn",
+        "KnownRarities": [
+          3
+        ]
+      },
+      {
+        "EffectName": "ArkantosStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "GiantSpawn",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "NidhoggSpawn",
+        "KnownRarities": [
+          3
+        ]
+      },
+      {
+        "EffectName": "HeroBoarStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "LegendKastorStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "KronosUnique",
+        "KnownRarities": [
+          0
+        ]
+      },
+      {
+        "EffectName": "GaiaUnique",
+        "KnownRarities": [
+          0
+        ]
+      },
+      {
+        "EffectName": "AndromedaRefundMythFavor",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "AndromedaCheaperFortress",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "AIServantKronosStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "AIFollowerLokiStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "AIChampionFreyrStart",
+        "KnownRarities": []
+      },
+      {
+        "EffectName": "BossNidhoggSpawn",
+        "KnownRarities": []
+      }
+    ],
+    "PreferredFinalRewards": []
+  }
+}

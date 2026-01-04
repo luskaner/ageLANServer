@@ -6,7 +6,7 @@ system and reverting that configuration upon exit.
 ## Minimum system Requirements
 
 - Windows without S edition/mode (recommended):
-    - 10 on x86-64 (recommended).
+    - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
 - Linux with kernel 3.2:
     - x86-64 (recommended).

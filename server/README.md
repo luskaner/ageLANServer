@@ -7,9 +7,9 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- **Windows**: 10 (or equivalent, not Arm32).
+- **Windows**: 7 (or equivalent).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Big Sur (v11).
+- **macOS**: Monterey (v12).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -21,7 +21,7 @@ system.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.24.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.25.
 
 </details>
 
@@ -155,6 +155,11 @@ the [`responses`](resources/responses) base directory.
           flags, currently just disabling the beta tag for AotG.
         * [`known_blessings.json`](resources/responses/athens/playfab/public-production/2/known_blessings.json): Listing
           of all blessings, even blessings or levels not used. Used by the server to grant them all to the users.
+        * [`gauntlet.json`](resources/responses/athens/playfab/public-production/2/gauntlet.json): General
+          settings of the Challenge mode.
+        * [
+          `gauntlet_mission_poools.json`](resources/responses/athens/playfab/public-production/2/gauntlet_mission_pools.json):
+          Listing of missions and their pools.
 
 ## Starting and configuring Online-like Battle Servers
 
@@ -174,7 +179,7 @@ self-explanatory.
 
 ## Docker
 
-See [Docker](../server-docker) for information.
+See [Docker](../tools/server-docker) for information.
 
 ## Exit Codes
 
