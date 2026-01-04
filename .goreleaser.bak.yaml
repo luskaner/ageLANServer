@@ -1,0 +1,962 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: 2
+builds:
+  - id: server_32_windows
+    main: ./server
+    binary: server
+    goos: [ windows ]
+    goarch: [ "386" ]
+  - id: server_32_linux
+    main: ./server
+    binary: server
+    goos: [ linux ]
+    goarch: [ "386", arm ]
+    goarm: [ "5", "6" ]
+  - id: server_64_windows_amd64
+    main: ./server
+    binary: server
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server_64_windows_arm64
+    main: ./server
+    binary: server
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server_64_x86_linux
+    main: ./server
+    binary: server
+    goos: [ linux ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server_64_arm_linux
+    main: ./server
+    binary: server
+    goos: [ linux ]
+    goarch: [ arm64 ]
+  - id: server_64_macos
+    main: ./server
+    binary: server
+    goos: [ darwin ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: server_64_full_windows_amd64
+    main: ./server
+    binary: server/server
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server_64_full_windows_arm64
+    main: ./server
+    binary: server/server
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server_64_full_linux
+    main: ./server
+    binary: server/server
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: server-genCert_32_windows
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ windows ]
+    goarch: [ "386" ]
+    goamd64: [ "v1" ]
+  - id: server-genCert_32_linux
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ linux ]
+    goarch: [ "386", arm ]
+    goarm: [ "5", "6" ]
+  - id: server-genCert_64_windows_amd64
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server-genCert_64_windows_arm64
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server-genCert_64_x86_linux
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ linux ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server-genCert_64_arm_linux
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ linux ]
+    goarch: [ arm64 ]
+  - id: server-genCert_64_macos
+    main: ./server-genCert
+    binary: bin/genCert
+    goos: [ darwin ]
+    goarch: [ amd64, arm64 ]
+  - id: server-genCert_64_full_windows_amd64
+    main: ./server-genCert
+    binary: server/bin/genCert
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: server-genCert_64_full_windows_arm64
+    main: ./server-genCert
+    binary: server/bin/genCert
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: server-genCert_64_full_linux
+    main: ./server-genCert
+    binary: server/bin/genCert
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher_windows_amd64
+    main: ./launcher
+    binary: launcher
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher_windows_arm64
+    main: ./launcher
+    binary: launcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher_linux
+    main: ./launcher
+    binary: launcher
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher_full_windows_amd64
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher_full_windows_arm64
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher_full_linux
+    main: ./launcher
+    binary: launcher/launcher
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-agent_windows_amd64
+    main: ./launcher-agent
+    binary: bin/agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-agent_windows_arm64
+    main: ./launcher-agent
+    binary: bin/agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-agent_linux
+    main: ./launcher-agent
+    binary: bin/agent
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-agent_full_windows_amd64
+    main: ./launcher-agent
+    binary: launcher/bin/agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-agent_full_windows_arm64
+    main: ./launcher-agent
+    binary: launcher/bin/agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-agent_full_linux
+    main: ./launcher-agent
+    binary: launcher/bin/agent
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config_windows_amd64
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config_windows_arm64
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config_linux
+    main: ./launcher-config
+    binary: bin/config
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config_full_windows_amd64
+    main: ./launcher-config
+    binary: launcher/bin/config
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config_full_windows_arm64
+    main: ./launcher-config
+    binary: launcher/bin/config
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config_full_linux
+    main: ./launcher-config
+    binary: launcher/bin/config
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin_windows_amd64
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin_windows_arm64
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin_linux
+    main: ./launcher-config-admin
+    binary: bin/config-admin
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin_full_windows_amd64
+    main: ./launcher-config-admin
+    binary: launcher/bin/config-admin
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin_full_windows_arm64
+    main: ./launcher-config-admin
+    binary: launcher/bin/config-admin
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin_full_linux
+    main: ./launcher-config-admin
+    binary: launcher/bin/config-admin
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin-agent_windows_amd64
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin-agent_windows_arm64
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-agent_linux
+    main: ./launcher-config-admin-agent
+    binary: bin/config-admin-agent
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: battle-server-manager_linux
+    main: ./battle-server-manager
+    binary: battle-server-manager
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: battle-server-manager_windows_amd64
+    main: ./battle-server-manager
+    binary: battle-server-manager
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: battle-server-manager_windows_arm64
+    main: ./battle-server-manager
+    binary: battle-server-manager
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: battle-server-manager_full_linux
+    main: ./battle-server-manager
+    binary: battle-server-manager/battle-server-manager
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+  - id: battle-server-manager_full_windows_amd64
+    main: ./battle-server-manager
+    binary: battle-server-manager/battle-server-manager
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: battle-server-manager_full_windows_arm64
+    main: ./battle-server-manager
+    binary: battle-server-manager/battle-server-manager
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-agent_full_windows_amd64
+    main: ./launcher-config-admin-agent
+    binary: launcher/bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    goamd64: [ "v1" ]
+  - id: launcher-config-admin-agent_full_windows_arm64
+    main: ./launcher-config-admin-agent
+    binary: launcher/bin/config-admin-agent
+    goos: [ windows ]
+    goarch: [ arm64 ]
+  - id: launcher-config-admin-agent_full_linux
+    main: ./launcher-config-admin-agent
+    binary: launcher/bin/config-admin-agent
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    goamd64: [ "v1" ]
+archives:
+  - id: all_windows_amd64
+    ids:
+      - server_64_full_windows_amd64
+      - server-genCert_64_full_windows_amd64
+      - launcher_full_windows_amd64
+      - launcher-agent_full_windows_amd64
+      - launcher-config_full_windows_amd64
+      - launcher-config-admin_full_windows_amd64
+      - launcher-config-admin-agent_full_windows_amd64
+      - battle-server-manager_full_windows_amd64
+    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win10_x86-64"
+    files:
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
+      - src: server/README.md
+        dst: server/docs/README.txt
+      - src: server/BattleServers.md
+        dst: server/docs/BattleServers.txt
+      - server/resources/config
+      - server/resources/responses
+      - src: launcher/README.md
+        dst: launcher/docs/README.txt
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config.txt
+      - launcher/resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.athens.toml
+      - src: server/resources/windows/start_age1.bat
+        dst: server/start_age1.bat
+      - src: server/resources/windows/start_age2.bat
+        dst: server/start_age2.bat
+      - src: server/resources/windows/start_age3.bat
+        dst: server/start_age3.bat
+      - src: server/resources/windows/start_athens.bat
+        dst: server/start_athens.bat
+      - src: launcher/resources/windows/start_age1.bat
+        dst: launcher/start_age1.bat
+      - src: launcher/resources/windows/start_age2.bat
+        dst: launcher/start_age2.bat
+      - src: launcher/resources/windows/start_age3.bat
+        dst: launcher/start_age3.bat
+      - src: launcher/resources/windows/start_athens.bat
+        dst: launcher/start_athens.bat
+      - src: battle-server-manager/resources/windows/clean.bat
+        dst: battle-server-manager/clean.bat
+      - src: battle-server-manager/resources/windows/remove-all.bat
+        dst: battle-server-manager/remove-all.bat
+      - src: battle-server-manager/resources/windows/start_age1.bat
+        dst: battle-server-manager/start_age1.bat
+      - src: battle-server-manager/resources/windows/start_age2.bat
+        dst: battle-server-manager/start_age2.bat
+      - src: battle-server-manager/resources/windows/start_age3.bat
+        dst: battle-server-manager/start_age3.bat
+      - src: battle-server-manager/resources/windows/start_athens.bat
+        dst: battle-server-manager/start_athens.bat
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.athens.toml
+      - src: battle-server-manager/README.md
+        dst: battle-server-manager/docs/README.txt
+    formats: zip
+  - id: all_windows_arm64
+    ids:
+      - server_64_full_windows_arm64
+      - server-genCert_64_full_windows_arm64
+      - launcher_full_windows_arm64
+      - launcher-agent_full_windows_arm64
+      - launcher-config_full_windows_arm64
+      - launcher-config-admin_full_windows_arm64
+      - launcher-config-admin-agent_full_windows_arm64
+      - battle-server-manager_full_windows_arm64
+    name_template: "{{ .ProjectName }}_full_{{ .RawVersion }}_win11_arm64"
+    files:
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
+      - src: server/README.md
+        dst: server/docs/README.txt
+      - src: server/BattleServers.md
+        dst: server/docs/BattleServers.txt
+      - server/resources/config
+      - server/resources/responses
+      - src: launcher/README.md
+        dst: launcher/docs/README.txt
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config.txt
+      - launcher/resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.athens.toml
+      - src: server/resources/windows/start_age1.bat
+        dst: server/start_age1.bat
+      - src: server/resources/windows/start_age2.bat
+        dst: server/start_age2.bat
+      - src: server/resources/windows/start_age3.bat
+        dst: server/start_age3.bat
+      - src: server/resources/windows/start_athens.bat
+        dst: server/start_athens.bat
+      - src: launcher/resources/windows/start_age1.bat
+        dst: launcher/start_age1.bat
+      - src: launcher/resources/windows/start_age2.bat
+        dst: launcher/start_age2.bat
+      - src: launcher/resources/windows/start_age3.bat
+        dst: launcher/start_age3.bat
+      - src: launcher/resources/windows/start_athens.bat
+        dst: launcher/start_athens.bat
+      - src: battle-server-manager/resources/windows/clean.bat
+        dst: battle-server-manager/clean.bat
+      - src: battle-server-manager/resources/windows/remove-all.bat
+        dst: battle-server-manager/remove-all.bat
+      - src: battle-server-manager/resources/windows/start_age1.bat
+        dst: battle-server-manager/start_age1.bat
+      - src: battle-server-manager/resources/windows/start_age2.bat
+        dst: battle-server-manager/start_age2.bat
+      - src: battle-server-manager/resources/windows/start_age3.bat
+        dst: battle-server-manager/start_age3.bat
+      - src: battle-server-manager/resources/windows/start_athens.bat
+        dst: battle-server-manager/start_athens.bat
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.athens.toml
+      - src: battle-server-manager/README.md
+        dst: battle-server-manager/docs/README.txt
+    formats: tar.xz
+  - id: all_linux
+    ids:
+      - server_64_full_linux
+      - server-genCert_64_full_linux
+      - launcher_full_linux
+      - launcher-agent_full_linux
+      - launcher-config_full_linux
+      - launcher-config-admin_full_linux
+      - launcher-config-admin-agent_full_linux
+      - battle-server-manager_full_linux
+    name_template: >-
+      {{- .ProjectName }}_full_
+      {{- .RawVersion }}_linux
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    files:
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: README.md
+        dst: docs/README
+      - src: server/README.md
+        dst: server/docs/README
+      - src: server/BattleServers.md
+        dst: server/docs/BattleServers
+      - server/resources/config
+      - src: server/resources/unix/start_age1.sh
+        dst: server/start_age1.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age2.sh
+        dst: server/start_age2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age3.sh
+        dst: server/start_age3.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_athens.sh
+        dst: server/start_athens.sh
+        info:
+          mode: 0744
+      - server/resources/responses
+      - src: server-genCert/resources/unix/genCert.sh
+        dst: server/bin/genCert.sh
+        info:
+          mode: 0744
+      - src: launcher/README.md
+        dst: launcher/docs/README
+      - src: launcher-config/README.md
+        dst: launcher/docs/README-config
+      - launcher/resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: launcher/resources/config.athens.toml
+      - src: launcher/resources/unix/start_age1.sh
+        dst: launcher/start_age1.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age2.sh
+        dst: launcher/start_age2.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age3.sh
+        dst: launcher/start_age3.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_athens.sh
+        dst: launcher/start_athens.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/clean.sh
+        dst: battle-server-manager/clean.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/remove-all.sh
+        dst: battle-server-manager/remove-all.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age1.sh
+        dst: battle-server-manager/start_age1.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age2.sh
+        dst: battle-server-manager/start_age2.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age3.sh
+        dst: battle-server-manager/start_age3.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_athens.sh
+        dst: battle-server-manager/start_athens.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: battle-server-manager/resources/config.athens.toml
+      - src: battle-server-manager/README.md
+        dst: battle-server-manager/docs/README
+    formats: tar.xz
+  - id: server_windows
+    ids:
+      - server_32_windows
+      - server-genCert_32_windows
+      - server_64_windows_amd64
+      - server_64_windows_arm64
+      - server-genCert_64_windows_amd64
+      - server-genCert_64_windows_arm64
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_win10
+      {{- if eq .Arch "386" }}_x86-32
+      {{- else if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    files:
+      - src: server/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: server/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: server/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: server/resources/windows/start_athens.bat
+        dst: start_athens.bat
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: server/BattleServers.md
+        dst: docs/BattleServers.txt
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: README.md
+        dst: docs/README.txt
+    formats: zip
+  - id: server_linux_tar_xz
+    ids: [ server_64_arm_linux, server-genCert_64_arm_linux ]
+    name_template: "{{ .ProjectName }}_server_{{ .RawVersion }}_linux_arm64"
+    files:
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/unix/start_age1.sh
+        dst: start_age1.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age2.sh
+        dst: start_age2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age3.sh
+        dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_athens.sh
+        dst: start_athens.sh
+        info:
+          mode: 0744
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: server-genCert/resources/unix/genCert.sh
+        dst: bin/genCert.sh
+        info:
+          mode: 0744
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: server/README.md
+        dst: docs/README
+      - src: server/BattleServers.md
+        dst: docs/BattleServers.txt
+    formats: tar.xz
+  - id: server_linux_tar_gz
+    ids: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_linux
+      {{- if eq .Arch "386" }}_x86-32
+      {{- else if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arm "5" }}_arm-5
+      {{- else if eq .Arm "6" }}_arm-6
+      {{- end }}
+    files:
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/unix/start_age1.sh
+        dst: start_age1.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age2.sh
+        dst: start_age2.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age3.sh
+        dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_athens.sh
+        dst: start_athens.sh
+        info:
+          mode: 0744
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: server-genCert/resources/unix/genCert.sh
+        dst: bin/genCert.sh
+        info:
+          mode: 0744
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: server/README.md
+        dst: docs/README
+      - src: server/BattleServers.md
+        dst: docs/BattleServers
+  - id: server_macos
+    ids: [ server_64_macos, server-genCert_64_macos ]
+    name_template: >-
+      {{- .ProjectName }}_server_
+      {{- .RawVersion }}_mac
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- else }}
+      {{- end }}
+    files:
+      - src: server/resources/unix/start_age1.sh
+        dst: start_age1.command
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age2.sh
+        dst: start_age2.command
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_age3.sh
+        dst: start_age3.command
+        info:
+          mode: 0744
+      - src: server/resources/unix/start_athens.sh
+        dst: start_athens.command
+        info:
+          mode: 0744
+      - src: server/resources/config
+        dst: resources/config
+      - src: server/resources/responses
+        dst: resources/responses
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: server/README.md
+        dst: docs/README
+      - src: server/BattleServers.md
+        dst: docs/BattleServers
+  - id: launcher_windows_amd64
+    ids:
+      - launcher_windows_amd64
+      - launcher-agent_windows_amd64
+      - launcher-config_windows_amd64
+      - launcher-config-admin_windows_amd64
+      - launcher-config-admin-agent_windows_amd64
+    files:
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: launcher/README.md
+        dst: docs/README.txt
+      - src: launcher-config/README.md
+        dst: docs/README-config.txt
+      - src: launcher/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: launcher/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: launcher/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: launcher/resources/windows/start_athens.bat
+        dst: start_athens.bat
+    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win10_x86-64"
+    formats: zip
+  - id: launcher_windows_arm64
+    ids:
+      - launcher_windows_arm64
+      - launcher-agent_windows_arm64
+      - launcher-config_windows_arm64
+      - launcher-config-admin_windows_arm64
+      - launcher-config-admin-agent_windows_arm64
+    files:
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: LICENSE
+        dst: docs/LICENSE.txt
+      - src: launcher/README.md
+        dst: docs/README.txt
+      - src: launcher-config/README.md
+        dst: docs/README-config.txt
+      - src: launcher/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: launcher/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: launcher/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: launcher/resources/windows/start_athens.bat
+        dst: start_athens.bat
+    name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win11_arm64"
+    formats: tar.xz
+  - id: launcher_linux
+    ids:
+      - launcher_linux
+      - launcher-agent_linux
+      - launcher-config_linux
+      - launcher-config-admin_linux
+      - launcher-config-admin-agent_linux
+    files:
+      - src: launcher/resources/config.toml
+        dst: resources/config.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: launcher/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: LICENSE
+        dst: docs/LICENSE
+      - src: launcher/README.md
+        dst: docs/README
+      - src: launcher-config/README.md
+        dst: docs/README-config
+      - src: launcher/resources/unix/start_age1.sh
+        dst: start_age1.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age2.sh
+        dst: start_age2.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_age3.sh
+        dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: launcher/resources/unix/start_athens.sh
+        dst: start_athens.sh
+        info:
+          mode: 0744
+    name_template: >-
+      {{- .ProjectName }}_launcher_
+      {{- .RawVersion }}_linux
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else if eq .Arch "arm64" }}_arm64
+      {{- end }}
+    formats: tar.xz
+  - id: battle-server-manager_windows_amd64
+    ids:
+      - battle-server-manager_windows_amd64
+    name_template: "{{ .ProjectName }}_battle-server-manager_{{ .RawVersion }}_win10_x86-64"
+    files:
+      - src: battle-server-manager/resources/windows/clean.bat
+        dst: clean.bat
+      - src: battle-server-manager/resources/windows/remove-all.bat
+        dst: remove-all.bat
+      - src: battle-server-manager/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: battle-server-manager/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: battle-server-manager/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: battle-server-manager/resources/windows/start_athens.bat
+        dst: start_athens.bat
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: README.md
+        dst: docs/README.txt
+    formats: zip
+  - id: battle-server-manager_windows_arm64
+    ids:
+      - battle-server-manager_windows_arm64
+    name_template: "{{ .ProjectName }}_battle-server-manager_{{ .RawVersion }}_win11_arm64"
+    files:
+      - src: battle-server-manager/resources/windows/clean.bat
+        dst: clean.bat
+      - src: battle-server-manager/resources/windows/remove-all.bat
+        dst: remove-all.bat
+      - src: battle-server-manager/resources/windows/start_age1.bat
+        dst: start_age1.bat
+      - src: battle-server-manager/resources/windows/start_age2.bat
+        dst: start_age2.bat
+      - src: battle-server-manager/resources/windows/start_age3.bat
+        dst: start_age3.bat
+      - src: battle-server-manager/resources/windows/start_athens.bat
+        dst: start_athens.bat
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: README.md
+        dst: docs/README.txt
+    formats: tar.xz
+  - id: battle-server-manager_linux
+    ids:
+      - battle-server-manager_linux
+    name_template: >-
+      {{- .ProjectName }}_battle-server-manager_
+      {{- .RawVersion }}_linux
+      {{- if eq .Arch "amd64" }}_x86-64
+      {{- else }}_arm64
+      {{- end }}
+    files:
+      - src: battle-server-manager/resources/unix/clean.sh
+        dst: clean.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/remove-all.sh
+        dst: remove-all.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age1.sh
+        dst: start_age1.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age2.sh
+        dst: start_age2.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_age3.sh
+        dst: start_age3.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/unix/start_athens.sh
+        dst: start_athens.sh
+        info:
+          mode: 0744
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age1.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age2.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.age3.toml
+      - src: battle-server-manager/resources/config.game.toml
+        dst: resources/config.athens.toml
+      - src: README.md
+        dst: docs/README
+    formats: tar.xz
+universal_binaries:
+  - id: server_64_macos
+    name_template: 'server'
+    replace: true
+  - id: server-genCert_64_macos
+    name_template: 'bin/genCert'
+    replace: true
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt'
+signs:
+  - artifacts: checksum
+    cmd: gpg2
+    args: [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
+release:
+  draft: true
+  replace_existing_draft: false
+  use_existing_draft: true
+  replace_existing_artifacts: true
+  prerelease: 'auto'
