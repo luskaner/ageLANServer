@@ -69,8 +69,12 @@ var (
 				logger.Println(err.Error())
 				os.Exit(common.ErrPidLock)
 			}
+<<<<<<< HEAD
 			cfg := initConfig()
 			logger.LogEnabled = cfg.Config.Log
+=======
+			initConfig()
+>>>>>>> main
 			if err := logger.OpenMainFileLog(gameId); err != nil {
 				logger.Println("Failed to open file log")
 				logger.Println(err.Error())

@@ -99,7 +99,7 @@ WebSocketPort = 30002
 #### AoE II: DE
 
 ```toml
-[[Games.age1.BattleServers]]
+[[Games.age2.BattleServers]]
 Region = 'local'
 Name = 'Local'
 IPv4 = '192.168.1.2'
@@ -111,7 +111,7 @@ OutOfBandPort = 30005
 #### AoE III: DE
 
 ```toml
-[[Games.age1.BattleServers]]
+[[Games.age3.BattleServers]]
 Region = 'local'
 IPv4 = '192.168.1.2'
 BsPort = 30006
@@ -122,7 +122,7 @@ OutOfBandPort = 30008
 #### AoM: RT
 
 ```toml
-[[Games.age1.BattleServers]]
+[[Games.athens.BattleServers]]
 Region = 'local'
 IPv4 = '192.168.1.2'
 BsPort = 30009

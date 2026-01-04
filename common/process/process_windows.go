@@ -105,6 +105,9 @@ func FindProcess(pid int) (proc *os.Process, err error) {
 
 func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Process, err error) {
 	proc, err = os.FindProcess(pid)
+	if errors.Is(err, windows.ERROR_INVALID_PARAMETER) {
+		err = nil
+	}
 	entries := processesEntry(func(entry *windows.ProcessEntry32) bool {
 		return int(entry.ProcessID) == pid
 	}, true)
