@@ -466,7 +466,7 @@ archives:
         dst: battle-server-manager/resources/config.athens.toml
       - src: battle-server-manager/README.md
         dst: battle-server-manager/docs/README.txt
-    formats: tar.xz
+    formats: zip
   - id: all_linux
     ids:
       - server_64_full_linux
@@ -577,7 +577,7 @@ archives:
         dst: battle-server-manager/resources/config.athens.toml
       - src: battle-server-manager/README.md
         dst: battle-server-manager/docs/README
-    formats: tar.xz
+    formats: tar.gz
   - id: server_windows
     ids:
       - server_32_windows
@@ -647,7 +647,7 @@ archives:
         dst: docs/README
       - src: server/BattleServers.md
         dst: docs/BattleServers.txt
-    formats: tar.xz
+    formats: tar.gz
   - id: server_linux_tar_gz
     ids: [ server_32_linux, server-genCert_32_linux, server_64_x86_linux, server-genCert_64_x86_linux ]
     name_template: >-
@@ -689,6 +689,7 @@ archives:
         dst: docs/README
       - src: server/BattleServers.md
         dst: docs/BattleServers
+    formats: tar.gz
   - id: server_macos
     ids: [ server_64_macos, server-genCert_64_macos ]
     name_template: >-
@@ -725,6 +726,7 @@ archives:
         dst: docs/README
       - src: server/BattleServers.md
         dst: docs/BattleServers
+    formats: tar.gz
   - id: launcher_windows_amd64
     ids:
       - launcher_windows_amd64
@@ -792,7 +794,7 @@ archives:
       - src: launcher/resources/windows/start_athens.bat
         dst: start_athens.bat
     name_template: "{{ .ProjectName }}_launcher_{{ .RawVersion }}_win11_arm64"
-    formats: tar.xz
+    formats: zip
   - id: launcher_linux
     ids:
       - launcher_linux
@@ -839,7 +841,7 @@ archives:
       {{- if eq .Arch "amd64" }}_x86-64
       {{- else if eq .Arch "arm64" }}_arm64
       {{- end }}
-    formats: tar.xz
+    formats: tar.gz
   - id: battle-server-manager_windows_amd64
     ids:
       - battle-server-manager_windows_amd64
@@ -895,7 +897,7 @@ archives:
         dst: resources/config.athens.toml
       - src: README.md
         dst: docs/README.txt
-    formats: tar.xz
+    formats: zip
   - id: battle-server-manager_linux
     ids:
       - battle-server-manager_linux
@@ -940,7 +942,7 @@ archives:
         dst: resources/config.athens.toml
       - src: README.md
         dst: docs/README
-    formats: tar.xz
+    formats: tar.gz
 universal_binaries:
   - id: server_64_macos
     name_template: 'server'
