@@ -321,9 +321,7 @@ func QueryServers(
 
 	var wg sync.WaitGroup
 	for _, conn := range connTargets {
-		wg.Add(1)
-		go func(conn *connTarget) {
-			defer wg.Done()
+		wg.Go(func() {
 			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
 			sendAndReceive(&packetBuffer, conn, servers)
 			ticker := time.NewTicker(1 * time.Second)
@@ -332,7 +330,7 @@ func QueryServers(
 				<-ticker.C
 				sendAndReceive(&packetBuffer, conn, servers)
 			}
-		}(conn)
+		})
 	}
 	wg.Wait()
 }

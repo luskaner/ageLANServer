@@ -272,14 +272,12 @@ var (
 			defer cancel()
 
 			for _, server := range servers {
-				wg.Add(1)
-				go func(s *http.Server) {
-					defer wg.Done()
-					if err := s.Shutdown(ctx); err != nil {
-						fmt.Printf("'Server' %s forced to shutdown: %v\n", s.Addr, err)
+				wg.Go(func() {
+					if err := server.Shutdown(ctx); err != nil {
+						fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
 					}
-					logger.Println("'Server'", s.Addr, "stopped")
-				}(server)
+					logger.Println("'Server'", server.Addr, "stopped")
+				})
 			}
 			wg.Wait()
 		},
