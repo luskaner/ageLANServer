@@ -224,12 +224,11 @@ supported operating systems.
         * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.gz
 * Server:
     * Windows:
-        * **7, Server 2008 R2, Home Server 2011, Embedded 7, 8, Server 2012, Embedded 8, 8.1, Server 2012 R2,
-          Embedded 8.1 on x86-64**:
+        * **7, Server 2008 R2, Home Server 2011, Embedded 7 on x86-64**:
           ...\_server\_
           *A.B.C*_
           win7_x86-64.zip
-        * **7, Embedded 7, Thin PC, 8, Embedded 8, 8.1, Embedded 8.1 on x86-32**:
+        * **7, Embedded 7, Thin PC on x86-32**:
           ...\_server\_
           *A.B.C*_
           win7_x86-32.zip

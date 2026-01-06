@@ -626,7 +626,7 @@ func Execute() error {
 	// Client
 	v.SetDefault("Client.Executable", "auto")
 	v.SetDefault("Client.ExecutableArgs", []string{})
-	v.SetDefault("Client.Executable", "auto")
+	v.SetDefault("Client.Path", "auto")
 	// Server
 	v.SetDefault("Server.Start", "auto")
 	v.SetDefault("Server.Executable", "auto")

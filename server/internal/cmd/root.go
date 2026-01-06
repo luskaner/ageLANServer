@@ -301,9 +301,9 @@ func Execute() error {
 	rootCmd.Flags().BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	rootCmd.Flags().StringVar(&id, "id", "", "Server instance ID to identify it.")
 	// Default Values
-	// Config
+	// General
 	v.SetDefault("Log", false)
-	v.SetDefault("Config.GeneratePlatformUserId", false)
+	v.SetDefault("GeneratePlatformUserId", false)
 	// Announcement
 	v.SetDefault("Announcement.Enabled", true)
 	v.SetDefault("Announcement.Multicast", true)
