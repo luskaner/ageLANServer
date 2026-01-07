@@ -5,13 +5,23 @@ version: '3'
 dotenv: [ '.env', '{{.ENV}}/.env.', '{{.HOME}}/.env' ]
 
 tasks:
+  build-goreleaser-cfg:
+    internal: true
+    cmds:
+      - go run tools/scripts/cmd/generateGoreleaserConfig.go
   build:
+    deps:
+      - build-goreleaser-cfg
     cmds:
       - goreleaser build --clean --snapshot
   release:
+    deps:
+      - build-goreleaser-cfg
     cmds:
       - goreleaser release --clean --snapshot --fail-fast
   release-no-sign:
+    deps:
+      - build-goreleaser-cfg
     cmds:
       - goreleaser release --clean --snapshot --fail-fast --skip=sign
 includes:

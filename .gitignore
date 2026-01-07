@@ -13,3 +13,4 @@ build/**/*
 !build/launcher/.gitkeep
 !build/battle-server-manager/
 !build/battle-server-manager/.gitkeep
+.goreleaser.yaml
