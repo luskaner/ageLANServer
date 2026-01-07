@@ -334,14 +334,13 @@ func archToValues(architecture Architecture, b config.Build) mapset.Set[string] 
 
 func build(path, main string, operatingSystem OperatingSystem, architecture Architecture, instructionSet string) config.Build {
 	b := config.Build{
+		ID:     buildName(path, operatingSystem, &architecture, instructionSet),
 		Main:   main,
 		Binary: path,
 		Goos:   []string{operatingSystem.Name()},
 		Goarch: []string{architecture.Name()},
 	}
-	id := fmt.Sprintf("%s_%s_%s", path, operatingSystem.Name(), architecture.Name())
 	if instructionSet != "" {
-		id = fmt.Sprintf("%s_%s", id, instructionSet)
 		switch architecture {
 		case Arch386:
 			b.Go386 = []string{instructionSet}
@@ -353,22 +352,80 @@ func build(path, main string, operatingSystem OperatingSystem, architecture Arch
 			b.Goarm64 = []string{instructionSet}
 		}
 	}
-	b.ID = id
 	return b
 }
 
-func (a *Archive) Builds() []config.Build {
-	var builds []config.Build
+func buildName(path string, operatingSystem OperatingSystem, architecture *Architecture, instructionSet string) string {
+	name := fmt.Sprintf("%s_%s", path, operatingSystem.Name())
+	if architecture != nil {
+		name = fmt.Sprintf("%s_%s", name, (*architecture).Name())
+	}
+	if instructionSet != "" {
+		name = fmt.Sprintf("%s_%s", name, instructionSet)
+	}
+	return name
+}
+
+func mergeBuilds(path string, main string, operatingSystem OperatingSystem, builds ...config.Build) config.Build {
+	b := config.Build{
+		ID:     buildName(path, operatingSystem, nil, ""),
+		Main:   main,
+		Binary: path,
+		Goos:   []string{operatingSystem.Name()},
+	}
+	for _, currentBuild := range builds {
+		b.Goarch = append(b.Goarch, currentBuild.Goarch...)
+		if len(currentBuild.Goarm) > 0 {
+			b.Goarm = append(b.Goarm, currentBuild.Goarm...)
+		}
+		if len(currentBuild.Goarm64) > 0 {
+			b.Goarm64 = append(b.Goarm64, currentBuild.Goarm64...)
+		}
+		if len(currentBuild.Go386) > 0 {
+			b.Go386 = append(b.Go386, currentBuild.Go386...)
+		}
+		if len(currentBuild.Goamd64) > 0 {
+			b.Goamd64 = append(b.Goamd64, currentBuild.Goamd64...)
+		}
+	}
+	return b
+}
+
+func (a *Archive) Builds(mergedOSes ...OperatingSystem) []config.Build {
+	osPathMainBuilds := make(map[OperatingSystem]map[string]map[string][]config.Build)
 	for path, binary := range a.binaries {
 		for operatingSystem, architectures := range *binary.targets {
+			if _, exists := osPathMainBuilds[operatingSystem]; !exists {
+				osPathMainBuilds[operatingSystem] = make(map[string]map[string][]config.Build)
+			}
+			if _, exists := osPathMainBuilds[operatingSystem][path]; !exists {
+				osPathMainBuilds[operatingSystem][path] = make(map[string][]config.Build)
+			}
+			osPathMainBuilds[operatingSystem][path][binary.main] = []config.Build{}
 			for architecture, instructionSets := range architectures {
 				if instructionSets.Cardinality() > 0 {
 					for intructionSet := range instructionSets.Iter() {
-						builds = append(builds, build(path, binary.main, operatingSystem, architecture, intructionSet))
+						osPathMainBuilds[operatingSystem][path][binary.main] = append(osPathMainBuilds[operatingSystem][path][binary.main], build(path, binary.main, operatingSystem, architecture, intructionSet))
 					}
 				} else {
-					builds = append(builds, build(path, binary.main, operatingSystem, architecture, ""))
+					osPathMainBuilds[operatingSystem][path][binary.main] = append(osPathMainBuilds[operatingSystem][path][binary.main], build(path, binary.main, operatingSystem, architecture, ""))
 				}
+			}
+		}
+	}
+	var builds []config.Build
+	for operatingSystem, blds := range osPathMainBuilds {
+		if !slices.Contains(mergedOSes, operatingSystem) {
+			for _, mainBuilds := range blds {
+				for _, currentBlds := range mainBuilds {
+					builds = append(builds, currentBlds...)
+				}
+			}
+			continue
+		}
+		for path, mainBuilds := range blds {
+			for main, currentBlds := range mainBuilds {
+				builds = append(builds, mergeBuilds(path, main, operatingSystem, currentBlds...))
 			}
 		}
 	}
@@ -422,21 +479,56 @@ func archive(name string, operatingSystem OperatingSystem, architecture Architec
 	return a
 }
 
+func archiveToUniversal(archive config.Archive) config.Archive {
+	splitId := strings.Split(archive.ID, "_")
+	a := config.Archive{
+		ID:           strings.Join(splitId[:2], "_"),
+		IDs:          archive.IDs,
+		Files:        archive.Files,
+		NameTemplate: fmt.Sprintf(`{{ .ProjectName }}_%s_{{ .RawVersion }}_mac`, splitId[0]),
+		Formats:      archive.Formats,
+	}
+	return a
+}
+
+func keyFromStrings(s []string) string {
+	elems := slices.Sorted[string](slices.Values(s))
+	return strings.Join(elems, ",")
+}
+
 func (a *Archive) Archives(builds []config.Build) []config.Archive {
-	var archives []config.Archive
+	binaryIdsArchives := make(map[string][]config.Archive)
 	for operatingSystem, architectures := range *a.targets {
 		for architecture, instructionSets := range architectures {
 			if instructionSets.Cardinality() == 0 {
 				if currentArchive := archive(a.name, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
-					archives = append(archives, *currentArchive)
+					id := keyFromStrings(currentArchive.IDs)
+					if _, exists := binaryIdsArchives[id]; !exists {
+						binaryIdsArchives[id] = []config.Archive{}
+					}
+					binaryIdsArchives[id] = append(binaryIdsArchives[id], *currentArchive)
 				}
 			} else {
 				for intructionSet := range instructionSets.Iter() {
 					if currentArchive := archive(a.name, operatingSystem, architecture, intructionSet, builds, a.files); currentArchive != nil {
-						archives = append(archives, *currentArchive)
+						id := keyFromStrings(currentArchive.IDs)
+						if _, exists := binaryIdsArchives[id]; !exists {
+							binaryIdsArchives[id] = []config.Archive{}
+						} else {
+							fmt.Println("as")
+						}
+						binaryIdsArchives[id] = append(binaryIdsArchives[id], *currentArchive)
 					}
 				}
 			}
+		}
+	}
+	var archives []config.Archive
+	for _, archs := range binaryIdsArchives {
+		if len(archs) == 1 {
+			archives = append(archives, archs[0])
+		} else {
+			archives = append(archives, archiveToUniversal(archs[0]))
 		}
 	}
 	return archives

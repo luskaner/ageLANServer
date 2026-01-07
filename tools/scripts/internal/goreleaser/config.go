@@ -10,7 +10,7 @@ const configSource = `%s/resources/config.game.toml`
 const scriptSource = `%s/resources/{{.BaseOS}}/%s.{{.SrcScriptExt}}`
 const gameScriptSource = `%s/resources/{{.BaseOS}}/start_{{.Game}}.{{.SrcScriptExt}}`
 
-func Generate() {
+func Generate() error {
 	// Server Archive
 	serverArchive := NewArchive("server", Targets3264)
 	serverArchive.AddDocFiles("docs", nil, nil, "LICENSE", "server/README.md", "server/BattleServers.md")
@@ -66,5 +66,5 @@ func Generate() {
 	fullArchive := NewMergedArchive("full", fullServerArchive, fullLauncherArchive, fullBattleServerManager)
 	fullArchive.RemoveFiles("LICENSE")
 	fullArchive.AddDocFiles("docs", nil, nil, "LICENSE", "README.md")
-	GenerateConfig(serverArchive, battleServerManagerArchive, launcherArchive, fullArchive)
+	return GenerateConfig(serverArchive, battleServerManagerArchive, launcherArchive, fullArchive)
 }

@@ -3,13 +3,8 @@ package main
 import "scripts/internal/goreleaser"
 
 func main() {
-	/*project := config.Project{
-		Version: 2,
-	}
-	marshal, err := yaml.Marshal(&project)
+	err := goreleaser.Generate()
 	if err != nil {
-		return
+		panic(err)
 	}
-	println(string(marshal))*/
-	goreleaser.Generate()
 }
