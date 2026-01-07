@@ -58,9 +58,9 @@ type ChallengeMission struct {
 }
 
 type Labyrinth struct {
-	Id        int
-	Dfficulty string
-	Missions  []ChallengeMission
+	Id         int
+	Difficulty string
+	Missions   []ChallengeMission
 }
 
 type ProgressInventory struct {

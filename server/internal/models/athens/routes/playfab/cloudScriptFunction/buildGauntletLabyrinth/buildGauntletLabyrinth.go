@@ -46,9 +46,9 @@ func (b *Function) RunTyped(game models.Game, u models.User, parameters *Paramet
 		}
 		data.Challenge = user.Challenge{
 			Labyrinth: userData.NewPrivateBaseValue(user.Labyrinth{
-				Id:        id,
-				Dfficulty: parameters.GauntletDifficulty,
-				Missions:  missions,
+				Id:         id,
+				Difficulty: parameters.GauntletDifficulty,
+				Missions:   missions,
 			}),
 			Progress: userData.NewPrivateBaseValue(user.Progress{
 				Lives:             3,

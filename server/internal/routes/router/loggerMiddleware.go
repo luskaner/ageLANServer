@@ -66,9 +66,9 @@ func NewLoggingMiddleware(next http.Handler) http.Handler {
 		if r.Method != http.MethodHead && len(responseBody) > 0 {
 			hash = sha512.Sum512(responseBody)
 		}
-		//if len(responseBody) > 4_096 {
-		//	responseBody = []byte{}
-		//}
+		if len(responseBody) > 4_096 {
+			responseBody = []byte{}
+		}
 		url := r.URL
 		if r.URL.Scheme == "" {
 			r.URL.Scheme = "https"

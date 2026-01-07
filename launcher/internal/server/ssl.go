@@ -15,6 +15,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
 func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Config {
@@ -65,11 +66,17 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 	client := &http.Client{Transport: tr}
 	//goland:noinspection ALL
 	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem", ip))
-	if err != nil || resp.StatusCode != http.StatusOK {
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer error:", err)
+		return nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		commonLogger.Println("ReadCACertificateFromServer status code:", resp.StatusCode)
 		return nil
 	}
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer read error:", err)
 		return nil
 	}
 	defer func(Body io.ReadCloser) {
@@ -77,10 +84,12 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 	}(resp.Body)
 	block, _ := pem.Decode(bodyBytes)
 	if block == nil || block.Type != "CERTIFICATE" {
+		commonLogger.Println("ReadCACertificateFromServer: no certificate found")
 		return nil
 	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer parse error:", err)
 		return nil
 	}
 	return cert

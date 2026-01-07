@@ -202,34 +202,33 @@ supported operating systems.
     * Windows:
         * **7 on x86-64**: ...\_full\_*A.B.C*_win7_x86-64.zip
         * **10 on x86-64**: ...\_full\_*A.B.C*_win10_x86-64.zip
-        * **11 on ARM**: ...\_full\_*A.B.C*_win11_arm64.tar.xz
+        * **11 on ARM**: ...\_full\_*A.B.C*_win11_arm64.zip
     * Linux:
-        * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.gz
+        * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.gz
 * Launcher:
     * Windows:
         * **7 on x86-64**: ...\_launcher\_*A.B.C*_win7_x86-64.zip
         * **10 on x86-64**: ...\_launcher\_*A.B.C*_win10_x86-64.zip
-        * **11 on ARM**: ...\_launcher\_*A.B.C*_win11_arm64.tar.xz
+        * **11 on ARM**: ...\_launcher\_*A.B.C*_win11_arm64.zip
     * Linux:
-        * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.gz
+        * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.gz
 * Battle Server Manager:
     * Windows:
         * **7 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win7_x86-64.zip
         * **10 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win10_x86-64.zip
-        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win11_arm64.tar.xz
+        * **11 on ARM**: ...\_battle-server-manager\_*A.B.C*_win11_arm64.zip
     * Linux:
-        * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.xz
-        * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.xz
+        * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.gz
+        * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.gz
 * Server:
     * Windows:
-        * **7, Server 2008 R2, Home Server 2011, Embedded 7, 8, Server 2012, Embedded 8, 8.1, Server 2012 R2,
-          Embedded 8.1 on x86-64**:
+        * **7, Server 2008 R2, Home Server 2011, Embedded 7 on x86-64**:
           ...\_server\_
           *A.B.C*_
           win7_x86-64.zip
-        * **7, Embedded 7, Thin PC, 8, Embedded 8, 8.1, Embedded 8.1 on x86-32**:
+        * **7, Embedded 7, Thin PC on x86-32**:
           ...\_server\_
           *A.B.C*_
           win7_x86-32.zip
@@ -237,7 +236,7 @@ supported operating systems.
         * **10 (IoT), (Storage) Server 2016, Server IoT 2019 on x86-64**: ...\_server\_*A.B.C*_win10_x86-64.zip
         * **10 (IoT) on x86-32**: ...\_server\_*A.B.C*_win10_x86-32.zip
     * Linux:
-        * **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.xz
+        * **ARM64**: ...\_server\_*A.B.C*_linux_arm64.tar.gz
         * **ARM32**:
             * ARMv5 (armel): ...\_server\_*A.B.C*_linux_arm-5.tar.gz
             * ARMv6 (sometimes called armhf): ...\_server\_*A.B.C*_linux_arm-6.tar.gz

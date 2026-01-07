@@ -2,7 +2,12 @@ module scripts
 
 go 1.25.5
 
-require github.com/goreleaser/goreleaser/v2 v2.13.2
+require (
+	github.com/deckarep/golang-set/v2 v2.8.0
+	github.com/google/uuid v1.6.0
+	github.com/goreleaser/goreleaser/v2 v2.13.2
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251120230642-dcccabe2cd63 // indirect
@@ -33,7 +38,6 @@ require (
 	github.com/go-git/go-git/v5 v5.16.4 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/goreleaser/chglog v0.7.4 // indirect
 	github.com/goreleaser/fileglob v1.4.0 // indirect
 	github.com/goreleaser/nfpm/v2 v2.44.1 // indirect
@@ -65,5 +69,4 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
