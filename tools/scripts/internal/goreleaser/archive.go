@@ -301,7 +301,8 @@ func (a *Archive) AddMainBinary(binary *Binary) {
 }
 
 func (a *Archive) AddAuxiliarBinary(binary *Binary) {
-	a.binaries[filepath.ToSlash(filepath.Join("bin", binary.main))] = binary
+	a.binaries[filepath.ToSlash(
+		filepath.Join("bin", strings.ReplaceAll(binary.main, a.name+"-", "")))] = binary
 }
 
 func (a *Archive) CloneWithFilesPrefix(prefix string) *Archive {
