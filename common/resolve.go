@@ -1,12 +1,17 @@
 package common
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/miekg/dns"
 )
+
+// Google, Cloudfare and OpenDNS primaries then secondaries
+var dnsServers = []string{"8.8.8.8", "1.1.1.1", "208.67.222.222", "8.8.4.4", "1.0.0.1", "208.67.220.220"}
 
 var cacheTime = 1 * time.Minute
 var failedIpToHosts map[string]time.Time
@@ -64,6 +69,32 @@ func cachedIpToHosts(ip string) (bool, mapset.Set[string]) {
 		cached = true
 	}
 	return cached, result
+}
+
+func DirectHostToIP(host string) (string, error) {
+	fqdnHost := dns.Fqdn(host)
+	m := new(dns.Msg)
+	m.SetQuestion(fqdnHost, dns.TypeA)
+	client := &dns.Client{
+		Timeout: time.Second,
+	}
+	for _, dnsServer := range dnsServers {
+		in, _, err := client.Exchange(m, net.JoinHostPort(dnsServer, "53"))
+		if err != nil {
+			continue
+		}
+
+		if in.Rcode != dns.RcodeSuccess {
+			continue
+		}
+
+		for _, ans := range in.Answer {
+			if a, ok := ans.(*dns.A); ok {
+				return a.A.String(), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no IP found for %s", host)
 }
 
 func CacheMapping(host string, ip string) {
