@@ -6,7 +6,7 @@ require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/hairyhenderson/go-which v0.2.2
-	github.com/miekg/dns v1.1.70
+	github.com/miekg/dns v1.1.72
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/sys v0.40.0
