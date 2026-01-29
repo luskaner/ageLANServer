@@ -117,6 +117,8 @@ var revertCmd = &cobra.Command{
 		if cmd.GameId == common.GameAoE1 {
 			doRestoreMetadata = false
 			doRestoreCaStoreCert = false
+		} else if cmd.GameId == common.GameAoE4 {
+			doRestoreCaStoreCert = false
 		}
 		if (restoredMetadata || restoredProfiles) && !common.SupportedGames.ContainsOne(cmd.GameId) {
 			commonLogger.Println("Invalid game type")
@@ -331,7 +333,7 @@ func InitRevert() {
 		"caStoreCert",
 		"s",
 		false,
-		"Restore the game's trusted root store. For all except AoE I: DE.",
+		"Restore the game's trusted root store. For all except AoE I: DE and AoE IV: AE.",
 	)
 	revertCmd.Flags().BoolVarP(
 		&stopAgent,

@@ -42,11 +42,12 @@ Check all that apply:
 - [ ] Age of Empires: Definitive Edition
 - [ ] Age of Empires II: Definitive Edition
 - [ ] Age of Empires III: Definitive Edition
+- [ ] Age of Empires IV: Anniversary Edition
 - [ ] Age of Mythology: Retold
 
 **Server**
 
-- OS and Architecture: [e.g. Ubuntu]
+- OS: [e.g. Ubuntu]
 - OS Version and architecture [e.g. 24.04 x64]:
 - Server version [e.g. 1.0.0]:
 - Server log (**mandatory**):

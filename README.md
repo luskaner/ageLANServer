@@ -20,6 +20,7 @@ is in maintenance or is eventually shutdown.
 * **Age of Empires: Definitive Edition**.
 * **Age of Empires II: Definitive Edition**.
 * **Age of Empires III: Definitive Edition**.
+* **Age of Empires IV: Anniversary Edition**.
 * **Age of Mythology: Retold** ([currently](https://github.com/luskaner/ageLANServer/issues/245) only the *Steam*
   version).
 
@@ -36,7 +37,7 @@ is in maintenance or is eventually shutdown.
 > See more details
 > in [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA)).
 
-### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition and Age of Mythology: Retold
+### AoE II: DE, AoE III: DE, AoE IV: AE and AoM: RT
 
 <details>
 <summary>List of features</summary>
@@ -48,7 +49,7 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-### Age of Empires II: Definitive Edition, Age of Empires III: Definitive Edition
+### AoE II: DE and AoE III: DE
 
 <details>
 <summary>List of features</summary>
@@ -58,7 +59,7 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-### Age of Empires III: Definitive Edition
+### AoE II: DE
 
 <details>
 <summary>List of features</summary>
@@ -68,7 +69,11 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-### Age of Mythology: Retold
+### AoE III: DE, AoE IV: AE
+
+- 👥 Groups
+
+### AoM: RT
 
 <details>
 <summary>List of features</summary>
@@ -89,7 +94,7 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-#### Age of Empires III: Definitive Edition
+#### AoE III: DE, AoE IV: AE
 
 <details>
 <summary>List of limitations</summary>
@@ -98,7 +103,14 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-#### Age of Mythology: Retold
+#### AoE IV: AE
+
+* **⚠️ Modifying the profile causes a game crash.**
+* ⚠️ Error dialog shown that some online services are unavailable on start.
+* ⚠️ Error dialog shown that mods cannot be loaded on start when using a custom launcher.
+* ⚠️ Error dialog shown that match results cannot be loaded after game end.
+
+#### AoM: RT
 
 <details>
 <summary>List of limitations</summary>
@@ -109,7 +121,7 @@ is in maintenance or is eventually shutdown.
       the official server.
     * Favor stash is infinite.
     * Story mode has all missions unlocked by default.
-    * Challenge mode lifes are infinite, you have access to all legends and you are max level (99) by default.
+    * Challenge mode lifes are infinite, you have access to all legends, and you are max level (99) by default.
 
 </details>
 
@@ -140,7 +152,7 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- **Windows**: 7 (or equivalent).
+- **Windows**: 7 (or equivalent, 10 or higher recommended).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Monterey (v12).
 
@@ -185,6 +197,10 @@ it will require admin rights elevation.**
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
   Windows version*). Recommended a late 2023 version or later.
+- Age of Empires IV: Anniversary Edition
+  on [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition)
+  or [Xbox](https://www.xbox.com/games/store/age-of-mythology-retold/9npkgvxpfrsx). Recommended a 2025
+  version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
@@ -303,14 +319,14 @@ play.
     - Redirect the game's API requests to the LAN server.
     - Proxy certain requests:
         - CDN so it does not detect the official game status.
-        - Chat and user names show properly.
+        - Chat and usernames show properly.
 - (Optional) Install a self-signed certificate to allow the game to connect to the LAN server.
-- (except AoE I) Add a certificate to the game's store to allow the game to connect to the LAN server.
-- (Optional) Run custom configuration commands to setup/revert the configuration.
+- (except AoE I and AoE IV) Add a certificate to the game's store to allow the game to connect to the LAN server.
+- (Optional) Run custom configuration commands to set up/revert the configuration.
 - (Windows Optional) Re-broadcast the battle server through other network interfaces apart from the most priority one.
 - Automatically find and start the game.
 
-Afterwards, it reverses any changes to allow the official launcher to connect to the official servers.
+Afterward, it reverses any changes to allow the official launcher to connect to the official servers.
 </details>
 
 *Note: See the [launcher README](launcher/README.md) for more details.*
@@ -329,8 +345,8 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    `Client.Path` to point to the game's directory.
    **You will need to use a custom launcher (plus what my
    other [repo](https://github.com/luskaner/ageLANServerLauncherCompanion) provides) for 100% offline play**.
-6. If you are using AoM and don't have AoE II: DE installed on Steam edit the
-   `battle-server-manager/resources/config.athens.toml` file and point `Executable.Path` to the AoE II: DE
+6. If you are using AoE IV/AoM and don't have AoE II: DE installed edit the
+   `battle-server-manager/resources/config.<game>.toml` file and point `Executable.Path` to the AoE II: DE
    BattleServer.exe executable (it's portable), for example, 'S:
    \SteamLibrary\steamapps\common\AoE2DE\BattleServer\BattleServer.exe'.
 7. **Execute `launcher/start_<game_title>` script**: you will be asked for admin elevation and
@@ -338,11 +354,12 @@ Afterwards, it reverses any changes to allow the official launcher to connect to
    Firewall or any other.
 8. **Repeat the above steps for every PC** (except the point 6) you want to play in LAN with by running the *launcher*,
    the first PC to
-   launch it will host the "server" and the rest will auto-discover and be prompted to connnect to it.
+   launch it will host the "server" and the rest will auto-discover and be prompted to connect to it.
 9. In the game, just host a new lobby via the Multiplayer section. Setting it to public visibility is recommended.
 10. If the lobby is Public, they can join directly in the browser or you can **Invite friends** by searching them by
     name
-    and sending an invite as needed. If the game allows, you can share the link to join the lobby automatically (only
+    and sending an invitation as needed. If the game allows, you can share the link to join the lobby automatically (
+    only
     works if already
     in-game).
 

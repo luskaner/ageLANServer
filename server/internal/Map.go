@@ -342,3 +342,14 @@ func (m *SafeOrderedMap[K, V]) Iter() (int, iter.Seq2[K, V]) {
 	ro := m.ro.Load().(*baseSafeOrderedMapData[K, V])
 	return ro.iter()
 }
+
+func (m *SafeOrderedMap[K, V]) First() (key K, value V, ok bool) {
+	ro := m.ro.Load().(*baseSafeOrderedMapData[K, V])
+	if len(ro.keys) == 0 {
+		return
+	}
+	key = ro.keys[0]
+	value = ro.internal[key]
+	ok = true
+	return
+}

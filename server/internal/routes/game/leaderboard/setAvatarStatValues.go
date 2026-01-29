@@ -10,6 +10,8 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
+// TODO: Any fixed stats for aoe4?
+
 var fixedAvatarNames = map[string]mapset.Set[string]{
 	common.GameAoM: mapset.NewSet[string]("STAT_GAUNTLET_REWARD_FAVOUR", "STAT_GAUNTLET_REWARD_XP"),
 }

@@ -12,7 +12,7 @@ import (
 func profileFolder(gameId string) string {
 	var p string
 	switch gameId {
-	case common.GameAoE1:
+	case common.GameAoE1, common.GameAoE4:
 		p = "Users"
 	}
 	return p

@@ -12,11 +12,12 @@ import (
 func GetAvailableCommunityEvents(w http.ResponseWriter, r *http.Request) {
 	var response i.A
 	game := models.G(r)
-	if game.Title() == common.GameAoM {
+	title := game.Title()
+	if title == common.GameAoM {
 		response = game.(*athens.Game).CommunityEventsEncoded()
 	} else {
 		response = i.A{0, i.A{}, i.A{}}
-		if game.Title() == common.GameAoE2 {
+		if title == common.GameAoE2 || title == common.GameAoE4 {
 			response = append(
 				response,
 				i.A{}, i.A{}, i.A{}, i.A{},

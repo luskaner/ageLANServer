@@ -31,24 +31,32 @@ func (p *PlayfabApi) Check(r *http.Request) bool {
 }
 
 func (p *PlayfabApi) Initialize(gameId string) bool {
-	return gameId == common.GameAoM
+	return gameId == common.GameAoE4 || gameId == common.GameAoM
 }
 
-func (p *PlayfabApi) InitializeRoutes(_ string, _ http.Handler) http.Handler {
+func (p *PlayfabApi) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	p.initialize()
 	playfabClientGroup := p.group.Subgroup("/Client")
 	playfabClientGroup.HandleFunc("POST", "/GetPlayerCombinedInfo", Client.GetPlayerCombinedInfo)
 	playfabClientGroup.HandleFunc("POST", "/GetTime", Client.GetTime)
-	playfabClientGroup.HandleFunc("POST", "/GetTitleData", Client.GetTitleData)
-	playfabClientGroup.HandleFunc("POST", "/GetUserReadOnlyData", Client.GetUserReadOnlyData)
-	playfabClientGroup.HandleFunc("POST", "/LoginWithSteam", Client.LoginWithSteam)
+	if gameId == common.GameAoE4 {
+		playfabClientGroup.HandleFunc("POST", "/LoginWithCustomID", Client.LoginWithCustomID)
+		playfabClientGroup.HandleFunc("POST", "/GetUserData", Client.GetUserData)
+	}
+	if gameId == common.GameAoM {
+		playfabClientGroup.HandleFunc("POST", "/GetTitleData", Client.GetTitleData)
+		playfabClientGroup.HandleFunc("POST", "/GetUserReadOnlyData", Client.GetUserReadOnlyData)
+		playfabClientGroup.HandleFunc("POST", "/LoginWithSteam", Client.LoginWithSteam)
+	}
 	playfabClientGroup.HandleFunc("POST", "/UpdateUserTitleDisplayName", Client.UpdateUserTitleDisplayName)
 
 	playfabEventGroup := p.group.Subgroup("/Event")
 	playfabEventGroup.HandleFunc("POST", "/WriteTelemetryEvents", Event.WriteTelemetryEvents)
 
-	playfabInventoryGroup := p.group.Subgroup("/Inventory")
-	playfabInventoryGroup.HandleFunc("POST", "/GetInventoryItems", Inventory.GetInventoryItems)
+	if gameId == common.GameAoM {
+		playfabInventoryGroup := p.group.Subgroup("/Inventory")
+		playfabInventoryGroup.HandleFunc("POST", "/GetInventoryItems", Inventory.GetInventoryItems)
+	}
 
 	playfabMultiplayerServerGroup := p.group.Subgroup("/MultiplayerServer")
 	playfabMultiplayerServerGroup.HandleFunc("POST", "/GetCognitiveServicesToken", MultiplayerServer.GetCognitiveServicesToken)
@@ -57,18 +65,20 @@ func (p *PlayfabApi) InitializeRoutes(_ string, _ http.Handler) http.Handler {
 	playfabPartyGroup := p.group.Subgroup("/Party")
 	playfabPartyGroup.HandleFunc("POST", "/RequestParty", Party.RequestParty)
 
-	catalogGroup := p.group.Subgroup("/Catalog")
-	catalogGroup.HandleFunc("POST", "/GetItems", Catalog.GetItems)
+	if gameId == common.GameAoM {
+		catalogGroup := p.group.Subgroup("/Catalog")
+		catalogGroup.HandleFunc("POST", "/GetItems", Catalog.GetItems)
 
-	cloudScriptGroup := p.group.Subgroup("/CloudScript")
-	cloudScriptGroup.HandleFunc("POST", "/ExecuteFunction", CloudScript.ExecuteFunction)
+		cloudScriptGroup := p.group.Subgroup("/CloudScript")
+		cloudScriptGroup.HandleFunc("POST", "/ExecuteFunction", CloudScript.ExecuteFunction)
 
-	fs := http.FileServer(http.Dir(playfab.BaseDir))
-	playfabStaticGroup := p.group.Subgroup(playfab.StaticSuffix)
-	playfabStaticGroup.Handle(
-		"GET",
-		"/",
-		http.StripPrefix(playfab.StaticSuffix, fs),
-	)
+		fs := http.FileServer(http.Dir(playfab.BaseDir))
+		playfabStaticGroup := p.group.Subgroup(playfab.StaticSuffix)
+		playfabStaticGroup.Handle(
+			"GET",
+			"/",
+			http.StripPrefix(playfab.StaticSuffix, fs),
+		)
+	}
 	return PlayfabMiddleware(p.group.mux)
 }

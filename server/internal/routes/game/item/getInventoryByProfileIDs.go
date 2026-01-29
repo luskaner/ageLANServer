@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
 type getInventoryByProfileIDsRequest struct {
@@ -20,21 +21,34 @@ func GetInventoryByProfileIDs(w http.ResponseWriter, r *http.Request) {
 	}
 	initialData := make(i.A, len(req.ProfileIDs.Data))
 	finalData := make(i.A, len(req.ProfileIDs.Data))
-	finalDataArr := i.A{
-		// What this mean?
-		i.A{1, 0, 0, 0, 10000, 0, 0, 0, 1},
-		i.A{2, 0, 1, 0, 10000, 0, 1, 1, 0},
-	}
+	game := models.G(r)
+	locations := game.Items().EncodeLocations()
+	users := game.Users()
+	sess := models.SessionOrPanic(r)
+	userId := sess.GetUserId()
 	for j, profileId := range req.ProfileIDs.Data {
+		var itemsEncoded i.A
+		// Only return items for the user's own profile to avoid crash (AoE4) when looking another's player profile
+		// Make it for all games as a precaution
+		if userId == profileId {
+			if u, ok := users.GetUserById(profileId); ok {
+				_ = u.GetItems().WithReadOnly(func(data *map[int32]models.Item) error {
+					for _, item := range *data {
+						// FIXME: Not all items should be shared with all users
+						itemsEncoded = append(itemsEncoded, item.Encode(profileId))
+					}
+					return nil
+				})
+			}
+		}
 		profileIdStr := strconv.Itoa(int(profileId))
 		initialData[j] = i.A{
 			profileIdStr,
-			// And this?
-			i.A{},
+			itemsEncoded,
 		}
 		finalData[j] = i.A{
 			profileIdStr,
-			finalDataArr,
+			locations,
 		}
 	}
 	i.JSON(&w, i.A{0, initialData, finalData})

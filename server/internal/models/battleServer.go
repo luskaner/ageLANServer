@@ -153,12 +153,17 @@ func (battleServer *MainBattleServer) String() string {
 }
 
 type BattleServers interface {
-	Initialize(battleServers []BattleServer, haveOobPort bool, battleServerName string)
+	Initialize(battleServers []BattleServer, opts *BattleServerOpts)
 	Iter() iter.Seq2[string, BattleServer]
 	Encode(r *http.Request) internal.A
 	Get(region string) (BattleServer, bool)
 	NewLANBattleServer(region string) BattleServer
 	NewBattleServer(region string) BattleServer
+}
+
+type BattleServerOpts struct {
+	OobPort bool
+	Name    string
 }
 
 type MainBattleServers struct {
@@ -167,17 +172,25 @@ type MainBattleServers struct {
 	battleServerName string
 }
 
-func (battleSrvs *MainBattleServers) Initialize(battleServers []BattleServer, haveOobPort bool, battleServerName string) {
+func (battleSrvs *MainBattleServers) Initialize(battleServers []BattleServer, opts *BattleServerOpts) {
+	if opts == nil {
+		opts = &BattleServerOpts{
+			OobPort: true,
+		}
+	}
+	if opts.Name == "" {
+		opts.Name = "true"
+	}
 	keyOrder := make([]string, len(battleServers))
 	mapping := make(map[string]BattleServer, len(battleServers))
 	for i, bs := range battleServers {
-		battleServers[i].SetHasOobPort(haveOobPort)
-		battleServers[i].SetBattleServerName(battleServerName)
+		battleServers[i].SetHasOobPort(opts.OobPort)
+		battleServers[i].SetBattleServerName(opts.Name)
 		keyOrder[i] = bs.Region()
 		mapping[keyOrder[i]] = battleServers[i]
 	}
-	battleSrvs.battleServerName = battleServerName
-	battleSrvs.haveOobPort = haveOobPort
+	battleSrvs.battleServerName = opts.Name
+	battleSrvs.haveOobPort = opts.OobPort
 	battleSrvs.store = internal.NewReadOnlyOrderedMap[string, BattleServer](keyOrder, mapping)
 }
 

@@ -7,7 +7,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- **Windows**: 7 (or equivalent).
+- **Windows**: 7 (or equivalent, 10 or higher recommended).
 - **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
 - **macOS**: Monterey (v12).
 
@@ -29,7 +29,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Main
 
-* `aoe-api.reliclink.com`: legacy domain for AoE I: DE, AoE II: DE and AoE III: DE.
+* `aoe-api.reliclink.com`: legacy domain for AoE I: DE, AoE II: DE, AoE III: DE and AoE IV: AE.
 * `*.worldsedgelink.com`: current domain for all games.
 
 ### Playfab
@@ -55,11 +55,12 @@ the ```launcher``` if you are hosting and running the launcher on same PC.
 #### Self-signed certificate
 
 The self signed certificate pair (``selfsigned_cert.pem`` and ``selfsigned_key.pem``) is generated specifically for
-non-AoM games.
+non-AoM and non-AoE IV games.
 
 #### Default
 
-The default certificate pair (``cert.pem`` and ``key.pem``) serves as the default and for AoM. It is signed by
+The default certificate pair (``cert.pem`` and ``key.pem``) serves as the default and for AoM and AoE IV. It is signed
+by
 `cacert.pem` certificate authority.
 
 You can use your own certificate by (re)placing the `cert.pem` and `key.pem` files in the `resources/certificates`
@@ -114,6 +115,7 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 - [`Item Bundle Items`](resources/responses/age2/itemBundleItems.json): Grouping of items into bundles.
+- [`Item Locations`](resources/responses/age4/itemLocations.json): Locations of items.
 
 #### Age of Empires III: Definitive Edition
 
@@ -122,6 +124,23 @@ the [`responses`](resources/responses) base directory.
 - [`Item Definitions`](resources/responses/age3/itemDefinitions.json): Definitions of items. Includes rewards,
   challenges and
   other items.
+- [`Item Locations`](resources/responses/age4/itemLocations.json): Locations of items.
+
+#### Age of Empires IV: Anniversary Edition
+
+- [`Achievements`](resources/responses/age4/achievements.json): List of achievements.
+- [`Leaderboards`](resources/responses/age4/leaderboards.json): List of leaderboards.
+- [`Automatch maps`](resources/responses/age4/automatchMaps.json): List of maps for automatch.
+- [`Challenges`](resources/responses/age4/challenges.json): List of challenges.
+- [`Presence Data`](resources/responses/age4/presenceData.json): Presence data. Basically if a player is online, offline
+  or
+  away.
+- [`Item Definitions`](resources/responses/age4/itemDefinitions.json): Definitions of items. Includes rewards,
+  challenges and
+  other items.
+- [`Item Locations`](resources/responses/age4/itemLocations.json): Locations of items.
+- [`Item Bundle Items`](resources/responses/age4/itemBundleItems.json): Grouping of items into bundles.
+- [`Level Rewards Table`](resources/responses/age4/levelRewardsTable.json): Level rewards table.
 
 #### Age of Mythology: Retold
 

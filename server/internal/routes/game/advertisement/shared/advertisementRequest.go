@@ -69,4 +69,5 @@ type AdvertisementHostRequest struct {
 	SlotInfo         string `schema:"slotinfo"`
 	PsnSessionId     uint64 `schema:"psnSessionID"`
 	State            int8   `schema:"state"`
+	ServiceType      uint8  `schema:"serviceType"`
 }
