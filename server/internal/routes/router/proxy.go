@@ -9,31 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/miekg/dns"
+	"github.com/luskaner/ageLANServer/common"
 )
-
-// Google, Cloudfare and OpenDNS primaries then secondaries
-var dnsServers = []string{"8.8.8.8", "1.1.1.1", "208.67.222.222", "8.8.4.4", "1.0.0.1", "208.67.220.220"}
-
-func resolveDirect(host string) (string, error) {
-	for _, dnsServer := range dnsServers {
-		m := new(dns.Msg)
-		m.SetQuestion(dns.Fqdn(host), dns.TypeA)
-
-		c := new(dns.Client)
-		in, _, err := c.Exchange(m, dnsServer+":53")
-		if err != nil {
-			continue
-		}
-
-		for _, ans := range in.Answer {
-			if a, ok := ans.(*dns.A); ok {
-				return a.A.String(), nil
-			}
-		}
-	}
-	return "", fmt.Errorf("no IP found for %s", host)
-}
 
 type Proxy struct {
 	Router
@@ -44,7 +21,7 @@ type Proxy struct {
 
 func NewProxy(host string, initFn func(gameId string, next http.Handler) http.Handler) (proxy Proxy) {
 	proxy = Proxy{host: host, initializeRoutes: initFn}
-	ip, err := resolveDirect(host)
+	ip, err := common.DirectHostToIP(host)
 	if err != nil {
 		return
 	}

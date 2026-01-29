@@ -1,10 +1,7 @@
 package common
 
 import (
-	"context"
 	"fmt"
-	"net"
-	"time"
 )
 
 const Tld = "com"
@@ -60,14 +57,6 @@ func AllHosts(gameId string) (domains []string) {
 	return
 }
 
-func domainExists(domain string) bool {
-	resolver := &net.Resolver{}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	_, err := resolver.LookupIPAddr(ctx, domain)
-	return err == nil
-}
-
 func generateDomains(gameId string) (domains []string) {
 	var prefix string
 	var releaseMin int
@@ -95,7 +84,7 @@ func generateDomains(gameId string) (domains []string) {
 		domains = append(domains, generateDomainName(release))
 	}
 	for release := releaseMin + 1; ; release++ {
-		if domain := generateDomainName(release); domainExists(domain) {
+		if _, err := DirectHostToIP(generateDomainName(release)); err == nil {
 			domains = append(domains, generateDomainName(release))
 		} else {
 			break
