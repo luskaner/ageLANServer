@@ -405,6 +405,9 @@ func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
 }
 
 func (u *MainUser) EncodePresence(definitions PresenceDefinitions) i.A {
+	if definitions == nil {
+		return i.A{}
+	}
 	var presenceProperties i.A
 	for id, value := range u.presenceProperties.Iter() {
 		presenceProperties = append(presenceProperties, i.A{id, value})

@@ -71,7 +71,12 @@ is in maintenance or is eventually shutdown.
 
 ### AoE III: DE, AoE IV: AE
 
+<details>
+<summary>List of features</summary>
+
 - 👥 Groups
+
+</details>
 
 ### AoM: RT
 

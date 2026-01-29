@@ -39,7 +39,7 @@ func UpdateHost(w http.ResponseWriter, r *http.Request) {
 			if hostId == currentUserId {
 				return
 			}
-			adv.UnsafeSetHostId(hostId)
+			adv.UnsafeSetHostId(currentUserId)
 		})
 		i.JSON(&w, i.A{0})
 	}

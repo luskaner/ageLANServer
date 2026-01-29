@@ -32,7 +32,12 @@ func (b *BoolMappedNumber[T]) MarshalJSON() ([]byte, error) {
 
 func (b *BoolMappedNumber[T]) UnmarshalJSON(data []byte) error {
 	var val T
-	return json.Unmarshal(data, &val)
+	if err := json.Unmarshal(data, &val); err == nil {
+		b.Value = val
+		return nil
+	} else {
+		return err
+	}
 }
 
 func NewBoolMappedNumber[T number](value T) *BoolMappedNumber[T] {

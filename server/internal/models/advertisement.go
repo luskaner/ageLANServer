@@ -194,6 +194,7 @@ func (adv *MainAdvertisement) UnsafeGetVisible() bool {
 	return adv.visible
 }
 
+// UnsafeGetHostId requires advertisement read lock
 func (adv *MainAdvertisement) UnsafeGetHostId() int32 {
 	return adv.hostId
 }

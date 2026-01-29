@@ -35,11 +35,10 @@ func UpdateItemAttributes(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}, i.A{}})
 		return
 	}
-	errorCodes := make([]int, minLength)
+	errorCodes := make([]i.A, minLength)
 	itemsEncoded := make([]i.A, minLength)
 	_ = u.GetItems().WithReadWrite(func(data *map[int32]models.Item) error {
 		for j, itemId := range req.ItemIds.Data {
-			// TODO: Handle XP gains
 			var itemIdErrorCodes i.A
 			attributeKeys := req.Keys.Data.Data
 			if item, exists := (*data)[itemId]; !exists {
@@ -54,9 +53,10 @@ func UpdateItemAttributes(w http.ResponseWriter, r *http.Request) {
 					metadata.UpdateAttribute(attr, value)
 				}
 				item.IncrementVersion()
-				itemIdErrorCodes[j] = itemIdErrorCodes
+				itemIdErrorCodes = i.A{0, slices.Repeat(i.A{0}, len(attributeKeys))}
 				itemsEncoded[j] = item.Encode(sess.GetUserId())
 			}
+			errorCodes[j] = itemIdErrorCodes
 		}
 		return nil
 	})
