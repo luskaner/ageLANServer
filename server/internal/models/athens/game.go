@@ -13,33 +13,32 @@ import (
 )
 
 type Game struct {
-	models.Game
+	commonPlayfab.BaseGame
 	AllowedBlessings              map[int][]string
 	GauntletPoolIndexByDifficulty map[string][]int
 	Gauntlet                      playfab.Gauntlet
 	GauntletMissionPools          playfab.GauntletMissionPools
 	CatalogItems                  map[string]commonPlayfab.CatalogItem
 	// All users have the same fixed items
-	InventoryItems  []commonPlayfab.InventoryItem
-	PlayfabSessions commonPlayfab.MainSessions
+	InventoryItems []commonPlayfab.InventoryItem
 }
 
 func CreateGame() models.Game {
 	mainGame := models.CreateMainGame(
 		common.GameAoM,
-		nil,
-		nil,
-		nil,
-		&user.Users{},
-		nil,
-		nil,
-		nil,
-		mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"),
-		true,
-		"true",
+		&models.CreateMainGameOpts{
+			Instances: &models.InstanceOpts{
+				Users: &user.Users{},
+			},
+			Resources: &models.ResourcesOpts{
+				KeyedFilenames: mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"),
+			},
+		},
 	)
 	g := &Game{
-		Game: mainGame,
+		BaseGame: commonPlayfab.BaseGame{
+			Game: mainGame,
+		},
 	}
 	blessings := playfab.ReadBlessings()
 	g.CatalogItems, g.InventoryItems = playfab.Items(blessings)
@@ -48,7 +47,7 @@ func CreateGame() models.Game {
 	g.AllowedBlessings = precomputed.AllowedGauntletBlessings(g.Gauntlet, blessings)
 	gauntletPoolNamesToIndex := precomputed.PoolNamesToIndex(g.GauntletMissionPools)
 	g.GauntletPoolIndexByDifficulty = precomputed.PoolsIndexByDifficulty(g.Gauntlet, gauntletPoolNamesToIndex)
-	g.PlayfabSessions.Initialize()
+	g.PlayfabSessions().Initialize()
 	communityEvent.Initialize()
 	return g
 }

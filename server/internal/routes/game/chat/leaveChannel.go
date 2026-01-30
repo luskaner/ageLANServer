@@ -10,7 +10,7 @@ import (
 )
 
 func NotifyLeaveChannel(sessions models.Sessions, users models.Users, user models.User, chatChannelId int32, clientLibVersion uint16) {
-	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.GetProfileInfo(false, clientLibVersion)}
+	staticResponse := i.A{strconv.Itoa(int(chatChannelId)), user.EncodeProfileInfo(clientLibVersion)}
 	for userId := range users.GetUserIds() {
 		if userId == user.GetId() {
 			continue

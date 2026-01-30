@@ -41,7 +41,7 @@ func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServ
 	switch gameTitle {
 	case common.GameAoE1:
 		response = append(response, metadata)
-	case common.GameAoE2, common.GameAoM:
+	case common.GameAoE2, common.GameAoE4, common.GameAoM:
 		response = append(
 			response,
 			0,
@@ -72,8 +72,9 @@ func Host(w http.ResponseWriter, r *http.Request) {
 
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
-		// Disallow Matchmaking as it is not implemented
-		if adv.Description == "SESSION_MATCH_KEY" {
+		// In AoE4 we cannot differentiate between Matchmaking and custom matches so just allow it
+		if gameTitle != common.GameAoE4 && adv.Description == "SESSION_MATCH_KEY" {
+			// Disallow Matchmaking as it is not implemented
 			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
@@ -81,7 +82,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
-		if gameTitle != common.GameAoE2 {
+		if gameTitle == common.GameAoE1 || gameTitle == common.GameAoE3 || gameTitle == common.GameAoM {
 			adv.Joinable = true
 		}
 		u, ok := game.Users().GetUserById(adv.HostId)
@@ -91,20 +92,30 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		}
 		advertisements := game.Advertisements()
 		// Leave the previous match if the user is already in one
-		// Necessary for AoE3 but might as well do it for all
-		if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
-			advertisements.WithWriteLock(existingAdv.GetId(), func() {
-				advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
-			})
+		// Necessary for AoE3 but might as well do it for all (except AoE4 which needs multiple for groups)
+		if gameTitle != common.GameAoE4 {
+			// FIXME: Exit in aoe4 if the currrent match is not a party
+			if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
+				advertisements.WithWriteLock(existingAdv.GetId(), func() {
+					advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
+				})
+			}
+		}
+		if adv.Party != -1 {
+			if partyAdv, ok := advertisements.GetAdvertisement(adv.Party); !ok {
+				returnError(battleServers, gameTitle, r, &w)
+			} else if partyAdv.GetParty() != -1 {
+				returnError(battleServers, gameTitle, r, &w)
+			}
 		}
 		storedAdv := advertisements.Store(
 			&adv,
 			!battleServer.LAN(),
-			gameTitle == common.GameAoM,
+			gameTitle,
 		)
 		var response i.A
 		advertisements.WithWriteLock(storedAdv.GetId(), func() {
-			if advertisements.UnsafeNewPeer(storedAdv.GetId(), storedAdv.GetIp(), u.GetId(), u.GetStatId(), adv.Race, adv.Team) == nil {
+			if advertisements.UnsafeNewPeer(storedAdv.GetId(), storedAdv.GetIp(), u.GetId(), u.GetStatId(), adv.Party, adv.Race, adv.Team) == nil {
 				ok = false
 				return
 			}
@@ -116,7 +127,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 				r,
 				storedAdv.GetRelayRegion(),
 				storedAdv.EncodePeers(),
-				storedAdv.GetMetadata(),
+				storedAdv.GetXboxSessionId(),
 				storedAdv.UnsafeGetDescription(),
 			)
 		})

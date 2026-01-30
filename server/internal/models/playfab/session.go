@@ -16,17 +16,17 @@ const sessionDuration = 24 * time.Hour
 type SessionKey = string
 
 type SessionData struct {
-	playfabId   string
-	entityToken string
-	user        models.User
+	playfabId string
+	token     string
+	user      models.User
 }
 
 func (s *SessionData) PlayfabId() string {
 	return s.playfabId
 }
 
-func (s *SessionData) EntityToken() string {
-	return s.entityToken
+func (s *SessionData) Token() string {
+	return s.token
 }
 
 func (s *SessionData) User() models.User {
@@ -41,17 +41,29 @@ func (s *MainSessions) Initialize() {
 	s.baseSessions = models.NewBaseSessions[SessionKey, SessionData](sessionDuration)
 }
 
-func (s *MainSessions) Create(users models.Users, steamUserId uint64) SessionKey {
+func (s *MainSessions) create(user models.User) SessionKey {
+	sess := &SessionData{
+		token: uuid.NewString(),
+		user:  user,
+	}
+	stored := s.baseSessions.CreateSession(generateId, sess)
+	sess.playfabId = stored.Id()
+	return sess.playfabId
+}
+
+func (s *MainSessions) CreateWithSteamUserId(users models.Users, steamUserId uint64) SessionKey {
 	if user, found := users.GetUserByPlatformUserId(false, steamUserId); !found {
 		return ""
 	} else {
-		sess := &SessionData{
-			entityToken: uuid.NewString(),
-			user:        user,
-		}
-		stored := s.baseSessions.CreateSession(generateId, sess)
-		sess.playfabId = stored.Id()
-		return sess.playfabId
+		return s.create(user)
+	}
+}
+
+func (s *MainSessions) CreateWithUserId(users models.Users, userId int32) SessionKey {
+	if user, found := users.GetUserById(userId); !found {
+		return ""
+	} else {
+		return s.create(user)
 	}
 }
 

@@ -27,7 +27,7 @@ func PeerUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Only the host can update peers
-		if hostId := adv.GetHostId(); hostId != currentUserId {
+		if hostId := adv.UnsafeGetHostId(); hostId != currentUserId {
 			return
 		}
 		advPeers := adv.GetPeers()

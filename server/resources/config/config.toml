@@ -7,7 +7,7 @@ GeneratePlatformUserId = false
 
 [Games]
 # Games that the server will accept.
-# "age1" (AoE: DE), "age2" (AoE II: DE), "age3" (AoE III: DE) and "athens" (AoM: RT).
+# "age1" (AoE: DE), "age2" (AoE II: DE), "age3" (AoE III: DE), "age4" (AoE IV: AE) and "athens" (AoM: RT).
 Enabled = []
 
 # Games.<game>.Hosts is the hosts/IPs the server will bind to for that game. Only IPv4 is supported.
@@ -21,6 +21,9 @@ Hosts = ['0.0.0.0']
 Hosts = ['0.0.0.0']
 
 [Games.age3]
+Hosts = ['0.0.0.0']
+
+[Games.age4]
 Hosts = ['0.0.0.0']
 
 [Games.athens]

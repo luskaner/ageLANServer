@@ -18,6 +18,8 @@ func metadataFolder(gameId string) string {
 		p = "metadata"
 	case common.GameAoE3:
 		p = filepath.Join("Common", "RLink")
+	case common.GameAoE4:
+		p = "network"
 	case common.GameAoM:
 		p = filepath.Join("temp", "RLink")
 	}

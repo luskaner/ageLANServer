@@ -45,7 +45,7 @@ func main() {
 	serverExe := os.Args[3]
 	commonLogger.Printf("Server executable: %s\n", serverExe)
 	var broadcastBattleServer bool
-	if runtime.GOOS == "windows" && gameId != common.GameAoM {
+	if runtime.GOOS == "windows" && (gameId != common.GameAoM && gameId != common.GameAoE4) {
 		broadcastBattleServer, _ = strconv.ParseBool(os.Args[4])
 	}
 	commonLogger.Printf("Broadcast LAN Battle-Server: %v\n", broadcastBattleServer)
