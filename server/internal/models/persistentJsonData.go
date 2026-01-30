@@ -143,7 +143,7 @@ type jsonDataWithMetadata[T any] struct {
 }
 
 type jsonAnyDataWithMetadata struct {
-	Metadata jsonMetadata `json:"xboxSessionId"`
+	Metadata jsonMetadata `json:"metadata"`
 	Data     any          `json:"data"`
 }
 

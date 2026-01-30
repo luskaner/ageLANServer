@@ -408,14 +408,19 @@ func (u *MainUser) EncodePresence(definitions PresenceDefinitions) i.A {
 	if definitions == nil {
 		return i.A{}
 	}
+	presenceId := u.GetPresence()
+	presenceDefinition := definitions.Get(presenceId)
+	if presenceDefinition == nil {
+		return i.A{}
+	}
 	var presenceProperties i.A
 	for id, value := range u.presenceProperties.Iter() {
 		presenceProperties = append(presenceProperties, i.A{id, value})
 	}
-	presenceId := u.GetPresence()
+
 	return i.A{
 		presenceId,
-		(*definitions.Get(presenceId)).GetLabel(),
+		(*presenceDefinition).GetLabel(),
 		presenceProperties,
 	}
 }
