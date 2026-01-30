@@ -18,12 +18,21 @@ var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")
 var userDataFolder = filepath.Join(paths.ResourcesDir, "userData")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
+type ResourcesOpts struct {
+	KeyedFilenames mapset.Set[string]
+}
+
+type signature struct {
+	Value string `json:"dataSignature"`
+}
+
 type Resources interface {
-	Initialize(gameId string, keyedFilenames mapset.Set[string])
+	Initialize(gameId string, opts *ResourcesOpts)
 	ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool)
 	LoginData() []i.A
 	ChatChannels() map[string]*MainChatChannel
 	ArrayFiles() map[string]i.A
+	SignedAssets() map[string][]byte
 	CloudFiles() CloudFiles
 }
 
@@ -37,11 +46,17 @@ type MainResources struct {
 	cloudFiles      CloudFiles
 }
 
-func (r *MainResources) Initialize(gameId string, keyedFilenames mapset.Set[string]) {
+func (r *MainResources) Initialize(gameId string, opts *ResourcesOpts) {
+	if opts == nil {
+		opts = &ResourcesOpts{}
+	}
+	if opts.KeyedFilenames == nil {
+		opts.KeyedFilenames = mapset.NewSet[string]("itemDefinitions.json")
+	}
 	r.arrayFiles = make(map[string]i.A)
 	r.keyedFiles = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
-	r.keyedFilenames = keyedFilenames
+	r.keyedFilenames = opts.KeyedFilenames
 	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
@@ -59,6 +74,10 @@ func (r *MainResources) ChatChannels() map[string]*MainChatChannel {
 
 func (r *MainResources) ArrayFiles() map[string]i.A {
 	return r.arrayFiles
+}
+
+func (r *MainResources) SignedAssets() map[string][]byte {
+	return r.keyedFiles
 }
 
 func (r *MainResources) CloudFiles() CloudFiles {
@@ -81,10 +100,12 @@ func (r *MainResources) initializeLogin(gameId string) {
 	if err != nil {
 		panic(err)
 	}
-	re := regexp.MustCompile(`"([^"]*)"`)
+	re := regexp.MustCompile(`"([^"]+)"\s*:\s*"([^"]*)"`)
 	matches := re.FindAllStringSubmatch(string(data), -1)
-	for j := 0; j < len(matches)-1; j += 2 {
-		r.loginData = append(r.loginData, i.A{matches[j][1], matches[j+1][1]})
+	for _, m := range matches {
+		if len(m) == 3 {
+			r.loginData = append(r.loginData, i.A{m[1], m[2]})
+		}
 	}
 }
 
@@ -100,12 +121,11 @@ func (r *MainResources) initializeResponses(gameId string) {
 			continue
 		}
 		if r.keyedFilenames.ContainsOne(name) {
-			re := regexp.MustCompile(`"dataSignature"\s*:\s*"(.*?)"`)
-			matches := re.FindStringSubmatch(string(data))
-			if len(matches) == 1 {
-				serverSignature := matches[1]
+			var sig signature
+			err = json.Unmarshal(data, &sig)
+			if err == nil && sig.Value != "" {
 				r.keyedFiles[name] = data
-				r.nameToSignature[name] = serverSignature
+				r.nameToSignature[name] = sig.Value
 			}
 		} else {
 			var result i.A

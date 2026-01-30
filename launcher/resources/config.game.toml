@@ -40,6 +40,6 @@ ExecutableArgs = []
 # The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam' or 'msstore' it will be detected automatically.
 # If 'Executable' is a custom launcher, this is required to be set. Otherwise, this will be ignored.
 # Used to find the game certificate certificate store, file "cacert.pem".
-# Required that the game path can be found in all games except AoE I: DE.
+# Required that the game path can be found in all games except AoE I: DE and AoE IV: AE.
 # Note: You may use environment variables.
 Path = 'auto'

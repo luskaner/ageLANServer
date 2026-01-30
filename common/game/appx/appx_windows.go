@@ -38,6 +38,8 @@ func appNameSuffix(gameTitle string) string {
 		return "MSPhoenix"
 	case common.GameAoE3:
 		return "MSGPBoston"
+	case common.GameAoE4:
+		return "Cardinal"
 	// FIXME: Add common.GameAoM
 	default:
 		return ""
@@ -127,13 +129,12 @@ func GameInstallLocation(gameTitle string) (ok bool, gameLocation string) {
 		return
 	}
 	var installLocation string
-	if ok, installLocation = InstallLocation(fullName); !ok {
-		return
-	} else {
+	if ok, installLocation = InstallLocation(fullName); ok {
 		gameLocation = filepath.Join(installLocation, "Game")
 		if f, err := os.Stat(gameLocation); err != nil || !f.IsDir() {
 			return false, ""
 		}
-		return true, gameLocation
+		ok = true
 	}
+	return
 }

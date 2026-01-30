@@ -7,5 +7,12 @@ import (
 )
 
 func CreateGame() models.Game {
-	return models.CreateGame(common.GameAoE2, mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"), true, "true")
+	return models.CreateMainGame(
+		common.GameAoE2,
+		&models.CreateMainGameOpts{
+			Resources: &models.ResourcesOpts{
+				KeyedFilenames: mapset.NewThreadUnsafeSet[string]("itemBundleItems.json", "itemDefinitions.json"),
+			},
+		},
+	)
 }

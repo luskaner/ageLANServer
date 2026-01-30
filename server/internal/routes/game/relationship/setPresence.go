@@ -8,9 +8,14 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-func ChangePresence(clientLibVersion uint16, sessions models.Sessions, users models.Users, user models.User, presence int32) {
+func ChangePresence(clientLibVersion uint16, sessions models.Sessions, users models.Users, user models.User, presenceDefinitions models.PresenceDefinitions, presence int32) {
 	user.SetPresence(presence)
-	profileInfo := i.A{user.GetProfileInfo(true, clientLibVersion)}
+	NotifyChangePresence(clientLibVersion, sessions, users, user, presenceDefinitions)
+}
+
+func NotifyChangePresence(clientLibVersion uint16, sessions models.Sessions, users models.Users, user models.User, presenceDefinitions models.PresenceDefinitions) {
+	profileInfo := i.A{user.EncodeProfileInfo(clientLibVersion)}
+	profileInfo[0] = append(profileInfo[0].(i.A), user.EncodePresence(presenceDefinitions)...)
 	for u := range users.GetUserIds() {
 		sess, ok := sessions.GetByUserId(u)
 		if ok {
@@ -36,11 +41,7 @@ func SetPresence(w http.ResponseWriter, r *http.Request) {
 	sess := models.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
-	u, ok := users.GetUserById(sess.GetUserId())
-	if ok {
-		ChangePresence(sess.GetClientLibVersion(), game.Sessions(), users, u, req.PresenceId)
-		i.JSON(&w, i.A{0})
-	} else {
-		i.JSON(&w, i.A{2})
-	}
+	u, _ := users.GetUserById(sess.GetUserId())
+	ChangePresence(sess.GetClientLibVersion(), game.Sessions(), users, u, game.PresenceDefinitions(), req.PresenceId)
+	i.JSON(&w, i.A{0})
 }

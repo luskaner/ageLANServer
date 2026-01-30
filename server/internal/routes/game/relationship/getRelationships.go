@@ -21,13 +21,13 @@ func relationshipResponse(errorCode int, friends []i.A, lastConnection []i.A) i.
 	}
 }
 
-func Relationships(gameTitle string, clientLibVersion uint16, users models.Users, user models.User) i.A {
-	profileInfo := users.GetProfileInfo(true, func(u models.User) bool {
+func Relationships(gameTitle string, clientLibVersion uint16, users models.Users, user models.User, presences models.PresenceDefinitions) i.A {
+	profileInfo := users.EncodeProfileInfo(presences, func(u models.User) bool {
 		return u != user && u.GetPresence() > 0
 	}, clientLibVersion)
 	friends := profileInfo
 	lastConnection := profileInfo
-	if gameTitle == common.GameAoE3 || gameTitle == common.GameAoM {
+	if gameTitle == common.GameAoE3 || gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
 		lastConnection = []i.A{}
 	} else {
 		friends = []i.A{}
@@ -37,13 +37,13 @@ func Relationships(gameTitle string, clientLibVersion uint16, users models.Users
 
 func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	// As we don't have knowledge of Steam/Xbox friends, nor it is supposed to be many players on the server
-	// just return all online users as if they were friends (AoE3/AoM) or last connections (AoE2)
+	// just return all online users as if they were friends (AoE3/AoE4/AoM) or last connections (AoE2)
 	sess := models.SessionOrPanic(r)
 	game := models.G(r)
 	users := game.Users()
 	currentUser, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		i.JSON(&w, Relationships(game.Title(), sess.GetClientLibVersion(), users, currentUser))
+		i.JSON(&w, Relationships(game.Title(), sess.GetClientLibVersion(), users, currentUser, game.PresenceDefinitions()))
 	} else {
 		i.JSON(&w, relationshipResponse(0, []i.A{}, []i.A{}))
 	}

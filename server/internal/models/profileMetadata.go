@@ -18,8 +18,11 @@ func NewAvatarMetadataUpgradableDefaultData(gameId string) *AvatarMetadataUpgrad
 
 func (p *AvatarMetadataUpgradableDefaultData) Default() *string {
 	var metadata string
-	if p.gameId == common.GameAoE3 || p.gameId == common.GameAoM {
+	switch p.gameId {
+	case common.GameAoE3, common.GameAoM:
 		metadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
+	case common.GameAoE4:
+		metadata = `{"sharedHistory":1,"hardwareType":0,"inputDeviceType":0}`
 	}
 	return &metadata
 }

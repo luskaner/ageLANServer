@@ -26,8 +26,8 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 			BaseConfig: bs.BaseConfig,
 		})
 	}
-	if gameId == common.GameAoM && len(battleServers) == 0 {
-		return fmt.Errorf("no battle server for AoM")
+	if (gameId == common.GameAoE4 || gameId == common.GameAoM) && len(battleServers) == 0 {
+		return fmt.Errorf("no battle server")
 	}
 	BattleServersStore[gameId] = battleServers
 	return nil

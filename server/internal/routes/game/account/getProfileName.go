@@ -24,7 +24,7 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	sess := models.SessionOrPanic(r)
-	profileInfo := game.Users().GetProfileInfo(false, func(currentUser models.User) bool {
+	profileInfo := game.Users().EncodeProfileInfo(nil, func(currentUser models.User) bool {
 		_, ok := profileIdsMap[currentUser.GetId()]
 		return ok
 	}, sess.GetClientLibVersion())

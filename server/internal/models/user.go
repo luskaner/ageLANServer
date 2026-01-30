@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -23,17 +24,22 @@ type User interface {
 	GetPlatformPath() string
 	GetPlatformId() int
 	GetPlatformUserID() uint64
-	GetExtraProfileInfo(clientLibVersion uint16) i.A
-	GetProfileInfo(includePresence bool, clientLibVersion uint16) i.A
+	EncodeExtraProfileInfo(clientLibVersion uint16) i.A
+	EncodeProfileInfo(clientLibVersion uint16) i.A
 	GetPresence() int32
 	SetPresence(presence int32)
+	SetPresenceProperty(id int32, value string)
 	GetAvatarMetadata() *PersistentJsonData[*string]
+	GetProfileProperties() *PersistentJsonData[*map[string]string]
 	GetProfileExperience() uint32
 	GetProfileLevel() uint16
 	GetPlatformRelated() uint8
 	GetAvatarStats() *PersistentJsonData[*AvatarStats]
 	GetPersistentData() *PersistentStringJsonMap
+	GetItems() *PersistentJsonData[*map[int32]Item]
+	GetItemLoadouts() *PersistentJsonData[ItemLoadouts]
 	EncodeAvatarStats() i.A
+	EncodePresence(definitions PresenceDefinitions) i.A
 }
 
 type MainUser struct {
@@ -47,9 +53,13 @@ type MainUser struct {
 	isXbox            bool
 	persistentData    *PersistentStringJsonMap
 	// Dynamic from here
-	avatarMetadata *PersistentJsonData[*string]
-	presence       atomic.Int32
-	avatarStats    *PersistentJsonData[*AvatarStats]
+	profileProperties  *PersistentJsonData[*map[string]string]
+	avatarMetadata     *PersistentJsonData[*string]
+	presence           atomic.Int32
+	presenceProperties *i.SafeMap[int32, string]
+	avatarStats        *PersistentJsonData[*AvatarStats]
+	items              *PersistentJsonData[*map[int32]Item]
+	itemLoadouts       *PersistentJsonData[ItemLoadouts]
 }
 
 func (u *MainUser) EncodeAvatarStats() i.A {
@@ -63,11 +73,11 @@ func (u *MainUser) EncodeAvatarStats() i.A {
 
 type Users interface {
 	Initialize()
-	GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
+	GetOrCreateUser(gameId string, itemDefinitions Items, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
 	GetUserByStatId(id int32) (User, bool)
 	GetUserById(id int32) (User, bool)
 	GetUserIds() func(func(int32) bool)
-	GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A
+	EncodeProfileInfo(definitions PresenceDefinitions, matches func(user User) bool, clientLibVersion uint16) []i.A
 	GetUserByPlatformUserId(xbox bool, id uint64) (User, bool)
 }
 
@@ -76,6 +86,7 @@ type MainUsers struct {
 	GenerateFn func(
 		gameId string,
 		persistentData *PersistentStringJsonMap,
+		itemDefinitions Items,
 		avatarStatsDefinitions AvatarStatDefinitions,
 		identifier string,
 		isXbox bool,
@@ -91,7 +102,7 @@ func (users *MainUsers) Initialize() {
 	}
 }
 
-func (users *MainUsers) Generate(gameId string, persistentData *PersistentStringJsonMap, avatarStatsDefinitions AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, alias string) User {
+func (users *MainUsers) Generate(gameId string, persistentData *PersistentStringJsonMap, itemDefinitions Items, avatarStatsDefinitions AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, alias string) User {
 	hasher := fnv.New64a()
 	_, _ = hasher.Write([]byte(identifier))
 	hsh := hasher.Sum(nil)
@@ -105,22 +116,54 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 			NewAvatarStatsUpgradableDefaultData(gameId, avatarStatsDefinitions),
 		)
 	}
+	var profileProperties *PersistentJsonData[*map[string]string]
+	if gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+		profileProperties, _ = NewPersistentJsonData[*map[string]string](
+			persistentData,
+			"profileProperties",
+			NewProfilePropertiesUpgradableDefaultData(),
+		)
+	}
+	var items *PersistentJsonData[*map[int32]Item]
+	if itemDefinitions != nil {
+		items, _ = NewPersistentJsonData[*map[int32]Item](
+			persistentData,
+			"items",
+			NewItemsUpgradableDefaultData(gameId, itemDefinitions),
+		)
+	}
+	var itemLoadouts *PersistentJsonData[ItemLoadouts]
+	if gameId != common.GameAoE1 {
+		itemLoadouts, _ = NewPersistentJsonData[ItemLoadouts](
+			persistentData,
+			"itemLoadouts",
+			NewItemLoadoutsUpgradableDefaultData(),
+		)
+	}
 	avatarMetadata, _ := NewPersistentJsonData[*string](
 		persistentData,
 		"avatarMetadata",
 		NewAvatarMetadataUpgradableDefaultData(gameId),
 	)
+	var presenceProperties *i.SafeMap[int32, string]
+	if gameId != common.GameAoE1 {
+		presenceProperties = i.NewSafeMap[int32, string]()
+	}
 	return &MainUser{
-		id:             rng.Int32(),
-		statId:         rng.Int32(),
-		profileId:      rng.Int32(),
-		avatarMetadata: avatarMetadata,
-		reliclink:      rng.Int32(),
-		alias:          alias,
-		platformUserId: platformUserId,
-		isXbox:         isXbox,
-		avatarStats:    avatarStats,
-		persistentData: persistentData,
+		id:                 rng.Int32(),
+		statId:             rng.Int32(),
+		profileId:          rng.Int32(),
+		avatarMetadata:     avatarMetadata,
+		items:              items,
+		itemLoadouts:       itemLoadouts,
+		profileProperties:  profileProperties,
+		reliclink:          rng.Int32(),
+		alias:              alias,
+		platformUserId:     platformUserId,
+		isXbox:             isXbox,
+		avatarStats:        avatarStats,
+		persistentData:     persistentData,
+		presenceProperties: presenceProperties,
 	}
 }
 
@@ -145,7 +188,7 @@ func generatePlatformUserIdXbox(rng *rand.Rand) uint64 {
 	return uint64(rng.Int64N(9e15) + 1e15)
 }
 
-func (users *MainUsers) GetOrCreateUser(gameId string, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
+func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User {
 	if i.GeneratePlatformUserId {
 		entropy := make([]byte, 16)
 		macAddress, err := net.ParseMAC(remoteMacAddress)
@@ -184,6 +227,7 @@ func (users *MainUsers) GetOrCreateUser(gameId string, avatarStatsDefinitions Av
 			return users.GenerateFn(
 				gameId,
 				persistentData,
+				itemDefinitions,
 				avatarStatsDefinitions,
 				identifier,
 				isXbox,
@@ -226,14 +270,18 @@ func (users *MainUsers) GetUserIds() func(func(int32) bool) {
 	}
 }
 
-func (users *MainUsers) GetProfileInfo(includePresence bool, matches func(user User) bool, clientLibVersion uint16) []i.A {
-	var presenceData = make([]i.A, 0)
+func (users *MainUsers) EncodeProfileInfo(presenceDefinitions PresenceDefinitions, matches func(user User) bool, clientLibVersion uint16) []i.A {
+	var profileInfo = make([]i.A, 0)
 	for u := range users.store.Values() {
 		if matches(u) {
-			presenceData = append(presenceData, u.GetProfileInfo(includePresence, clientLibVersion))
+			currentProfileInfo := u.EncodeProfileInfo(clientLibVersion)
+			if presenceDefinitions != nil {
+				currentProfileInfo = append(currentProfileInfo, u.EncodePresence(presenceDefinitions)...)
+			}
+			profileInfo = append(profileInfo, currentProfileInfo)
 		}
 	}
-	return presenceData
+	return profileInfo
 }
 
 func (u *MainUser) GetPersistentData() *PersistentStringJsonMap {
@@ -258,6 +306,10 @@ func (u *MainUser) GetStatId() int32 {
 
 func (u *MainUser) GetProfileId() int32 {
 	return u.profileId
+}
+
+func (u *MainUser) GetProfileProperties() *PersistentJsonData[*map[string]string] {
+	return u.profileProperties
 }
 
 func (u *MainUser) GetReliclink() int32 {
@@ -299,7 +351,7 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func (u *MainUser) GetExtraProfileInfo(clientLibVersion uint16) i.A {
+func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
 	info := i.A{
 		u.statId,
 		0,
@@ -326,7 +378,7 @@ func (u *MainUser) GetExtraProfileInfo(clientLibVersion uint16) i.A {
 	return info
 }
 
-func (u *MainUser) GetProfileInfo(includePresence bool, clientLibVersion uint16) i.A {
+func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
 	profileInfo := i.A{
 		time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix(),
 		u.GetId(),
@@ -349,10 +401,28 @@ func (u *MainUser) GetProfileInfo(includePresence bool, clientLibVersion uint16)
 		u.GetPlatformId(),
 		i.A{},
 	)
-	if includePresence {
-		profileInfo = append(profileInfo, u.GetPresence(), nil, i.A{})
-	}
 	return profileInfo
+}
+
+func (u *MainUser) EncodePresence(definitions PresenceDefinitions) i.A {
+	if definitions == nil {
+		return i.A{}
+	}
+	presenceId := u.GetPresence()
+	presenceDefinition := definitions.Get(presenceId)
+	if presenceDefinition == nil {
+		return i.A{}
+	}
+	var presenceProperties i.A
+	for id, value := range u.presenceProperties.Iter() {
+		presenceProperties = append(presenceProperties, i.A{id, value})
+	}
+
+	return i.A{
+		presenceId,
+		(*presenceDefinition).GetLabel(),
+		presenceProperties,
+	}
 }
 
 func (u *MainUser) GetPresence() int32 {
@@ -361,6 +431,16 @@ func (u *MainUser) GetPresence() int32 {
 
 func (u *MainUser) SetPresence(presence int32) {
 	u.presence.Store(presence)
+}
+
+func (u *MainUser) SetPresenceProperty(id int32, value string) {
+	if value == "" {
+		u.presenceProperties.Delete(id)
+	} else {
+		u.presenceProperties.Store(id, value, func(_ string) bool {
+			return true
+		})
+	}
 }
 
 func (u *MainUser) GetAvatarMetadata() *PersistentJsonData[*string] {
@@ -381,4 +461,12 @@ func (u *MainUser) GetProfileLevel() uint16 {
 
 func (u *MainUser) GetProfileExperience() uint32 {
 	return 0
+}
+
+func (u *MainUser) GetItems() *PersistentJsonData[*map[int32]Item] {
+	return u.items
+}
+
+func (u *MainUser) GetItemLoadouts() *PersistentJsonData[ItemLoadouts] {
+	return u.itemLoadouts
 }

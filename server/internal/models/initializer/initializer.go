@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models/age1"
 	"github.com/luskaner/ageLANServer/server/internal/models/age2"
 	"github.com/luskaner/ageLANServer/server/internal/models/age3"
+	"github.com/luskaner/ageLANServer/server/internal/models/age4"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens"
 )
 
@@ -24,6 +25,8 @@ func InitializeGame(gameId string, configBattleServers []i.BattleServer) error {
 		game = age2.CreateGame()
 	case common.GameAoE3:
 		game = age3.CreateGame()
+	case common.GameAoE4:
+		game = age4.CreateGame()
 	case common.GameAoM:
 		game = athens.CreateGame()
 	}

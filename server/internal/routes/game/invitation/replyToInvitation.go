@@ -36,11 +36,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 	peers := adv.GetPeers()
 	var peer models.Peer
 	sess := models.SessionOrPanic(r)
-	u, ok := game.Users().GetUserById(sess.GetUserId())
-	if !ok {
-		i.JSON(&w, i.A{2})
-		return
-	}
+	u, _ := game.Users().GetUserById(sess.GetUserId())
 	peer, ok = peers.Load(inviter.GetId())
 	if !ok {
 		i.JSON(&w, i.A{2})
@@ -63,7 +59,7 @@ func ReplyToInvitation(w http.ResponseWriter, r *http.Request) {
 			inviterSession,
 			"ReplyInvitationMessage",
 			i.A{
-				u.GetProfileInfo(false, inviterSession.GetClientLibVersion()),
+				u.EncodeProfileInfo(inviterSession.GetClientLibVersion()),
 				q.AdvertisementId,
 				acceptStr,
 			},

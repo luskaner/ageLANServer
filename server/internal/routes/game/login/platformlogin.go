@@ -38,6 +38,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	u := users.GetOrCreateUser(
 		title,
+		game.Items(),
 		avatarStatDefinitions,
 		r.RemoteAddr,
 		req.MacAddress,
@@ -51,9 +52,9 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
 	sess, _ = sessions.GetById(sessionId)
-	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, 1)
-	profileInfo := u.GetProfileInfo(false, req.ClientLibVersion)
-	if title == common.GameAoE3 || title == common.GameAoM {
+	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, game.PresenceDefinitions(), 1)
+	profileInfo := u.EncodeProfileInfo(req.ClientLibVersion)
+	if title == common.GameAoE3 || title == common.GameAoM || title == common.GameAoE4 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := sessions.GetByUserId(user)
@@ -70,7 +71,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title == common.GameAoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.ClientLibVersion))
+		extraProfileInfoList = append(extraProfileInfoList, u.EncodeExtraProfileInfo(req.ClientLibVersion))
 	}
 	battleServers := game.BattleServers()
 	servers := battleServers.Encode(r)
@@ -115,7 +116,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
-		relationship.Relationships(title, req.ClientLibVersion, users, u),
+		relationship.Relationships(title, req.ClientLibVersion, users, u, nil),
 		extraProfileInfoList,
 		avatarStats,
 		nil,

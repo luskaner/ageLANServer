@@ -60,7 +60,7 @@ var (
 	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, and AoM: RT to connect to the local LAN 'server'",
+		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, AoE 4: DE and AoM: RT to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &fileLock.PidLock{}
@@ -104,7 +104,7 @@ var (
 				return
 			}
 			canBroadcastBattleServer := "false"
-			if runtime.GOOS == "windows" && gameId != common.GameAoM {
+			if runtime.GOOS == "windows" && (gameId != common.GameAoM && gameId != common.GameAoE4) {
 				canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
 				if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 					logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
@@ -249,7 +249,7 @@ var (
 
 			logger.Printf("Game %s.\n", gameId)
 			if clientExecutable == "msstore" && gameId == common.GameAoM {
-				logger.Println("The Microsoft Store (Xbox) version of AoM: RT is not supported.")
+				logger.Println("The Microsoft Store (Xbox) version is not supported on this game.")
 				errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 				return
 			}
@@ -261,12 +261,12 @@ var (
 			switch executer.(type) {
 			case gameExecutor.SteamExec:
 				logger.Println("Game found on Steam.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(gameExecutor.SteamExec).GamePath()
 				}
 			case gameExecutor.XboxExec:
 				logger.Println("Game found on Xbox.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(gameExecutor.XboxExec).GamePath()
 				}
 			case gameExecutor.CustomExec:
@@ -282,7 +282,7 @@ var (
 						isolateProfiles = false
 					}
 				}
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 						logger.Println("Invalid client path")
 						errorCode.Store(int32(internal.ErrInvalidClientPath))
@@ -472,10 +472,10 @@ var (
 						serverArgs = append(serverArgs, "--deterministic")
 					}
 				}
-				if gameId == common.GameAoM && battleServerManagerRun == "false" {
-					logger.Println("AoM: RT needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
+				if (gameId == common.GameAoM || gameId == common.GameAoE4) && battleServerManagerRun == "false" {
+					logger.Println("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 				}
-				runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && gameId == common.GameAoM)
+				runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && (gameId == common.GameAoM || gameId == common.GameAoE4))
 				if cfg.Server.Start == "auto" {
 					str := "No 'server's were found, proceeding to"
 					if runBattleServerManager {

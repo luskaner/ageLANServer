@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -48,7 +49,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		}
 
 		adv.UnsafeUpdatePlatformSessionId(idValueUint)
-		metadata = adv.GetMetadata()
+		metadata = adv.GetXboxSessionId()
 		_, peersId = peers.Keys()
 		ok = true
 	})
@@ -58,6 +59,9 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 	}
 	sessions := game.Sessions()
 	message := i.A{req.MatchID, metadata, idValueUint}
+	if gameTitle := game.Title(); gameTitle == common.GameAoE2 || gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
+		message = append(message, 0, "", "")
+	}
 	for peerId := range peersId {
 		if currentSess, ok := sessions.GetByUserId(peerId); ok {
 			wss.SendOrStoreMessage(

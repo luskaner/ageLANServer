@@ -11,7 +11,7 @@ CanAddHost = true
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustCertificate = 'local'
 # Whether to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'. This is only necessary in Windows when not running AoM, on the rest of systems it is always 'false'.
+# Either 'auto' or 'false'. This is only necessary in Windows when not running AoM nor AoE IV, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
 Log = false
@@ -53,7 +53,7 @@ AnnounceMulticastGroups = ['239.31.97.8']
 # This section only applies if starting the server.
 [Server.BattleServerManager]
 # When to use the manager to start a new Battle Server running the manager; accepted values:
-# 'required': Only for games that require it to work (AoM: RT).
+# 'required': Only for games that require it to work (AoM: RT and AoE IV: AE).
 # 'true'.
 # 'false'.
 # Note: by default the manager will only start a new instance if one is not already running for the given game.
