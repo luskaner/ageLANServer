@@ -204,7 +204,7 @@ it will require admin rights elevation.**
   Windows version*). Recommended a late 2023 version or later.
 - Age of Empires IV: Anniversary Edition
   on [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-mythology-retold/9npkgvxpfrsx). Recommended a 2025
+  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iv-anniversary-edition/9n94ncgm1q2n). Recommended a 2025
   version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
