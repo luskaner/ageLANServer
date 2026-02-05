@@ -2,8 +2,6 @@ module scripts
 
 go 1.25.5
 
-toolchain go1.25.7
-
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0

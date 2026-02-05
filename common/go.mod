@@ -2,8 +2,6 @@ module github.com/luskaner/ageLANServer/common
 
 go 1.25.0
 
-toolchain go1.25.7
-
 require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.8.0
