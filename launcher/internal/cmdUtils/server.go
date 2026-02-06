@@ -52,7 +52,7 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 			sort.Strings(bestHostsSlice)
 		}
 		description := bestAddress.Ip.String()
-		if len(alternativeIpSlice) > 1 {
+		if len(alternativeIpSlice) > 0 {
 			description += ", "
 			description += strings.Join(alternativeIpSlice, ", ")
 		}
