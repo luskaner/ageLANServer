@@ -1,6 +1,6 @@
 module scripts
 
-go 1.25.5
+go 1.25.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
