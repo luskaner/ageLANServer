@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -24,22 +25,21 @@ func init() {
 }
 
 func domainToIps(host string) []net.IP {
-	ips, err := net.LookupIP(host)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	resolver := &net.Resolver{}
+	ips, err := resolver.LookupIP(ctx, "ip4", host)
 	if err != nil {
 		return nil
 	}
-	validIps := make([]net.IP, 0)
-	for _, ip := range ips {
-		ipv4 := ip.To4()
-		if ipv4 != nil {
-			validIps = append(validIps, ipv4)
-		}
-	}
-	return validIps
+	return ips
 }
 
 func ipToDnsName(ip string) []string {
-	names, err := net.LookupAddr(ip)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	resolver := &net.Resolver{}
+	names, err := resolver.LookupAddr(ctx, ip)
 	if err != nil {
 		return nil
 	}

@@ -26,6 +26,7 @@ type DestinationFn func(source string) Renders[FileData]
 type DestinationsFnMap = map[OperatingSystem][]DestinationFn
 type SourceIgnoreFn = map[OperatingSystem]func(path string) bool
 type OperatingSystemsArchs = map[OperatingSystem]mapset.Set[Architecture]
+type OverrideOsFriendlyName func(name string, os OperatingSystem, arch Architecture) string
 
 type File struct {
 	source      string
@@ -63,22 +64,29 @@ func NewFileData(os OperatingSystem) FileData {
 }
 
 type Archive struct {
-	name     string
-	files    mapset.Set[File]
-	targets  *BinaryTargets
-	binaries map[string]*Binary
+	name                   string
+	files                  mapset.Set[File]
+	targets                *BinaryTargets
+	binaries               map[string]*Binary
+	overrideOsFriendlyName OverrideOsFriendlyName
 }
 
-func NewArchive(name string, targets *BinaryTargets) *Archive {
+func NewArchive(name string, targets *BinaryTargets, overrideOsFriendlyName OverrideOsFriendlyName) *Archive {
+	if overrideOsFriendlyName == nil {
+		overrideOsFriendlyName = func(name string, os OperatingSystem, arch Architecture) string {
+			return os.FriendlyName()
+		}
+	}
 	return &Archive{
-		name:     name,
-		files:    mapset.NewSet[File](),
-		targets:  targets,
-		binaries: make(map[string]*Binary),
+		name:                   name,
+		files:                  mapset.NewSet[File](),
+		targets:                targets,
+		binaries:               make(map[string]*Binary),
+		overrideOsFriendlyName: overrideOsFriendlyName,
 	}
 }
 
-func NewMergedArchive(name string, archives ...*Archive) *Archive {
+func NewMergedArchive(name string, overrideOsFriendlyName OverrideOsFriendlyName, archives ...*Archive) *Archive {
 	mergedOsesArchs := archives[0].targets.Clone()
 	for _, a := range archives[1:] {
 		osesToDelete := make([]OperatingSystem, 0)
@@ -125,7 +133,7 @@ func NewMergedArchive(name string, archives ...*Archive) *Archive {
 	for osKey := range *mergedOsesArchs {
 		oses.Add(osKey)
 	}
-	mergedArchive := NewArchive(name, mergedOsesArchs)
+	mergedArchive := NewArchive(name, mergedOsesArchs, overrideOsFriendlyName)
 	for _, a := range archives {
 		for file := range a.files.Iter() {
 			if file.os == nil {
@@ -306,7 +314,7 @@ func (a *Archive) AddAuxiliarBinary(binary *Binary) {
 }
 
 func (a *Archive) CloneWithFilesPrefix(prefix string) *Archive {
-	newArchive := NewArchive(a.name, a.targets)
+	newArchive := NewArchive(a.name, a.targets, a.overrideOsFriendlyName)
 	for file := range a.files.Iter() {
 		newFile := file
 		newFile.destination = filepath.ToSlash(filepath.Join(prefix, file.destination))
@@ -433,7 +441,7 @@ func (a *Archive) Builds(mergedOSes ...OperatingSystem) []config.Build {
 	return builds
 }
 
-func archive(name string, operatingSystem OperatingSystem, architecture Architecture, instructionSet string, allBuilds []config.Build, files mapset.Set[File]) *config.Archive {
+func archive(name string, overrideOsFriendlyName OverrideOsFriendlyName, operatingSystem OperatingSystem, architecture Architecture, instructionSet string, allBuilds []config.Build, files mapset.Set[File]) *config.Archive {
 	matchingBuildIds := mapset.NewSet[string]()
 	for _, b := range allBuilds {
 		if slices.Contains(b.Goos, operatingSystem.Name()) && slices.Contains(b.Goarch, architecture.Name()) {
@@ -448,7 +456,7 @@ func archive(name string, operatingSystem OperatingSystem, architecture Architec
 		return nil
 	}
 	id := fmt.Sprintf("%s_%s_%s", name, operatingSystem.Name(), architecture.Name())
-	nameTemplate := fmt.Sprintf(`{{ .ProjectName }}_%s_{{ .RawVersion }}_%s_%s`, name, operatingSystem.FriendlyName(), architecture.FriendlyName())
+	nameTemplate := fmt.Sprintf(`{{ .ProjectName }}_%s_{{ .RawVersion }}_%s_%s`, name, overrideOsFriendlyName(name, operatingSystem, architecture), architecture.FriendlyName())
 	if instructionSet != "" {
 		id = fmt.Sprintf("%s-%s", id, instructionSet)
 		nameTemplate = fmt.Sprintf(`%s-%s`, nameTemplate, instructionSet)
@@ -502,7 +510,7 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 	for operatingSystem, architectures := range *a.targets {
 		for architecture, instructionSets := range architectures {
 			if instructionSets.Cardinality() == 0 {
-				if currentArchive := archive(a.name, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
+				if currentArchive := archive(a.name, a.overrideOsFriendlyName, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
 					id := keyFromStrings(currentArchive.IDs)
 					if _, exists := binaryIdsArchives[id]; !exists {
 						binaryIdsArchives[id] = []config.Archive{}
@@ -511,7 +519,7 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 				}
 			} else {
 				for intructionSet := range instructionSets.Iter() {
-					if currentArchive := archive(a.name, operatingSystem, architecture, intructionSet, builds, a.files); currentArchive != nil {
+					if currentArchive := archive(a.name, a.overrideOsFriendlyName, operatingSystem, architecture, intructionSet, builds, a.files); currentArchive != nil {
 						id := keyFromStrings(currentArchive.IDs)
 						if _, exists := binaryIdsArchives[id]; !exists {
 							binaryIdsArchives[id] = []config.Archive{}
