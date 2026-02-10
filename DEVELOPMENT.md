@@ -1,7 +1,3 @@
-## Local development
-
-Copy `go.work.example` to `go.work`
-
 ### System requirements
 
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.

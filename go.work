@@ -1,0 +1,24 @@
+go 1.25.5
+
+toolchain go1.25.7
+
+// Necessary for launcher-config's internal.readCertsFromFile
+godebug x509negativeserial=1
+
+use (
+	battle-server-broadcast
+	battle-server-manager
+	common
+	launcher
+	launcher-agent
+	launcher-common
+	launcher-config
+	launcher-config-admin
+	launcher-config-admin-agent
+	server
+	server-genCert
+	tools/scripts
+	tools/server-replay
+)
+
+replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast
