@@ -52,7 +52,8 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
 	sess, _ = sessions.GetById(sessionId)
-	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, game.PresenceDefinitions(), 1)
+	presenceDefinitions := game.PresenceDefinitions()
+	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, presenceDefinitions, 1)
 	profileInfo := u.EncodeProfileInfo(req.ClientLibVersion)
 	if title == common.GameAoE3 || title == common.GameAoM || title == common.GameAoE4 {
 		for user := range users.GetUserIds() {
@@ -116,7 +117,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
-		relationship.Relationships(title, req.ClientLibVersion, users, u, nil),
+		relationship.Relationships(title, req.ClientLibVersion, users, u, presenceDefinitions),
 		extraProfileInfoList,
 		avatarStats,
 		nil,

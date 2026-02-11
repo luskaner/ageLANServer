@@ -1,6 +1,10 @@
 package models
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/luskaner/ageLANServer/server/internal"
+)
 
 type Game interface {
 	Title() string
@@ -112,13 +116,15 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 		game.leaderboardDefinitions = opts.Instances.LeaderboardDefinitions
 		game.leaderboardDefinitions.Initialize(leaderboards)
 	}
-	if presenceDefinitions, ok := game.resources.ArrayFiles()["presenceData.json"]; ok {
-		if opts.Instances.PresenceDefinitions == nil {
-			opts.Instances.PresenceDefinitions = &MainPresenceDefinitions{}
-		}
-		game.presenceDefinitions = opts.Instances.PresenceDefinitions
-		game.presenceDefinitions.Initialize(presenceDefinitions)
+	if opts.Instances.PresenceDefinitions == nil {
+		opts.Instances.PresenceDefinitions = &MainPresenceDefinitions{}
 	}
+	var presenceDefinitions internal.A
+	if loadedPresenceDefinitions, ok := game.resources.ArrayFiles()["presenceData.json"]; ok {
+		presenceDefinitions = loadedPresenceDefinitions
+	}
+	game.presenceDefinitions = opts.Instances.PresenceDefinitions
+	game.presenceDefinitions.Initialize(presenceDefinitions)
 	return game
 }
 
