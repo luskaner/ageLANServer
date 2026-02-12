@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.7'
+          go-version: '1.26.0'
           cache-dependency-path: |
             go.work.sum
       - name: Generate Goreleaser config

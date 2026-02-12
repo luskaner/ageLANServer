@@ -29,11 +29,10 @@ type Value[T any] struct {
 
 func (v *Value[T]) MarshalJSON() ([]byte, error) {
 	if val, err := json.Marshal(v.Value); err == nil {
-		stringVal := string(val)
 		return json.Marshal(BaseValue[string]{
 			LastUpdated: v.LastUpdated,
 			Permission:  v.Permission,
-			Value:       &stringVal,
+			Value:       new(string(val)),
 		})
 	} else {
 		return nil, err

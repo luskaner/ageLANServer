@@ -1,7 +1,7 @@
 ### System requirements
 
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
-- [Go 1.25](https://go.dev/dl/) or higher, except for Windows 7-8 (and equivalent) which need an unofficial fork
+- [Go 1.26](https://go.dev/dl/) or higher, except for Windows 7-8 (and equivalent) which need an unofficial fork
   like [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) (recommended)
   or [XTLS/go-win7](https://github.com/XTLS/go-win7).
 - [Git](https://git-scm.com/downloads), with the latest supported for Windows 7/8 being v2.46.2.

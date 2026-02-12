@@ -25,8 +25,7 @@ func LoginWithCustomID(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 		sessions := game.PlayfabSessions()
-		id := sessions.CreateWithUserId(game.Users(), int32(userId))
-		return &id
+		return new(sessions.CreateWithUserId(game.Users(), int32(userId)))
 	}); response != nil {
 		shared.RespondOK(&w, loginWithCustomIDResponse{
 			*response,

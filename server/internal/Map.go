@@ -24,8 +24,7 @@ func NewSafeMap[K comparable, V any]() *SafeMap[K, V] {
 }
 
 func (m *SafeMap[K, V]) updateReadOnly() {
-	clone := maps.Clone(m.wo)
-	m.ro.Store(&clone)
+	m.ro.Store(new(maps.Clone(m.wo)))
 }
 
 func (m *SafeMap[K, V]) Load(key K) (value V, ok bool) {

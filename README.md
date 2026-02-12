@@ -171,7 +171,7 @@ system and configuration.
 - Solaris-based (Solaris and Illumos).
 - AIX.
 
-Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.25.
+Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/MinimumRequirements) 1.26.
 
 </details>
 
