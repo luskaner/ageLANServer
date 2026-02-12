@@ -351,8 +351,7 @@ func initConfig() *internal.Configuration {
 	if err := v.ReadInConfig(); err == nil {
 		logger.Println("Using config file:", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}

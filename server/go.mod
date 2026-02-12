@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/server
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
+	golang.org/x/exp v0.0.0-20260211191109-2735e65f0518
 	golang.org/x/net v0.50.0
 )
 

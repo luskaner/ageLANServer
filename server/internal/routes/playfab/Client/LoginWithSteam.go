@@ -99,8 +99,7 @@ func LoginWithSteam(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 		sessions := game.PlayfabSessions()
-		id := sessions.CreateWithSteamUserId(game.Users(), steamId)
-		return &id
+		return new(sessions.CreateWithSteamUserId(game.Users(), steamId))
 	}); response != nil {
 		shared.RespondOK(&w, response)
 	}

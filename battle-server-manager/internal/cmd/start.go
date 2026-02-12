@@ -247,7 +247,7 @@ func initConfig() *internal.Configuration {
 	v.SetDefault("SSL.Auto", true)
 	v.SetDefault("SSL.CertFile", "")
 	v.SetDefault("SSL.KeyFile", "")
-	
+
 	for _, configPath := range configPaths {
 		v.AddConfigPath(configPath)
 	}
@@ -262,8 +262,7 @@ func initConfig() *internal.Configuration {
 		data, _ := os.ReadFile(v.ConfigFileUsed())
 		commonLogger.PrefixPrintln("config", string(data))
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); ok {
 			commonLogger.Println("No config file found, using defaults.")
 		} else {
 			commonLogger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())

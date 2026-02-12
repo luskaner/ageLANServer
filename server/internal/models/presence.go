@@ -27,8 +27,7 @@ func (pd *MainPresenceDefinitions) Initialize(presence i.A) {
 			id := int32(rawPresenceArr[0].(float64))
 			var label *string
 			if rawPresenceArr[2] != nil {
-				tmpLabel := rawPresenceArr[2].(string)
-				label = &tmpLabel
+				label = new(rawPresenceArr[2].(string))
 			}
 			pd.data[id] = &MainPresenceDefinition{
 				id:    id,

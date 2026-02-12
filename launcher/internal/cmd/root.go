@@ -714,8 +714,7 @@ func initConfig() *internal.Configuration {
 		logger.Println("Using main config file:", v.ConfigFileUsed())
 		logger.PrintFile("main config", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}
@@ -729,8 +728,7 @@ func initConfig() *internal.Configuration {
 		logger.Println("Using game config file:", v.ConfigFileUsed())
 		logger.PrintFile("game config", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing game config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(internal.ErrGameConfigParse)
 		}
