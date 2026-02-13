@@ -22,10 +22,25 @@ jobs:
           go-version: '1.26.0'
           cache-dependency-path: |
             go.work.sum
+      - name: Set up Go legacy
+        id: setup_go_legacy
+        run: |
+          dir="${{ vars.GOROOT_LEGACY }}"
+          subdir="go-legacy-win7"
+          curl -L https://github.com/thongtech/$subdir/releases/download/v1.26.0-1/$subdir-1.26.0-1.linux_amd64.tar.gz -o go.tar.gz
+          sudo mkdir -p "$dir"
+          sudo tar -C "$dir" --strip-components=1 -xzf go.tar.gz
+          rm go.tar.gz
+          echo "goroot=$dir/$subdir" >> $GITHUB_OUTPUT
       - name: Generate Goreleaser config
         shell: bash
         run: |
-          go run tools/scripts/cmd/generateGoreleaserConfig.go
+          go run tools/scripts/cmd/generateGoreleaserConfig.go "${{ steps.setup_go_legacy.outputs.goroot }}"
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean --snapshot --fail-fast --skip=sign
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
