@@ -115,7 +115,7 @@ the [`responses`](resources/responses) base directory.
   challenges and
   other items.
 - [`Item Bundle Items`](resources/responses/age2/itemBundleItems.json): Grouping of items into bundles.
-- [`Item Locations`](resources/responses/age4/itemLocations.json): Locations of items.
+- [`Item Locations`](resources/responses/age2/itemLocations.json): Locations of items.
 
 #### Age of Empires III: Definitive Edition
 
@@ -124,7 +124,7 @@ the [`responses`](resources/responses) base directory.
 - [`Item Definitions`](resources/responses/age3/itemDefinitions.json): Definitions of items. Includes rewards,
   challenges and
   other items.
-- [`Item Locations`](resources/responses/age4/itemLocations.json): Locations of items.
+- [`Item Locations`](resources/responses/age3/itemLocations.json): Locations of items.
 
 #### Age of Empires IV: Anniversary Edition
 
@@ -153,6 +153,7 @@ the [`responses`](resources/responses) base directory.
   offline
   or
   away. Also includes the screen the player is in
+- [`Item Locations`](resources/responses/athens/itemLocations.json): Locations of items.
 - [`Item Definitions`](resources/responses/athens/itemDefinitions.json): Definitions of items. Includes rewards,
   challenges and
   other items.

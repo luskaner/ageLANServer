@@ -72,7 +72,7 @@ func generateDomains(gameId string) (domains []string) {
 		subDomainReleasePart = "-activerelease"
 	case GameAoM:
 		prefix = "andromeda"
-		releaseMin = 13
+		releaseMin = 15
 		subDomainReleasePart = stdSubDomainReleasePart
 	default:
 		return
