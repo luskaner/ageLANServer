@@ -11,7 +11,7 @@ import (
 func universalBinaries(binaries []config.Build) []config.UniversalBinary {
 	var result []config.UniversalBinary
 	for _, binary := range binaries {
-		if slices.Contains(binary.Goos, OSMacOS.Name()) {
+		if slices.Contains(binary.Goos, OSMacOS.Goos()) {
 			result = append(result, config.UniversalBinary{
 				ID:           binary.ID,
 				NameTemplate: binary.Binary,

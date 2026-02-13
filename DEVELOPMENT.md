@@ -1,12 +1,22 @@
 ### System requirements
 
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
-- [Go 1.26](https://go.dev/dl/) or higher, except for Windows 7-8 (and equivalent) which need an unofficial fork
-  like [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) (recommended)
-  or [XTLS/go-win7](https://github.com/XTLS/go-win7).
-- [Git](https://git-scm.com/downloads), with the latest supported for Windows 7/8 being v2.46.2.
+- Go 1.26:
+    * Officially from https://go.dev/dl/ if not running Windows or is 10 and higher (or equivalent).
+    * Unnoficially from [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) if running Windows
+      7-8.X (or equivalent). Regardless if you install the official version, you need to install this one too for
+      release.
+- [Git](https://git-scm.com/downloads), with the latest supported for Windows 7-8 being v2.46.2.
 - [Task](https://taskfile.dev/installation/).
 - [GoReleaser](https://goreleaser.com/).
+
+### Setup
+
+Copy `.env.example` to `.env` and set:
+
+* ```GPG_FINGERPRINT``` to the fingerprint of the key. Required only for `task release`.
+* ```GOROOT_LEGACY``` to the legacy go installation path. Required for `task build` and
+  `task release`.
 
 ### Debug
 
@@ -26,13 +36,14 @@ Depending on the module you want to debug, you will need to run the correspondin
 
 ### Build
 
-Run ```task build```.
+1. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
+2. Run ```task build```.
 
 ### Release
 
 1. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.
 2. Create a new sign-only GPG key pair (*RSA 4096-bit*) with a passphrase.
-3. Copy .env.example to .env and set ```GPG_FINGERPRINT``` to the fingerprint of the key.
+3. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
 4. Finally run ```task release```
 
 *Note: You will also need a local tag in semantic form like vX.Y.Z*
