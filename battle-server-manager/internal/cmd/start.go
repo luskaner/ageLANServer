@@ -259,8 +259,10 @@ func initConfig() *internal.Configuration {
 	}
 	if err := v.ReadInConfig(); err == nil {
 		commonLogger.Println("Using config file:", v.ConfigFileUsed())
-		data, _ := os.ReadFile(v.ConfigFileUsed())
-		commonLogger.PrefixPrintln("config", string(data))
+		if logRoot != "" {
+			data, _ := os.ReadFile(v.ConfigFileUsed())
+			commonLogger.PrefixPrintln("config", string(data))
+		}
 	} else {
 		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); ok {
 			commonLogger.Println("No config file found, using defaults.")
