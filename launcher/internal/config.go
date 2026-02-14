@@ -27,14 +27,15 @@ type BattleServerManager struct {
 }
 
 type Server struct {
-	Executable              `mapstructure:",squash"`
-	Start                   string
-	Host                    string
-	Stop                    string
-	SingleAutoSelect        bool
-	AnnouncePorts           []int
-	AnnounceMulticastGroups []string
-	BattleServerManager     BattleServerManager
+	Executable               `mapstructure:",squash"`
+	Start                    string
+	Host                     string
+	Stop                     string
+	SingleAutoSelect         bool
+	StartWithoutConfirmation bool
+	AnnouncePorts            []int
+	AnnounceMulticastGroups  []string
+	BattleServerManager      BattleServerManager
 }
 
 type Client struct {
