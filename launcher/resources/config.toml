@@ -25,11 +25,11 @@ CanTrustInPc = 'local'
 CanTrustInGame = true
 
 [Server]
-# Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
+# Whether to start the server automatically or 'auto', which will start the server if no server is found in the LAN
 # 'auto' depend on the Announce setting in the server config being true to find servers.
 Start = 'auto'
 # Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
-# This will also stop the Battle Server is one was started with the Battle Server Manager.
+# This will also stop the Battle Server if one was started with the Battle Server Manager.
 Stop = 'auto'
 # Whether to select automatically the server if only one was discovered.
 # Not recommended to be set to true if users connect using the official game launcher.
