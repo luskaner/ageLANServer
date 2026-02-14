@@ -32,7 +32,7 @@ Executable = 'auto'
 # If using this variable, 'Config.CanAddHost' setting will be ignored.
 # The host file follows the Windows system format.
 # {CertFilePath} will be replaced by the certificate file path.
-# If using this variable, 'Config.CanTrustCertificate' setting will be ignored.
+# If using this variable, 'Config.Certificate.CanTrustInPc' setting will be ignored.
 # The format is the same as the server stored certificate.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.

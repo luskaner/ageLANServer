@@ -4,17 +4,25 @@
 # If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 # Note: Will require admin privileges.
 CanAddHost = true
-# Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
-# local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent. Only on Windows.
-# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
-CanTrustCertificate = 'local'
 # Whether to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
 # Either 'auto' or 'false'. This is only necessary in Windows when not running AoM nor AoE IV, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
 Log = false
+
+[Config.Certificate]
+# Whether or not to trust the certificate of the server in user or local store, or not at all.
+# false: do not trust the certificate. You will have to trust it manually in the proper store.
+# local: trust the certificate in the local store. Requires admin rights.
+# user: trust the certificate in the user store. Requires user consent. Only on Windows.
+# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
+CanTrustInPc = 'local'
+# Whether to trust the certificate of the server in the game's certificate store.
+# Required for all games except AoE I: DE and AoE IV: AE.
+# false: do not trust the certificate. You will have to trust it manually if the game needs it.
+# true: trust the certificate in the game's certificate store.
+# Requires 'Client.Path' to be resolved properly.
+CanTrustInGame = true
 
 [Server]
 # Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
