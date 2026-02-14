@@ -481,8 +481,10 @@ var (
 					if runBattleServerManager {
 						str += " start a battle server (if needed) and then"
 					}
-					logger.Println(str + " start the 'server'. Press enter to continue...")
-					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+					if !cfg.Server.StartWithoutConfirmation {
+						logger.Println(str + " start the 'server'. Press enter to continue...")
+						_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+					}
 				}
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
 				if serverExecutablePath == "" {
@@ -630,11 +632,12 @@ func Execute() error {
 	v.SetDefault("Client.Path", "auto")
 	// Server
 	v.SetDefault("Server.Start", "auto")
+	v.SetDefault("Server.Stop", "auto")
+	v.SetDefault("Server.SingleAutoSelect", false)
+	v.SetDefault("Server.StartWithoutConfirmation", false)
 	v.SetDefault("Server.Executable", "auto")
 	v.SetDefault("Server.ExecutableArgs", []string{"-e", "{Game}", "--id", "{Id}"})
 	v.SetDefault("Server.Host", netip.IPv4Unspecified().String())
-	v.SetDefault("Server.Stop", "auto")
-	v.SetDefault("Server.SingleAutoSelect", false)
 	v.SetDefault("Server.AnnouncePorts", []int{common.AnnouncePort})
 	v.SetDefault("Server.AnnounceMulticastGroups", []string{common.AnnounceMulticastGroup})
 	// Server.BattleServerManager
