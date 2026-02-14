@@ -645,7 +645,7 @@ func Execute() error {
 	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Config.Certificate.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
+	if err := v.BindPFlag("Config.Certificate.CanTrustInPc", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {
