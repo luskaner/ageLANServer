@@ -94,7 +94,7 @@ var (
 			}()
 			logger.WriteFileLog(gameId, "start")
 			isAdmin := commonExecutor.IsAdmin()
-			canTrustCertificate := cfg.Config.CanTrustCertificate
+			canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
 			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")
 			}
@@ -541,7 +541,7 @@ var (
 			}
 			logger.WriteFileLog(gameId, "post isolate user data")
 			if gamePath != "" {
-				errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath)))
+				errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
 				if errorCode.Load() != int32(common.ErrSuccess) {
 					return
 				}
@@ -616,7 +616,8 @@ func Execute() error {
 	// Default Values
 	// Config
 	v.SetDefault("Config.CanAddHost", "true")
-	v.SetDefault("Config.CanTrustCertificate", "local")
+	v.SetDefault("Config.Certificate.CanTrustInPc", "local")
+	v.SetDefault("Config.Certificate.CanTrustInGame", true)
 	v.SetDefault("Config.CanBroadcastBattleServer", "auto")
 	v.SetDefault("Config.Log", false)
 	v.SetDefault("Config.IsolateMetadata", "required")
@@ -644,7 +645,7 @@ func Execute() error {
 	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Config.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
+	if err := v.BindPFlag("Config.Certificate.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {

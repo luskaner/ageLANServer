@@ -7,13 +7,18 @@ type Executable struct {
 
 type Config struct {
 	CanAddHost               bool
-	CanTrustCertificate      string
 	CanBroadcastBattleServer string
 	Log                      bool
 	IsolateMetadata          string
 	IsolateProfiles          string
 	SetupCommand             []string
 	RevertCommand            []string
+	Certificate              ConfigCertificate
+}
+
+type ConfigCertificate struct {
+	CanTrustInPc   string
+	CanTrustInGame bool
 }
 
 type BattleServerManager struct {
