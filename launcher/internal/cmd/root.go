@@ -343,7 +343,7 @@ var (
 			logger.Println("Cleaning up (if needed)...")
 			config.KillAgent()
 			if err = commonLogger.FileLogger.Buffer("config_revert_initial", func(writer io.Writer) {
-				launcherCommon.ConfigRevert(gameId, commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
+				launcherCommon.ConfigRevert("", commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
 					commonLogger.Println("run config revert", options.String())
 				}, executor.RunRevert)
 			}); err != nil {

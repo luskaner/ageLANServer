@@ -67,59 +67,77 @@ func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCer
 	return args
 }
 
-func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, optionsFn func(options exec.Options), runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result)) bool {
+func allRevertFlags(gameId string, logRoot string, stopAgent bool) []string {
+	return RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, "", "", "", logRoot, stopAgent, false)
+}
+
+func ConfigRevert(
+	gameId string,
+	logRoot string,
+	headless bool,
+	out io.Writer,
+	optionsFn func(options exec.Options),
+	runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result),
+) (success bool) {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
 	}
 	err, revertFlags := RevertConfigStore.Load()
+	var games []string
+	if gameId == "" {
+		games = common.SupportedGames.ToSlice()
+	} else {
+		games = []string{gameId}
+	}
+	multipleRevertFlags := make([][]string, len(games))
 	if err != nil || len(revertFlags) > 0 {
 		var stopAgent bool
-		var revertLine string
-		if !headless {
-			revertLine = "Reverting "
-		}
 		if err != nil {
-			if !headless {
-				commonLogger.Println("Failed to get revert flags: ", err)
-				revertLine += "all possible "
-			}
+			commonLogger.Printf("Failed to get revert flags: %v, will revert for all games\n", err)
 			stopAgent = ConfigAdminAgentRunning(headless)
-			revertFlags = RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, "", "", "", logRoot, stopAgent, false)
-		} else if !headless && slices.Contains(revertFlags, "-g") {
-			stopAgent = true
-		}
-
-		requiresRevertAdminElevation := RequiresRevertAdminElevation(revertFlags, headless)
-		if !headless {
-			revertLine += "configuration"
-			if requiresRevertAdminElevation {
-				revertLine += `, authorize 'config-admin' if needed`
-			} else if stopAgent {
-				revertLine += ` and stopping its agent`
+			for i, game := range common.SupportedGames.ToSlice() {
+				multipleRevertFlags[i] = allRevertFlags(game, logRoot, stopAgent)
 			}
-			commonLogger.Println(revertLine + `...`)
-		} else if requiresRevertAdminElevation {
-			return false
+		} else {
+			multipleRevertFlags = [][]string{revertFlags}
+			if !headless && slices.Contains(revertFlags, "-g") {
+				stopAgent = true
+			}
 		}
-
-		if revertResult := runRevertFn(revertFlags, headless, out, optionsFn); !revertResult.Success() {
-			if !headless {
+		// This does not depend on the game type so compute it once
+		requiresRevertAdminElevation := RequiresRevertAdminElevation(multipleRevertFlags[0], headless)
+		if headless && requiresRevertAdminElevation {
+			commonLogger.Println("Revert requires admin elevation while headless, this should not happen, skipping...")
+			return
+		}
+		var revertEnd string
+		if requiresRevertAdminElevation {
+			revertEnd += `, authorize 'config-admin' if needed`
+		} else if stopAgent {
+			revertEnd += ` and stopping its agent`
+		}
+		for i, currentRevertFlags := range multipleRevertFlags {
+			commonLogger.Println(games[i] + ":")
+			commonLogger.Println("\tReverting configuration" + revertEnd + `...`)
+			if revertResult := runRevertFn(currentRevertFlags, headless, out, optionsFn); revertResult.Success() {
+				success = true
+			} else {
 				if ConfigAdminAgentRunning(false) {
-					commonLogger.Println("'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
+					commonLogger.Println("\t\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 				} else {
-					commonLogger.Println("Failed to cleanup configuration, try to do it manually.")
+					commonLogger.Println("\t\tFailed to cleanup configuration, try to do it manually.")
 				}
 			}
-			return false
 		}
-
-		if err = RevertConfigStore.Delete(); err != nil {
-			if !headless {
+		if success {
+			if err = RevertConfigStore.Delete(); err != nil {
 				commonLogger.Println("Failed to clear revert flags: ", err)
 			}
 		}
+	} else {
+		success = true
 	}
-	return true
+	return success
 }
 
 func ConfigAdminAgentRunning(bin bool) bool {
