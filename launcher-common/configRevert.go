@@ -121,14 +121,14 @@ func ConfigRevert(
 			revertEnd += ` and stopping its agent`
 		}
 		for _, currentRevertFlags := range multipleRevertFlags {
-			commonLogger.Println("\tReverting configuration" + revertEnd + `...`)
+			commonLogger.Println("Reverting configuration" + revertEnd + `...`)
 			if revertResult := runRevertFn(currentRevertFlags, headless, out, optionsFn); revertResult.Success() {
 				success = true
 			} else {
 				if ConfigAdminAgentRunning(false) {
-					commonLogger.Println("\t\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
+					commonLogger.Println("\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 				} else {
-					commonLogger.Println("\t\tFailed to cleanup configuration, try to do it manually.")
+					commonLogger.Println("\tFailed to cleanup configuration, try to do it manually.")
 				}
 			}
 		}
