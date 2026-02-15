@@ -93,9 +93,13 @@ func ConfigRevert(
 	if err != nil || len(revertFlags) > 0 {
 		var stopAgent bool
 		if err != nil {
-			commonLogger.Printf("Failed to get revert flags: %v, will revert for all games\n", err)
+			if len(games) == 1 {
+				commonLogger.Printf("Failed to get revert flags: %v, will revert for game %s\n", err, games[0])
+			} else {
+				commonLogger.Printf("Failed to get revert flags: %v, will revert for all games\n", err)
+			}
 			stopAgent = ConfigAdminAgentRunning(headless)
-			for i, game := range common.SupportedGames.ToSlice() {
+			for i, game := range games {
 				multipleRevertFlags[i] = allRevertFlags(game, logRoot, stopAgent)
 			}
 		} else {
@@ -116,8 +120,7 @@ func ConfigRevert(
 		} else if stopAgent {
 			revertEnd += ` and stopping its agent`
 		}
-		for i, currentRevertFlags := range multipleRevertFlags {
-			commonLogger.Println(games[i] + ":")
+		for _, currentRevertFlags := range multipleRevertFlags {
 			commonLogger.Println("\tReverting configuration" + revertEnd + `...`)
 			if revertResult := runRevertFn(currentRevertFlags, headless, out, optionsFn); revertResult.Success() {
 				success = true
