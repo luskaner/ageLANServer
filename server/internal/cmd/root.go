@@ -48,7 +48,7 @@ var (
 	Version string
 	rootCmd = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE and AoM: RT.",
+		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE, AoE 4: AE and AoM: RT.",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &fileLock.PidLock{}
 			exitCode := common.ErrSuccess
@@ -313,7 +313,7 @@ func Execute() error {
 		v.SetDefault(fmt.Sprintf("Games.%s.Hosts", game), []string{netip.IPv4Unspecified().String()})
 	}
 	// Bindings
-	if err := viper.BindPFlag("Log", rootCmd.Flags().Lookup("log")); err != nil {
+	if err := v.BindPFlag("Log", rootCmd.Flags().Lookup("log")); err != nil {
 		return err
 	}
 	if err := v.BindPFlag("Announcement.Enabled", rootCmd.Flags().Lookup("announce")); err != nil {
@@ -351,8 +351,7 @@ func initConfig() *internal.Configuration {
 	if err := v.ReadInConfig(); err == nil {
 		logger.Println("Using config file:", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}

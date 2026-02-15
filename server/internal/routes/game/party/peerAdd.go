@@ -26,7 +26,7 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Only the host can add peers
-		if hostId := adv.GetHostId(); hostId != currentUserId {
+		if hostId := adv.UnsafeGetHostId(); hostId != currentUserId {
 			return
 		}
 		users := make([]models.User, length)
@@ -41,7 +41,7 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 		advIp := adv.GetIp()
 		var addedUserIds []int32
 		for j, u := range users {
-			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatId(), raceIds[j], teamIds[j]); peer != nil {
+			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatId(), -1, raceIds[j], teamIds[j]); peer != nil {
 				addedUserIds = append(addedUserIds, u.GetId())
 			} else {
 				break

@@ -60,7 +60,7 @@ var (
 	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
 	rootCmd                        = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
-		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, and AoM: RT to connect to the local LAN 'server'",
+		Short: "launcher discovers and configures AoE: DE, AoE 2: DE and AoE 3: DE, AoE 4: DE and AoM: RT to connect to the local LAN 'server'",
 		Long:  "launcher discovers or starts a local LAN 'server', configures and executes the game launcher to connect to it",
 		Run: func(_ *cobra.Command, _ []string) {
 			lock := &fileLock.PidLock{}
@@ -94,7 +94,7 @@ var (
 			}()
 			logger.WriteFileLog(gameId, "start")
 			isAdmin := commonExecutor.IsAdmin()
-			canTrustCertificate := cfg.Config.CanTrustCertificate
+			canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
 			if runtime.GOOS != "windows" {
 				canTrustCertificateValues.Remove("user")
 			}
@@ -104,7 +104,7 @@ var (
 				return
 			}
 			canBroadcastBattleServer := "false"
-			if runtime.GOOS == "windows" && gameId != common.GameAoM {
+			if runtime.GOOS == "windows" && (gameId != common.GameAoM && gameId != common.GameAoE4) {
 				canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
 				if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 					logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
@@ -249,7 +249,7 @@ var (
 
 			logger.Printf("Game %s.\n", gameId)
 			if clientExecutable == "msstore" && gameId == common.GameAoM {
-				logger.Println("The Microsoft Store (Xbox) version of AoM: RT is not supported.")
+				logger.Println("The Microsoft Store (Xbox) version is not supported on this game.")
 				errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 				return
 			}
@@ -261,12 +261,12 @@ var (
 			switch executer.(type) {
 			case gameExecutor.SteamExec:
 				logger.Println("Game found on Steam.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(gameExecutor.SteamExec).GamePath()
 				}
 			case gameExecutor.XboxExec:
 				logger.Println("Game found on Xbox.")
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					gamePath = executer.(gameExecutor.XboxExec).GamePath()
 				}
 			case gameExecutor.CustomExec:
@@ -282,7 +282,7 @@ var (
 						isolateProfiles = false
 					}
 				}
-				if gameId != common.GameAoE1 {
+				if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
 					if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 						logger.Println("Invalid client path")
 						errorCode.Store(int32(internal.ErrInvalidClientPath))
@@ -343,7 +343,7 @@ var (
 			logger.Println("Cleaning up (if needed)...")
 			config.KillAgent()
 			if err = commonLogger.FileLogger.Buffer("config_revert_initial", func(writer io.Writer) {
-				launcherCommon.ConfigRevert(gameId, commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
+				launcherCommon.ConfigRevert("", commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
 					commonLogger.Println("run config revert", options.String())
 				}, executor.RunRevert)
 			}); err != nil {
@@ -472,17 +472,19 @@ var (
 						serverArgs = append(serverArgs, "--deterministic")
 					}
 				}
-				if gameId == common.GameAoM && battleServerManagerRun == "false" {
-					logger.Println("AoM: RT needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
+				if (gameId == common.GameAoM || gameId == common.GameAoE4) && battleServerManagerRun == "false" {
+					logger.Println("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 				}
-				runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && gameId == common.GameAoM)
+				runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && (gameId == common.GameAoM || gameId == common.GameAoE4))
 				if cfg.Server.Start == "auto" {
 					str := "No 'server's were found, proceeding to"
 					if runBattleServerManager {
 						str += " start a battle server (if needed) and then"
 					}
-					logger.Println(str + " start the 'server'. Press enter to continue...")
-					_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+					if !cfg.Server.StartWithoutConfirmation {
+						logger.Println(str + " start the 'server'. Press enter to continue...")
+						_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+					}
 				}
 				serverExecutablePath := server.GetExecutablePath(serverExecutable)
 				if serverExecutablePath == "" {
@@ -541,7 +543,7 @@ var (
 			}
 			logger.WriteFileLog(gameId, "post isolate user data")
 			if gamePath != "" {
-				errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath)))
+				errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
 				if errorCode.Load() != int32(common.ErrSuccess) {
 					return
 				}
@@ -616,7 +618,8 @@ func Execute() error {
 	// Default Values
 	// Config
 	v.SetDefault("Config.CanAddHost", "true")
-	v.SetDefault("Config.CanTrustCertificate", "local")
+	v.SetDefault("Config.Certificate.CanTrustInPc", "local")
+	v.SetDefault("Config.Certificate.CanTrustInGame", true)
 	v.SetDefault("Config.CanBroadcastBattleServer", "auto")
 	v.SetDefault("Config.Log", false)
 	v.SetDefault("Config.IsolateMetadata", "required")
@@ -629,11 +632,12 @@ func Execute() error {
 	v.SetDefault("Client.Path", "auto")
 	// Server
 	v.SetDefault("Server.Start", "auto")
+	v.SetDefault("Server.Stop", "auto")
+	v.SetDefault("Server.SingleAutoSelect", false)
+	v.SetDefault("Server.StartWithoutConfirmation", false)
 	v.SetDefault("Server.Executable", "auto")
 	v.SetDefault("Server.ExecutableArgs", []string{"-e", "{Game}", "--id", "{Id}"})
 	v.SetDefault("Server.Host", netip.IPv4Unspecified().String())
-	v.SetDefault("Server.Stop", "auto")
-	v.SetDefault("Server.SingleAutoSelect", false)
 	v.SetDefault("Server.AnnouncePorts", []int{common.AnnouncePort})
 	v.SetDefault("Server.AnnounceMulticastGroups", []string{common.AnnounceMulticastGroup})
 	// Server.BattleServerManager
@@ -644,7 +648,7 @@ func Execute() error {
 	if err := v.BindPFlag("Config.CanAddHost", rootCmd.Flags().Lookup("canAddHost")); err != nil {
 		return err
 	}
-	if err := v.BindPFlag("Config.CanTrustCertificate", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
+	if err := v.BindPFlag("Config.Certificate.CanTrustInPc", rootCmd.Flags().Lookup("canTrustCertificate")); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {
@@ -714,8 +718,7 @@ func initConfig() *internal.Configuration {
 		logger.Println("Using main config file:", v.ConfigFileUsed())
 		logger.PrintFile("main config", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(common.ErrConfigParse)
 		}
@@ -729,8 +732,7 @@ func initConfig() *internal.Configuration {
 		logger.Println("Using game config file:", v.ConfigFileUsed())
 		logger.PrintFile("game config", v.ConfigFileUsed())
 	} else {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing game config file:", v.ConfigFileUsed()+":", err.Error())
 			os.Exit(internal.ErrGameConfigParse)
 		}

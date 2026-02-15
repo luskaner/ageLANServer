@@ -1,5 +1,3 @@
-go.work
-go.work.sum
 .tools
 .task
 .env
@@ -14,3 +12,4 @@ build/**/*
 !build/battle-server-manager/
 !build/battle-server-manager/.gitkeep
 .goreleaser.yaml
+tools/**/go.sum

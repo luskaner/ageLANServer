@@ -18,6 +18,7 @@ Host = 'auto'
 # Path to 'BattleServer.exe' executable including it.
 # If 'auto' it will try to find it using Steam and then Xbox (Windows-only).
 # AoM: RT: will search for AoE II: DE executable instead, as the one included does not work.
+# AoE IV: AE: will search for AoE II: DE executable instead, as it is missing it.
 # Note: You may use environment variables.
 Path = 'auto'
 # Extra arguments to pass to the corresponding 'BattleServer.exe' executable.
@@ -58,14 +59,14 @@ OutOfBand = 0
 Auto = true
 # Path to the SSL certificate file to use.
 # If 'Auto' is true, this is ignored, otherwise:
-# AoM: Path to cert.pem
+# AoE IV/AoM: Path to cert.pem
 # Other games: Path to selfsigned_cert.pem
 # Argument: -sslCert
 # Note: You may use environment variables.
 CertFile = ''
 # Path to the SSL key file to use.
 # If 'Auto' is true, this is ignored, otherwise:
-# AoM: Path to key.pem
+# AoE IV/AoM: Path to key.pem
 # Other games: Path to selfsigned_key.pem
 # Argument: -sslKey
 # Note: You may use environment variables.

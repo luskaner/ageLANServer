@@ -4,22 +4,38 @@
 # If using '{HostFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 # Note: Will require admin privileges.
 CanAddHost = true
-# Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store before running the launcher.
-# local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent. Only on Windows.
-# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
-CanTrustCertificate = 'local'
 # Whether to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one).
-# Either 'auto' or 'false'. This is only necessary in Windows when not running AoM, on the rest of systems it is always 'false'.
+# Either 'auto' or 'false'. This is only necessary in Windows when not running AoM nor AoE IV, on the rest of systems it is always 'false'.
 CanBroadcastBattleServer = 'auto'
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
 Log = false
 
+[Config.Certificate]
+# Whether or not to trust the certificate of the server in user or local store, or not at all.
+# false: do not trust the certificate. You will have to trust it manually in the proper store.
+# local: trust the certificate in the local store. Requires admin rights.
+# user: trust the certificate in the user store. Requires user consent. Only on Windows.
+# If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
+CanTrustInPc = 'local'
+# Whether to trust the certificate of the server in the game's certificate store.
+# Required for all games except AoE I: DE and AoE IV: AE.
+# false: do not trust the certificate. You will have to trust it manually if the game needs it.
+# true: trust the certificate in the game's certificate store.
+# Requires 'Client.Path' to be resolved properly.
+CanTrustInGame = true
+
 [Server]
-# Whether to start the server automatically or 'auto', which will start the server is no server is found in the LAN
+# Whether to start the server automatically or 'auto', which will start the server if no server is found in the LAN
 # 'auto' depend on the Announce setting in the server config being true to find servers.
 Start = 'auto'
+# Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
+# This will also stop the Battle Server if one was started with the Battle Server Manager.
+Stop = 'auto'
+# Whether to select automatically the server if only one was discovered.
+# Not recommended to be set to true if users connect using the official game launcher.
+SingleAutoSelect = false
+# Whether to start the server automatically without user confirmation when Start is 'auto' and no server is found.
+StartWithoutConfirmation = false
 # The process to start the server, if 'auto', it will be try to execute the server binary in this directory order:
 # 1. './server/'
 # 2. '../server/'
@@ -37,12 +53,6 @@ ExecutableArgs = ['-e', '{Game}', '--id', '{Id}']
 # The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
 # Note: See the server config to set the interface to bind to.
 Host = '0.0.0.0'
-# Whether to stop it automatically, if 'auto', it will stop the server if Start = true (or 'auto' does not find a server)
-# This will also stop the Battle Server is one was started with the Battle Server Manager.
-Stop = 'auto'
-# Whether to select automatically the server if only one was discovered.
-# Not recommended to be set to true if users connect using the official game launcher.
-SingleAutoSelect = false
 # Announce ports to listen to. If not including the default port, default configured servers will not get discovered.
 AnnouncePorts = [31978]
 # Announce multicast group adresses to join.
@@ -53,7 +63,7 @@ AnnounceMulticastGroups = ['239.31.97.8']
 # This section only applies if starting the server.
 [Server.BattleServerManager]
 # When to use the manager to start a new Battle Server running the manager; accepted values:
-# 'required': Only for games that require it to work (AoM: RT).
+# 'required': Only for games that require it to work (AoM: RT and AoE IV: AE).
 # 'true'.
 # 'false'.
 # Note: by default the manager will only start a new instance if one is not already running for the given game.

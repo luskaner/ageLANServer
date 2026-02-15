@@ -3,6 +3,7 @@ package advertisement
 import (
 	"net/http"
 
+	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
@@ -47,14 +48,21 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	}
 	advertisements := game.Advertisements()
 	// Leave the previous match if the user is already in one
-	// Necessary for AoE1 but might as well do it for all
-	if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
-		advertisements.WithWriteLock(existingAdv.GetId(), func() {
-			advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
-		})
+	// Necessary for AoE1 but might as well do it for all (except AoE4 which needs multiple for groups)
+	if game.Title() != common.GameAoE4 {
+		// FIXME: Exit in aoe4 if the currrent match is not a party
+		if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
+			advertisements.WithWriteLock(existingAdv.GetId(), func() {
+				advertisements.UnsafeRemovePeer(existingAdv.GetId(), u.GetId())
+			})
+		}
 	}
 	matchingAdv, foundAdv := advertisements.GetAdvertisement(q.Id)
 	if !foundAdv {
+		joinReturnError(battleServers, r, w)
+		return
+	}
+	if q.Party != -1 && q.Party != matchingAdv.GetParty() {
 		joinReturnError(battleServers, r, w)
 		return
 	}
@@ -79,6 +87,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			matchingAdv.GetIp(),
 			u.GetId(),
 			u.GetStatId(),
+			q.Party,
 			q.Race,
 			q.Team,
 		)

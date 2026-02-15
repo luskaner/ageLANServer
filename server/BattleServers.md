@@ -8,7 +8,8 @@ Depending on the game and version, the path can be one of these two:
 * `Drive:\Path\To\Game\BattleServer\BattleServer.exe`
 
 There is an exception: AoM: RT includes a buggy implementation and requires a more modern version. The best is to use
-the newer version found in AoE II: DE.
+the newer version found in AoE II: DE. The same applies for AoE IV: AE as it does not include the Battle Server
+executable.
 
 ### Executable
 
@@ -59,14 +60,18 @@ generated and that you are located in the battle server directory using the `Pow
 
 `& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
+#### AoE IV: AE
+
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30009 webSocketPort 30010 -outOfBandPort 30011 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+
 #### AoM: RT
 
-`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30007 webSocketPort 30008 -outOfBandPort 30009 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30012 webSocketPort 30013 -outOfBandPort 30014 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
 
 ## Configuring the Server
 
 For each battle server instance you run you will need to edit `<server>/resources/config.toml` and inside `[Games]`
-section, add `[[Games.<game>.BattleServers]]` where game is one of `age1`, `age3`, or `age3`.
+section, add `[[Games.<game>.BattleServers]]` where game is one of `age1`, `age2`, `age3`, `age4` or `athens`.
 inside that subsection the following properties are required (with the arguments matching):
 
 | Battle Server argument | Server configuration key |
@@ -119,15 +124,26 @@ WebSocketPort = 30007
 OutOfBandPort = 30008
 ```
 
+#### AoE IV: AE
+
+```toml
+[[Games.age4.BattleServers]]
+Region = 'local'
+IPv4 = '192.168.1.2'
+BsPort = 30009
+WebSocketPort = 30010
+OutOfBandPort = 30011
+```
+
 #### AoM: RT
 
 ```toml
 [[Games.athens.BattleServers]]
 Region = 'local'
 IPv4 = '192.168.1.2'
-BsPort = 30009
-WebSocketPort = 30010
-OutOfBandPort = 30011
+BsPort = 30012
+WebSocketPort = 30013
+OutOfBandPort = 30014
 ```
 
 ## Simplest way to use an online-like Battle Server
@@ -160,9 +176,13 @@ Replace the placeholders with the actual paths.
     ```
     & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
-    * AoM: RT:
+    * AoE IV: AE:
     ```
     & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30009 webSocketPort 30010 -outOfBandPort 30011 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
+    ```
+    * AoM: RT:
+    ```
+    & ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30012 webSocketPort 30013 -outOfBandPort 30014 -sslKey "<server>/resources/certificates/key.pem" -sslCert "<server>/resources/certificates/cert.pem"
     ```
 6. Open `<server>/resources/config.toml` and add the corresponding configuration inside `[Games]` for the game you are
    running the
@@ -185,7 +205,7 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30004
     OutOfBandPort = 30005
     ```
-    * AoE II: DE:
+    * AoE III: DE:
     ```toml
     [[Games.age3.BattleServers]]
     Region = 'local'
@@ -194,14 +214,23 @@ Replace the placeholders with the actual paths.
     WebSocketPort = 30007
     OutOfBandPort = 30008
     ```
-    * AoM: RT:
+    * AoE IV: AE:
     ```toml
-    [[Games.athens.BattleServers]]
+    [[Games.age4.BattleServers]]
     Region = 'local'
     IPv4 = '<server-ip>'
     BsPort = 30009
     WebSocketPort = 30010
     OutOfBandPort = 30011
+    ```
+    * AoM: RT:
+    ```toml
+    [[Games.athens.BattleServers]]
+    Region = 'local'
+    IPv4 = '<server-ip>'
+    BsPort = 30012
+    WebSocketPort = 30013
+    OutOfBandPort = 30014
     ```
 7. Start the game as you normally would and then:
     * AoE DE: Click on "Multiplayer" then on "Create Game", you may select the "Region", "local", or leave as default.

@@ -24,7 +24,7 @@ func FindProfilesByPlatformID(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	sess := models.SessionOrPanic(r)
-	profileInfo := game.Users().GetProfileInfo(true, func(currentUser models.User) bool {
+	profileInfo := game.Users().EncodeProfileInfo(game.PresenceDefinitions(), func(currentUser models.User) bool {
 		_, ok := platformIdsMap[currentUser.GetPlatformUserID()]
 		return ok
 	}, sess.GetClientLibVersion())

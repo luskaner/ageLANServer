@@ -29,6 +29,7 @@ type Data struct {
 
 func Path(gameId string) string {
 	var s string
+	addPrefix := true
 	switch gameId {
 	case common.GameAoE1:
 		s = `Age of Empires DE`
@@ -36,10 +37,17 @@ func Path(gameId string) string {
 		s = `Age of Empires 2 DE`
 	case common.GameAoE3:
 		s = `Age of Empires 3 DE`
+	case common.GameAoE4:
+		addPrefix = false
+		s = `Age of Empires IV`
 	case common.GameAoM:
 		s = `Age of Mythology Retold`
 	}
-	return filepath.Join(basePath(gameId), prefix, s)
+	path := basePath(gameId)
+	if addPrefix {
+		path = filepath.Join(path, prefix)
+	}
+	return filepath.Join(path, s)
 }
 
 func typ(path string) (typ int, ext string) {

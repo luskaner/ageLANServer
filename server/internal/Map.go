@@ -24,8 +24,7 @@ func NewSafeMap[K comparable, V any]() *SafeMap[K, V] {
 }
 
 func (m *SafeMap[K, V]) updateReadOnly() {
-	clone := maps.Clone(m.wo)
-	m.ro.Store(&clone)
+	m.ro.Store(new(maps.Clone(m.wo)))
 }
 
 func (m *SafeMap[K, V]) Load(key K) (value V, ok bool) {
@@ -341,4 +340,15 @@ func (m *SafeOrderedMap[K, V]) Values() (int, iter.Seq[V]) {
 func (m *SafeOrderedMap[K, V]) Iter() (int, iter.Seq2[K, V]) {
 	ro := m.ro.Load().(*baseSafeOrderedMapData[K, V])
 	return ro.iter()
+}
+
+func (m *SafeOrderedMap[K, V]) First() (key K, value V, ok bool) {
+	ro := m.ro.Load().(*baseSafeOrderedMapData[K, V])
+	if len(ro.keys) == 0 {
+		return
+	}
+	key = ro.keys[0]
+	value = ro.internal[key]
+	ok = true
+	return
 }

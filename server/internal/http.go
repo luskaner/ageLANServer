@@ -43,11 +43,9 @@ func decode(dst any, src map[string][]string) error {
 		return nil
 	}
 
-	var merr schema.MultiError
-	if errors.As(err, &merr) {
+	if merr, ok := errors.AsType[schema.MultiError](err); ok {
 		for k, err := range merr {
-			var unknownKeyError schema.UnknownKeyError
-			if errors.As(err, &unknownKeyError) {
+			if _, ok := errors.AsType[schema.UnknownKeyError](err); ok {
 				delete(merr, k)
 			}
 		}

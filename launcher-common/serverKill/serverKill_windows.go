@@ -37,8 +37,7 @@ func Do(path string) error {
 	} else if proc == nil {
 		return nil
 	}
-	wait := 2 * time.Second
-	if process.WaitForProcess(proc, &wait) {
+	if process.WaitForProcess(proc, new(2*time.Second)) {
 		return nil
 	}
 	if err = process.KillPidProc(pid, proc); err != nil {

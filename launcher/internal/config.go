@@ -7,13 +7,18 @@ type Executable struct {
 
 type Config struct {
 	CanAddHost               bool
-	CanTrustCertificate      string
 	CanBroadcastBattleServer string
 	Log                      bool
 	IsolateMetadata          string
 	IsolateProfiles          string
 	SetupCommand             []string
 	RevertCommand            []string
+	Certificate              ConfigCertificate
+}
+
+type ConfigCertificate struct {
+	CanTrustInPc   string
+	CanTrustInGame bool
 }
 
 type BattleServerManager struct {
@@ -22,14 +27,15 @@ type BattleServerManager struct {
 }
 
 type Server struct {
-	Executable              `mapstructure:",squash"`
-	Start                   string
-	Host                    string
-	Stop                    string
-	SingleAutoSelect        bool
-	AnnouncePorts           []int
-	AnnounceMulticastGroups []string
-	BattleServerManager     BattleServerManager
+	Executable               `mapstructure:",squash"`
+	Start                    string
+	Host                     string
+	Stop                     string
+	SingleAutoSelect         bool
+	StartWithoutConfirmation bool
+	AnnouncePorts            []int
+	AnnounceMulticastGroups  []string
+	BattleServerManager      BattleServerManager
 }
 
 type Client struct {

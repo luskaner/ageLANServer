@@ -12,12 +12,12 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
-const elementSepGlob = "."
+const elementSepDotGlob = "."
 const minElementGlob = "??"
-const minElementSepGlob = minElementGlob + elementSepGlob
-const dateGlob = minElementGlob + minElementSepGlob + minElementSepGlob + minElementGlob
-const dateTimePrefixGlob = dateGlob + "-" + minElementGlob
-const dateTimeGlob = dateTimePrefixGlob + elementSepGlob + minElementSepGlob + minElementGlob
+const minElementSepGlob = minElementGlob + elementSepDotGlob
+const dateDotGlob = minElementGlob + minElementSepGlob + minElementSepGlob + minElementGlob
+const dateTimePrefixGlob = dateDotGlob + "-" + minElementGlob
+const dateTimeGlob = dateTimePrefixGlob + elementSepDotGlob + minElementSepGlob + minElementGlob
 const dateTimeNoDotGlob = dateTimePrefixGlob + minElementSepGlob + minElementGlob
 
 type Game interface {
@@ -28,6 +28,7 @@ var gameIdToGame = map[string]Game{
 	common.GameAoE1: GameAoE1{},
 	common.GameAoE2: GameAoE2{},
 	common.GameAoE3: GameAoE3{},
+	common.GameAoE4: GameAoE4{},
 	common.GameAoM:  GameAoM{},
 }
 
@@ -126,9 +127,7 @@ func sortByModTime(filesInfo *[]os.FileInfo) {
 
 func CopyGameLogs(gameId string, logRoot string) {
 	commonLogger.Println("Copying game logs...")
-	if game, ok := gameIdToGame[gameId]; !ok {
-		return
-	} else {
+	if game, ok := gameIdToGame[gameId]; ok {
 		paths := game.Paths(userData.Path(gameId))
 		for _, path := range paths {
 			str := fmt.Sprintf("\tCopying %s... ", path)

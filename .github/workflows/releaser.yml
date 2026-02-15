@@ -16,29 +16,31 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Rename go.work
-        shell: bash
-        run: |
-          cp go.work.example go.work
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.7'
+          go-version: '1.26.0'
           cache-dependency-path: |
-            common/go.sum
-            server/go.sum
-            server-genCert/go.sum            
-            launcher/go.sum
-            launcher-common/go.sum
-            launcher-agent/go.sum
-            launcher-config/go.sum
-            launcher-config-admin/go.sum
-            launcher-config-admin-agent/go.sum
-            battle-server-manager/go.sum
+            go.work.sum
+      - name: Set up Go legacy
+        id: setup_go_legacy
+        run: |
+          dir="${{ vars.GOROOT_LEGACY }}"
+          subdir="go-legacy-win7"
+          curl -L https://github.com/thongtech/$subdir/releases/download/v1.26.0-1/$subdir-1.26.0-1.linux_amd64.tar.gz -o go.tar.gz
+          sudo mkdir -p "$dir"
+          sudo tar -C "$dir" --strip-components=1 -xzf go.tar.gz
+          rm go.tar.gz
+          echo "goroot=$dir/$subdir" >> $GITHUB_OUTPUT
       - name: Generate Goreleaser config
         shell: bash
         run: |
-          go run tools/scripts/cmd/generateGoreleaserConfig.go
+          go run tools/scripts/cmd/generateGoreleaserConfig.go "${{ steps.setup_go_legacy.outputs.goroot }}"
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean --snapshot --fail-fast --skip=sign
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6

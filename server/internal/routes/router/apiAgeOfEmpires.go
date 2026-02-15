@@ -20,7 +20,7 @@ func (a *ApiAgeOfEmpires) Initialize(gameId string) bool {
 }
 
 func (a *ApiAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {
-	a.Proxy = NewProxy(common.ApiAgeOfEmpires, func(gameId string, next http.Handler) http.Handler {
+	a.Proxy = NewProxy(common.ApiAgeOfEmpires, func(_ string, _ http.Handler) http.Handler {
 		a.group.HandleFunc("POST", "/textmoderation", textmoderation.TextModeration)
 		return a.group.mux
 	})

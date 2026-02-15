@@ -8,7 +8,7 @@ tasks:
   build-goreleaser-cfg:
     internal: true
     cmds:
-      - go run tools/scripts/cmd/generateGoreleaserConfig.go
+      - go run tools/scripts/cmd/generateGoreleaserConfig.go "{{ .GOROOT_LEGACY }}"
   build:
     deps:
       - build-goreleaser-cfg

@@ -1,6 +1,6 @@
-go 1.25.0
+go 1.26.0
 
-toolchain go1.25.7
+toolchain go1.26.0
 
 // Necessary for launcher-config's internal.readCertsFromFile
 godebug x509negativeserial=1
@@ -17,8 +17,8 @@ use (
 	launcher-config-admin-agent
 	server
 	server-genCert
-	tools/server-replay
 	tools/scripts
+	tools/server-replay
 )
 
 replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast
