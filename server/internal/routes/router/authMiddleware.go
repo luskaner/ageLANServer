@@ -167,7 +167,8 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 			data.Add("callNum", strconv.Itoa(callNum))
 			data.Add("connect_id", upstreamSessionId)
 			data.Add("sessionID", upstreamSessionId)
-			dataReader := strings.NewReader(data.Encode())
+			encodedData := data.Encode()
+			dataReader := strings.NewReader(encodedData)
 			logoutReq := r.Clone(context.Background())
 			logoutReq.RequestURI = ""
 			logoutReq.RemoteAddr = ""
@@ -179,7 +180,7 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 			logoutReq.Body = io.NopCloser(dataReader)
 			logoutReq.ContentLength = int64(dataReader.Len())
 			logoutReq.GetBody = func() (io.ReadCloser, error) {
-				reader := dataReader
+				reader := strings.NewReader(encodedData)
 				return io.NopCloser(reader), nil
 			}
 			logoutReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
