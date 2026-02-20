@@ -3,7 +3,7 @@ Log = false
 
 # Whether to generate the Platform User Id. *ONLY* as a last resort if multiple users
 # are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
-# Incompatible with Authentication not set to 'none'.
+# Incompatible with Authentication not set to 'disabled'.
 GeneratePlatformUserId = false
 
 # Authentication method to use. Accepted values:
