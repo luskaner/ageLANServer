@@ -16,6 +16,7 @@ import (
 
 var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")
 var userDataFolder = filepath.Join(paths.ResourcesDir, "userData")
+var EtcFolder = filepath.Join(paths.ResourcesDir, "etc")
 var CloudFolder = filepath.Join(ResponsesFolder, "cloud")
 
 type ResourcesOpts struct {

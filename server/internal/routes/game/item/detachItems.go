@@ -35,7 +35,7 @@ func DetachItems(w http.ResponseWriter, r *http.Request) {
 	}
 	errorCodes := make([]int, minLength)
 	itemsEncoded := make([]i.A, minLength)
-	_ = u.GetItems().WithReadWrite(func(data *map[int32]models.Item) error {
+	_ = u.GetItems().WithReadWrite(func(data *map[int32]*models.MainItem) error {
 		for j, itemId := range req.ItemIds.Data {
 			itemLocationId := req.LocationIds.Data[j]
 			durabilityCount := req.DurabilityCounts.Data[j]

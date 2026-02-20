@@ -167,6 +167,7 @@ func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 			if err != nil {
 				return
 			}
+			req.Header.Set("User-Agent", common.UserAgent())
 			req.Host = serverName
 			if //goland:noinspection ALL
 			_, err = client.Do(req); err != nil {

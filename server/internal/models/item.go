@@ -123,6 +123,30 @@ type ItemMetadata struct {
 	other      map[string]any
 }
 
+func NewItemMetadataRaw(metadata []byte) ItemMetadata {
+	roMetadata := &ReadOnlyItemMetadata{}
+	itemMetadata := ItemMetadata{}
+	if err := json.Unmarshal(metadata, roMetadata); err != nil {
+		return itemMetadata
+	}
+	if len(roMetadata.attributes) > 0 {
+		itemMetadata.attributes = make(map[string]string, len(roMetadata.attributes))
+		for k, v := range roMetadata.attributes {
+			itemMetadata.attributes[k] = v.Value
+		}
+	}
+	if len(roMetadata.other) > 0 {
+		itemMetadata.other = make(map[string]any, len(roMetadata.other))
+		for k, v := range roMetadata.other {
+			var val any
+			if err := json.Unmarshal(v, &val); err == nil {
+				itemMetadata.other[k] = val
+			}
+		}
+	}
+	return itemMetadata
+}
+
 func (i *ItemMetadata) MarshalJSON() ([]byte, error) {
 	all := make(map[string]any)
 	if len(i.attributes) > 0 {
@@ -287,6 +311,22 @@ func newMainItemFromStorage(storage *itemStorage) *MainItem {
 		tradeId:         storage.TradeId,
 		permissionFlags: storage.PermissionFlags,
 		maxCharges:      storage.MaxCharges,
+	}
+}
+
+func NewMainItemFromRaw(itemRaw i.A) *MainItem {
+	return &MainItem{
+		id:              int32(itemRaw[0].(float64)),
+		metadata:        NewItemMetadataRaw([]byte(itemRaw[6].(string))),
+		entityVersion:   int32(itemRaw[1].(float64)),
+		definitionId:    int32(itemRaw[2].(float64)),
+		durabilityId:    int32(itemRaw[5].(float64)),
+		durabilityCount: int32(itemRaw[4].(float64)),
+		creationDate:    time.Unix(int64(itemRaw[7].(float64)), 0),
+		locationId:      int32(itemRaw[8].(float64)),
+		tradeId:         int32(itemRaw[9].(float64)),
+		permissionFlags: uint32(itemRaw[10].(float64)),
+		maxCharges:      int32(itemRaw[11].(float64)),
 	}
 }
 
@@ -558,21 +598,21 @@ func (d *ReadOnlyItemDefinitions) GetByName(name string) (ItemDefinition, bool) 
 }
 
 type ItemsUpgradableDefaultData struct {
-	InitialUpgradableDefaultData[*map[int32]Item]
+	InitialUpgradableDefaultData[*map[int32]*MainItem]
 	gameId      string
 	definitions Items
 }
 
 func NewItemsUpgradableDefaultData(gameId string, definitions Items) *ItemsUpgradableDefaultData {
 	return &ItemsUpgradableDefaultData{
-		InitialUpgradableDefaultData: InitialUpgradableDefaultData[*map[int32]Item]{},
+		InitialUpgradableDefaultData: InitialUpgradableDefaultData[*map[int32]*MainItem]{},
 		gameId:                       gameId,
 		definitions:                  definitions,
 	}
 }
 
-func (is *ItemsUpgradableDefaultData) Default() *map[int32]Item {
-	var items []Item
+func (is *ItemsUpgradableDefaultData) Default() *map[int32]*MainItem {
+	var items []*MainItem
 	var itemPackCategory ItemCategory
 	for category := range is.definitions.IterCategories() {
 		if category.GetName() == "ItemPack" {
@@ -586,7 +626,7 @@ func (is *ItemsUpgradableDefaultData) Default() *map[int32]Item {
 		}
 		var itemId int32
 		i.WithRng(func(rand *i.RandReader) {
-			for itemId = rand.Int32(); itemId < 100 || slices.ContainsFunc(items, func(item Item) bool {
+			for itemId = rand.Int32(); itemId < 100 || slices.ContainsFunc(items, func(item *MainItem) bool {
 				return item.GetId() == itemId
 			}); {
 			}
@@ -613,7 +653,7 @@ func (is *ItemsUpgradableDefaultData) Default() *map[int32]Item {
 			maxCharges:      -1,
 		})
 	}
-	itemsMap := make(map[int32]Item)
+	itemsMap := make(map[int32]*MainItem)
 	for _, item := range items {
 		itemsMap[item.GetId()] = item
 	}

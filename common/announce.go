@@ -10,7 +10,7 @@ const VersionHeader = "X-Version"
 const (
 	// AnnounceVersion0 : 1.1.X - v1.4.X
 	AnnounceVersion0 = iota
-	// AnnounceVersion1 : 1.5.X - v1.10.X
+	// AnnounceVersion1 : v1.5.X - v1.10.X
 	AnnounceVersion1
 	// AnnounceVersion2 (v1.11.X and higher) no longer sends any extra data, '/test' is supposed to be queried to get it
 	AnnounceVersion2

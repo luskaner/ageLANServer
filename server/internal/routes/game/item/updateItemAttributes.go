@@ -37,7 +37,7 @@ func UpdateItemAttributes(w http.ResponseWriter, r *http.Request) {
 	}
 	errorCodes := make([]i.A, minLength)
 	itemsEncoded := make([]i.A, minLength)
-	_ = u.GetItems().WithReadWrite(func(data *map[int32]models.Item) error {
+	_ = u.GetItems().WithReadWrite(func(data *map[int32]*models.MainItem) error {
 		for j, itemId := range req.ItemIds.Data {
 			var itemIdErrorCodes i.A
 			attributeKeys := req.Keys.Data.Data

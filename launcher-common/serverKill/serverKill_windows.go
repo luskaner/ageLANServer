@@ -25,8 +25,14 @@ func Do(path string) error {
 		return fmt.Errorf("could not resolve local IPs")
 	}
 	for _, ip := range ips {
+		req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/shutdown", ip), nil)
+		if err != nil {
+			continue
+		}
+		req.Header.Set("Content-Type", "")
+		req.Header.Set("User-Agent", common.UserAgent())
 		//goland:noinspection ALL
-		resp, err := client.Post(fmt.Sprintf("https://%s/shutdown", ip), "", nil)
+		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode == http.StatusOK {
 			break
 		}

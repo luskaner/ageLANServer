@@ -30,6 +30,7 @@ type Games struct {
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
+	Authentication         string
 	Announcement           Announcement
 	Games                  Games
 }

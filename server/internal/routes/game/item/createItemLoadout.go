@@ -40,7 +40,7 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if itemIds.Cardinality() > 0 {
-		_ = u.GetItems().WithReadOnly(func(data *map[int32]models.Item) error {
+		_ = u.GetItems().WithReadOnly(func(data *map[int32]*models.MainItem) error {
 			ok = itemIds.IsSubset(mapset.NewThreadUnsafeSetFromMapKeys(*data))
 			return nil
 		})
@@ -52,7 +52,7 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var itemLoadoutEncoded i.A
-	_ = u.GetItemLoadouts().WithReadWrite(func(data models.ItemLoadouts) error {
+	_ = u.GetItemLoadouts().WithReadWrite(func(data *models.MainItemLoadouts) error {
 		itemLoadoutEncoded = data.NewItemLoadout(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIds...), userId)
 		return nil
 	})

@@ -38,21 +38,29 @@ func SelfSignedCertGame(game string) bool {
 	return game != GameAoE4 && game != GameAoM
 }
 
-func AllHosts(gameId string) (domains []string) {
-	if cache, ok := hostsCache[gameId]; ok {
-		return cache
-	}
+func GameHostsDirect(gameId string) (domains []string) {
 	switch gameId {
 	case GameAoE1, GameAoE2, GameAoE3, GameAoE4:
 		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
 	case GameAoM:
-		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix}
+		domains = []string{"athens-live" + apiWorldsEdge}
 	}
-	if gameId == GameAoE4 {
-		domains = append(domains, "ED603"+playFabSuffix)
+	domains = append(domains, generateDomains(gameId)...)
+	return domains
+}
+
+func AllHosts(gameId string) (domains []string) {
+	if cache, ok := hostsCache[gameId]; ok {
+		return cache
+	}
+	domains = GameHostsDirect(gameId)
+	switch gameId {
+	case GameAoM:
+		domains = append(domains, "c15f9"+playFabSuffix)
+	case GameAoE4:
+		domains = append(domains, "ed603"+playFabSuffix)
 	}
 	domains = append(domains, ApiAgeOfEmpires, CdnAgeOfEmpires)
-	domains = append(domains, generateDomains(gameId)...)
 	hostsCache[gameId] = domains
 	return
 }

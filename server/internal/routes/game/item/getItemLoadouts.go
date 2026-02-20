@@ -14,7 +14,7 @@ func GetItemLoadouts(w http.ResponseWriter, r *http.Request) {
 	userId := sess.GetUserId()
 	u, _ := game.Users().GetUserById(userId)
 	if itemLoadouts := u.GetItemLoadouts(); itemLoadouts != nil {
-		_ = itemLoadouts.WithReadOnly(func(data models.ItemLoadouts) error {
+		_ = itemLoadouts.WithReadOnly(func(data *models.MainItemLoadouts) error {
 			for loadout := range data.Iter() {
 				itemsEncoded = append(itemsEncoded, loadout.Encode(userId))
 			}
