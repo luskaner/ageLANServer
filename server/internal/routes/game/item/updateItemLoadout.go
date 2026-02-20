@@ -29,7 +29,7 @@ func UpdateItemLoadout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var itemLoadoutEncoded i.A
-	_ = u.GetItemLoadouts().WithReadWrite(func(data models.ItemLoadouts) error {
+	_ = u.GetItemLoadouts().WithReadWrite(func(data *models.MainItemLoadouts) error {
 		if item := data.Get(req.Id); item != nil {
 			item.Update(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIds...))
 			itemLoadoutEncoded = item.Encode(userId)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/cloudfiles"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/account"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/achievement"
@@ -89,7 +90,16 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	newsGroup.HandleFunc("GET", "/getNews", news.GetNews)
 
 	loginGroup := gameGroup.Subgroup("/login")
-	loginGroup.HandleFunc("POST", "/platformlogin", login.Platformlogin)
+	loginHandler := login.Platformlogin
+	if internal.Authentication != "disabled" {
+		if internal.Connectivity {
+			loginHandler = AuthMiddleware(loginHandler, gameId, internal.Authentication == "cached").ServeHTTP
+		} else {
+			loginHandler = AuthMiddlewareOffline(loginHandler).ServeHTTP
+		}
+	}
+	loginHandler = LoginUserMiddleware(loginHandler).ServeHTTP
+	loginGroup.HandleFunc("POST", "/platformlogin", loginHandler)
 	loginGroup.HandleFunc("POST", "/logout", login.Logout)
 	loginGroup.HandleFunc("POST", "/readSession", login.ReadSession)
 	accountGroup := gameGroup.Subgroup("/account")

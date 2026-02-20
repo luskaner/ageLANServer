@@ -45,8 +45,9 @@ var deterministic bool
 var cfgFile string
 
 var (
-	Version string
-	rootCmd = &cobra.Command{
+	Version              string
+	authenticationValues = mapset.NewThreadUnsafeSet[string]("required", "cached", "adaptive", "disabled")
+	rootCmd              = &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: "server is a service for multiplayer features in AoE: DE, AoE 2: DE, AoE 3: DE, AoE 4: AE and AoM: RT.",
 		Run: func(_ *cobra.Command, _ []string) {
@@ -68,6 +69,32 @@ var (
 				os.Exit(common.ErrFileLog)
 			}
 			logger.PrintFile("config", v.ConfigFileUsed())
+			internal.Connectivity = common.DNSConnectivity()
+			if !internal.Connectivity {
+				logger.Println("No internet connectivity, some features will fallback gracefully.")
+			}
+			if !authenticationValues.ContainsOne(cfg.Authentication) {
+				logger.Printf("Invalid authentication value: %s", cfg.Authentication)
+				os.Exit(internal.ErrInvalidAuthentication)
+			} else if cfg.Authentication == "required" && !internal.Connectivity {
+				logger.Println("Authentication is set to 'required' but there is no internet connectivity, which is required for authentication. Change the authentication method or fix the connectivity.")
+				os.Exit(internal.ErrInvalidAuthentication)
+			}
+			if cfg.Authentication == "adaptive" {
+				if internal.Connectivity {
+					cfg.Authentication = "cached"
+				} else {
+					cfg.Authentication = "disabled"
+				}
+				logger.Printf("Adaptive authentication resolved to '%s' based on connectivity\n", cfg.Authentication)
+			}
+			if cfg.Authentication == "disabled" {
+				logger.Println("Authentication is disabled, you are responsible that users access it legally.")
+			} else if cfg.GeneratePlatformUserId {
+				logger.Println("Generating a platform User ID is not compatible with the Authentication resolving to a value other than 'disabled'.")
+				os.Exit(internal.ErrInvalidAuthentication)
+			}
+			internal.Authentication = cfg.Authentication
 			var seed uint64
 			if !deterministic {
 				seed = uint64(time.Now().UnixNano())
@@ -302,6 +329,7 @@ func Execute() error {
 	// General
 	v.SetDefault("Log", false)
 	v.SetDefault("GeneratePlatformUserId", false)
+	v.SetDefault("Authentication", "disabled")
 	// Announcement
 	v.SetDefault("Announcement.Enabled", true)
 	v.SetDefault("Announcement.Multicast", true)

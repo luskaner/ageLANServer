@@ -36,8 +36,9 @@ type User interface {
 	GetPlatformRelated() uint8
 	GetAvatarStats() *PersistentJsonData[*AvatarStats]
 	GetPersistentData() *PersistentStringJsonMap
-	GetItems() *PersistentJsonData[*map[int32]Item]
-	GetItemLoadouts() *PersistentJsonData[ItemLoadouts]
+	GetItems() *PersistentJsonData[*map[int32]*MainItem]
+	GetItemLoadouts() *PersistentJsonData[*MainItemLoadouts]
+	GetAuth() *PersistentJsonData[*time.Time]
 	EncodeAvatarStats() i.A
 	EncodePresence(definitions PresenceDefinitions) i.A
 }
@@ -58,8 +59,9 @@ type MainUser struct {
 	presence           atomic.Int32
 	presenceProperties *i.SafeMap[int32, string]
 	avatarStats        *PersistentJsonData[*AvatarStats]
-	items              *PersistentJsonData[*map[int32]Item]
-	itemLoadouts       *PersistentJsonData[ItemLoadouts]
+	items              *PersistentJsonData[*map[int32]*MainItem]
+	itemLoadouts       *PersistentJsonData[*MainItemLoadouts]
+	auth               *PersistentJsonData[*time.Time]
 }
 
 func (u *MainUser) EncodeAvatarStats() i.A {
@@ -124,17 +126,17 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 			NewProfilePropertiesUpgradableDefaultData(),
 		)
 	}
-	var items *PersistentJsonData[*map[int32]Item]
+	var items *PersistentJsonData[*map[int32]*MainItem]
 	if itemDefinitions != nil {
-		items, _ = NewPersistentJsonData[*map[int32]Item](
+		items, _ = NewPersistentJsonData[*map[int32]*MainItem](
 			persistentData,
 			"items",
 			NewItemsUpgradableDefaultData(gameId, itemDefinitions),
 		)
 	}
-	var itemLoadouts *PersistentJsonData[ItemLoadouts]
+	var itemLoadouts *PersistentJsonData[*MainItemLoadouts]
 	if gameId != common.GameAoE1 {
-		itemLoadouts, _ = NewPersistentJsonData[ItemLoadouts](
+		itemLoadouts, _ = NewPersistentJsonData[*MainItemLoadouts](
 			persistentData,
 			"itemLoadouts",
 			NewItemLoadoutsUpgradableDefaultData(),
@@ -144,6 +146,11 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 		persistentData,
 		"avatarMetadata",
 		NewAvatarMetadataUpgradableDefaultData(gameId),
+	)
+	auth, _ := NewPersistentJsonData[*time.Time](
+		persistentData,
+		"auth",
+		NewAuthUpgradableDefaultData(),
 	)
 	var presenceProperties *i.SafeMap[int32, string]
 	if gameId != common.GameAoE1 {
@@ -164,6 +171,7 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 		avatarStats:        avatarStats,
 		persistentData:     persistentData,
 		presenceProperties: presenceProperties,
+		auth:               auth,
 	}
 }
 
@@ -463,10 +471,14 @@ func (u *MainUser) GetProfileExperience() uint32 {
 	return 0
 }
 
-func (u *MainUser) GetItems() *PersistentJsonData[*map[int32]Item] {
+func (u *MainUser) GetItems() *PersistentJsonData[*map[int32]*MainItem] {
 	return u.items
 }
 
-func (u *MainUser) GetItemLoadouts() *PersistentJsonData[ItemLoadouts] {
+func (u *MainUser) GetItemLoadouts() *PersistentJsonData[*MainItemLoadouts] {
 	return u.itemLoadouts
+}
+
+func (u *MainUser) GetAuth() *PersistentJsonData[*time.Time] {
+	return u.auth
 }

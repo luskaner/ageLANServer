@@ -14,4 +14,5 @@ const (
 	ErrGame
 	ErrAnnounce
 	ErrInvalidId
+	ErrInvalidAuthentication
 )

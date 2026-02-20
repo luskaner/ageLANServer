@@ -82,16 +82,16 @@ func (l *MainItemLoadouts) Iter() iter.Seq[ItemLoadout] {
 }
 
 type ItemLoadoutsUpgradableDefaultData struct {
-	InitialUpgradableDefaultData[ItemLoadouts]
+	InitialUpgradableDefaultData[*MainItemLoadouts]
 }
 
 func NewItemLoadoutsUpgradableDefaultData() *ItemLoadoutsUpgradableDefaultData {
 	return &ItemLoadoutsUpgradableDefaultData{
-		InitialUpgradableDefaultData: InitialUpgradableDefaultData[ItemLoadouts]{},
+		InitialUpgradableDefaultData: InitialUpgradableDefaultData[*MainItemLoadouts]{},
 	}
 }
 
-func (i *ItemLoadoutsUpgradableDefaultData) Default() ItemLoadouts {
+func (i *ItemLoadoutsUpgradableDefaultData) Default() *MainItemLoadouts {
 	return &MainItemLoadouts{
 		ItemLoadouts: make(map[int32]ItemLoadout),
 	}

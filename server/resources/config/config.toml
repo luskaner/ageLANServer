@@ -3,7 +3,15 @@ Log = false
 
 # Whether to generate the Platform User Id. *ONLY* as a last resort if multiple users
 # are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
+# Incompatible with Authentication not set to 'disabled'.
 GeneratePlatformUserId = false
+
+# Authentication method to use. Accepted values:
+# required: authenticate the user with the official servers as it was, effectively, the same.
+# cached: authenticate with the official server at least once every 30 days (tied to user platform user id).
+# adaptive: resolve to 'cached' if internet is detected or 'disabled' otherwise.
+# disabled: no authentication as it worked before.
+Authentication = 'disabled'
 
 [Games]
 # Games that the server will accept.

@@ -28,7 +28,7 @@ func EquipItemLoadout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var itemLoadoutEncoded i.A
-	_ = u.GetItemLoadouts().WithReadOnly(func(data models.ItemLoadouts) error {
+	_ = u.GetItemLoadouts().WithReadOnly(func(data *models.MainItemLoadouts) error {
 		itemLoadout := data.Get(req.Id)
 		if itemLoadout != nil {
 			itemLoadoutEncoded = itemLoadout.Encode(userId)

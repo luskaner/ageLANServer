@@ -12,7 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-type request struct {
+type PlatformLoginRequest struct {
 	AccountType      string `schema:"accountType"`
 	PlatformUserId   uint64 `schema:"platformUserID"`
 	Alias            string `schema:"alias"`
@@ -21,35 +21,21 @@ type request struct {
 	ClientLibVersion uint16 `schema:"clientLibVersion"`
 }
 
+func PlatformLoginError(t time.Time, w http.ResponseWriter) {
+	i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
+}
+
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
-	t := time.Now().UTC().Unix()
-	var req request
-	if err := i.Bind(r, &req); err != nil {
-		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
-		return
-	}
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
 	sessions := game.Sessions()
-	var avatarStatDefinitions models.AvatarStatDefinitions = nil
-	if title != common.GameAoE1 {
-		avatarStatDefinitions = game.LeaderboardDefinitions().AvatarStatDefinitions()
-	}
-	u := users.GetOrCreateUser(
-		title,
-		game.Items(),
-		avatarStatDefinitions,
-		r.RemoteAddr,
-		req.MacAddress,
-		req.AccountType == "XBOXLIVE",
-		req.PlatformUserId,
-		req.Alias,
-	)
+	u := r.Context().Value("user").(models.User)
 	sess, ok := sessions.GetByUserId(u.GetId())
 	if ok {
 		sessions.Delete(sess.Id())
 	}
+	req := r.Context().Value("request").(PlatformLoginRequest)
 	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
 	sess, _ = sessions.GetById(sessionId)
 	presenceDefinitions := game.PresenceDefinitions()
@@ -91,7 +77,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		sessionId,
 		549_000_000,
-		t,
+		r.Context().Value("time").(time.Time).Unix(),
 		i.A{
 			profileId,
 			u.GetPlatformPath(),

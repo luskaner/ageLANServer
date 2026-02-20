@@ -97,6 +97,20 @@ func DirectHostToIP(host string) (string, error) {
 	return "", fmt.Errorf("no IP found for %s", host)
 }
 
+func DNSConnectivity() bool {
+	for _, dnsServer := range dnsServers {
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(dnsServer, "53"), time.Second)
+		if err != nil {
+			continue
+		}
+		if conn != nil {
+			_ = conn.Close()
+			return true
+		}
+	}
+	return false
+}
+
 func CacheMapping(host string, ip string) {
 	hostToLower := strings.ToLower(host)
 	if _, exists := hostToIps[hostToLower]; !exists {

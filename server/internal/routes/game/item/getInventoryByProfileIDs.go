@@ -32,7 +32,7 @@ func GetInventoryByProfileIDs(w http.ResponseWriter, r *http.Request) {
 		// Make it for all games as a precaution
 		if userId == profileId {
 			if u, ok := users.GetUserById(profileId); ok {
-				_ = u.GetItems().WithReadOnly(func(data *map[int32]models.Item) error {
+				_ = u.GetItems().WithReadOnly(func(data *map[int32]*models.MainItem) error {
 					for _, item := range *data {
 						// FIXME: Not all items should be shared with all users
 						itemsEncoded = append(itemsEncoded, item.Encode(profileId))
