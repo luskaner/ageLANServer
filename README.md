@@ -108,13 +108,6 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-#### AoE IV: AE
-
-* **⚠️ Modifying the profile causes a game crash.**
-* ⚠️ Error dialog shown that some online services are unavailable on start.
-* ⚠️ Error dialog shown that mods cannot be loaded on start when using a custom launcher.
-* ⚠️ Error dialog shown that match results cannot be loaded after game end.
-
 #### AoM: RT
 
 <details>
