@@ -24,5 +24,5 @@ func Addfriend(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	i.JSON(&w, i.A{2, u.GetProfileInfo(false, models.SessionOrPanic(r).GetClientLibVersion())})
+	i.JSON(&w, i.A{2, u.EncodeProfileInfo(models.SessionOrPanic(r).GetClientLibVersion())})
 }

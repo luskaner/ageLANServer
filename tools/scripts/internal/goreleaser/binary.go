@@ -5,8 +5,7 @@ import mapset "github.com/deckarep/golang-set/v2"
 type BinaryTargets map[OperatingSystem]map[Architecture]mapset.Set[string]
 
 func NewBinaryTargets() *BinaryTargets {
-	targets := make(BinaryTargets)
-	return &targets
+	return new(make(BinaryTargets))
 }
 
 func (bt *BinaryTargets) Clone() *BinaryTargets {

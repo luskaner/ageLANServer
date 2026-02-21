@@ -171,24 +171,22 @@ func NewPersistentStringMap(path string, upgrader UpgradableData[*PersistentStri
 	}
 	var initialRawData *PersistentStringJsonMapRaw
 	if file.Existed() {
-		var metadata jsonMetadata
-		if err = readPersistentData(file, &metadata); err != nil {
+		var wrapper jsonDataWithMetadata[*PersistentStringJsonMapRaw]
+		if err = readPersistentData(file, &wrapper); err != nil {
 			return
 		}
-		if metadata.Version > upgrader.CurrentVersion() {
+		if wrapper.Metadata.Version > upgrader.CurrentVersion() {
 			_ = file.fileLock.Unlock()
 			err = errors.New("data version is newer than current version")
 			return
-		} else if localErr, upgraded, data := upgrade(file, metadata.Version, upgrader); localErr == nil && upgraded {
+		} else if localErr, upgraded, data := upgrade(file, wrapper.Metadata.Version, upgrader); localErr == nil && upgraded {
 			initialRawData = data
 		} else if localErr != nil {
 			_ = file.fileLock.Unlock()
 			err = localErr
 			return
 		} else {
-			if err = readPersistentData(file, &initialRawData); err != nil {
-				return
-			}
+			initialRawData = wrapper.Data
 		}
 	} else {
 		initialRawData = internal.NewSafeMap[string, jsonDataWithMetadata[json.RawMessage]]()

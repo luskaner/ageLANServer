@@ -22,7 +22,7 @@ const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
-const SubDomainReleasePart = "-live-release"
+const stdSubDomainReleasePart = "-live-release"
 
 var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + AgeOfEmpires + dotTld}
 
@@ -35,24 +35,32 @@ func CertDomains() []string {
 }
 
 func SelfSignedCertGame(game string) bool {
-	return game != GameAoM
+	return game != GameAoE4 && game != GameAoM
+}
+
+func GameHostsDirect(gameId string) (domains []string) {
+	switch gameId {
+	case GameAoE1, GameAoE2, GameAoE3, GameAoE4:
+		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
+	case GameAoM:
+		domains = []string{"athens-live" + apiWorldsEdge}
+	}
+	domains = append(domains, generateDomains(gameId)...)
+	return domains
 }
 
 func AllHosts(gameId string) (domains []string) {
 	if cache, ok := hostsCache[gameId]; ok {
 		return cache
 	}
+	domains = GameHostsDirect(gameId)
 	switch gameId {
-	case GameAoE1, GameAoE2, GameAoE3:
-		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
 	case GameAoM:
-		domains = []string{"athens-live" + apiWorldsEdge, "C15F9" + playFabSuffix, ApiAgeOfEmpires}
+		domains = append(domains, "c15f9"+playFabSuffix)
+	case GameAoE4:
+		domains = append(domains, "ed603"+playFabSuffix)
 	}
-	domains = append(domains, CdnAgeOfEmpires)
-	if gameId == GameAoE3 {
-		domains = append(domains, ApiAgeOfEmpires)
-	}
-	domains = append(domains, generateDomains(gameId)...)
+	domains = append(domains, ApiAgeOfEmpires, CdnAgeOfEmpires)
 	hostsCache[gameId] = domains
 	return
 }
@@ -60,18 +68,25 @@ func AllHosts(gameId string) (domains []string) {
 func generateDomains(gameId string) (domains []string) {
 	var prefix string
 	var releaseMin int
+	var subDomainReleasePart string
 	switch gameId {
 	case GameAoE2:
 		prefix = SubDomainAge2Prefix
 		releaseMin = 2
+		subDomainReleasePart = stdSubDomainReleasePart
+	case GameAoE4:
+		prefix = "dr"
+		releaseMin = 2
+		subDomainReleasePart = "-activerelease"
 	case GameAoM:
 		prefix = "andromeda"
-		releaseMin = 13
+		releaseMin = 15
+		subDomainReleasePart = stdSubDomainReleasePart
 	default:
 		return
 	}
 	generateDomainName := func(release int) string {
-		return fmt.Sprintf("%s%s%d%s", prefix, SubDomainReleasePart, release, apiWorldsEdge)
+		return fmt.Sprintf("%s%s%d%s", prefix, subDomainReleasePart, release, apiWorldsEdge)
 	}
 	for release := 1; release <= releaseMin; release++ {
 		domains = append(domains, generateDomainName(release))

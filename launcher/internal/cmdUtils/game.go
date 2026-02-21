@@ -118,7 +118,7 @@ func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor g
 	}); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
-				logger.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config/option setting 'CanTrustCertificate' to 'local'.")
+				logger.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config setting 'Config.Certificate.CanTrustInPc' to 'local'.")
 			}
 			result = customExecutor.DoElevated(args, func(options commonExecutor.Options) {
 				commonLogger.Println("start elevated game", options.String())

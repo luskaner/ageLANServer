@@ -35,7 +35,7 @@ func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.C
 				}
 				requiresFixing = true
 			} else {
-				logger.Println(host + " must have been trusted manually. If you want it automatically, set config/option CanTrustCertificate to 'user' or 'local'.")
+				logger.Println(host + " must have been trusted manually.")
 				errorCode = internal.ErrConfigCert
 				return
 			}

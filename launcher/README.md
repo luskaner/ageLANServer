@@ -35,7 +35,7 @@ require admin rights elevation.**
 - Isolated profiles directory.
 - Smart modify the hosts file.
 - Smart install of a self-signed certificate.
-- Add certificate to the game's trusted store (except AoE I).
+- Add certificate to the game's trusted store (except AoE I and AoE IV).
 
 All possible client modifications are reverted upon the launcher's exit.
 

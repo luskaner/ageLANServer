@@ -19,7 +19,8 @@ type recipientID struct {
 
 func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 	response := i.A{code}
-	if gameId == common.GameAoM {
+	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+		// FIXME: Is it the 0 repeated for each recipient?
 		response = append(response, i.A{0})
 	}
 	i.JSON(w, response)
@@ -36,7 +37,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var targetUserIds recipientIDs
-	if gameTitle == common.GameAoM {
+	if gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
 		if err := i.Bind(r, &targetUserIds); err != nil {
 			whisperResult(&w, gameTitle, 2)
 			return
@@ -68,7 +69,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := i.A{""}
-	if gameTitle == common.GameAoM {
+	if gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
 		message = append(
 			message,
 			i.A{
@@ -86,7 +87,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		finalMessage := i.A{
-			currentUser.GetProfileInfo(false, receiverSession.GetClientLibVersion()),
+			currentUser.EncodeProfileInfo(receiverSession.GetClientLibVersion()),
 		}
 		finalMessage = append(finalMessage, message...)
 		wss.SendOrStoreMessage(

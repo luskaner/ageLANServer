@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/server
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
+	golang.org/x/exp v0.0.0-20260211191109-2735e65f0518
 	golang.org/x/net v0.50.0
 )
 
@@ -17,7 +18,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

@@ -23,10 +23,10 @@ func extChange(ext string) DestinationFn {
 }
 
 type DestinationFn func(source string) Renders[FileData]
-type DestinationsFnMap = map[OperatingSystem][]DestinationFn
-type SourceIgnoreFn = map[OperatingSystem]func(path string) bool
+type DestinationsFnMap = map[string][]DestinationFn
+type SourceIgnoreFn = map[string]func(path string) bool
 type OperatingSystemsArchs = map[OperatingSystem]mapset.Set[Architecture]
-type OverrideOsFriendlyName func(name string, os OperatingSystem, arch Architecture) string
+type OverrideOsName func(name string, os OperatingSystem, arch Architecture) string
 
 type File struct {
 	source      string
@@ -43,19 +43,19 @@ type FileData struct {
 	Game         string
 }
 
-func NewFileData(os OperatingSystem) FileData {
+func NewFileData(goos string) FileData {
 	f := FileData{}
-	switch os {
-	case OSWindows:
+	switch goos {
+	case "windows":
 		f.BaseOS = "windows"
 		f.SrcScriptExt = "bat"
 		f.DstScriptExt = f.SrcScriptExt
 		f.DstDocExt = "txt"
-	case OSLinux:
+	case "linux":
 		f.BaseOS = "unix"
 		f.SrcScriptExt = "sh"
 		f.DstScriptExt = f.SrcScriptExt
-	case OSMacOS:
+	case "darwin":
 		f.BaseOS = "unix"
 		f.SrcScriptExt = "sh"
 		f.DstScriptExt = "command"
@@ -64,29 +64,29 @@ func NewFileData(os OperatingSystem) FileData {
 }
 
 type Archive struct {
-	name                   string
-	files                  mapset.Set[File]
-	targets                *BinaryTargets
-	binaries               map[string]*Binary
-	overrideOsFriendlyName OverrideOsFriendlyName
+	name           string
+	files          mapset.Set[File]
+	targets        *BinaryTargets
+	binaries       map[string]*Binary
+	overrideOsName OverrideOsName
 }
 
-func NewArchive(name string, targets *BinaryTargets, overrideOsFriendlyName OverrideOsFriendlyName) *Archive {
-	if overrideOsFriendlyName == nil {
-		overrideOsFriendlyName = func(name string, os OperatingSystem, arch Architecture) string {
-			return os.FriendlyName()
+func NewArchive(name string, targets *BinaryTargets, overrideOsName OverrideOsName) *Archive {
+	if overrideOsName == nil {
+		overrideOsName = func(name string, os OperatingSystem, arch Architecture) string {
+			return os.Name()
 		}
 	}
 	return &Archive{
-		name:                   name,
-		files:                  mapset.NewSet[File](),
-		targets:                targets,
-		binaries:               make(map[string]*Binary),
-		overrideOsFriendlyName: overrideOsFriendlyName,
+		name:           name,
+		files:          mapset.NewSet[File](),
+		targets:        targets,
+		binaries:       make(map[string]*Binary),
+		overrideOsName: overrideOsName,
 	}
 }
 
-func NewMergedArchive(name string, overrideOsFriendlyName OverrideOsFriendlyName, archives ...*Archive) *Archive {
+func NewMergedArchive(name string, overrideOsName OverrideOsName, archives ...*Archive) *Archive {
 	mergedOsesArchs := archives[0].targets.Clone()
 	for _, a := range archives[1:] {
 		osesToDelete := make([]OperatingSystem, 0)
@@ -133,7 +133,7 @@ func NewMergedArchive(name string, overrideOsFriendlyName OverrideOsFriendlyName
 	for osKey := range *mergedOsesArchs {
 		oses.Add(osKey)
 	}
-	mergedArchive := NewArchive(name, mergedOsesArchs, overrideOsFriendlyName)
+	mergedArchive := NewArchive(name, mergedOsesArchs, overrideOsName)
 	for _, a := range archives {
 		for file := range a.files.Iter() {
 			if file.os == nil {
@@ -170,8 +170,9 @@ func (a *Archive) AddSrcDstFileWithMode(source string, destination string, mode 
 
 func (a *Archive) addFile(os OperatingSystem, fileMode os.FileMode, fileData FileData, source Renders[FileData], sourceIgnoreFn SourceIgnoreFn, destinationFn ...DestinationFn) {
 	var sourceRendered string
-	if sourceIgnoreFn != nil && sourceIgnoreFn[os] != nil {
-		if sourceRendered = source.Render(fileData); sourceIgnoreFn[os](sourceRendered) {
+	goos := os.Goos()
+	if sourceIgnoreFn != nil && sourceIgnoreFn[goos] != nil {
+		if sourceRendered = source.Render(fileData); sourceIgnoreFn[goos](sourceRendered) {
 			return
 		}
 	} else {
@@ -203,12 +204,12 @@ func (a *Archive) AddSrcOsDstFile(source Renders[FileData], sourceIgnoreFn Sourc
 	destinationsFns := make(map[OperatingSystem][]DestinationFn)
 	for oses := range *a.targets {
 		destinationsFns[oses] = []DestinationFn{destinationFn}
-		if value, exists := destinationsFn[oses]; exists {
+		if value, exists := destinationsFn[oses.Goos()]; exists {
 			destinationsFns[oses] = append(destinationsFns[oses], value...)
 		}
 	}
 	for operatingSystem, osDestinationFns := range destinationsFns {
-		fileData := NewFileData(operatingSystem)
+		fileData := NewFileData(operatingSystem.Goos())
 		if perGame {
 			for game := range common.SupportedGames.Iter() {
 				fileData.Game = game
@@ -234,10 +235,10 @@ func (a *Archive) AddScriptFiles(destDir string, source Renders[FileData], sourc
 	if finalDestinationsFn == nil {
 		finalDestinationsFn = make(DestinationsFnMap)
 	}
-	if _, exists := finalDestinationsFn[OSMacOS]; !exists {
-		finalDestinationsFn[OSMacOS] = []DestinationFn{}
+	if _, exists := finalDestinationsFn["darwin"]; !exists {
+		finalDestinationsFn["darwin"] = []DestinationFn{}
 	}
-	finalDestinationsFn[OSMacOS] = append([]DestinationFn{extChange("command")}, finalDestinationsFn[OSMacOS]...)
+	finalDestinationsFn["darwin"] = append([]DestinationFn{extChange("command")}, finalDestinationsFn["darwin"]...)
 	a.AddSrcOsDstFile(
 		source,
 		sourceIgnoreFn,
@@ -273,23 +274,23 @@ func (a *Archive) AddDocFiles(destDir string, destinationFn DestinationFn, desti
 	if finalDestinationsFn == nil {
 		finalDestinationsFn = make(DestinationsFnMap)
 	}
-	if _, exists := finalDestinationsFn[OSWindows]; !exists {
-		finalDestinationsFn[OSWindows] = []DestinationFn{}
+	if _, exists := finalDestinationsFn["windows"]; !exists {
+		finalDestinationsFn["windows"] = []DestinationFn{}
 	}
-	if _, exists := finalDestinationsFn[OSMacOS]; !exists {
-		finalDestinationsFn[OSMacOS] = []DestinationFn{}
+	if _, exists := finalDestinationsFn["darwin"]; !exists {
+		finalDestinationsFn["darwin"] = []DestinationFn{}
 	}
-	if _, exists := finalDestinationsFn[OSLinux]; !exists {
-		finalDestinationsFn[OSLinux] = []DestinationFn{}
+	if _, exists := finalDestinationsFn["linux"]; !exists {
+		finalDestinationsFn["linux"] = []DestinationFn{}
 	}
 	if destinationFn == nil {
 		destinationFn = func(source string) Renders[FileData] {
 			return LiteralString[FileData](source)
 		}
 	}
-	finalDestinationsFn[OSWindows] = append([]DestinationFn{extChange("txt")}, finalDestinationsFn[OSWindows]...)
-	finalDestinationsFn[OSMacOS] = append([]DestinationFn{extChange("")}, finalDestinationsFn[OSMacOS]...)
-	finalDestinationsFn[OSLinux] = append([]DestinationFn{extChange("")}, finalDestinationsFn[OSLinux]...)
+	finalDestinationsFn["windows"] = append([]DestinationFn{extChange("txt")}, finalDestinationsFn["windows"]...)
+	finalDestinationsFn["darwin"] = append([]DestinationFn{extChange("")}, finalDestinationsFn["darwin"]...)
+	finalDestinationsFn["linux"] = append([]DestinationFn{extChange("")}, finalDestinationsFn["linux"]...)
 	for _, source := range sources {
 		a.AddSrcOsDstFile(
 			LiteralString[FileData](source),
@@ -314,7 +315,7 @@ func (a *Archive) AddAuxiliarBinary(binary *Binary) {
 }
 
 func (a *Archive) CloneWithFilesPrefix(prefix string) *Archive {
-	newArchive := NewArchive(a.name, a.targets, a.overrideOsFriendlyName)
+	newArchive := NewArchive(a.name, a.targets, a.overrideOsName)
 	for file := range a.files.Iter() {
 		newFile := file
 		newFile.destination = filepath.ToSlash(filepath.Join(prefix, file.destination))
@@ -346,8 +347,11 @@ func build(path, main string, operatingSystem OperatingSystem, architecture Arch
 		ID:     buildName(path, operatingSystem, &architecture, instructionSet),
 		Main:   main,
 		Binary: path,
-		Goos:   []string{operatingSystem.Name()},
-		Goarch: []string{architecture.Name()},
+		Goos:   []string{operatingSystem.Goos()},
+		Goarch: []string{architecture.Goarch()},
+	}
+	if tool := operatingSystem.Tool(); tool != "" {
+		b.Tool = tool
 	}
 	if instructionSet != "" {
 		switch architecture {
@@ -367,7 +371,7 @@ func build(path, main string, operatingSystem OperatingSystem, architecture Arch
 func buildName(path string, operatingSystem OperatingSystem, architecture *Architecture, instructionSet string) string {
 	name := fmt.Sprintf("%s_%s", path, operatingSystem.Name())
 	if architecture != nil {
-		name = fmt.Sprintf("%s_%s", name, (*architecture).Name())
+		name = fmt.Sprintf("%s_%s", name, (*architecture).Goarch())
 	}
 	if instructionSet != "" {
 		name = fmt.Sprintf("%s_%s", name, instructionSet)
@@ -380,7 +384,10 @@ func mergeBuilds(path string, main string, operatingSystem OperatingSystem, buil
 		ID:     buildName(path, operatingSystem, nil, ""),
 		Main:   main,
 		Binary: path,
-		Goos:   []string{operatingSystem.Name()},
+		Goos:   []string{operatingSystem.Goos()},
+	}
+	if tool := operatingSystem.Tool(); tool != "" {
+		b.Tool = tool
 	}
 	for _, currentBuild := range builds {
 		b.Goarch = append(b.Goarch, currentBuild.Goarch...)
@@ -441,10 +448,10 @@ func (a *Archive) Builds(mergedOSes ...OperatingSystem) []config.Build {
 	return builds
 }
 
-func archive(name string, overrideOsFriendlyName OverrideOsFriendlyName, operatingSystem OperatingSystem, architecture Architecture, instructionSet string, allBuilds []config.Build, files mapset.Set[File]) *config.Archive {
+func archive(name string, overrideOsName OverrideOsName, operatingSystem OperatingSystem, architecture Architecture, instructionSet string, allBuilds []config.Build, files mapset.Set[File]) *config.Archive {
 	matchingBuildIds := mapset.NewSet[string]()
 	for _, b := range allBuilds {
-		if slices.Contains(b.Goos, operatingSystem.Name()) && slices.Contains(b.Goarch, architecture.Name()) {
+		if b.Tool == operatingSystem.Tool() && slices.Contains(b.Goos, operatingSystem.Goos()) && slices.Contains(b.Goarch, architecture.Goarch()) {
 			if instructionSet == "" {
 				matchingBuildIds.Add(b.ID)
 			} else if archValues := archToValues(architecture, b); archValues.Contains(instructionSet) {
@@ -455,14 +462,14 @@ func archive(name string, overrideOsFriendlyName OverrideOsFriendlyName, operati
 	if matchingBuildIds.IsEmpty() {
 		return nil
 	}
-	id := fmt.Sprintf("%s_%s_%s", name, operatingSystem.Name(), architecture.Name())
-	nameTemplate := fmt.Sprintf(`{{ .ProjectName }}_%s_{{ .RawVersion }}_%s_%s`, name, overrideOsFriendlyName(name, operatingSystem, architecture), architecture.FriendlyName())
+	id := fmt.Sprintf("%s_%s_%s", name, operatingSystem.Name(), architecture.Goarch())
+	nameTemplate := fmt.Sprintf(`{{ .ProjectName }}_%s_{{ .RawVersion }}_%s_%s`, name, overrideOsName(name, operatingSystem, architecture), architecture.Name())
 	if instructionSet != "" {
 		id = fmt.Sprintf("%s-%s", id, instructionSet)
 		nameTemplate = fmt.Sprintf(`%s-%s`, nameTemplate, instructionSet)
 	}
 	formats := mapset.NewSet[string]()
-	if operatingSystem == OSWindows {
+	if operatingSystem.Goos() == "windows" {
 		formats.Add("zip")
 	} else {
 		formats.Add("tar.gz")
@@ -510,7 +517,7 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 	for operatingSystem, architectures := range *a.targets {
 		for architecture, instructionSets := range architectures {
 			if instructionSets.Cardinality() == 0 {
-				if currentArchive := archive(a.name, a.overrideOsFriendlyName, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
+				if currentArchive := archive(a.name, a.overrideOsName, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
 					id := keyFromStrings(currentArchive.IDs)
 					if _, exists := binaryIdsArchives[id]; !exists {
 						binaryIdsArchives[id] = []config.Archive{}
@@ -519,7 +526,7 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 				}
 			} else {
 				for intructionSet := range instructionSets.Iter() {
-					if currentArchive := archive(a.name, a.overrideOsFriendlyName, operatingSystem, architecture, intructionSet, builds, a.files); currentArchive != nil {
+					if currentArchive := archive(a.name, a.overrideOsName, operatingSystem, architecture, intructionSet, builds, a.files); currentArchive != nil {
 						id := keyFromStrings(currentArchive.IDs)
 						if _, exists := binaryIdsArchives[id]; !exists {
 							binaryIdsArchives[id] = []config.Archive{}

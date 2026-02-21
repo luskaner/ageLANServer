@@ -77,8 +77,7 @@ func (options Options) standardExec() (result *Result) {
 		result.Pid = uint32(cmd.Process.Pid)
 	}
 	if err != nil {
-		var exitError *exec.ExitError
-		if errors.As(err, &exitError) {
+		if _, ok := errors.AsType[*exec.ExitError](err); ok {
 			err = nil
 		}
 	}

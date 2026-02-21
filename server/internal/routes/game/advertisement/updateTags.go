@@ -59,7 +59,7 @@ func UpdateTags(w http.ResponseWriter, r *http.Request) {
 	}
 	sess := models.SessionOrPanic(r)
 	advertisements.WithWriteLock(matchingAdv.GetId(), func() {
-		if matchingAdv.GetHostId() != sess.GetUserId() {
+		if matchingAdv.UnsafeGetHostId() != sess.GetUserId() {
 			updateTagsReturnError(&w)
 			ok = false
 			return

@@ -7,5 +7,5 @@ import (
 )
 
 func ClearRelationship(w http.ResponseWriter, _ *http.Request) {
-	i.JSON(&w, i.A{0})
+	i.JSON(&w, i.A{2})
 }

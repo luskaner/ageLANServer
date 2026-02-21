@@ -27,7 +27,7 @@ func readCertsPool(path string) (pool *x509.CertPool, err error) {
 	return
 }
 
-func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string) (errorCode int) {
+func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (errorCode int) {
 	logger.Println("Adding CA certificate to game if needed...")
 	caPool, err := readCertsPool(caCertPath)
 	if err != nil {
@@ -35,7 +35,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		return common.ErrSuccess
 	}
 	var addCert bool
-	addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, true)
+	addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
 	if !addCert || errorCode != common.ErrSuccess {
 		return
 	}

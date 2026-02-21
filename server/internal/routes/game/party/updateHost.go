@@ -18,10 +18,29 @@ func UpdateHost(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2})
 		return
 	}
-	_, ok := models.G(r).Advertisements().GetAdvertisement(req.MatchID)
+	game := models.G(r)
+	advertisements := game.Advertisements()
+	adv, ok := advertisements.GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 	} else {
-		i.JSON(&w, i.A{1})
+		sess := models.SessionOrPanic(r)
+		currentUserId := sess.GetUserId()
+		peers := adv.GetPeers()
+		if firstUserId, _, ok := peers.First(); !ok {
+			i.JSON(&w, i.A{2})
+			return
+		} else if firstUserId != currentUserId {
+			i.JSON(&w, i.A{2})
+			return
+		}
+		advertisements.WithWriteLock(adv.GetId(), func() {
+			hostId := adv.UnsafeGetHostId()
+			if hostId == currentUserId {
+				return
+			}
+			adv.UnsafeSetHostId(currentUserId)
+		})
+		i.JSON(&w, i.A{0})
 	}
 }

@@ -24,5 +24,5 @@ func SetAvatarMetadata(w http.ResponseWriter, r *http.Request) {
 		*data = req.Metadata
 		return nil
 	})
-	i.JSON(&w, i.A{0, u.GetProfileInfo(false, sess.GetClientLibVersion())})
+	i.JSON(&w, i.A{0, u.EncodeProfileInfo(sess.GetClientLibVersion())})
 }

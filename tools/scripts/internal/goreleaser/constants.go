@@ -3,7 +3,7 @@ package goreleaser
 import mapset "github.com/deckarep/golang-set/v2"
 
 var UnixBasedOperatingSystems = mapset.NewSet(OSLinux, OSMacOS)
-var operatingSystems = UnixBasedOperatingSystems.Union(mapset.NewSet(OSWindows))
+var operatingSystems = UnixBasedOperatingSystems.Union(mapset.NewSet(OSWindowsLegacy, OSWindowsModern))
 var Targets64 *BinaryTargets
 var Targets64ExceptMacOS *BinaryTargets
 var Targets32 *BinaryTargets

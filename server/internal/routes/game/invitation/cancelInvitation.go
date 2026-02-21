@@ -29,11 +29,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 	peers := adv.GetPeers()
 	var peer models.Peer
 	sess := models.SessionOrPanic(r)
-	u, ok := game.Users().GetUserById(sess.GetUserId())
-	if !ok {
-		i.JSON(&w, i.A{2})
-		return
-	}
+	u, _ := game.Users().GetUserById(sess.GetUserId())
 	peer, ok = peers.Load(u.GetId())
 	if !ok {
 		i.JSON(&w, i.A{2})
@@ -56,7 +52,7 @@ func CancelInvitation(w http.ResponseWriter, r *http.Request) {
 			inviteeSession,
 			"CancelInvitationMessage",
 			i.A{
-				u.GetProfileInfo(false, inviteeSession.GetClientLibVersion()),
+				u.EncodeProfileInfo(inviteeSession.GetClientLibVersion()),
 				q.AdvertisementId,
 			},
 		)

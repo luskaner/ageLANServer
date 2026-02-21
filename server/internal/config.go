@@ -23,12 +23,14 @@ type Games struct {
 	Age1    Game
 	Age2    Game
 	Age3    Game
+	Age4    Game
 	Athens  Game
 }
 
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
+	Authentication         string
 	Announcement           Announcement
 	Games                  Games
 }
@@ -41,6 +43,8 @@ func (cfg *Configuration) GetGameHosts(gameId string) []string {
 		return cfg.Games.Age2.Hosts
 	case "age3":
 		return cfg.Games.Age3.Hosts
+	case "age4":
+		return cfg.Games.Age4.Hosts
 	case "athens":
 		return cfg.Games.Athens.Hosts
 	default:
@@ -56,6 +60,8 @@ func (cfg *Configuration) GetGameBattleServers(gameId string) []BattleServer {
 		return cfg.Games.Age2.BattleServers
 	case "age3":
 		return cfg.Games.Age3.BattleServers
+	case "age4":
+		return cfg.Games.Age4.BattleServers
 	case "athens":
 		return cfg.Games.Athens.BattleServers
 	default:

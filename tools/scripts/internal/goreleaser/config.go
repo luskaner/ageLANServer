@@ -10,11 +10,11 @@ const configSource = `%s/resources/config.game.toml`
 const scriptSource = `%s/resources/{{.BaseOS}}/%s.{{.SrcScriptExt}}`
 const gameScriptSource = `%s/resources/{{.BaseOS}}/start_{{.Game}}.{{.SrcScriptExt}}`
 
-func overrideWindowsFriendlyName(name string, os OperatingSystem, arch Architecture) string {
-	if os == OSWindows && arch == ArchArm64 && (name == "full" || name == "launcher" || name == "battle-server-manager") {
+func overrideWindowsName(name string, os OperatingSystem, arch Architecture) string {
+	if os == OSWindowsModern && arch == ArchArm64 && (name == "full" || name == "launcher" || name == "battle-server-manager") {
 		return "win11"
 	}
-	return os.FriendlyName()
+	return os.Name()
 }
 
 func Generate() error {
@@ -25,10 +25,10 @@ func Generate() error {
 	serverArchive.AddSrcDstFile("server/resources/config", "resources/config")
 	serverArchive.AddScriptFiles("", NewTemplate[FileData](fmt.Sprintf(gameScriptSource, `server`)), nil, nil, true)
 	serverArchive.AddScriptFiles("bin", NewTemplate[FileData](fmt.Sprintf(scriptSource, `server-genCert`, `genCert`)), SourceIgnoreFn{
-		OSWindows: func(path string) bool {
+		"windows": func(path string) bool {
 			return path == `server-genCert/resources/windows/genCert.bat`
 		},
-		OSMacOS: func(path string) bool {
+		"darwin": func(path string) bool {
 			return path == `server-genCert/resources/unix/genCert.sh`
 		},
 	}, nil, false)
@@ -37,7 +37,7 @@ func Generate() error {
 	serverGenCert := NewBinary("./server-genCert", Targets3264)
 	serverArchive.AddAuxiliarBinary(serverGenCert)
 	// Battle Server Manager Archive
-	battleServerManagerArchive := NewArchive("battle-server-manager", Targets64ExceptMacOS, overrideWindowsFriendlyName)
+	battleServerManagerArchive := NewArchive("battle-server-manager", Targets64ExceptMacOS, overrideWindowsName)
 	battleServerManagerArchive.AddDocFiles("docs", nil, nil, "battle-server-manager/README.md")
 	battleServerManagerArchive.AddScriptFiles("", NewTemplate[FileData](fmt.Sprintf(gameScriptSource, `battle-server-manager`)), nil, nil, true)
 	battleServerManagerArchive.AddScriptFiles("", NewTemplate[FileData](fmt.Sprintf(scriptSource, `battle-server-manager`, `clean`)), nil, nil, false)
@@ -46,7 +46,7 @@ func Generate() error {
 	battleServerManager := NewBinary("./battle-server-manager", Targets64ExceptMacOS)
 	battleServerManagerArchive.AddMainBinary(battleServerManager)
 	// Launcher archive
-	launcherArchive := NewArchive("launcher", Targets64ExceptMacOS, overrideWindowsFriendlyName)
+	launcherArchive := NewArchive("launcher", Targets64ExceptMacOS, overrideWindowsName)
 	launcherArchive.AddSrcDstFile("launcher/resources/config.toml", "resources/config.toml")
 	launcherArchive.AddScriptFiles("", NewTemplate[FileData](fmt.Sprintf(gameScriptSource, `launcher`)), nil, nil, true)
 	launcherArchive.AddConfigFiles("", NewTemplate[FileData](fmt.Sprintf(configSource, `launcher`)), true)
@@ -70,7 +70,7 @@ func Generate() error {
 	fullServerArchive := serverArchive.CloneWithFilesPrefix(`server`)
 	fullLauncherArchive := launcherArchive.CloneWithFilesPrefix(`launcher`)
 	fullBattleServerManager := battleServerManagerArchive.CloneWithFilesPrefix(`battle-server-manager`)
-	fullArchive := NewMergedArchive("full", overrideWindowsFriendlyName, fullServerArchive, fullLauncherArchive, fullBattleServerManager)
+	fullArchive := NewMergedArchive("full", overrideWindowsName, fullServerArchive, fullLauncherArchive, fullBattleServerManager)
 	fullArchive.RemoveFiles("LICENSE")
 	fullArchive.AddDocFiles("docs", nil, nil, "LICENSE", "README.md")
 	return GenerateConfig(serverArchive, battleServerManagerArchive, launcherArchive, fullArchive)

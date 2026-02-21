@@ -47,8 +47,7 @@ var CommBuffer *Buffer
 
 func Uptime(startTime *time.Time) time.Duration {
 	if startTime == nil {
-		t := time.Now()
-		startTime = &t
+		startTime = new(time.Now())
 	}
 	return startTime.Sub(StartTime)
 }

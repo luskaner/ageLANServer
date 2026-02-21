@@ -41,7 +41,7 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	chatChannelIdStr := strconv.Itoa(int(req.ChatroomID))
 	i.JSON(&w, i.A{0, chatChannelIdStr, 0, encodedUsers})
 	sessions := game.Sessions()
-	staticResponse := i.A{chatChannelIdStr, i.A{0, user.GetProfileInfo(false, sess.GetClientLibVersion())}}
+	staticResponse := i.A{chatChannelIdStr, i.A{0, user.EncodeProfileInfo(sess.GetClientLibVersion())}}
 	for userId := range users.GetUserIds() {
 		var existingUserSession models.Session
 		existingUserSession, ok = sessions.GetByUserId(userId)

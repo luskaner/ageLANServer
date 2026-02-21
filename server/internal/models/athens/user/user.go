@@ -54,7 +54,7 @@ func (users *Users) Initialize() {
 	users.MainUsers.Initialize()
 }
 
-func (users *Users) Generate(_ string, persistentData *models.PersistentStringJsonMap, avatarStatsDefinitions models.AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, alias string) models.User {
+func (users *Users) Generate(_ string, persistentData *models.PersistentStringJsonMap, itemDefinitions models.Items, avatarStatsDefinitions models.AvatarStatDefinitions, identifier string, isXbox bool, platformUserId uint64, alias string) models.User {
 	d, err := models.NewPersistentJsonData[*Data](
 		persistentData,
 		"playfab",
@@ -63,7 +63,7 @@ func (users *Users) Generate(_ string, persistentData *models.PersistentStringJs
 	if err != nil {
 		return nil
 	}
-	mainUser := users.MainUsers.Generate(common.GameAoM, persistentData, avatarStatsDefinitions, identifier, isXbox, platformUserId, alias)
+	mainUser := users.MainUsers.Generate(common.GameAoM, persistentData, itemDefinitions, avatarStatsDefinitions, identifier, isXbox, platformUserId, alias)
 	return &User{
 		MainUser:    mainUser.(*models.MainUser),
 		PlayfabData: d,

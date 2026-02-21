@@ -22,7 +22,7 @@ func ResolveSSLFilesPath(gameId string, ssl internal.SSL) (resolvedCertFile stri
 		if !ok {
 			err = fmt.Errorf("no SSL certificate and keys found")
 		}
-		if gameId == common.GameAoM {
+		if gameId == common.GameAoE4 || gameId == common.GameAoM {
 			resolvedCertFile = cert
 			resolvedKeyFile = key
 		} else {

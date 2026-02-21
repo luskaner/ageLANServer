@@ -64,8 +64,15 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		ip = ips[0]
 	}
 	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/cacert.pem", ip), nil)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer error:", err)
+		return nil
+	}
+	req.Header.Set("User-Agent", common.UserAgent())
 	//goland:noinspection ALL
-	resp, err := client.Get(fmt.Sprintf("https://%s/cacert.pem", ip))
+	resp, err := client.Do(req)
+	// TODO: Add user-agent header
 	if err != nil {
 		commonLogger.Println("ReadCACertificateFromServer error:", err)
 		return nil

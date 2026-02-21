@@ -31,8 +31,10 @@ tasks:
     deps:
       - build-config-all
       - prepare-server
+      - prepare-battle-server-manager
       - build-server
       - build-launcher-agent
+      - build-battle-server-manager
       - os:prepare-launcher
     sources:
       - common/**/*

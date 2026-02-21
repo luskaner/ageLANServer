@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Compile
-FROM golang:1.25-alpine3.23 AS compiler
+FROM golang:1.26-alpine3.23 AS compiler
 WORKDIR /app
 COPY server-docker/genCert/go.work.template go.work
 COPY common common

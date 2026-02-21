@@ -80,7 +80,6 @@ jobs:
       - if: matrix.build-mode == 'manual'
         shell: bash
         run: |
-          cp go.work.example go.work
           go build -o build/server/server.exe ./server
           go build -o build/server/bin/genCert.exe ./server-genCert
           go build -o build/launcher/launcher.exe ./launcher
@@ -94,6 +93,7 @@ jobs:
           go build -o build/tools/scripts/copyLauncherResources.exe ./tools/scripts/cmd/copyLauncherResources.go
           go build -o build/tools/scripts/copyServerResources.exe ./tools/scripts/cmd/copyServerResources.go
           go build -o build/tools/scripts/createServerResourcesFolder.exe ./tools/scripts/cmd/createServerResourcesFolder.go
+           go build -o build/tools/scripts/generateGoreleaserConfig.exe ./tools/scripts/cmd/generateGoreleaserConfig.go
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:

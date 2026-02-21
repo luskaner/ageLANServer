@@ -36,9 +36,9 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 			1,
 			i.A{u.GetId()},
 		})
-		message[2] = append(message[2].(i.A), u.GetProfileInfo(false, clientLibVersion))
+		message[2] = append(message[2].(i.A), u.EncodeProfileInfo(clientLibVersion))
 		if includeExtraProfileInfo {
-			message[3] = append(message[3].(i.A), u.GetExtraProfileInfo(clientLibVersion))
+			message[3] = append(message[3].(i.A), u.EncodeExtraProfileInfo(clientLibVersion))
 		}
 		break
 	}

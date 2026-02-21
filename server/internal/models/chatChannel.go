@@ -64,7 +64,7 @@ func (channel *MainChatChannel) AddUser(user User, clientLibVersion uint16) (exi
 		i := 0
 		encodedUsers = make(internal.A, length)
 		for _, el := range users {
-			encodedUsers[i] = internal.A{0, el.GetProfileInfo(false, clientLibVersion)}
+			encodedUsers[i] = internal.A{0, el.EncodeProfileInfo(clientLibVersion)}
 			i++
 		}
 	})

@@ -3,6 +3,7 @@ package cloud
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/luskaner/ageLANServer/common"
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -21,13 +22,20 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	game := models.G(r)
+	cloudFiles := game.Resources().CloudFiles()
+	if cloudFiles.Value == nil {
+		i.JSON(&w, i.A{2, slices.Repeat(i.A{nil}, len(req.Names.Data))})
+		return
+	}
 	descriptions := make(i.A, len(req.Names.Data))
 	gameTitle := game.Title()
+	var errorCode int
 	for j, name := range req.Names.Data {
-		fileData, ok := game.Resources().CloudFiles().Value[name]
+		fileData, ok := cloudFiles.Value[name]
 		if !ok {
-			i.JSON(&w, i.A{2, i.A{nil}})
-			return
+			descriptions[j] = i.A{nil}
+			errorCode = 2
+			continue
 		}
 		finalPart := fileData.Key
 		description := i.A{
@@ -44,5 +52,5 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 		}
 		descriptions[j] = description
 	}
-	i.JSON(&w, i.A{0, descriptions})
+	i.JSON(&w, i.A{errorCode, descriptions})
 }

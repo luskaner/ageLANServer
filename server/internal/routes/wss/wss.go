@@ -86,22 +86,21 @@ func (c *connectionWrapper) logJSON(sender string, receiver string, data any) {
 	if logger.CommBuffer != nil {
 		dataMarshalled, _ := json.Marshal(data)
 		d := computeData(dataMarshalled)
-		msg := wss.NewWrite(
+		logger.CommBuffer.Log(new(wss.NewWrite(
 			*d,
 			serverCommunication.Uptime{
 				Uptime: logger.Uptime(nil),
 			},
 			serverCommunication.Sender{Sender: sender},
 			receiver,
-		)
-		logger.CommBuffer.Log(&msg)
+		)))
 	}
 }
 
 func (c *connectionWrapper) logControl(sender string, receiver string, messageType int, data []byte) {
 	if logger.CommBuffer != nil {
 		d := computeData(data)
-		msg := wss.NewWrite(
+		logger.CommBuffer.Log(new(wss.NewWrite(
 			wss.Control{
 				Data:        *d,
 				MessageType: messageType,
@@ -111,8 +110,7 @@ func (c *connectionWrapper) logControl(sender string, receiver string, messageTy
 			},
 			serverCommunication.Sender{Sender: sender},
 			receiver,
-		)
-		logger.CommBuffer.Log(&msg)
+		)))
 	}
 }
 
@@ -132,15 +130,14 @@ func (c *connectionWrapper) WriteControl(messageType int, data []byte, deadline 
 
 func (c *connectionWrapper) logClose(sender string, receiver string) {
 	if logger.CommBuffer != nil {
-		msg := wss.NewWrite(
+		logger.CommBuffer.Log(new(wss.NewWrite(
 			wss.Disconnection{},
 			serverCommunication.Uptime{
 				Uptime: logger.Uptime(nil),
 			},
 			serverCommunication.Sender{Sender: sender},
 			receiver,
-		)
-		logger.CommBuffer.Log(&msg)
+		)))
 	}
 }
 
@@ -231,15 +228,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		conn:      conn,
 	}
 	if logger.CommBuffer != nil {
-		msg := wss.NewWrite(
+		logger.CommBuffer.Log(new(wss.NewWrite(
 			wss.Connection{},
 			serverCommunication.Uptime{
 				Uptime: logger.Uptime(nil),
 			},
 			serverCommunication.Sender{Sender: connWrapper.RemoteAddr()},
 			connWrapper.LocalAddr(),
-		)
-		logger.CommBuffer.Log(&msg)
+		)))
 	}
 	connWrapper.conn.SetCloseHandler(func(code int, text string) error {
 		closeConn(connWrapper, code, text)
@@ -287,8 +283,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		var e net.Error
-		if errors.As(pingErr, &e) && e.Temporary() {
+		if e, ok := errors.AsType[net.Error](pingErr); ok && e.Temporary() {
 			return nil
 		}
 		return pingErr

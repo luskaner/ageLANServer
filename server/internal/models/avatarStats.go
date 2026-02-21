@@ -142,6 +142,7 @@ func (a *AvatarStatsUpgradableDefaultData) Default() *AvatarStats {
 			"STAT_POP_PEAK_200_MP":          0,
 			"STAT_TOTAL_GAMES":              0,
 		}
+	// TODO: What benefits Aoe4 here ?
 	case common.GameAoE3:
 		// FIXME: Is this even needed?
 		values = map[string]int64{

@@ -17,9 +17,7 @@ func (g GameAoE1) Paths(path string) (paths []string) {
 	if f, err := os.Stat(startupLogFile); err == nil && !f.IsDir() {
 		paths = append(paths, startupLogFile)
 	}
-	if matches, err := filepath.Glob(filepath.Join(logsPath, fmt.Sprintf("%s_base_log.txt", dateTimeGlob))); err != nil {
-		return
-	} else {
+	if matches, err := filepath.Glob(filepath.Join(logsPath, fmt.Sprintf("%s_base_log.txt", dateTimeGlob))); err == nil {
 		addNewestPath(
 			logsPath,
 			matches,

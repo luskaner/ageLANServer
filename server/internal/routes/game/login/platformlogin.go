@@ -12,7 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
 
-type request struct {
+type PlatformLoginRequest struct {
 	AccountType      string `schema:"accountType"`
 	PlatformUserId   uint64 `schema:"platformUserID"`
 	Alias            string `schema:"alias"`
@@ -21,39 +21,27 @@ type request struct {
 	ClientLibVersion uint16 `schema:"clientLibVersion"`
 }
 
+func PlatformLoginError(t time.Time, w http.ResponseWriter) {
+	i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
+}
+
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
-	t := time.Now().UTC().Unix()
-	var req request
-	if err := i.Bind(r, &req); err != nil {
-		i.JSON(&w, i.A{2, "", 0, t, i.A{}, i.A{}, 0, 0, nil, nil, i.A{}, i.A{}, 0, i.A{}})
-		return
-	}
 	game := models.G(r)
 	title := game.Title()
 	users := game.Users()
 	sessions := game.Sessions()
-	var avatarStatDefinitions models.AvatarStatDefinitions = nil
-	if title != common.GameAoE1 {
-		avatarStatDefinitions = game.LeaderboardDefinitions().AvatarStatDefinitions()
-	}
-	u := users.GetOrCreateUser(
-		title,
-		avatarStatDefinitions,
-		r.RemoteAddr,
-		req.MacAddress,
-		req.AccountType == "XBOXLIVE",
-		req.PlatformUserId,
-		req.Alias,
-	)
+	u := r.Context().Value("user").(models.User)
 	sess, ok := sessions.GetByUserId(u.GetId())
 	if ok {
 		sessions.Delete(sess.Id())
 	}
+	req := r.Context().Value("request").(PlatformLoginRequest)
 	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
 	sess, _ = sessions.GetById(sessionId)
-	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, 1)
-	profileInfo := u.GetProfileInfo(false, req.ClientLibVersion)
-	if title == common.GameAoE3 || title == common.GameAoM {
+	presenceDefinitions := game.PresenceDefinitions()
+	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, presenceDefinitions, 1)
+	profileInfo := u.EncodeProfileInfo(req.ClientLibVersion)
+	if title == common.GameAoE3 || title == common.GameAoM || title == common.GameAoE4 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := sessions.GetByUserId(user)
@@ -70,7 +58,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
 	if title == common.GameAoE2 {
-		extraProfileInfoList = append(extraProfileInfoList, u.GetExtraProfileInfo(req.ClientLibVersion))
+		extraProfileInfoList = append(extraProfileInfoList, u.EncodeExtraProfileInfo(req.ClientLibVersion))
 	}
 	battleServers := game.BattleServers()
 	servers := battleServers.Encode(r)
@@ -89,7 +77,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		sessionId,
 		549_000_000,
-		t,
+		r.Context().Value("time").(time.Time).Unix(),
 		i.A{
 			profileId,
 			u.GetPlatformPath(),
@@ -115,7 +103,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	allProfileInfo := i.A{
 		0,
 		profileInfo,
-		relationship.Relationships(title, req.ClientLibVersion, users, u),
+		relationship.Relationships(title, req.ClientLibVersion, users, u, presenceDefinitions),
 		extraProfileInfoList,
 		avatarStats,
 		nil,

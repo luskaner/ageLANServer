@@ -126,6 +126,8 @@ var setUpCmd = &cobra.Command{
 		if cmd.GameId == common.GameAoE1 {
 			doBackupMetadata = false
 			doRestoreCaStoreCert = false
+		} else if cmd.GameId == common.GameAoE4 {
+			doRestoreCaStoreCert = false
 		}
 		if (doBackupMetadata || doBackupProfiles) && !common.SupportedGames.ContainsOne(cmd.GameId) {
 			commonLogger.Println("Invalid game type")
@@ -369,7 +371,7 @@ func InitSetUp() {
 		"caStoreCert",
 		"s",
 		nil,
-		"Add the certificate to the game's trusted root store. For all except AoE I: DE.",
+		"Add the certificate to the game's trusted root store. For all except AoE I: DE and AoE IV: AE.",
 	)
 	setUpCmd.Flags().BoolVarP(
 		&agentStart,

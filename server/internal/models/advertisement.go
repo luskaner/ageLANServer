@@ -33,7 +33,7 @@ type Tags struct {
 }
 
 type Advertisement interface {
-	GetMetadata() string
+	GetXboxSessionId() string
 	UnsafeGetModDllChecksum() int32
 	UnsafeGetModDllFile() string
 	UnsafeGetPasswordValue() string
@@ -41,6 +41,7 @@ type Advertisement interface {
 	UnsafeGetState() int8
 	UnsafeGetDescription() string
 	GetRelayRegion() string
+	GetParty() int32
 	UnsafeGetVisible() bool
 	UnsafeGetJoinable() bool
 	UnsafeGetAppBinaryChecksum() int32
@@ -52,6 +53,7 @@ type Advertisement interface {
 	UnsafeGetPlatformSessionId() uint64
 	UnsafeGetObserversDelay() uint32
 	UnsafeGetObserversEnabled() bool
+	UnsafeSetHostId(hostId int32)
 	UnsafeUpdateState(state int8)
 	UnsafeUpdatePlatformSessionId(sessionId uint64)
 	UnsafeUpdateTags(integer map[string]int32, text map[string]string)
@@ -60,7 +62,7 @@ type Advertisement interface {
 	UnsafeUpdate(advFrom *shared.AdvertisementUpdateRequest)
 	GetId() int32
 	GetIp() string
-	GetHostId() int32
+	UnsafeGetHostId() int32
 	GetPeers() *i.SafeOrderedMap[int32, Peer]
 	MakeMessage(broadcast bool, content string, typeId uint8, sender User, receivers []User) Message
 	StartObserving(userId int32)
@@ -96,9 +98,10 @@ type MainAdvertisement struct {
 	slotInfo          string
 	platformSessionId uint64
 	state             int8
+	lan               bool
 	startTime         int64
 	peers             *i.SafeOrderedMap[int32, Peer]
-	metadata          string
+	xboxSessionId     string
 	tags              Tags
 }
 
@@ -113,11 +116,11 @@ func containsFilter[M ~map[K]V, K, V comparable](filter M, tags M) bool {
 
 type Advertisements interface {
 	Initialize(users Users, battleServers BattleServers)
-	Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) Advertisement
+	Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, gameId string) Advertisement
 	WithReadLock(id int32, action func())
 	WithWriteLock(id int32, action func())
 	GetAdvertisement(id int32) (Advertisement, bool)
-	UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer
+	UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, party int32, race int32, team int32) Peer
 	UnsafeRemovePeer(advertisementId int32, userId int32) bool
 	UnsafeDelete(adv Advertisement)
 	UnsafeFirstAdvertisement(matches func(adv Advertisement) bool) Advertisement
@@ -139,8 +142,8 @@ func (advs *MainAdvertisements) Initialize(users Users, battleServers BattleServ
 	advs.battleServers = battleServers
 }
 
-func (adv *MainAdvertisement) GetMetadata() string {
-	return adv.metadata
+func (adv *MainAdvertisement) GetXboxSessionId() string {
+	return adv.xboxSessionId
 }
 
 // UnsafeGetModDllChecksum requires advertisement read lock
@@ -191,8 +194,13 @@ func (adv *MainAdvertisement) UnsafeGetVisible() bool {
 	return adv.visible
 }
 
-func (adv *MainAdvertisement) GetHostId() int32 {
+// UnsafeGetHostId requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetHostId() int32 {
 	return adv.hostId
+}
+
+func (adv *MainAdvertisement) GetParty() int32 {
+	return adv.party
 }
 
 // UnsafeGetAppBinaryChecksum requires advertisement read lock
@@ -248,32 +256,37 @@ func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, Peer] {
 	return adv.peers
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, alternateScid bool) Advertisement {
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateXboxSessionId bool, gameId string) Advertisement {
 	adv := &MainAdvertisement{}
 	i.WithRng(func(rand *i.RandReader) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
 	})
 	adv.relayRegion = advFrom.RelayRegion
-	if generateMetadata {
+	if generateXboxSessionId {
+		// FIXME: This might be just slowing things down as the session is not valid
 		var scidEnd string
-		if alternateScid {
+		switch gameId {
+		case common.GameAoM:
 			scidEnd = "00006fe8b971"
-		} else {
+		case common.GameAoE4:
+			scidEnd = "00007d18f66e"
+		default:
 			scidEnd = "000068a451d4"
 		}
-		adv.metadata = fmt.Sprintf(
+		adv.xboxSessionId = fmt.Sprintf(
 			`{"templateName":"GameSession","name":"%s","scid":"00000000-0000-0000-0000-%s"}`,
 			uuid.New().String(),
 			scidEnd,
 		)
 	} else {
-		adv.metadata = "0"
+		adv.xboxSessionId = "0"
 	}
 	adv.hostId = advFrom.HostId
 	adv.party = advFrom.Party
 	adv.race = advFrom.Race
 	adv.team = advFrom.Team
 	adv.statGroup = advFrom.StatGroup
+	adv.lan = i.NumberToBool(advFrom.ServiceType)
 	adv.tags.text = make(map[string]string)
 	adv.tags.integer = make(map[string]int32)
 	adv.peers = i.NewSafeOrderedMap[int32, Peer]()
@@ -369,12 +382,12 @@ func (advs *MainAdvertisements) GetAdvertisement(id int32) (Advertisement, bool)
 }
 
 // UnsafeNewPeer requires advertisement write lock
-func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer {
+func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, party int32, race int32, team int32) Peer {
 	adv, exists := advs.GetAdvertisement(advertisementId)
 	if !exists {
 		return nil
 	}
-	peer := NewPeer(advertisementId, advertisementIp, userId, userStatId, race, team)
+	peer := NewPeer(advertisementId, advertisementIp, userId, userStatId, party, race, team)
 	_, storedPeer := adv.GetPeers().Store(peer.GetUserId(), peer, func(_ Peer) bool {
 		return false
 	})
@@ -390,7 +403,7 @@ func (advs *MainAdvertisements) UnsafeRemovePeer(advertisementId int32, userId i
 	if !adv.GetPeers().Delete(userId) {
 		return false
 	}
-	if adv.GetHostId() == userId {
+	if adv.GetPeers().Len() == 0 {
 		advs.UnsafeDelete(adv)
 	}
 	return true
@@ -411,6 +424,11 @@ func (adv *MainAdvertisement) UnsafeUpdateState(state int8) {
 		adv.joinable = false
 		adv.observers.userIds = i.NewSafeSet[int32]()
 	}
+}
+
+// UnsafeSetHostId requires advertisement write lock
+func (adv *MainAdvertisement) UnsafeSetHostId(hostId int32) {
+	adv.hostId = hostId
 }
 
 // UnsafeUpdatePlatformSessionId requires advertisement write lock
@@ -450,81 +468,64 @@ func (adv *MainAdvertisement) UnsafeMatchesTags(integer map[string]int32, text m
 
 // UnsafeEncode requires advertisement read lock
 func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers BattleServers) i.A {
-	var visible uint8
-	if adv.visible {
-		visible = 1
-	} else {
-		visible = 0
-	}
-	var passworded uint8
-	if adv.password.enabled {
-		passworded = 1
-	} else {
-		passworded = 0
-	}
 	var startTime *int64
-	if adv.startTime != 0 {
+	if i.NumberToBool(adv.startTime) {
 		startTime = &adv.startTime
 	} else {
 		startTime = nil
-	}
-	var started uint8
-	if startTime != nil {
-		started = 1
-	} else {
-		started = 0
 	}
 	response := i.A{
 		adv.id,
 		adv.platformSessionId,
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoM {
+	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
+		// goodolggameslobbyid (GoG lobby ID), always 0
+		if gameId == common.GameAoE4 {
+			response = append(response, 0)
+		} else {
+			response = append(response, "0")
+		}
 		response = append(
 			response,
-			"0",
 			"",
 			"",
 		)
 	}
 	response = append(
 		response,
-		adv.GetMetadata(),
+		adv.GetXboxSessionId(),
 		adv.hostId,
-		started,
+		adv.state,
 		adv.description,
 	)
-	if gameId == common.GameAoE2 || gameId == common.GameAoM {
+	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
 		response = append(response, adv.description)
-	}
-	lan := 1
-	var battleServer BattleServer
-	var battleServerExists bool
-	if battleServer, battleServerExists = battleServers.Get(adv.relayRegion); battleServerExists {
-		lan = 0
 	}
 	response = append(
 		response,
-		visible,
+		i.NewBoolMappedNumberFromBool(adv.visible),
 		adv.mapName,
 		adv.options,
-		passworded,
+		i.NewBoolMappedNumberFromBool(adv.password.enabled),
 		adv.maxPlayers,
 		adv.slotInfo,
 		adv.matchType,
 		adv.EncodePeers(),
 		adv.observers.userIds.Len(),
-		0,
-		0,
+		0, // observermax, can it be 0 so it means without limit?
+		i.NewBoolMappedNumberFromBool(adv.observers.enabled),
 		adv.observers.delay,
-		1,
-		lan,
+		// TODO: Ensure if the order of password and the next is correct
+		i.NewBoolMappedNumberFromBool(adv.observers.password != ""),
+		i.NewBoolMappedNumberFromBool(adv.lan),
 		startTime,
 		adv.relayRegion,
 	)
-	if battleServerExists {
-		battleServer.AppendName(&response)
-	} else {
+	if adv.lan {
 		response = append(response, nil)
+	} else {
+		battleServer, _ := battleServers.Get(adv.relayRegion)
+		battleServer.AppendName(&response)
 	}
 	return response
 }

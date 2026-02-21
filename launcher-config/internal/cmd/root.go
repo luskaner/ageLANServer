@@ -31,6 +31,6 @@ func addGamePathFlag(cmd *cobra.Command) {
 		&gamePath,
 		"gamePath",
 		"",
-		"Path to the game folder. Required when using 'caStoreCert' and all except AoE: DE.",
+		"Path to the game folder. Required when using 'caStoreCert' and all except AoE: DE and AoE IV: AE.",
 	)
 }

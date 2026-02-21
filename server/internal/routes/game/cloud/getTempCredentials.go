@@ -12,6 +12,7 @@ import (
 )
 
 func GetTempCredentials(w http.ResponseWriter, r *http.Request) {
+	// TODO: What about age4 that can download replays?
 	fullKey := r.URL.Query().Get("key")
 	key := strings.TrimPrefix(fullKey, "/cloudfiles/")
 	game := models.G(r)

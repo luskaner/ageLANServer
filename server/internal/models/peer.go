@@ -13,6 +13,7 @@ type MainPeerMutable struct {
 
 type Peer interface {
 	GetUserId() int32
+	GetParty() int32
 	Encode() i.A
 	Invite(user User) bool
 	Uninvite(user User) bool
@@ -22,6 +23,7 @@ type Peer interface {
 
 type MainPeer struct {
 	advertisementId int32
+	party           int32
 	advertisementIp string
 	userId          int32
 	userStatId      int32
@@ -29,9 +31,10 @@ type MainPeer struct {
 	invites         *i.SafeSet[User]
 }
 
-func NewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, race int32, team int32) Peer {
+func NewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, party int32, race int32, team int32) Peer {
 	peer := &MainPeer{
 		advertisementId: advertisementId,
+		party:           party,
 		advertisementIp: advertisementIp,
 		userId:          userId,
 		userStatId:      userStatId,
@@ -44,6 +47,10 @@ func NewPeer(advertisementId int32, advertisementIp string, userId int32, userSt
 
 func (peer *MainPeer) GetUserId() int32 {
 	return peer.userId
+}
+
+func (peer *MainPeer) GetParty() int32 {
+	return peer.party
 }
 
 func (peer *MainPeer) GetMutable() *MainPeerMutable {
