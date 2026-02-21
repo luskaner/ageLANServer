@@ -36,11 +36,6 @@ jobs:
         shell: bash
         run: |
           go run tools/scripts/cmd/generateGoreleaserConfig.go "${{ steps.setup_go_legacy.outputs.goroot }}"
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: '~> v2'
-          args: release --clean --fail-fast
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
