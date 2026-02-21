@@ -413,7 +413,7 @@ func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
 }
 
 func (u *MainUser) EncodePresence(definitions PresenceDefinitions) i.A {
-	if definitions == nil {
+	if definitions == nil || u.presenceProperties == nil {
 		return i.A{}
 	}
 	presenceId := u.GetPresence()
