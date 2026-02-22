@@ -53,5 +53,5 @@
   "RL_NUMBER_OF_EVENT_GAMES_TO_RANK": "5",
   "RL_WEB_ASSETS_ICONS_ROOT": "https://test-build-data.reliclink.com/",
   "RL_GLOBAL_REWARD_CURRENCY": "",
-  "RL_SSO_URL": "https://sso.relic.com/es/steam?title=age4&"
+  "RL_SSO_URL": "https://sso.relic.com/en/steam?title=age4&"
 }
