@@ -72,7 +72,6 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 	req.Header.Set("User-Agent", common.UserAgent())
 	//goland:noinspection ALL
 	resp, err := client.Do(req)
-	// TODO: Add user-agent header
 	if err != nil {
 		commonLogger.Println("ReadCACertificateFromServer error:", err)
 		return nil
