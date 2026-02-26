@@ -8,7 +8,7 @@ require (
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 	golang.org/x/sys v0.41.0
 )
 
