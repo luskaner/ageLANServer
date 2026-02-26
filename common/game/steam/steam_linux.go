@@ -1,9 +1,10 @@
 package steam
 
 import (
-	"mvdan.cc/sh/v3/shell"
 	"os"
 	"strings"
+
+	"mvdan.cc/sh/v3/shell"
 )
 
 const suffixDir = ".steam/steam"
@@ -39,4 +40,9 @@ func ConfigPath() string {
 		}
 	}
 	return ""
+}
+
+func ConfigPathAlt() (path string) {
+	// No known alternatives
+	return
 }

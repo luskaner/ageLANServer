@@ -38,14 +38,22 @@ func (g Game) OpenUri() string {
 	return fmt.Sprintf("steam://rungameid/%s", g.AppId)
 }
 
+func openLibraryFolder(path string) (f *os.File, err error) {
+	return os.Open(filepath.Join(path, "config", "libraryfolders.vdf"))
+}
+
 func (g Game) LibraryFolder() (folder string) {
 	p := ConfigPath()
 	if p == "" {
 		return
 	}
-	f, err := os.Open(filepath.Join(p, "config", "libraryfolders.vdf"))
+	f, err := openLibraryFolder(p)
 	if err != nil {
-		return
+		// Likely a Steam Emulator messed up the config, try the alternative way
+		p = ConfigPathAlt()
+		if f, err = openLibraryFolder(p); err != nil {
+			return
+		}
 	}
 	defer func() {
 		_ = f.Close()
