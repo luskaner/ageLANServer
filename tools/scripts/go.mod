@@ -5,11 +5,18 @@ go 1.26.0
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
-	github.com/goreleaser/goreleaser/v2 v2.13.3
+	github.com/goreleaser/goreleaser/v2 v2.14.1
+	github.com/luskaner/ageLANServer/common v0.0.0-20260222202449-9700c7480140
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/klauspost/compress v1.18.4 // indirect
+require (
+	github.com/miekg/dns v1.1.72 // indirect
+	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
+	mvdan.cc/sh/v3 v3.12.0 // indirect
+)
 
 require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251120230642-dcccabe2cd63 // indirect
@@ -22,7 +29,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/caarlos0/log v0.5.4 // indirect
+	github.com/caarlos0/log v0.6.0 // indirect
 	github.com/charmbracelet/colorprofile v0.4.1 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260209111912-3cca7cf7b09b // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
