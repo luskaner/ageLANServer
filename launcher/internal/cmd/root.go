@@ -54,6 +54,7 @@ var (
 	cfgFile                        string
 	gameCfgFile                    string
 	gameId                         string
+	filesToPrint                   []string
 	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
 	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
 	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
@@ -75,6 +76,9 @@ var (
 				logger.Println("Failed to open file log")
 				logger.Println(err.Error())
 				os.Exit(common.ErrFileLog)
+			}
+			for _, fileToPrint := range filesToPrint {
+				logger.PrintFile("config", fileToPrint)
 			}
 			var errorCode atomic.Int32
 			errorCode.Store(int32(common.ErrSuccess))
@@ -717,7 +721,7 @@ func initConfig() *internal.Configuration {
 	}
 	if err := v.MergeInConfig(); err == nil {
 		logger.Println("Using main config file:", v.ConfigFileUsed())
-		logger.PrintFile("main config", v.ConfigFileUsed())
+		filesToPrint = append(filesToPrint, v.ConfigFileUsed())
 	} else {
 		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing config file:", v.ConfigFileUsed()+":", err.Error())
@@ -731,7 +735,7 @@ func initConfig() *internal.Configuration {
 	}
 	if err := v.MergeInConfig(); err == nil {
 		logger.Println("Using game config file:", v.ConfigFileUsed())
-		logger.PrintFile("game config", v.ConfigFileUsed())
+		filesToPrint = append(filesToPrint, v.ConfigFileUsed())
 	} else {
 		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			logger.Println("Error parsing game config file:", v.ConfigFileUsed()+":", err.Error())
