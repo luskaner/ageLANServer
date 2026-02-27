@@ -60,7 +60,9 @@ func AllHosts(gameId string) (domains []string) {
 	case GameAoE4:
 		domains = append(domains, "ed603"+playFabSuffix)
 	}
-	domains = append(domains, ApiAgeOfEmpires, CdnAgeOfEmpires)
+	if gameId != GameAoE4 {
+		domains = append(domains, ApiAgeOfEmpires, CdnAgeOfEmpires)
+	}
 	hostsCache[gameId] = domains
 	return
 }

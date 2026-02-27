@@ -16,6 +16,10 @@ func (c *CdnAgeOfEmpires) Name() string {
 	return common.CdnAgeOfEmpires
 }
 
+func (c *CdnAgeOfEmpires) Initialize(gameId string) bool {
+	return gameId != common.GameAoE4
+}
+
 func (c *CdnAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {
 	c.Proxy = NewProxy(common.CdnAgeOfEmpires, func(gameId string, next http.Handler) http.Handler {
 		var prefix string

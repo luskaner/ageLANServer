@@ -16,7 +16,7 @@ func (a *ApiAgeOfEmpires) Name() string {
 }
 
 func (a *ApiAgeOfEmpires) Initialize(gameId string) bool {
-	return gameId == common.GameAoE3 || gameId == common.GameAoM
+	return gameId != common.GameAoE4
 }
 
 func (a *ApiAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {

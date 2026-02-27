@@ -29,15 +29,16 @@ func NewProxy(host string, initFn func(gameId string, next http.Handler) http.Ha
 	if err != nil {
 		return
 	}
-	proxy.proxy = httputil.NewSingleHostReverseProxy(remote)
-	proxy.proxy.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			ServerName: host,
+	proxy.proxy = &httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.Out.URL.Scheme = remote.Scheme
+			pr.Out.URL.Host = remote.Host
 		},
-	}
-	proxy.proxy.Director = func(req *http.Request) {
-		req.URL.Host = remote.Host
-		req.URL.Scheme = remote.Scheme
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				ServerName: host,
+			},
+		},
 	}
 	return
 }
