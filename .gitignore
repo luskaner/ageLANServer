@@ -13,3 +13,4 @@ build/**/*
 !build/battle-server-manager/.gitkeep
 .goreleaser.yaml
 tools/**/go.sum
+go.work.sum
