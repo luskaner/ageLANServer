@@ -1,24 +1,16 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/spf13/cobra"
+	"github.com/luskaner/ageLANServer/common/cmd"
 )
-
-var rootCmd = &cobra.Command{
-	Use:   filepath.Base(os.Args[0]),
-	Short: "config-admin execute admin-only tasks",
-	Long:  "config-admin execute admin-only tasks as required by 'config'",
-}
 
 var Version string
 var logRoot string
+var rootFlagSet *cmd.RootFlagSet
 
 func Execute() error {
-	rootCmd.Version = Version
-	initSetUp()
-	initRevert()
-	return rootCmd.Execute()
+	rootFlagSet = cmd.NewRootFlagSet()
+	rootFlagSet.RegisterCommand("setup", runSetUp)
+	rootFlagSet.RegisterCommand("revert", runRevert)
+	return rootFlagSet.Execute(Version)
 }

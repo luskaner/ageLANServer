@@ -1,8 +1,8 @@
 package internal
 
 type Executable struct {
-	Path string   `mapstructure:"Executable"`
-	Args []string `mapstructure:"ExecutableArgs"`
+	Path string   `koanf:"Executable"`
+	Args []string `koanf:"ExecutableArgs"`
 }
 
 type Config struct {
@@ -22,12 +22,12 @@ type ConfigCertificate struct {
 }
 
 type BattleServerManager struct {
-	Executable `mapstructure:",squash"`
+	Executable `koanf:",squash"`
 	Run        string
 }
 
 type Server struct {
-	Executable               `mapstructure:",squash"`
+	Executable               `koanf:",squash"`
 	Start                    string
 	Host                     string
 	Stop                     string
@@ -39,7 +39,7 @@ type Server struct {
 }
 
 type Client struct {
-	Executable `mapstructure:",squash"`
+	Executable `koanf:",squash"`
 	Path       string
 }
 

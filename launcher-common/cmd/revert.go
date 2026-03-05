@@ -1,29 +1,29 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var RemoveLocalCert bool
 var UnmapIPs bool
 var RemoveAll bool
 
-func InitRevert(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(
+func InitRevert(flags *pflag.FlagSet) {
+	flags.BoolVarP(
 		&UnmapIPs,
 		"ip",
 		"i",
 		false,
 		"Remove the IP mappings from the local DNS server",
 	)
-	cmd.Flags().BoolVarP(
+	flags.BoolVarP(
 		&RemoveLocalCert,
 		"localCert",
 		"l",
 		false,
 		"Remove the certificate from the local machine's trusted root store",
 	)
-	cmd.Flags().BoolVarP(
+	flags.BoolVarP(
 		&RemoveAll,
 		"all",
 		"a",
