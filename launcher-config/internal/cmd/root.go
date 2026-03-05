@@ -1,33 +1,26 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/spf13/cobra"
+	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/spf13/pflag"
 )
-
-var RootCmd = &cobra.Command{
-	Use:   filepath.Base(os.Args[0]),
-	Short: "config execute config-only tasks",
-	Long:  "config execute config-only tasks as required by 'launcher' directly or indirectly via the 'agent'",
-}
 
 var gamePath string
 var Version string
 var hostFilePath string
 var certFilePath string
 var logRoot string
+var rootFlagSet *commonCmd.RootFlagSet
 
 func Execute() error {
-	RootCmd.Version = Version
-	InitSetUp()
-	InitRevert()
-	return RootCmd.Execute()
+	rootFlagSet = commonCmd.NewRootFlagSet()
+	rootFlagSet.RegisterCommand("setup", runSetUp)
+	rootFlagSet.RegisterCommand("revert", runRevert)
+	return rootFlagSet.Execute(Version)
 }
 
-func addGamePathFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(
+func addGamePathFlag(fs *pflag.FlagSet) {
+	fs.StringVar(
 		&gamePath,
 		"gamePath",
 		"",

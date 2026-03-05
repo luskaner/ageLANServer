@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const name = `game`
-const names = name + `s`
+const GameIdentifier = `game`
+const GamesIdentifier = GameIdentifier + `s`
 const shorthand = `e`
 const descriptionStart = `Game type.`
 const descriptionMultipleStart = `Game types.`
@@ -18,7 +18,7 @@ const descriptionEnd = `are supported.`
 func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
 	flags.StringVarP(
 		gameId,
-		name,
+		GameIdentifier,
 		shorthand,
 		"",
 		fmt.Sprintf(
@@ -42,7 +42,7 @@ func gamesDescription() string {
 func GamesVarCommand(flags *pflag.FlagSet, gameIds *[]string) {
 	flags.StringArrayVarP(
 		gameIds,
-		names,
+		GamesIdentifier,
 		shorthand,
 		common.SupportedGames.ToSlice(),
 		gamesDescription(),
@@ -51,7 +51,7 @@ func GamesVarCommand(flags *pflag.FlagSet, gameIds *[]string) {
 
 func GamesCommand(flags *pflag.FlagSet) {
 	flags.StringArrayP(
-		names,
+		GamesIdentifier,
 		shorthand,
 		common.SupportedGames.ToSlice(),
 		gamesDescription(),

@@ -23,6 +23,7 @@ const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
 const stdSubDomainReleasePart = "-live-release"
+const aoe4SubDomainPrefix = "aoeliverelease"
 
 var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + AgeOfEmpires + dotTld}
 
@@ -40,7 +41,12 @@ func SelfSignedCertGame(game string) bool {
 
 func GameHostsDirect(gameId string) (domains []string) {
 	switch gameId {
-	case GameAoE1, GameAoE2, GameAoE3, GameAoE4:
+	case GameAoE4:
+		for i := 1; i <= 2; i++ {
+			domains = append(domains, fmt.Sprintf("%s%d%s", aoe4SubDomainPrefix, i, apiWorldsEdge))
+		}
+		fallthrough
+	case GameAoE1, GameAoE2, GameAoE3:
 		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
 	case GameAoM:
 		domains = []string{"athens-live" + apiWorldsEdge}

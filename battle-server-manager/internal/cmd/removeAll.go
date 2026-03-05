@@ -8,34 +8,32 @@ import (
 	"github.com/luskaner/ageLANServer/common/battleServerConfig"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
-var RemoveAllCmd = &cobra.Command{
-	Use:   "remove-all",
-	Short: "remove-all will kill all Battle Server instances and config files",
-	Run: func(cmd *cobra.Command, args []string) {
-		commonLogger.Println("Removing all...")
-		games, err := cmdUtils.ParsedGameIds(nil)
-		if err != nil {
-			commonLogger.Println(err.Error())
-			os.Exit(internal.ErrGames)
-		}
-		for gameId := range games.Iter() {
-			commonLogger.Printf("Game: %s\n", gameId)
-			configs, err := battleServerConfig.Configs(gameId, false)
-			if err != nil {
-				commonLogger.Printf("\t%s\n", err)
-				continue
-			}
-			if !cmdUtils.Remove(gameId, configs, false) {
-				commonLogger.Println("\tNo configuration needs it.")
-			}
-		}
-	},
-}
+func runRemoveAll(args []string) error {
+	fs := pflag.NewFlagSet("remove-all", pflag.ContinueOnError)
+	cmd.GamesVarCommand(fs, &cmdUtils.GameIds)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
 
-func InitRemoveAll() {
-	cmd.GamesVarCommand(RemoveAllCmd.Flags(), &cmdUtils.GameIds)
-	RootCmd.AddCommand(RemoveAllCmd)
+	commonLogger.Println("Removing all...")
+	games, err := cmdUtils.ParsedGameIds(nil)
+	if err != nil {
+		commonLogger.Println(err.Error())
+		os.Exit(internal.ErrGames)
+	}
+	for g := range games.Iter() {
+		commonLogger.Printf("Game: %s\n", g)
+		configs, err := battleServerConfig.Configs(g, false)
+		if err != nil {
+			commonLogger.Printf("\t%s\n", err)
+			continue
+		}
+		if !cmdUtils.Remove(g, configs, false) {
+			commonLogger.Println("\tNo configuration needs it.")
+		}
+	}
+	return nil
 }

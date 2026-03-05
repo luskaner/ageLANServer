@@ -2,21 +2,15 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/spf13/cobra"
 )
 
-var RootCmd = &cobra.Command{
-	Use:   filepath.Base(os.Args[0]),
-	Short: "battle-server-manager manage Battle Server instances",
-	Long:  "battle-server-manager manage Battle Server instances directly or as required by 'launcher'",
-}
-
 var Version string
+var rootFlagSet *cmd.RootFlagSet
 
 func Execute() error {
 	lock := &fileLock.PidLock{}
@@ -28,10 +22,11 @@ func Execute() error {
 	defer func() {
 		_ = lock.Unlock()
 	}()
-	RootCmd.Version = Version
-	InitClean()
-	InitRemove()
-	InitRemoveAll()
-	InitStart()
-	return RootCmd.Execute()
+
+	rootFlagSet = cmd.NewRootFlagSet()
+	rootFlagSet.RegisterCommand("clean", runClean)
+	rootFlagSet.RegisterCommand("remove", runRemove)
+	rootFlagSet.RegisterCommand("remove-all", runRemoveAll)
+	rootFlagSet.RegisterCommand("start", runStart)
+	return rootFlagSet.Execute(Version)
 }
