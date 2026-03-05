@@ -136,9 +136,9 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		File:           cmd[0],
 		Wait:           true,
 		SpecialFile:    true,
-		Shell:          true,
 		UseWorkingPath: true,
 		Args:           args,
+		ExitCode:       true,
 	}
 	if buffErr := commonLogger.FileLogger.Buffer("setup_command", func(writer io.Writer) {
 		commonLogger.Println("run setup command", options.String())
