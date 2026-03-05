@@ -32,7 +32,7 @@ type BattleServer interface {
 }
 
 type MainBattleServer struct {
-	battleServerConfig.BaseConfig `mapstructure:",squash"`
+	battleServerConfig.BaseConfig `koanf:",squash"`
 	lan                           *bool
 	hasOobPort                    bool
 	battleServerName              string

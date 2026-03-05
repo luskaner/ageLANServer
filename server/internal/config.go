@@ -10,7 +10,7 @@ type Announcement struct {
 }
 
 type BattleServer struct {
-	battleServerConfig.BaseConfig `mapstructure:",squash"`
+	battleServerConfig.BaseConfig `koanf:",squash"`
 }
 
 type Game struct {

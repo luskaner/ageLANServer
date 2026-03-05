@@ -24,6 +24,7 @@ func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err 
 	options := exec.Options{
 		File:           cmd[0],
 		Wait:           true,
+		SpecialFile:    true,
 		UseWorkingPath: true,
 		Args:           args,
 	}
