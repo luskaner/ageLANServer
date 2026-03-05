@@ -90,5 +90,3 @@ func runRevert(args []string) error {
 	}
 	return nil
 }
-
-// initRevert removed: root registration handled in internal/cmd/root.go

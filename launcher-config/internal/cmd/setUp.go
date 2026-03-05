@@ -110,7 +110,6 @@ var addedGameCert bool
 
 func runSetUp(args []string) error {
 	fs := pflag.NewFlagSet("setup", pflag.ContinueOnError)
-	// initialize flags from launcher-common
 	launcherCommonCmd.InitSetUp(fs)
 	addGamePathFlag(fs)
 	commonCmd.LogRootCommand(fs, &logRoot)
@@ -150,7 +149,6 @@ func runSetUp(args []string) error {
 		}
 	}
 
-	// run the original logic (adaptado a launcherCommonCmd vars)
 	// signal handler
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
