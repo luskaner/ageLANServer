@@ -70,6 +70,7 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		return nil
 	}
 	req.Header.Set("User-Agent", common.UserAgent())
+	req.Host = host
 	//goland:noinspection ALL
 	resp, err := client.Do(req)
 	if err != nil {
