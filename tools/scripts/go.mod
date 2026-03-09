@@ -1,12 +1,21 @@
 module scripts
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
-	github.com/goreleaser/goreleaser/v2 v2.14.1
+	github.com/goreleaser/goreleaser/v2 v2.14.2
+	github.com/luskaner/ageLANServer/common v0.0.0-20260305192845-f8730e31b478
 	gopkg.in/yaml.v3 v3.0.1
+)
+
+require (
+	github.com/miekg/dns v1.1.72 // indirect
+	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
+	mvdan.cc/sh/v3 v3.12.0 // indirect
 )
 
 require (
