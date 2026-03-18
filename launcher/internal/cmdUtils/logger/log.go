@@ -109,17 +109,22 @@ func writeProcessesStatus(_ string) error {
 }
 
 func writeHostInfo(_ string) error {
-	if err, lines, f := hosts.GetAllLines(os.O_RDONLY); err != nil {
-		return fmt.Errorf("error reading hosts: %w", err)
-	} else {
-		defer hosts.CloseFile(f)
+	f, err := hosts.OpenMain()
+	if err != nil {
+		return fmt.Errorf("error opening hosts: %w", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	var lines []hosts.Line
+	if err, _, lines = hosts.GetAllLines(f); err == nil {
 		addedSomeEntry := false
 		allHostsSet := mapset.NewThreadUnsafeSet[string](allHosts...)
 		for _, line := range lines {
 			hsts := line.Hosts()
 			hostsSet := mapset.NewThreadUnsafeSet[string]()
 			for _, host := range hsts {
-				hostsSet.Add(strings.ToLower(host))
+				hostsSet.Add(string(host))
 			}
 			if hostsSet.ContainsAnyElement(allHostsSet) {
 				commonLogger.Printf("%s", line.String())
@@ -129,6 +134,8 @@ func writeHostInfo(_ string) error {
 		if !addedSomeEntry {
 			commonLogger.Println("No matchings.")
 		}
+	} else {
+		return fmt.Errorf("error reading hosts: %w", err)
 	}
 	return nil
 }

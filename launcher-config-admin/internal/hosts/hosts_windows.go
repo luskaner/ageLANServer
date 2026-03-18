@@ -25,6 +25,7 @@ func FlushDns() (result *exec.Result) {
 		}
 		result = options.Exec()
 	}); err != nil {
+		result = &exec.Result{}
 		result.ExitCode = common.ErrFileLog
 		result.Err = err
 	}
