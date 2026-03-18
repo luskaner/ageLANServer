@@ -10,7 +10,7 @@ import (
 func parseHost(host string) (ok bool, parsed Host) {
 	var decoded string
 	var err error
-	if decoded, err = idna.Punycode.ToUnicode(host); err != nil {
+	if decoded, err = idna.Lookup.ToUnicode(host); err != nil {
 		return
 	}
 	if net.ParseIP(decoded) == nil {
