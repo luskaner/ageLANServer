@@ -51,11 +51,12 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 			if err != nil {
 				return internal.ErrConfigIpMapAdd
 			}
+			tmpName := hostFileLock.File.Name()
+			c.hostFilePath, _ = filepath.Abs(tmpName)
+			str += fmt.Sprintf("Saving hosts to '%s' file", tmpName)
 			if err = hostFileLock.Unlock(); err != nil {
 				return internal.ErrConfigIpMapAdd
 			}
-			c.hostFilePath, _ = filepath.Abs(hostFileLock.File.Name())
-			str += fmt.Sprintf("Saving hosts to '%s' file", hostFileLock.File.Name())
 		} else {
 			str += "Adding hosts to hosts file"
 			if !commonExecutor.IsAdmin() {
