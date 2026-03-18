@@ -2,51 +2,53 @@ package hosts
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"os"
 	"strings"
+	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common/fileLock"
 	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
+	"github.com/luskaner/ageLANServer/launcher-common/hosts/text"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 )
 
-func getExistingHosts() (err error, existingHosts mapset.Set[string], f *os.File) {
-	var lines []launcherCommonHosts.Line
-	err, lines, f = launcherCommonHosts.GetAllLines(os.O_RDWR)
-	if err != nil {
-		return
-	}
-	existingHosts = mapset.NewThreadUnsafeSet[string]()
-	for _, line := range lines {
-		if !line.Own() {
-			continue
+func restoreBackup(backFile *os.File, mainLock *fileLock.Lock) error {
+	return launcherCommonHosts.UpdateHosts(mainLock, func(f *os.File) error {
+		_, err := f.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
 		}
-		for _, lineHost := range line.Hosts() {
-			existingHosts.Add(lineHost)
+		var written int64
+		written, err = io.Copy(f, backFile)
+		if err != nil {
+			return err
 		}
-	}
-	return
+		return f.Truncate(written)
+	}, FlushDns)
 }
 
-func RemoveHosts() error {
-	err, existingHosts, hostsFile := getExistingHosts()
+func restoreInPlace(mainLock *fileLock.Lock) error {
+	buf, err := io.ReadAll(mainLock.File)
 	if err != nil {
+		_ = mainLock.Unlock()
 		return err
 	}
-	if existingHosts.IsEmpty() {
-		if hostsFile != nil && launcherCommonHosts.Lock != nil {
-			launcherCommonHosts.CloseFile(hostsFile)
-		}
-		return nil
-	}
-
-	_, err = hostsFile.Seek(0, io.SeekStart)
+	encType := text.Encoding(buf)
+	var enc encoding.Encoding
+	enc, err = text.GetEncoding(encType)
 	if err != nil {
-		launcherCommonHosts.CloseFile(hostsFile)
+		_ = mainLock.Unlock()
 		return err
 	}
-
-	return launcherCommonHosts.UpdateHosts(hostsFile, func(f *os.File) error {
+	_, err = mainLock.File.Seek(0, io.SeekStart)
+	if err != nil {
+		_ = mainLock.Unlock()
+		return err
+	}
+	return launcherCommonHosts.UpdateHosts(mainLock, func(f *os.File) error {
 		var lines []string
 		var line string
 
@@ -54,17 +56,24 @@ func RemoveHosts() error {
 		if err != nil {
 			return err
 		}
-
-		scanner := bufio.NewScanner(f)
+		decodingReader := transform.NewReader(f, enc.NewDecoder())
+		scanner := bufio.NewScanner(decodingReader)
 		for scanner.Scan() {
 			line = scanner.Text()
-			ok, parsedLine := launcherCommonHosts.Parse(line)
-			lineToAdd := line
-			if ok && parsedLine.Own() {
-				lineToAdd = ""
+			ok, _, parsedLine := launcherCommonHosts.ParseLine(line, true)
+			if !ok {
+				continue
 			}
-			if lineToAdd != "" {
-				lines = append(lines, lineToAdd)
+			var ignoreLine bool
+			if parsedLine.Own() {
+				if parsedLine.OnlyComments() {
+					line = parsedLine.WithoutOwnMarking().Uncommented()
+				} else {
+					ignoreLine = true
+				}
+			}
+			if !ignoreLine {
+				lines = append(lines, line)
 			}
 		}
 
@@ -78,21 +87,77 @@ func RemoveHosts() error {
 		}
 
 		linesJoined := strings.Join(lines, launcherCommonHosts.LineEnding)
-		_, err = f.WriteString(linesJoined)
+		var linesJoinedEncoded string
+		linesJoinedEncoded, err = enc.NewEncoder().String(linesJoined)
+		if err != nil {
+			return err
+		}
+		var n int
+		n, err = f.WriteString(linesJoinedEncoded)
 		if err != nil {
 			return err
 		}
 
-		err = f.Truncate(int64(len(linesJoined)))
+		err = f.Truncate(int64(n))
 		if err != nil {
 			return err
 		}
-
-		_, err = f.Seek(0, io.SeekStart)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}, FlushDns)
+}
+
+func RemoveHosts() error {
+	var bakExists bool
+	var removeBak bool
+	bakLock, err := launcherCommonHosts.OpenLockedBackup(os.O_RDWR)
+	if err == nil {
+		bakExists = true
+		defer func() {
+			backLockName := bakLock.File.Name()
+			_ = bakLock.Unlock()
+			if removeBak {
+				_ = os.Remove(backLockName)
+			}
+		}()
+	}
+	mainLock, err := launcherCommonHosts.OpenLockedMain(os.O_RDWR)
+	var createdMain bool
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if bakExists {
+				mainLock, err = launcherCommonHosts.OpenLockedMain(os.O_RDWR | os.O_CREATE)
+				if err != nil {
+					return err
+				}
+				createdMain = true
+			} else {
+				return nil
+			}
+		} else {
+			return err
+		}
+	}
+	if bakExists {
+		var doRestoreBak bool
+		if createdMain {
+			doRestoreBak = true
+		} else if bakInfo, err := bakLock.File.Stat(); err != nil {
+			_ = mainLock.Unlock()
+			return err
+		} else if mainInfo, err := mainLock.File.Stat(); err != nil {
+			_ = mainLock.Unlock()
+			return err
+		} else {
+			doRestoreBak = mainInfo.ModTime().Before(bakInfo.ModTime().Add(1 * time.Second))
+		}
+		if doRestoreBak {
+			err = restoreBackup(bakLock.File, mainLock)
+			if err == nil {
+				removeBak = true
+			}
+			return err
+		}
+		removeBak = true
+	}
+	return restoreInPlace(mainLock)
 }
