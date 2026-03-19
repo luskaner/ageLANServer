@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"io"
 	"net"
+	"runtime"
 
 	"github.com/luskaner/ageLANServer/common/executables"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
@@ -25,8 +27,10 @@ func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot s
 		args = append(args, "--logRoot", logRoot)
 	}
 	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
-	optionsFn(options)
-	if out != nil {
+	if optionsFn != nil {
+		optionsFn(options)
+	}
+	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
 		options.Stdout = out
 		options.Stderr = out
 	}
@@ -51,8 +55,10 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 		args = append(args, "--logRoot", logRoot)
 	}
 	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
-	optionsFn(options)
-	if out != nil {
+	if optionsFn != nil {
+		optionsFn(options)
+	}
+	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
 		options.Stdout = out
 		options.Stderr = out
 	}

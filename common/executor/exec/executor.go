@@ -39,6 +39,15 @@ func (result *Result) Success() bool {
 
 func (options Options) Exec() (result *Result) {
 	result = &Result{}
+	if options.Wait {
+		if options.Pid {
+			result.Err = errors.New("pid requires wait as false")
+			return
+		}
+	} else if options.ExitCode {
+		result.Err = errors.New("exit code requires wait as true")
+		return
+	}
 	if options.GUI && !options.ShowWindow {
 		result.Err = errors.New("gui apps need to set showWindow as true")
 		return
@@ -73,7 +82,7 @@ func (options Options) standardExec() (result *Result) {
 	if options.ExitCode && cmd.ProcessState != nil {
 		result.ExitCode = cmd.ProcessState.ExitCode()
 	}
-	if options.Pid && cmd.ProcessState == nil {
+	if options.Pid && cmd.Process != nil {
 		result.Pid = uint32(cmd.Process.Pid)
 	}
 	if err != nil {
