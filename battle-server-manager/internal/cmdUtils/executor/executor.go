@@ -1,4 +1,4 @@
-package cmdUtils
+package executor
 
 import (
 	"fmt"
@@ -101,6 +101,7 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 		Args:           args,
 		Pid:            true,
 	}
+	modifyOptions(&options)
 	if hideWindow && logRoot != "" {
 		var f *os.File
 		if _, f, err = commonLogger.NewFileLogger("battle-server", logRoot, "", true); err != nil {

@@ -3,6 +3,7 @@ package cmd
 import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
+	"battle-server-manager/internal/cmdUtils/executor"
 	"errors"
 	"fmt"
 	"net"
@@ -167,7 +168,7 @@ func runStart(args []string) error {
 		commonLogger.Printf("could not resolve SSL files: %s\n", err)
 		os.Exit(internal.ErrResolveSSLFiles)
 	}
-	resolvedPath, err := cmdUtils.ResolvePath(gameId, cfg.Executable.Path)
+	resolvedPath, err := executor.ResolvePath(gameId, cfg.Executable.Path)
 	if err != nil {
 		commonLogger.Printf("could not resolve path: %s\n", err)
 		os.Exit(internal.ErrResolvePath)
@@ -178,7 +179,7 @@ func runStart(args []string) error {
 		os.Exit(internal.ErrParseArgs)
 	}
 	var pid uint32
-	pid, err = cmdUtils.ExecuteBattleServer(
+	pid, err = executor.ExecuteBattleServer(
 		gameId,
 		resolvedPath,
 		region,
