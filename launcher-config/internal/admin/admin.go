@@ -106,7 +106,6 @@ func StopAgentIfNeeded() (err error) {
 			return
 		}
 		commonLogger.Println(str + "OK")
-		str = "Closing connection"
 		clearIPCState()
 	} else {
 		commonLogger.Println("Already stopped")
