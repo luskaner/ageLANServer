@@ -3,12 +3,14 @@
 package exec
 
 import (
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
+	"mvdan.cc/sh/v3/syntax"
 )
 
 func (options Options) exec() (result *Result) {
@@ -30,7 +32,17 @@ func (options Options) exec() (result *Result) {
 	args = append(args, options.File)
 	args = append(args, options.Args...)
 	if joinArgsIndex != -1 {
-		argsReplace := strings.Join(args[joinArgsIndex:], " ")
+		argsQuoted := make([]string, len(args)-joinArgsIndex)
+		for i, arg := range args[joinArgsIndex:] {
+			if quoted, err := syntax.Quote(arg, syntax.LangPOSIX); err == nil {
+				argsQuoted[i] = quoted
+			} else {
+				return &Result{
+					Err: fmt.Errorf("error quoting argument: %w", err),
+				}
+			}
+		}
+		argsReplace := strings.Join(argsQuoted, " ")
 		args = args[:joinArgsIndex]
 		args = append(args, argsReplace)
 	}
