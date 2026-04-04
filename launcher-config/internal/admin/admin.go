@@ -106,16 +106,8 @@ func StopAgentIfNeeded() (err error) {
 			return
 		}
 		commonLogger.Println(str + "OK")
-		str = "Closing connection: "
-		err = ipc.Close()
-		if err != nil {
-			commonLogger.Println(str + "Could not close")
-			return
-		}
-		commonLogger.Println(str + "OK")
-		encoder = nil
-		decoder = nil
-		ipc = nil
+		str = "Closing connection"
+		clearIPCState()
 	} else {
 		commonLogger.Println("Already stopped")
 	}
@@ -123,15 +115,30 @@ func StopAgentIfNeeded() (err error) {
 }
 
 func ConnectAgentIfNeededWithRetries(retryUntilSuccess bool) bool {
-	var ok bool
+	var prePostFn func()
+	if retryUntilSuccess {
+		prePostFn = func() {}
+	} else {
+		prePostFn = clearIPCState
+	}
 	for i := 0; i < 30; i++ {
-		ok = ConnectAgentIfNeeded() == nil
-		if retryUntilSuccess == ok {
+		prePostFn()
+		if (ConnectAgentIfNeeded() == nil) == retryUntilSuccess {
 			return true
 		}
+		prePostFn()
 		time.Sleep(100 * time.Millisecond)
 	}
 	return false
+}
+
+func clearIPCState() {
+	if ipc != nil {
+		_ = ipc.Close()
+	}
+	encoder = nil
+	decoder = nil
+	ipc = nil
 }
 
 func ConnectAgentIfNeeded() (err error) {
@@ -158,7 +165,6 @@ func StartAgentIfNeeded() (result *exec.Result) {
 		commonLogger.Println("Already started")
 		return
 	}
-	preAgentStart()
 	file := executables.Filename(true, executables.LauncherConfigAdminAgent)
 	options := exec.Options{File: file, AsAdmin: true, Pid: true}
 	if internal.Logger != nil {
@@ -169,7 +175,9 @@ func StartAgentIfNeeded() (result *exec.Result) {
 	}
 	result = options.Exec()
 	if result.Success() {
-		postAgentStart(file)
+		if !postAgentStart(result.Pid, file) {
+			result.Err = fmt.Errorf("agent process failed to start")
+		}
 	}
 	return
 }

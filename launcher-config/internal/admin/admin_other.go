@@ -4,6 +4,7 @@ package admin
 
 import (
 	"net"
+	"os"
 	"time"
 
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -12,21 +13,24 @@ import (
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
 )
 
-func preAgentStart() {
-	if !executor.IsAdmin() {
-		commonLogger.Println("Waiting up to 30s for 'agent' to start...")
-	}
-}
+var waitInterval = 100 * time.Millisecond
 
-func postAgentStart(file string) {
-	if !executor.IsAdmin() {
-		for i := 0; i < 30; i++ {
+func postAgentStart(pid uint32, file string) (ok bool) {
+	if executor.IsAdmin() {
+		ok = true
+	} else {
+		for {
+			if process.WaitForProcess(&os.Process{Pid: int(pid)}, &waitInterval) {
+				break
+			}
 			if _, proc, err := process.Process(file); err == nil && proc != nil {
+				ok = true
 				break
 			}
 			time.Sleep(time.Second)
 		}
 	}
+	return
 }
 
 func DialIPC() (net.Conn, error) {

@@ -9,40 +9,64 @@
 package process
 
 import (
+	"errors"
 	"os"
 	"time"
 
 	"golang.org/x/sys/unix"
 )
 
+func alive(proc *os.Process) bool {
+	err := proc.Signal(unix.Signal(0))
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, unix.EPERM) {
+		return true
+	}
+	return false
+}
+
 func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
-	t := 100 * time.Millisecond
+	pollInterval := 100 * time.Millisecond
 	if duration == nil {
-		t *= 10
+		pollInterval *= 10
 	}
-	processGone := func() bool {
-		// Signal(0) returns nil if process exists, error if it doesn't
-		return proc.Signal(unix.Signal(0)) != nil
-	}
-	if duration == nil {
+	waitByPolling := func(timeoutChan <-chan time.Time) bool {
+		ticker := time.NewTicker(pollInterval)
+		defer ticker.Stop()
 		for {
-			if processGone() {
+			if !alive(proc) {
 				return true
 			}
-			time.Sleep(t)
-		}
-	} else {
-		timeout := time.After(*duration)
-		for {
 			select {
-			case <-timeout:
+			case <-timeoutChan:
 				return false
-			default:
-				if processGone() {
+			case <-ticker.C:
+				if !alive(proc) {
 					return true
 				}
-				time.Sleep(t)
 			}
 		}
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, err := proc.Wait()
+		done <- err
+	}()
+	var timeoutChan <-chan time.Time
+	if duration != nil {
+		timer := time.NewTimer(*duration)
+		defer timer.Stop()
+		timeoutChan = timer.C
+	}
+	select {
+	case err := <-done:
+		if err == nil {
+			return true
+		}
+		return waitByPolling(timeoutChan)
+	case <-timeoutChan:
+		return false
 	}
 }

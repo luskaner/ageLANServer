@@ -8,8 +8,7 @@ import (
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
 )
 
-func preAgentStart()          {}
-func postAgentStart(_ string) {}
+func postAgentStart(_ uint32, _ string) bool { return true }
 
 func DialIPC() (net.Conn, error) {
 	path := commonIpc.Path()
