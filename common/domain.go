@@ -18,12 +18,15 @@ const PlayFabDomain = "playfabapi"
 const AgeOfEmpires = "ageofempires"
 const ApiAgeOfEmpiresSubdomain = "api"
 const CdnAgeOfEmpiresSubdomain = "cdn"
-const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
+const apiAgeOfEmpiresSuffix = "." + AgeOfEmpires + dotTld
+const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + apiAgeOfEmpiresSuffix
+const Aoe4ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "-" + aoe4Marker + apiAgeOfEmpiresSuffix
 const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
 const stdSubDomainReleasePart = "-live-release"
 const aoe4SubDomainPrefix = "aoeliverelease"
+const aoe4Marker = "dr"
 
 var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*." + AgeOfEmpires + dotTld}
 
@@ -66,9 +69,9 @@ func AllHosts(gameId string) (domains []string) {
 	case GameAoE4:
 		domains = append(domains, "ed603"+playFabSuffix)
 	}
-	domains = append(domains, CdnAgeOfEmpires)
-	if gameId != GameAoE4 {
-		domains = append(domains, ApiAgeOfEmpires)
+	domains = append(domains, CdnAgeOfEmpires, ApiAgeOfEmpires)
+	if gameId == GameAoE4 {
+		domains = append(domains, Aoe4ApiAgeOfEmpires)
 	}
 	hostsCache[gameId] = domains
 	return
@@ -84,7 +87,7 @@ func generateDomains(gameId string) (domains []string) {
 		releaseMin = 2
 		subDomainReleasePart = stdSubDomainReleasePart
 	case GameAoE4:
-		prefix = "dr"
+		prefix = aoe4Marker
 		releaseMin = 2
 		subDomainReleasePart = "-activerelease"
 	case GameAoM:
