@@ -2007,6 +2007,108 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/team_migration-sqr.png"
+      },
+      {
+        "Id": "okuchichibu3",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "okuchichibu",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/okuchichibu-sqr.png"
+      },
+      {
+        "Id": "mirkwood39",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "mirkwood",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+      },
+      {
+        "Id": "snake_dance3",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "snake_dance",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/snake_dance-sqr.png"
       }
     ]
   },
@@ -5964,6 +6066,306 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/aso_grasslands-sqr.png"
+      },
+      {
+        "Id": "marsh48",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "marsh",
+        "Size": "Normal",
+        "VictoryCondition": "Standard",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/marsh-sqr.png"
+      },
+      {
+        "Id": "watering_hole54",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "watering_hole",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/watering_hole-sqr.png"
+      },
+      {
+        "Id": "yellow_river34",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "yellow_river",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Isis",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Isis",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/yellow_river-sqr.png"
+      },
+      {
+        "Id": "snake_dance4",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "snake_dance",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/snake_dance-sqr.png"
+      },
+      {
+        "Id": "river_styx49",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_styx",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Set",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Set",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_styx-sqr.png"
+      },
+      {
+        "Id": "anatolia47",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "anatolia",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Loki",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Loki",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/anatolia-sqr.png"
       }
     ]
   },
@@ -10599,6 +11001,266 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/mirage-sqr.png"
+      },
+      {
+        "Id": "kii5",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "kii",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "SeasonsD3",
+            "ArenaEffectName": "SeasonsD3",
+            "Title": "STR_AOTG_RULE_SEASONS",
+            "Description": "STR_AOTG_RULE_SEASONS_DESC",
+            "OwnerIcon": "resources/norse_freyr/static_color/major_gods/freyr_icon_round.png",
+            "OwnerPortrait": "resources/norse_freyr/static_color/major_gods/freyr_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 2,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 2,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/kii-sqr.png"
+      },
+      {
+        "Id": "qinghai_lake51",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "qinghai_lake",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Loki",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 2,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Loki",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 2,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/qinghai_lake-sqr.png"
+      },
+      {
+        "Id": "great_wall29",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "great_wall",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HelMinorWT",
+            "ArenaEffectName": "HelMinorWT",
+            "Title": "STR_AOTG_RULE_HEL_MINOR",
+            "Description": "STR_AOTG_RULE_HEL_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/hel_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/hel_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/great_wall-sqr.png"
+      },
+      {
+        "Id": "kerlaugar40",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "kerlaugar",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 2,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 2,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/kerlaugar-sqr.png"
       }
     ]
   },
@@ -15756,6 +16418,290 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/setonaikai-sqr.png"
+      },
+      {
+        "Id": "aso_grasslands4",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "aso_grasslands",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "PrometheusMinorWT",
+            "ArenaEffectName": "PrometheusMinorWT",
+            "Title": "STR_AOTG_RULE_PROMETHEUS_MINOR",
+            "Description": "STR_AOTG_RULE_PROMETHEUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/prometheus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/prometheus_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "FreyjaMinorWT",
+            "ArenaEffectName": "FreyjaMinorWT",
+            "Title": "STR_AOTG_RULE_FREYJA_MINOR",
+            "Description": "STR_AOTG_RULE_FREYJA_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Freyr",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Freyr",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/aso_grasslands-sqr.png"
+      },
+      {
+        "Id": "watering_hole55",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "watering_hole",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HelMinorWT",
+            "ArenaEffectName": "HelMinorWT",
+            "Title": "STR_AOTG_RULE_HEL_MINOR",
+            "Description": "STR_AOTG_RULE_HEL_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/hel_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/hel_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "FreyjaMinorWT",
+            "ArenaEffectName": "FreyjaMinorWT",
+            "Title": "STR_AOTG_RULE_FREYJA_MINOR",
+            "Description": "STR_AOTG_RULE_FREYJA_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/watering_hole-sqr.png"
+      },
+      {
+        "Id": "arena54",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "arena",
+        "Size": "Normal",
+        "VictoryCondition": "Conquest",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "FreyjaMinorWT",
+            "ArenaEffectName": "FreyjaMinorWT",
+            "Title": "STR_AOTG_RULE_FREYJA_MINOR",
+            "Description": "STR_AOTG_RULE_FREYJA_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 2,
+            "Personality": "economist.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 2,
+            "Personality": "economist.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/arena-sqr.png"
+      },
+      {
+        "Id": "river_nile53",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_nile",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HorusMinorWT",
+            "ArenaEffectName": "HorusMinorWT",
+            "Title": "STR_AOTG_RULE_HORUS_MINOR",
+            "Description": "STR_AOTG_RULE_HORUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/horus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/horus_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "FreyjaMinorWT",
+            "ArenaEffectName": "FreyjaMinorWT",
+            "Title": "STR_AOTG_RULE_FREYJA_MINOR",
+            "Description": "STR_AOTG_RULE_FREYJA_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 2,
+            "Personality": "economist.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 2,
+            "Personality": "economist.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_nile-sqr.png"
       }
     ]
   },
@@ -21060,6 +22006,379 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/oasis-sqr.png"
+      },
+      {
+        "Id": "watering_hole56",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "watering_hole",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HorusMinorWT",
+            "ArenaEffectName": "HorusMinorWT",
+            "Title": "STR_AOTG_RULE_HORUS_MINOR",
+            "Description": "STR_AOTG_RULE_HORUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/horus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/horus_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Gaia",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Gaia",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/watering_hole-sqr.png"
+      },
+      {
+        "Id": "peach_blossom_land50",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "peach_blossom_land",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "SeasonsD7",
+            "ArenaEffectName": "SeasonsD7",
+            "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+            "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+            "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+            "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/peach_blossom_land-sqr.png"
+      },
+      {
+        "Id": "river_styx50",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_styx",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "CelestialRemnantsD0",
+            "ArenaEffectName": "CelestialRemnantsD0",
+            "Title": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS",
+            "Description": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS_DESC",
+            "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+            "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+            "Visualization": "Right"
+          },
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Gaia",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Gaia",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_styx-sqr.png"
+      },
+      {
+        "Id": "valley_of_kings45",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "valley_of_kings",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HorusMinorWT",
+            "ArenaEffectName": "HorusMinorWT",
+            "Title": "STR_AOTG_RULE_HORUS_MINOR",
+            "Description": "STR_AOTG_RULE_HORUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/horus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/horus_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 2,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 2,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/valley_of_kings-sqr.png"
+      },
+      {
+        "Id": "kii6",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "kii",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "CelestialRemnantsD6",
+            "ArenaEffectName": "CelestialRemnantsD6",
+            "Title": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS",
+            "Description": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS_DESC",
+            "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+            "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+            "Visualization": "Right"
+          },
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Ra",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 2,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/kii-sqr.png"
       }
     ]
   },
@@ -23173,6 +24492,142 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/mirage-sqr.png"
+      },
+      {
+        "Id": "okuchichibu4",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "okuchichibu",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/okuchichibu-sqr.png"
+      },
+      {
+        "Id": "qinghai_lake52",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "qinghai_lake",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/qinghai_lake-sqr.png"
+      },
+      {
+        "Id": "snake_dance5",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "snake_dance",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/snake_dance-sqr.png"
+      },
+      {
+        "Id": "oasis49",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "oasis",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/oasis-sqr.png"
       }
     ]
   },
@@ -27130,6 +28585,306 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/peach_blossom_land-sqr.png"
+      },
+      {
+        "Id": "mirkwood40",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "mirkwood",
+        "Size": "Normal",
+        "VictoryCondition": "Conquest",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+      },
+      {
+        "Id": "kii7",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "kii",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/kii-sqr.png"
+      },
+      {
+        "Id": "ghost_lake49",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "ghost_lake",
+        "Size": "Normal",
+        "VictoryCondition": "Regicide",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Loki",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Loki",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/ghost_lake-sqr.png"
+      },
+      {
+        "Id": "arena55",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "arena",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Amaterasu",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Amaterasu",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/arena-sqr.png"
+      },
+      {
+        "Id": "mirage51",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "mirage",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/mirage-sqr.png"
+      },
+      {
+        "Id": "qinghai_lake53",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "qinghai_lake",
+        "Size": "Normal",
+        "VictoryCondition": "Standard",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Oranos",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/qinghai_lake-sqr.png"
       }
     ]
   },
@@ -31341,6 +33096,286 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/jotunheim-sqr.png"
+      },
+      {
+        "Id": "river_nile54",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_nile",
+        "Size": "Normal",
+        "VictoryCondition": "Standard",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "PrometheusMinorWT",
+            "ArenaEffectName": "PrometheusMinorWT",
+            "Title": "STR_AOTG_RULE_PROMETHEUS_MINOR",
+            "Description": "STR_AOTG_RULE_PROMETHEUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/prometheus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/prometheus_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_nile-sqr.png"
+      },
+      {
+        "Id": "river_styx51",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_styx",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Shennong",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_styx-sqr.png"
+      },
+      {
+        "Id": "senjogahara1",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "senjogahara",
+        "Size": "Normal",
+        "VictoryCondition": "Standard",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "CelestialRemnantsD8",
+            "ArenaEffectName": "CelestialRemnantsD8",
+            "Title": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS",
+            "Description": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS_DESC",
+            "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+            "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/senjogahara-sqr.png"
+      },
+      {
+        "Id": "mirkwood41",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "mirkwood",
+        "Size": "Normal",
+        "VictoryCondition": "Standard",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HorusMinorWT",
+            "ArenaEffectName": "HorusMinorWT",
+            "Title": "STR_AOTG_RULE_HORUS_MINOR",
+            "Description": "STR_AOTG_RULE_HORUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/horus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/horus_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "economist.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": -1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/mirkwood-sqr.png"
+      },
+      {
+        "Id": "mediterranean37",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "mediterranean",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HelMinorWT",
+            "ArenaEffectName": "HelMinorWT",
+            "Title": "STR_AOTG_RULE_HEL_MINOR",
+            "Description": "STR_AOTG_RULE_HEL_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/hel_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/hel_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Freyr",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Freyr",
+            "Team": 2,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/mediterranean-sqr.png"
       }
     ]
   },
@@ -36849,6 +38884,379 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/snake_dance-sqr.png"
+      },
+      {
+        "Id": "vinlandsaga47",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "vinlandsaga",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "SeasonsD4",
+            "ArenaEffectName": "SeasonsD4",
+            "Title": "STR_AOTG_RULE_SEASONS",
+            "Description": "STR_AOTG_RULE_SEASONS_DESC",
+            "OwnerIcon": "resources/norse_freyr/static_color/major_gods/freyr_icon_round.png",
+            "OwnerPortrait": "resources/norse_freyr/static_color/major_gods/freyr_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 1
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "humanoid.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Nuwa",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 1
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/vinlandsaga-sqr.png"
+      },
+      {
+        "Id": "jotunheim50",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "jotunheim",
+        "Size": "Normal",
+        "VictoryCondition": "Conquest",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "HorusMinorWT",
+            "ArenaEffectName": "HorusMinorWT",
+            "Title": "STR_AOTG_RULE_HORUS_MINOR",
+            "Description": "STR_AOTG_RULE_HORUS_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/horus_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/horus_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "HelMinorWT",
+            "ArenaEffectName": "HelMinorWT",
+            "Title": "STR_AOTG_RULE_HEL_MINOR",
+            "Description": "STR_AOTG_RULE_HEL_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/hel_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/hel_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Hades",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/jotunheim-sqr.png"
+      },
+      {
+        "Id": "vinlandsaga48",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "vinlandsaga",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "SeasonsD6",
+            "ArenaEffectName": "SeasonsD6",
+            "Title": "STR_AOTG_RULE_SEASONS_PHASE2",
+            "Description": "STR_AOTG_RULE_SEASONS_PHASE2_DESC",
+            "OwnerIcon": "resources/norse/static_color/major_gods/loki_icon_round.png",
+            "OwnerPortrait": "resources/norse/static_color/major_gods/loki_icon.png",
+            "Visualization": "Right"
+          },
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Demeter",
+            "Team": 0,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Odin",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/vinlandsaga-sqr.png"
+      },
+      {
+        "Id": "team_migration53",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "team_migration",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "CelestialRemnantsD9",
+            "ArenaEffectName": "CelestialRemnantsD9",
+            "Title": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS",
+            "Description": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS_DESC",
+            "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+            "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Freyr",
+            "Team": 0,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Zeus",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Freyr",
+            "Team": 0,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Zeus",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/team_migration-sqr.png"
+      },
+      {
+        "Id": "anatolia48",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "anatolia",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Deathmatch",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "FreyjaMinorWT",
+            "ArenaEffectName": "FreyjaMinorWT",
+            "Title": "STR_AOTG_RULE_FREYJA_MINOR",
+            "Description": "STR_AOTG_RULE_FREYJA_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/freyja_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Zeus",
+            "Team": 0,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Zeus",
+            "Team": 0,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "conqueror.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/anatolia-sqr.png"
       }
     ]
   },
@@ -42555,6 +44963,273 @@
         "Rewards": [],
         "MinimapImage": "",
         "MapPreviewImage": "resources/maps/previews/peach_blossom_land-sqr.png"
+      },
+      {
+        "Id": "river_styx52",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "river_styx",
+        "Size": "Normal",
+        "VictoryCondition": "SuddenDeath",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "AphroditeMinorWT",
+            "ArenaEffectName": "AphroditeMinorWT",
+            "Title": "STR_AOTG_RULE_APHRODITE_MINOR",
+            "Description": "STR_AOTG_RULE_APHRODITE_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/aphrodite_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "mythical.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Susanoo",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Kronos",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Tsukuyomi",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/river_styx-sqr.png"
+      },
+      {
+        "Id": "anatolia49",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "anatolia",
+        "Size": "Normal",
+        "VictoryCondition": "KingOfTheHill",
+        "GameType": "Standard",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "ThothMinorWT",
+            "ArenaEffectName": "ThothMinorWT",
+            "Title": "STR_AOTG_RULE_THOTH_MINOR",
+            "Description": "STR_AOTG_RULE_THOTH_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/thoth_minor_wt_icon.png",
+            "Visualization": "Left"
+          },
+          {
+            "Id": "SeasonsD4",
+            "ArenaEffectName": "SeasonsD4",
+            "Title": "STR_AOTG_RULE_SEASONS",
+            "Description": "STR_AOTG_RULE_SEASONS_DESC",
+            "OwnerIcon": "resources/norse_freyr/static_color/major_gods/freyr_icon_round.png",
+            "OwnerPortrait": "resources/norse_freyr/static_color/major_gods/freyr_icon.png",
+            "Visualization": "Right"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Amaterasu",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "passive.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Amaterasu",
+            "Team": 1,
+            "Personality": "balanced.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/anatolia-sqr.png"
+      },
+      {
+        "Id": "kerlaugar41",
+        "Predecessors": [],
+        "PositionX": 0,
+        "PositionY": 0,
+        "Visualization": "Regular",
+        "Map": "kerlaugar",
+        "Size": "Normal",
+        "VictoryCondition": "Conquest",
+        "GameType": "Lightning",
+        "MapVisibility": "Normal",
+        "StartingResources": "Standard",
+        "AllowTitans": true,
+        "WorldTwists": [
+          {
+            "Id": "CelestialRemnantsD6",
+            "ArenaEffectName": "CelestialRemnantsD6",
+            "Title": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS",
+            "Description": "STR_CELESTIAL_RULE_ATLANTEAN_REMNANTS_DESC",
+            "OwnerIcon": "resources/atlantean/static_color/major_gods/gaia_icon_round.png",
+            "OwnerPortrait": "resources/atlantean/static_color/major_gods/gaia_icon.png",
+            "Visualization": "Right"
+          },
+          {
+            "Id": "HelMinorWT",
+            "ArenaEffectName": "HelMinorWT",
+            "Title": "STR_AOTG_RULE_HEL_MINOR",
+            "Description": "STR_AOTG_RULE_HEL_MINOR_DESC",
+            "OwnerIcon": "resources/aotg/static_color/world_twists/hel_minor_wt_icon_round.png",
+            "OwnerPortrait": "resources/aotg/static_color/world_twists/hel_minor_wt_icon.png",
+            "Visualization": "Left"
+          }
+        ],
+        "Opponents": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "OpponentsFor2PlayerCoop": [
+          {
+            "Civ": "Demeter",
+            "Team": 1,
+            "Personality": "attacker.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Poseidon",
+            "Team": 1,
+            "Personality": "defender.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Thor",
+            "Team": 1,
+            "Personality": "supporter.personality",
+            "DifficultyOffset": 0
+          },
+          {
+            "Civ": "Fuxi",
+            "Team": 1,
+            "Personality": "overwhelmer.personality",
+            "DifficultyOffset": 0
+          }
+        ],
+        "Rewards": [],
+        "MinimapImage": "",
+        "MapPreviewImage": "resources/maps/previews/kerlaugar-sqr.png"
       }
     ]
   }
