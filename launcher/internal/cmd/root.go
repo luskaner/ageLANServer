@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
@@ -402,6 +403,21 @@ func runRoot(fs *pflag.FlagSet) error {
 			os.Exit(int(errorCode.Load()))
 		}
 	}()
+	// Let the agent and config-admin-agent 10s to finish each before killing them
+	waitDuration := 10 * time.Second
+	agent := executables.Filename(false, executables.LauncherAgent)
+	if _, proc, err := commonProcess.Process(agent); err == nil && proc != nil {
+		logger.Println("'agent' is running, waiting up to 10 seconds for it to end...")
+		if !commonProcess.WaitForProcess(proc, &waitDuration) {
+			logger.Println("'agent' did not exit on its own.")
+		}
+	}
+	if _, proc, err := commonProcess.Process(executables.Filename(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
+		logger.Println("'config-admin-agent' is running, waiting up to 10 seconds for it to end...")
+		if !commonProcess.WaitForProcess(proc, &waitDuration) {
+			logger.Println("'config-admin-agent' did not exit on its own.")
+		}
+	}
 	/*
 		Ensure:
 		* No running config-admin-agent nor agent processes
