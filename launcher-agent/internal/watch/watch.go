@@ -28,7 +28,7 @@ func waitUntilAnyProcessExist(names []string) (processes map[string]*os.Process)
 	return
 }
 
-func Watch(gameId string, logRoot string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
+func Watch(gameId string, basePath string, logRoot string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
 	battleServerExe string, battleServerRegion string, exitCode *int) {
 	*exitCode = common.ErrSuccess
 	if serverExe != "-" {
@@ -124,6 +124,6 @@ func Watch(gameId string, logRoot string, steamProcess bool, xboxProcess bool, s
 		return
 	}
 	if logRoot != "-" {
-		gameLogs.CopyGameLogs(gameId, logRoot)
+		gameLogs.CopyGameLogs(gameId, basePath, logRoot)
 	}
 }

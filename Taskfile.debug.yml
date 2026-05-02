@@ -58,6 +58,9 @@ tasks:
     cmds:
       - task: :tools:run
         vars: { PROGRAM: 'copyBattleServerManagerResources' }
+      - task: os:build-config-helper-amd64
+      - task: os:build-config-helper-arm64
+  # Start of build tasks
   build-server:
     sources:
       - common/**/*
@@ -76,7 +79,6 @@ tasks:
     method: checksum
     cmds:
       - go build -o build/server/bin/genCert ./server-genCert
-  # Start of build tasks
   build-battle-server-manager:
     sources:
       - common/**/*

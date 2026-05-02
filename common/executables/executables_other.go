@@ -2,6 +2,4 @@
 
 package executables
 
-func fileName(name string) string {
-	return name
-}
+var fileName = UnixFileName

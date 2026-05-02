@@ -6,7 +6,6 @@ import (
 	"net"
 	"path/filepath"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
@@ -21,7 +20,6 @@ import (
 
 func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (errorCode int) {
 	var mapIP bool
-	ips := mapset.NewThreadUnsafeSet[string]()
 	if !customHostFile {
 		for _, domain := range common.AllHosts(gameId) {
 			if !common.Matches(ip, domain) {
@@ -30,7 +28,6 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 					errorCode = internal.ErrConfigIpMap
 					return
 				}
-
 				mapIP = true
 			} else if !server.CheckConnectionFromServer(domain, true, nil) {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
@@ -42,9 +39,6 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 		mapIP = true
 	}
 	if mapIP {
-		ips.Add(ip)
-	}
-	if !ips.IsEmpty() {
 		var str string
 		if customHostFile {
 			hostFileLock, err := hosts.CreateTemp()
@@ -66,9 +60,17 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 		logger.Println(str + "...")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
-			if result := executor.RunSetUp(gameId, ips, nil, nil, nil, false, false, true, c.hostFilePath, "", "", writer, func(options exec.Options) {
-				commonLogger.Println("run config setup for hosts", options.String())
-			}); !result.Success() {
+			cfgSetupOps := executor.ConfigSetupOptions{
+				GameId:           c.gameId,
+				MapIp:            ip,
+				ExitAgentOnError: true,
+				HostFilePath:     c.hostFilePath,
+				Out:              writer,
+				OptionsFn: func(options exec.Options) {
+					commonLogger.Println("run config setup for hosts", options.String())
+				},
+			}
+			if result := cfgSetupOps.RunSetUp(); !result.Success() {
 				logger.Println("Failed to add hosts.")
 				if result.Err != nil {
 					logger.Println("Error message: " + result.Err.Error())

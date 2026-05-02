@@ -164,7 +164,7 @@ func StartAgentIfNeeded() (result *exec.Result) {
 		commonLogger.Println("Already started")
 		return
 	}
-	file := executables.Filename(true, executables.LauncherConfigAdminAgent)
+	file := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
 	options := exec.Options{File: file, AsAdmin: true, Pid: true}
 	if internal.Logger != nil {
 		options.Args = []string{internal.Logger.Folder()}

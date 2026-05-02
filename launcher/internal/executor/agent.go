@@ -9,7 +9,7 @@ import (
 )
 
 func StartAgent(game string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
-	battleServerExe string, battleServerRegion string, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+	battleServerExe string, battleServerRegion string, basePath string, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	if serverExe == "" {
 		serverExe = "-"
 	}
@@ -18,6 +18,10 @@ func StartAgent(game string, steamProcess bool, xboxProcess bool, serverExe stri
 	}
 	if battleServerRegion == "" {
 		battleServerRegion = "-"
+	}
+	if logRoot == "" || basePath == "" {
+		logRoot = "-"
+		basePath = "-"
 	}
 	args := []string{
 		strconv.FormatBool(steamProcess),
@@ -28,8 +32,9 @@ func StartAgent(game string, steamProcess bool, xboxProcess bool, serverExe stri
 		battleServerExe,
 		battleServerRegion,
 		logRoot,
+		basePath,
 	}
-	options := exec.Options{File: executables.Filename(false, executables.LauncherAgent), Pid: true, Args: args}
+	options := exec.Options{File: executables.NativeFileName(false, executables.LauncherAgent), Pid: true, Args: args}
 	optionsFn(options)
 	if out != nil {
 		options.Stdout = out

@@ -20,6 +20,29 @@ var (
 	procFindPackagesByPackageFamily = modkernelbase.NewProc("FindPackagesByPackageFamily")
 )
 
+type Game struct {
+	familyName string
+	fullName   string
+}
+
+func NewGame(gameId string) (game *Game, ok bool) {
+	if !appxAPIAvailable() {
+		return
+	}
+	familyName := appNamePrefix + appNameSuffix(gameId) + "_" + appPublisherId
+	var fullName string
+	ok, fullName = packageFamilyNameToFullName(familyName)
+	if !ok {
+		return
+	}
+	game = &Game{
+		familyName,
+		fullName,
+	}
+	ok = true
+	return
+}
+
 func appxAPIAvailable() bool {
 	return procFindPackagesByPackageFamily.Find() == nil
 }
@@ -46,18 +69,7 @@ func appNameSuffix(gameTitle string) string {
 	}
 }
 
-func name(gameTitle string) string {
-	return appNamePrefix + appNameSuffix(gameTitle)
-}
-
-func FamilyName(gameTitle string) string {
-	return name(gameTitle) + "_" + appPublisherId
-}
-
-func PackageFamilyNameToFullName(packageFamilyName string) (ok bool, fullName string) {
-	if !appxAPIAvailable() {
-		return
-	}
+func packageFamilyNameToFullName(packageFamilyName string) (ok bool, fullName string) {
 	pfnUTF16, err := windows.UTF16PtrFromString(packageFamilyName)
 	if err != nil {
 		return
@@ -102,10 +114,18 @@ func PackageFamilyNameToFullName(packageFamilyName string) (ok bool, fullName st
 	return
 }
 
-func InstallLocation(packageFullName string) (ok bool, installLocation string) {
+func (g Game) FamilyName() string {
+	return g.familyName
+}
+
+func (g Game) FullName() string {
+	return g.fullName
+}
+
+func (g Game) basePath() (ok bool, installLocation string) {
 	key, err := registry.OpenKey(
 		registry.CURRENT_USER,
-		`SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\`+packageFullName,
+		`SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\`+g.fullName,
 		registry.QUERY_VALUE,
 	)
 	if err != nil {
@@ -122,19 +142,12 @@ func InstallLocation(packageFullName string) (ok bool, installLocation string) {
 	return
 }
 
-func GameInstallLocation(gameTitle string) (ok bool, gameLocation string) {
-	var fullName string
-	ok, fullName = PackageFamilyNameToFullName(FamilyName(gameTitle))
-	if !ok {
-		return
-	}
-	var installLocation string
-	if ok, installLocation = InstallLocation(fullName); ok {
-		gameLocation = filepath.Join(installLocation, "Game")
-		if f, err := os.Stat(gameLocation); err != nil || !f.IsDir() {
-			return false, ""
+func (g Game) Path() (folder string) {
+	if ok, path := g.basePath(); ok {
+		folder = filepath.Join(path, "Game")
+		if f, err := os.Stat(folder); err != nil || !f.IsDir() {
+			folder = ""
 		}
-		ok = true
 	}
 	return
 }

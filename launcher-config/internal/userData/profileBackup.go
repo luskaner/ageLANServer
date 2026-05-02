@@ -6,22 +6,22 @@ import (
 
 var profiles []Data
 
-func setProfileData(gameId string) bool {
+func setProfileData(path *commonUserData.Path) bool {
 	profiles = make([]Data, 0)
-	err, commonProfiles := commonUserData.Profiles(gameId)
+	err, commonProfiles := path.Profiles()
 	if err != nil {
 		return false
 	}
 	for entry := range commonProfiles.Iter() {
-		if entry.Type == commonUserData.TypeActive {
-			profiles = append(profiles, Data{entry.Path})
+		if entry.Type() == commonUserData.TypeActive {
+			profiles = append(profiles, Data{entry.Path()})
 		}
 	}
 	return true
 }
 
-func runProfileMethod(gameId string, mainMethod func(data Data) bool, cleanMethod func(data Data) bool, stopOnFailed bool) bool {
-	if !setProfileData(gameId) {
+func runProfileMethod(path *commonUserData.Path, mainMethod func(data Data) bool, cleanMethod func(data Data) bool, stopOnFailed bool) bool {
+	if !setProfileData(path) {
 		return false
 	}
 	for i := range profiles {
@@ -46,10 +46,10 @@ func restoreProfile(data Data) bool {
 	return data.Restore()
 }
 
-func BackupProfiles(gameId string) bool {
-	return runProfileMethod(gameId, backupProfile, restoreProfile, true)
+func BackupProfiles(path *commonUserData.Path) bool {
+	return runProfileMethod(path, backupProfile, restoreProfile, true)
 }
 
-func RestoreProfiles(gameId string, reverseFailed bool) bool {
-	return runProfileMethod(gameId, restoreProfile, backupProfile, reverseFailed)
+func RestoreProfiles(path *commonUserData.Path, reverseFailed bool) bool {
+	return runProfileMethod(path, restoreProfile, backupProfile, reverseFailed)
 }

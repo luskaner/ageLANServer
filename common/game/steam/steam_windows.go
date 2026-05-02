@@ -6,34 +6,36 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-func ConfigPath() (path string) {
-	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam`, registry.QUERY_VALUE)
+func read(k registry.Key, path string, val string, _64bitView *bool) (value string) {
+	var access uint32 = registry.QUERY_VALUE
+	if _64bitView != nil {
+		if *_64bitView {
+			access |= registry.WOW64_64KEY
+		} else {
+			access |= registry.WOW64_32KEY
+		}
+	}
+	key, err := registry.OpenKey(k, path, access)
 	if err != nil {
 		return
 	}
 	defer func(key registry.Key) {
 		_ = key.Close()
 	}(key)
-	var val string
-	val, _, err = key.GetStringValue("SteamPath")
+	value, _, err = key.GetStringValue(val)
 	if err != nil {
-		return
+		value = ""
 	}
-	return val
+	return
+}
+
+func ConfigPath() (path string) {
+	return read(registry.CURRENT_USER, `SOFTWARE\Valve\Steam`, `SteamPath`, nil)
 }
 
 func ConfigPathAlt() (path string) {
-	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam`, registry.QUERY_VALUE)
-	if err != nil {
-		return
+	if p := read(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam`, `UninstallString`, new(false)); p != "" {
+		path = filepath.Dir(p)
 	}
-	defer func(key registry.Key) {
-		_ = key.Close()
-	}(key)
-	var val string
-	val, _, err = key.GetStringValue("UninstallString")
-	if err != nil {
-		return
-	}
-	return filepath.Dir(val)
+	return
 }

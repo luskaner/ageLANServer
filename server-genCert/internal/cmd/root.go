@@ -21,7 +21,7 @@ func rootCmd(_ *pflag.FlagSet) error {
 		fmt.Println("Could not get executable path")
 		os.Exit(common.ErrGeneral)
 	}
-	serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), executables.Filename(true, executables.Server))
+	serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), executables.NativeFileName(true, executables.Server))
 	serverFolder := common.CertificatePairFolder(serverExe)
 	if serverFolder == "" {
 		fmt.Println("Failed to determine certificate pairs folder")

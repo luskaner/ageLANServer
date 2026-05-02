@@ -25,7 +25,7 @@ func ResolveIsolateValue(value string, officialLauncher bool) bool {
 	}
 }
 
-func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
+func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (errorCode int) {
 	if metadata || profiles {
 		var isolateItems []string
 		if metadata {
@@ -37,9 +37,17 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool) (errorCode int) {
 		logger.Println("Backing up " + strings.Join(isolateItems, " and ") + ".")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_isolate", func(writer io.Writer) {
-			if result := executor.RunSetUp(c.gameId, nil, nil, nil, nil, metadata, profiles, false, "", "", "", writer, func(options exec.Options) {
-				commonLogger.Println("run config setup for data isolation", options.String())
-			}); !result.Success() {
+			cfgSetupOpts := &executor.ConfigSetupOptions{
+				GameId:         c.gameId,
+				BackupMetadata: metadata,
+				BackupProfiles: profiles,
+				GameDataPath:   path,
+				Out:            writer,
+				OptionsFn: func(options exec.Options) {
+					commonLogger.Println("run config setup for data isolation", options.String())
+				},
+			}
+			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
 				logger.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
 				errorCode = internal.ErrMetadataProfilesSetup

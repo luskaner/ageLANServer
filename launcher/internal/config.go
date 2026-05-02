@@ -5,12 +5,16 @@ type Executable struct {
 	Args []string `koanf:"ExecutableArgs"`
 }
 
+type ClientIsolation struct {
+	Metadata string
+	Profiles string
+	Path     string
+}
+
 type Config struct {
 	CanAddHost               bool
 	CanBroadcastBattleServer string
 	Log                      bool
-	IsolateMetadata          string
-	IsolateProfiles          string
 	SetupCommand             []string
 	RevertCommand            []string
 	Certificate              ConfigCertificate
@@ -41,6 +45,7 @@ type Server struct {
 type Client struct {
 	Executable `koanf:",squash"`
 	Path       string
+	Isolation  ClientIsolation
 }
 
 type Configuration struct {

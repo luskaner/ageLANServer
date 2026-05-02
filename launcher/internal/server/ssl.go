@@ -104,7 +104,7 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 
 func GenerateCertificatePair(certificateFolder string, optionsFn func(options exec.Options)) (result *exec.Result) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
-	exePath := filepath.Join(baseFolder, executables.Filename(false, executables.ServerGenCert))
+	exePath := filepath.Join(baseFolder, executables.NativeFileName(false, executables.ServerGenCert))
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}

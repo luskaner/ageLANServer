@@ -23,6 +23,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
+	"github.com/luskaner/ageLANServer/common/game"
+	gameExecutor "github.com/luskaner/ageLANServer/common/game/executor"
+	"github.com/luskaner/ageLANServer/common/game/executor/custom"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -40,7 +43,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	gameExecutor "github.com/luskaner/ageLANServer/launcher/internal/game/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
@@ -94,7 +96,7 @@ func Execute() error {
 	fs.StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
 	fs.StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	fs.Bool("serverSingleAutoSelect", false, `Auto-select the server when a single one is discovered.`)
-	serverExe := executables.Filename(false, executables.Server)
+	serverExe := executables.NativeFileName(false, executables.Server)
 	fs.StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
 	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use Steam`
@@ -112,9 +114,6 @@ func Execute() error {
 		clientExeTip += `or "msstore"`
 	}
 	clientExeTip += " to use the default launcher."
-	if runtime.GOOS == "linux" {
-		clientExeTip += " If using a custom launcher, the isolation of the metadata and profiles will be disabled."
-	}
 	fs.StringP("clientExe", "l", "auto", clientExeTip)
 	fs.StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
 
@@ -201,15 +200,15 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerRun))
 		return nil
 	}
-	isolateMetadataStr := cfg.Config.IsolateMetadata
+	isolateMetadataStr := cfg.Client.Isolation.Metadata
 	if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
-		logger.Printf("Invalid value for Config.IsolateMetadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
+		logger.Printf("Invalid value for Client.Isolation.Metadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
 		errorCode.Store(int32(internal.ErrInvalidIsolateMetadata))
 		return nil
 	}
-	isolateProfilesStr := cfg.Config.IsolateProfiles
+	isolateProfilesStr := cfg.Client.Isolation.Profiles
 	if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
-		logger.Printf("Invalid value for Config.IsolateProfiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
+		logger.Printf("Invalid value for Client.Isolation.Profiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
 		errorCode.Store(int32(internal.ErrInvalidIsolateProfiles))
 		return nil
 	}
@@ -269,9 +268,13 @@ func runRoot(fs *pflag.FlagSet) error {
 		return nil
 	}
 	canAddHost := cfg.Config.CanAddHost
-	var clientExecutable string
+	clientExecutable := cfg.Client.Executable.Path
 	var clientExecutableOfficial bool
-	if clientExecutable = cfg.Client.Executable.Path; clientExecutable == "auto" || clientExecutable == "steam" || clientExecutable == "msstore" {
+	if clientExecutable == "auto" || clientExecutable == "steam" {
+		clientExecutableOfficial = true
+	} else if runtime.GOOS == "windows" {
+		clientExecutableOfficial = clientExecutable == "msstore"
+	} else if clientExecutable == "steam_wine" || clientExecutable == "steam_crossover" {
 		clientExecutableOfficial = true
 	}
 	var isolateMetadata bool
@@ -279,6 +282,22 @@ func runRoot(fs *pflag.FlagSet) error {
 		isolateMetadata = cmdUtils.ResolveIsolateValue(isolateMetadataStr, clientExecutableOfficial)
 	}
 	isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
+	var isolationPath string
+	if cfg.Client.Isolation.Path != "auto" {
+		var isolationDir os.FileInfo
+		if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable.Path), nil); err != nil || !isolationDir.IsDir() {
+			logger.Println("Invalid isolation path")
+			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
+			return nil
+		} else {
+			logger.BasePath = isolationPath
+			logger.WriteFileLog(gameId, "post isolation path")
+		}
+	} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
+		logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
+		errorCode.Store(int32(internal.ErrInvalidIsolationPath))
+		return nil
+	}
 	var serverExecutable string
 	if serverExecutable = cfg.Server.Executable.Path; serverExecutable != "auto" {
 		var serverFile os.FileInfo
@@ -338,36 +357,30 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 		return nil
 	}
-
+	config.SetGameId(gameId)
 	logger.Println("Looking for the game...")
 	var gamePath string
 	executer := gameExecutor.MakeExec(gameId, clientExecutable)
-	var customExecutor gameExecutor.CustomExec
-	switch executer.(type) {
-	case gameExecutor.SteamExec:
-		logger.Println("Game found on Steam.")
-		if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
-			gamePath = executer.(gameExecutor.SteamExec).GamePath()
+	if executer != nil {
+		logger.Printf("Game found on %s.\n", executer.String())
+	} else {
+		logger.Println("Game not found.")
+		errorCode.Store(int32(internal.ErrGameLauncherNotFound))
+		return nil
+	}
+	if isolationPath == "" {
+		if isolationPath = config.IsolationPath(executer); isolationPath == "" {
+			logger.Println("Failed to auto retrieve isolation path")
+			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
+		} else {
+			logger.BasePath = isolationPath
+			logger.WriteFileLog(gameId, "post isolation path")
 		}
-	case gameExecutor.XboxExec:
-		logger.Println("Game found on Xbox.")
-		if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
-			gamePath = executer.(gameExecutor.XboxExec).GamePath()
-		}
-	case gameExecutor.CustomExec:
-		customExecutor = executer.(gameExecutor.CustomExec)
-		logger.Println("Game found on custom path.")
-		if runtime.GOOS == "linux" {
-			if isolateMetadata {
-				logger.Println("Isolating metadata is not supported.")
-				isolateMetadata = false
-			}
-			if isolateProfiles {
-				logger.Println("Isolating profiles is not supported.")
-				isolateProfiles = false
-			}
-		}
-		if gameId != common.GameAoE1 && gameId != common.GameAoE4 {
+	}
+	var customExecutor custom.Exec
+	var ok bool
+	if customExecutor, ok = executer.(custom.Exec); ok {
+		if config.NeedsGamePath() {
 			if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 				logger.Println("Invalid client path")
 				errorCode.Store(int32(internal.ErrInvalidClientPath))
@@ -376,10 +389,8 @@ func runRoot(fs *pflag.FlagSet) error {
 				gamePath = clientPath
 			}
 		}
-	default:
-		logger.Println("Game not found.")
-		errorCode.Store(int32(internal.ErrGameLauncherNotFound))
-		return nil
+	} else if config.NeedsGamePath() {
+		gamePath = executer.(game.Locatable).Path()
 	}
 	var gameCaCertPath string
 	if gamePath != "" {
@@ -389,9 +400,6 @@ func runRoot(fs *pflag.FlagSet) error {
 			logger.Cacert = &caCert
 		}
 	}
-
-	config.SetGameId(gameId)
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -405,14 +413,14 @@ func runRoot(fs *pflag.FlagSet) error {
 	}()
 	// Let the agent and config-admin-agent 10s to finish each before killing them
 	waitDuration := 10 * time.Second
-	agent := executables.Filename(false, executables.LauncherAgent)
+	agent := executables.NativeFileName(false, executables.LauncherAgent)
 	if _, proc, err := commonProcess.Process(agent); err == nil && proc != nil {
 		logger.Println("'agent' is running, waiting up to 10 seconds for it to end...")
 		if !commonProcess.WaitForProcess(proc, &waitDuration) {
 			logger.Println("'agent' did not exit on its own.")
 		}
 	}
-	if _, proc, err := commonProcess.Process(executables.Filename(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
+	if _, proc, err := commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
 		logger.Println("'config-admin-agent' is running, waiting up to 10 seconds for it to end...")
 		if !commonProcess.WaitForProcess(proc, &waitDuration) {
 			logger.Println("'config-admin-agent' did not exit on its own.")
@@ -434,7 +442,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		return nil
 	}
 	var proc *os.Process
-	_, proc, err = commonProcess.Process(executables.Filename(false, executables.Server))
+	_, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.Server))
 	if err == nil && proc != nil {
 		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 	}
@@ -620,7 +628,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		return nil
 	}
 	logger.WriteFileLog(gameId, "post add cert")
-	errorCode.Store(int32(config.IsolateUserData(isolateMetadata, isolateProfiles)))
+	errorCode.Store(int32(config.IsolateUserData(isolateMetadata, isolateProfiles, isolationPath)))
 	if errorCode.Load() != int32(common.ErrSuccess) {
 		return nil
 	}
@@ -632,7 +640,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		}
 		logger.WriteFileLog(gameId, "post add game cert")
 	}
-	errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer)))
+	errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer, isolationPath)))
 	return nil
 }
 
@@ -644,6 +652,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Config.Certificate.CanTrustInGame":         true,
 		"Config.CanBroadcastBattleServer":           "auto",
 		"Config.Log":                                false,
+		"Config.DataPath":                           "auto",
 		"Config.IsolateMetadata":                    "required",
 		"Config.IsolateProfiles":                    "required",
 		"Config.SetupCommand":                       []string{},
@@ -664,8 +673,8 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Server.BattleServerManager.Executable":     "auto",
 		"Server.BattleServerManager.ExecutableArgs": []string{"-e", "{Game}", "-r"},
 	}
-	for game := range common.SupportedGames.Iter() {
-		defaults[fmt.Sprintf("Games.%s.Hosts", game)] = []string{netip.IPv4Unspecified().String()}
+	for g := range common.SupportedGames.Iter() {
+		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
 	}
 	bindings := map[string]string{
 		"canAddHost":                    "Config.CanAddHost",

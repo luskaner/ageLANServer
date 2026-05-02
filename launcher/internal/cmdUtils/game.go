@@ -8,17 +8,18 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game/executor/base"
+	"github.com/luskaner/ageLANServer/common/game/executor/custom"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/battleServerBroadcast"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
-	gameExecutor "github.com/luskaner/ageLANServer/launcher/internal/game/executor"
 )
 
 func (c *Config) KillAgent() {
-	agent := executables.Filename(false, executables.LauncherAgent)
+	agent := executables.NativeFileName(false, executables.LauncherAgent)
 	logger.Println("Killing 'agent' if needed...")
 	err := commonProcess.Kill(agent)
 	if err != nil {
@@ -27,7 +28,11 @@ func (c *Config) KillAgent() {
 	}
 }
 
-func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor gameExecutor.CustomExec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string) (errorCode int) {
+func (c *Config) NeedsGamePath() bool {
+	return c.gameId != common.GameAoE1 && c.gameId != common.GameAoE4
+}
+
+func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (errorCode int) {
 	if canBroadcastBattleServer != "false" {
 		if battleServerBroadcast.Required() {
 			canBroadcastBattleServer = "true"
@@ -51,9 +56,6 @@ func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor g
 			logger.Println("Error message: " + err.Error())
 			return common.ErrFileLog
 		}
-		if loggerPath == "" {
-			loggerPath = "-"
-		}
 		result := executor.StartAgent(
 			c.gameId,
 			steamProcess,
@@ -62,6 +64,7 @@ func (c *Config) LaunchAgentAndGame(executer gameExecutor.Exec, customExecutor g
 			canBroadcastBattleServer == "true",
 			c.battleServerExe,
 			c.battleServerRegion,
+			basePath,
 			loggerPath,
 			f,
 			func(options commonExecutor.Options) {

@@ -1,14 +1,4 @@
 [Config]
-# If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
-# If it resolves to 'true', the launcher will isolate the metadata cache of the game, otherwise, it will be shared
-# On AoE I this is always false as it does not store metadata.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateMetadata = 'required'
-# If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
-# If it resolves to 'true', the launcher will isolate user profiles for the game, otherwise, it will be shared
-# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
-# Linux Note: Only supported when not using a custom launcher.
-IsolateProfiles = 'required'
 # Executable to run (including arguments) to run first after the "Setting up..." line.
 # The command must return a 0 exit code to continue. If you need to keep it running spawn a new detached process.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
@@ -20,11 +10,16 @@ SetupCommand = []
 RevertCommand = []
 
 [Client]
-# The path to the game launcher, if 'auto', the Steam and then the Xbox (Windows-only) one will be launched if found
-# Use a path to the game launcher, 'steam' or 'msstore' (non AoM: RT and Windows-only) to use the default launcher.
-# When using an official launcher, Config.IsolateMetadata and Config.IsolateProfiles must be 'required' or 'true'.
+# The path to the game launcher, the type (as seen next) or, if 'auto', then this priority applies:
+# Windows:
+# 1. Steam ('steam').
+# 2. Microsoft Store - Xbox ('msstore'). Not available for AoM: RT.
+# Linux:
+# 1. Steam ('steam').
+# 2. Steam with CrossOver ('steam_crossover').
+# 3. Steam with Wine ('steam_wine').
+# When using an official launcher, Config.Isolatation.Metadata and Config.Isolatation.Profiles must be 'required' or 'true'.
 # Note: It is not recommended to use an executable that requires admin rights (but it is supported).
-# Linux Note: setting a custom launcher will make 'Config.IsolateMetadata' and 'Config.IsolateProfiles' act as false.
 # Note 2: You may use environment variables.
 Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
@@ -43,3 +38,16 @@ ExecutableArgs = []
 # Required that the game path can be found in all games except AoE I: DE and AoE IV: AE.
 # Note: You may use environment variables.
 Path = 'auto'
+
+[Client.Isolation]
+# Path to the game data, if 'auto' it will be detected automatically based on the game and Client.Executable.
+# Linux Note: Required to be set to the path if Client.Executable is set to a custom launcher (and some isolation is enabled).
+Path = 'auto'
+# If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
+# If it resolves to 'true', the launcher will isolate the metadata cache of the game, otherwise, it will be shared
+# On AoE I this is always false as it does not store metadata.
+Metadata = 'required'
+# If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
+# If it resolves to 'true', the launcher will isolate user profiles for the game, otherwise, it will be shared
+# May cause issues with Steam Cloud or Xbox Cloud (depending on the game version) unless you disable cloud sync.
+Profiles = 'required'

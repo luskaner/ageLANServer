@@ -9,7 +9,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 const elementSepDotGlob = "."
@@ -125,10 +124,10 @@ func sortByModTime(filesInfo *[]os.FileInfo) {
 	})
 }
 
-func CopyGameLogs(gameId string, logRoot string) {
+func CopyGameLogs(gameId string, basePath string, logRoot string) {
 	commonLogger.Println("Copying game logs...")
 	if game, ok := gameIdToGame[gameId]; ok {
-		paths := game.Paths(userData.Path(gameId))
+		paths := game.Paths(basePath)
 		for _, path := range paths {
 			str := fmt.Sprintf("\tCopying %s... ", path)
 			if copyPathToDir(path, logRoot) {
