@@ -28,7 +28,6 @@ func (exec Exec) DoCustom(args []string, optionsFn func(options *commonExecutor.
 		Args:        args,
 		Pid:         true,
 	}
-	options.Args = append(options.Args, args...)
 	if optionsFn != nil {
 		optionsFn(&options)
 	}

@@ -18,14 +18,14 @@ type LocatableString interface {
 }
 
 func steamCrossOverPath(gameId string, battleServerPath string) (path string) {
-	if ex, ok := wine.NewExec(gameId); ok {
+	if ex, ok := crossover.NewExec(gameId); ok {
 		path = winePath(ex, gameId, battleServerPath)
 	}
 	return
 }
 
 func steamWinePath(gameId string, battleServerPath string) (path string) {
-	if ex, ok := crossover.NewExec(gameId); ok {
+	if ex, ok := wine.NewExec(gameId); ok {
 		path = winePath(ex, gameId, battleServerPath)
 	}
 	return

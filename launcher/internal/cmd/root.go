@@ -285,7 +285,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	var isolationPath string
 	if cfg.Client.Isolation.Path != "auto" {
 		var isolationDir os.FileInfo
-		if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable.Path), nil); err != nil || !isolationDir.IsDir() {
+		if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Isolation.Path), nil); err != nil || !isolationDir.IsDir() {
 			logger.Println("Invalid isolation path")
 			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
 			return nil
@@ -653,8 +653,8 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Config.CanBroadcastBattleServer":           "auto",
 		"Config.Log":                                false,
 		"Config.DataPath":                           "auto",
-		"Config.IsolateMetadata":                    "required",
-		"Config.IsolateProfiles":                    "required",
+		"Config.Isolation.Metadata":                 "required",
+		"Config.IsolationProfiles":                  "required",
 		"Config.SetupCommand":                       []string{},
 		"Config.RevertCommand":                      []string{},
 		"Client.Executable":                         "auto",
@@ -681,8 +681,8 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
 		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",
 		"log":                           "Config.Log",
-		"isolateMetadata":               "Config.IsolateMetadata",
-		"isolateProfiles":               "Config.IsolateProfiles",
+		"isolateMetadata":               "Config.Isolation.Metadata",
+		"isolateProfiles":               "Config.Isolation.Profiles",
 		"setupCommand":                  "Config.SetupCommand",
 		"revertCommand":                 "Config.RevertCommand",
 		"serverStart":                   "Server.Start",

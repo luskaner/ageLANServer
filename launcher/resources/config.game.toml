@@ -18,7 +18,7 @@ RevertCommand = []
 # 1. Steam ('steam').
 # 2. Steam with CrossOver ('steam_crossover').
 # 3. Steam with Wine ('steam_wine').
-# When using an official launcher, Config.Isolatation.Metadata and Config.Isolatation.Profiles must be 'required' or 'true'.
+# When using an official launcher, Config.Isolation.Metadata and Config.Isolatation.Profiles must be 'required' or 'true'.
 # Note: It is not recommended to use an executable that requires admin rights (but it is supported).
 # Note 2: You may use environment variables.
 Executable = 'auto'
