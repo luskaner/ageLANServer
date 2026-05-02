@@ -18,6 +18,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/hosts"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
@@ -38,7 +39,7 @@ func removeUserCert() bool {
 
 func restoreMetadata() bool {
 	commonLogger.Println("Restoring previously backed up metadata")
-	if userData.Metadata(launcherCommonCmd.GameId).Restore() {
+	if userData.Metadata(path).Restore() {
 		commonLogger.Println("Successfully restored metadata")
 		return true
 	}
@@ -49,7 +50,7 @@ func restoreMetadata() bool {
 
 func restoreProfiles() bool {
 	commonLogger.Println("Restoring previously backed up profiles")
-	if userData.RestoreProfiles(launcherCommonCmd.GameId, true) {
+	if userData.RestoreProfiles(path, true) {
 		commonLogger.Println("Successfully restored profiles")
 		return true
 	}
@@ -109,7 +110,7 @@ var addedGameCert bool
 func runSetUp(args []string) error {
 	fs := pflag.NewFlagSet("setup", pflag.ContinueOnError)
 	launcherCommonCmd.InitSetUp(fs)
-	addGamePathFlag(fs)
+	addCommonFlags(fs)
 	commonCmd.LogRootCommand(fs, &logRoot)
 	fs.StringVarP(&hostFilePath, "hostFilePath", "o", "", "Path to the host file. Only relevant when using 'ip' option. If empty, it will use the system path")
 	fs.StringVarP(&certFilePath, "certFilePath", "t", "", "Path to the certificate file. It requires the 'localCert' option to be set. If non-empty the certificate will be saved only to the specified path.")
@@ -147,9 +148,15 @@ func runSetUp(args []string) error {
 	} else if launcherCommonCmd.GameId == common.GameAoE4 {
 		doRestoreCaStoreCert = false
 	}
-	if (doBackupMetadata || doBackupProfiles) && !common.SupportedGames.ContainsOne(launcherCommonCmd.GameId) {
-		commonLogger.Println("Invalid game type")
-		os.Exit(launcherCommon.ErrInvalidGame)
+	if doBackupMetadata || doBackupProfiles {
+		if !common.SupportedGames.ContainsOne(launcherCommonCmd.GameId) {
+			commonLogger.Println("Invalid game type")
+			os.Exit(launcherCommon.ErrInvalidGame)
+		} else if fileInfo, err := os.Stat(dataPath); err != nil || !fileInfo.IsDir() {
+			commonLogger.Println("Invalid data path")
+			os.Exit(internal.ErrInvalidDataPath)
+		}
+		path = commonUserData.NewPath(dataPath, launcherCommonCmd.GameId)
 	}
 	var addLocalCertData []byte = nil
 	if certFilePath != "" {
@@ -182,7 +189,7 @@ func runSetUp(args []string) error {
 	}
 	if doBackupMetadata {
 		commonLogger.Println("Backing up metadata")
-		if userData.Metadata(launcherCommonCmd.GameId).Backup() {
+		if userData.Metadata(path).Backup() {
 			commonLogger.Println("Successfully backed up metadata")
 			backedUpMetadata = true
 		} else {
@@ -193,7 +200,7 @@ func runSetUp(args []string) error {
 	}
 	if doBackupProfiles {
 		commonLogger.Println("Backing up profiles")
-		if userData.BackupProfiles(launcherCommonCmd.GameId) {
+		if userData.BackupProfiles(path) {
 			commonLogger.Println("Successfully backed up profiles")
 			backedUpProfiles = true
 		} else {
@@ -252,9 +259,7 @@ func runSetUp(args []string) error {
 		certFile, err := os.Create(certFilePath)
 		if err == nil {
 			err = cert.WriteAsPem(launcherCommonCmd.AddLocalCertData, certFile)
-			if err != nil {
-				_ = certFile.Close()
-			}
+			_ = certFile.Close()
 		}
 		if err != nil {
 			commonLogger.Println("Error saving certificate file:", err)
@@ -268,11 +273,13 @@ func runSetUp(args []string) error {
 			result := admin.StartAgentIfNeeded()
 			if !result.Success() {
 				commonLogger.Println("Failed to start 'config-admin-agent'")
-				if result.Err != nil {
-					commonLogger.Println(result.Err)
-				}
-				if result.ExitCode != common.ErrSuccess {
-					commonLogger.Println(result.ExitCode)
+				if result != nil {
+					if result.Err != nil {
+						commonLogger.Println(result.Err)
+					}
+					if result.ExitCode != common.ErrSuccess {
+						commonLogger.Println(result.ExitCode)
+					}
 				}
 				errorCode = internal.ErrStartAgent
 				undoSetUp()
@@ -317,7 +324,7 @@ func runSetUp(args []string) error {
 					if err := admin.StopAgentIfNeeded(); err != nil {
 						failedStopAgent := true
 						if isAdmin {
-							err := commonProcess.Kill(executables.Filename(true, executables.LauncherConfigAdminAgent))
+							err := commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
 							if err == nil {
 								commonLogger.Println("Successfully killed 'config-admin-agent'.")
 								failedStopAgent = false

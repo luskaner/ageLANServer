@@ -26,7 +26,7 @@ func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot s
 	if logRoot != "" {
 		args = append(args, "--logRoot", logRoot)
 	}
-	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
 	if optionsFn != nil {
 		optionsFn(options)
 	}
@@ -54,7 +54,7 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 	if logRoot != "" {
 		args = append(args, "--logRoot", logRoot)
 	}
-	options := exec.Options{File: executables.Filename(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
+	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: args}
 	if optionsFn != nil {
 		optionsFn(options)
 	}

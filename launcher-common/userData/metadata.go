@@ -11,9 +11,9 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 )
 
-func metadataFolder(gameId string) string {
+func (u *Path) metadataFolder() string {
 	var p string
-	switch gameId {
+	switch u.GameId() {
 	case common.GameAoE2:
 		p = "metadata"
 	case common.GameAoE3:
@@ -26,8 +26,8 @@ func metadataFolder(gameId string) string {
 	return p
 }
 
-func Metadatas(gameId string) (err error, metadatas mapset.Set[Data]) {
-	p := filepath.Join(Path(gameId), metadataFolder(gameId))
+func (u *Path) Metadatas() (err error, metadatas mapset.Set[Data]) {
+	p := filepath.Join(u.String(), u.metadataFolder())
 	if _, err = os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 		oldParent := p
 		for parent := filepath.Dir(p); parent != oldParent; parent = filepath.Dir(parent) {

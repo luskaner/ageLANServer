@@ -4,15 +4,15 @@ import (
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
-func Metadata(gameId string) Data {
+func Metadata(path *commonUserData.Path) Data {
 	data := Data{}
-	err, metadatas := commonUserData.Metadatas(gameId)
+	err, metadatas := path.Metadatas()
 	if err != nil {
 		return data
 	}
 	for metadata := range metadatas.Iter() {
-		if metadata.Type == commonUserData.TypeActive {
-			data.Path = metadata.Path
+		if metadata.Type() == commonUserData.TypeActive {
+			data.Path = metadata.Path()
 			break
 		}
 	}

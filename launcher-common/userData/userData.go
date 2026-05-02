@@ -9,7 +9,9 @@ import (
 
 const backupSuffix = ".bak"
 const serverSuffix = ".lan"
+
 const prefix = "Games"
+const aoe4Prefix = "My " + prefix
 
 const (
 	TypeActive = iota
@@ -23,13 +25,34 @@ var suffixToType = map[string]int{
 }
 
 type Data struct {
-	Type int
-	Path string
+	typ  int
+	path string
 }
 
-func Path(gameId string) string {
+func (d *Data) Type() int {
+	return d.typ
+}
+
+func (d *Data) Path() string {
+	return d.path
+}
+
+type Path struct {
+	path   string
+	gameId string
+}
+
+func (u *Path) String() string {
+	return u.path
+}
+
+func (u *Path) GameId() string {
+	return u.gameId
+}
+
+func NewPath(path string, gameId string) *Path {
 	var s string
-	addPrefix := true
+	prefixToUse := prefix
 	switch gameId {
 	case common.GameAoE1:
 		s = `Age of Empires DE`
@@ -38,16 +61,12 @@ func Path(gameId string) string {
 	case common.GameAoE3:
 		s = `Age of Empires 3 DE`
 	case common.GameAoE4:
-		addPrefix = false
 		s = `Age of Empires IV`
+		prefixToUse = aoe4Prefix
 	case common.GameAoM:
 		s = `Age of Mythology Retold`
 	}
-	path := basePath(gameId)
-	if addPrefix {
-		path = filepath.Join(path, prefix)
-	}
-	return filepath.Join(path, s)
+	return &Path{filepath.Join(path, prefixToUse, s), gameId}
 }
 
 func typ(path string) (typ int, ext string) {

@@ -13,7 +13,7 @@ import (
 func ResolveSSLFilesPath(gameId string, ssl internal.SSL) (resolvedCertFile string, resolvedKeyFile string, err error) {
 	if ssl.Auto {
 		commonLogger.Println("Auto resolving SSL certificate and key files...")
-		serverExe := executables.FindPath(executables.Filename(true, executables.Server))
+		serverExe := executables.FindPath(executables.NativeFileName(true, executables.Server))
 		if serverExe == "" {
 			err = fmt.Errorf("could not find server executable")
 			return

@@ -40,9 +40,16 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		return
 	}
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_game", func(writer io.Writer) {
-		if result := executor.RunSetUp(gameId, nil, nil, nil, serverCertificate.Raw, false, false, false, "", "", gamePath, writer, func(options exec.Options) {
-			commonLogger.Println("run config setup for CA game cert", options.String())
-		}); !result.Success() {
+		cfgSetupOpts := &executor.ConfigSetupOptions{
+			GameId:          gameId,
+			AddGameCertData: serverCertificate.Raw,
+			GameBinPath:     gamePath,
+			Out:             writer,
+			OptionsFn: func(options exec.Options) {
+				commonLogger.Println("run config setup for CA game cert", options.String())
+			},
+		}
+		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			logger.Println("Failed to save CA certificate to game")
 			errorCode = internal.ErrConfigCACertAdd
 			if result.Err != nil {

@@ -17,58 +17,87 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-func RevertFlags(game string, unmapIPs bool, removeUserCert bool, removeLocalCert bool, restoreGameCert bool, restoreMetadata bool, restoreProfiles bool, hostFilePath string, certFilePath string, gamePath string, logRoot string, stopAgent bool, failfast bool) []string {
+type ConfigRevertFlagOptions struct {
+	GameId          string
+	UnmapIPs        bool
+	RemoveUserCert  bool
+	RemoveLocalCert bool
+	RestoreGameCert bool
+	RestoreMetadata bool
+	RestoreProfiles bool
+	HostFilePath    string
+	CertFilePath    string
+	GameBinPath     string
+	GameDataPath    string
+	LogRoot         string
+	StopAgent       bool
+	FailFast        bool
+}
+
+func (c *ConfigRevertFlagOptions) Flags() []string {
 	args := make([]string, 0)
-	if game != "" {
+	if c.GameId != "" {
 		args = append(args, "-e")
-		args = append(args, game)
+		args = append(args, c.GameId)
 	}
-	if stopAgent {
+	if c.StopAgent {
 		args = append(args, "-g")
 	}
-	if !failfast {
+	if !c.FailFast {
 		args = append(args, "-a")
 	} else {
-		if unmapIPs {
+		if c.UnmapIPs {
 			args = append(args, "-i")
 		}
-		if removeUserCert {
+		if c.RemoveUserCert {
 			args = append(args, "-u")
 		}
-		if removeLocalCert {
+		if c.RemoveLocalCert {
 			args = append(args, "-l")
 		}
-		if restoreMetadata {
+		if c.RestoreMetadata {
 			args = append(args, "-m")
 		}
-		if restoreProfiles {
+		if c.RestoreProfiles {
 			args = append(args, "-p")
 		}
-		if restoreGameCert {
+		if c.RestoreGameCert {
 			args = append(args, "-s")
 		}
 	}
-	if gamePath != "" {
+	if c.GameBinPath != "" {
 		args = append(args, "--gamePath")
-		args = append(args, gamePath)
+		args = append(args, c.GameBinPath)
 	}
-	if logRoot != "" {
+	if c.GameDataPath != "" {
+		args = append(args, "--dataPath")
+		args = append(args, c.GameDataPath)
+	}
+	if c.LogRoot != "" {
 		args = append(args, "--logRoot")
-		args = append(args, logRoot)
+		args = append(args, c.LogRoot)
 	}
-	if hostFilePath != "" {
+	if c.HostFilePath != "" {
 		args = append(args, "-o")
-		args = append(args, hostFilePath)
+		args = append(args, c.HostFilePath)
 	}
-	if certFilePath != "" {
+	if c.CertFilePath != "" {
 		args = append(args, "-t")
-		args = append(args, certFilePath)
+		args = append(args, c.CertFilePath)
 	}
 	return args
 }
 
 func allRevertFlags(gameId string, logRoot string, stopAgent bool) []string {
-	return RevertFlags(gameId, true, runtime.GOOS == "windows", true, false, true, true, "", "", "", logRoot, stopAgent, false)
+	options := &ConfigRevertFlagOptions{
+		GameId:          gameId,
+		UnmapIPs:        true,
+		RemoveUserCert:  runtime.GOOS == "windows",
+		RemoveLocalCert: true,
+		LogRoot:         logRoot,
+		StopAgent:       stopAgent,
+	}
+	return options.Flags()
 }
 
 func ConfigRevert(
@@ -144,7 +173,7 @@ func ConfigRevert(
 }
 
 func ConfigAdminAgentRunning(bin bool) bool {
-	if _, proc, err := commonProcess.Process(executables.Filename(bin, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
+	if _, proc, err := commonProcess.Process(executables.NativeFileName(bin, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
 		return true
 	}
 	return false
@@ -176,7 +205,7 @@ func RequiresStopConfigAgent(args []string) bool {
 func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
-	options := exec.Options{File: executables.Filename(bin, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
+	options := exec.Options{File: executables.NativeFileName(bin, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	if optionsFn != nil {
 		optionsFn(options)
 	}

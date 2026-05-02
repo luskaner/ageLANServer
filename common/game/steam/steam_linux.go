@@ -1,10 +1,9 @@
 package steam
 
 import (
-	"os"
 	"strings"
 
-	"mvdan.cc/sh/v3/shell"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 const suffixDir = ".steam/steam"
@@ -29,17 +28,9 @@ var dirs = []string{
 }
 
 func ConfigPath() string {
-	var stat os.FileInfo
-	for _, dir := range dirs {
-		convertedDir, err := shell.Expand(strings.ReplaceAll(dir, "{suffixDir}", suffixDir), nil)
-		if err != nil {
-			continue
-		}
-		if stat, err = os.Stat(convertedDir); err == nil && stat.IsDir() {
-			return convertedDir
-		}
-	}
-	return ""
+	return game.FirstExistingDir(dirs, func(s string) string {
+		return strings.ReplaceAll(s, "{suffixDir}", suffixDir)
+	})
 }
 
 func ConfigPathAlt() (path string) {

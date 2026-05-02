@@ -9,15 +9,33 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 )
 
+type ConfigPathFn func() string
+
+type PathTranslateFn func(s string) string
+
 type Game struct {
-	AppId string
+	appId       string
+	libraryPath string
 }
 
-func NewGame(id string) Game {
-	return Game{AppId: AppId(id)}
+func NewGame(gameId string) (game *Game, ok bool) {
+	return NewCustomGame(gameId, ConfigPath, ConfigPathAlt, func(s string) string {
+		return s
+	})
 }
 
-func AppId(id string) string {
+func NewCustomGame(gameId string, configPathFn ConfigPathFn, configPathAltFn ConfigPathFn, pathTransFn PathTranslateFn) (game *Game, ok bool) {
+	id := appId(gameId)
+	if libraryPath := libraryFolder(id, configPathFn, configPathAltFn); libraryPath != "" {
+		if transLibraryPath := pathTransFn(libraryPath); transLibraryPath != "" {
+			game = &Game{id, transLibraryPath}
+			ok = true
+		}
+	}
+	return
+}
+
+func appId(id string) string {
 	switch id {
 	case common.GameAoE1:
 		return "1017900"
@@ -35,22 +53,22 @@ func AppId(id string) string {
 }
 
 func (g Game) OpenUri() string {
-	return fmt.Sprintf("steam://rungameid/%s", g.AppId)
+	return fmt.Sprintf("steam://rungameid/%s", g.appId)
 }
 
 func openLibraryFolder(path string) (f *os.File, err error) {
 	return os.Open(filepath.Join(path, "config", "libraryfolders.vdf"))
 }
 
-func (g Game) LibraryFolder() (folder string) {
-	p := ConfigPath()
+func libraryFolder(appId string, configPathFn ConfigPathFn, configPathAltFn ConfigPathFn) (folder string) {
+	p := configPathFn()
 	if p == "" {
 		return
 	}
 	f, err := openLibraryFolder(p)
 	if err != nil {
 		// Likely a Steam Emulator messed up the config, try the alternative way
-		p = ConfigPathAlt()
+		p = configPathAltFn()
 		if f, err = openLibraryFolder(p); err != nil {
 			return
 		}
@@ -79,16 +97,16 @@ func (g Game) LibraryFolder() (folder string) {
 		if !ok {
 			continue
 		}
-		if _, exists := apps[g.AppId]; exists {
+		if _, exists := apps[appId]; exists {
 			return folderMap["path"].(string)
 		}
 	}
 	return
 }
 
-func (g Game) Path(libraryFolder string) (folder string) {
-	basePath := filepath.Join(libraryFolder, "steamapps")
-	f, err := os.Open(filepath.Join(basePath, fmt.Sprintf("appmanifest_%s.acf", g.AppId)))
+func (g Game) Path() (folder string) {
+	basePath := filepath.Join(g.libraryPath, "steamapps")
+	f, err := os.Open(filepath.Join(basePath, fmt.Sprintf("appmanifest_%s.acf", g.appId)))
 	if err != nil {
 		return
 	}

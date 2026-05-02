@@ -15,6 +15,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
@@ -35,7 +36,7 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 
 func backupMetadata() bool {
 	commonLogger.Println("Backing up previously restored metadata")
-	if userData.Metadata(launcherCommonCmd.GameId).Backup() {
+	if userData.Metadata(path).Backup() {
 		commonLogger.Println("Successfully backed up metadata")
 		return true
 	}
@@ -46,7 +47,7 @@ func backupMetadata() bool {
 
 func backupProfiles() bool {
 	commonLogger.Println("Backing up previously restored profiles")
-	if userData.BackupProfiles(launcherCommonCmd.GameId) {
+	if userData.BackupProfiles(path) {
 		commonLogger.Println("Successfully backed up profiles")
 		return true
 	}
@@ -99,7 +100,7 @@ var restoredProfiles bool
 func runRevert(args []string) error {
 	fs := pflag.NewFlagSet("revert", pflag.ContinueOnError)
 	launcherCommonCmd.InitRevert(fs)
-	addGamePathFlag(fs)
+	addCommonFlags(fs)
 	commonCmd.LogRootCommand(fs, &logRoot)
 	commonCmd.GameVarCommand(fs, &launcherCommonCmd.GameId)
 	fs.StringVarP(&hostFilePath, "hostFilePath", "o", "", "Path to the host file.")
@@ -148,10 +149,18 @@ func runRevert(args []string) error {
 	} else if launcherCommonCmd.GameId == common.GameAoE4 {
 		doRestoreCaStoreCert = false
 	}
-	if (restoredMetadata || restoredProfiles) && !common.SupportedGames.ContainsOne(launcherCommonCmd.GameId) {
-		commonLogger.Println("Invalid game type")
-		errorCode = launcherCommon.ErrInvalidGame
-		undoRevert()
+	if doRestoreMetadata || doRestoreProfiles {
+		if !common.SupportedGames.ContainsOne(launcherCommonCmd.GameId) {
+			commonLogger.Println("Invalid game type")
+			errorCode = launcherCommon.ErrInvalidGame
+			undoRevert()
+		} else if fileInfo, err := os.Stat(dataPath); err != nil || !fileInfo.IsDir() {
+			commonLogger.Println("Invalid data path")
+			errorCode = internal.ErrInvalidDataPath
+			undoRevert()
+		} else {
+			path = commonUserData.NewPath(dataPath, launcherCommonCmd.GameId)
+		}
 	}
 	commonLogger.Printf("Reverting configuration for %s...\n", launcherCommonCmd.GameId)
 	if doRemoveUserCert {
@@ -166,7 +175,7 @@ func runRevert(args []string) error {
 	}
 	if doRestoreMetadata {
 		commonLogger.Println("Restoring metadata")
-		if userData.Metadata(launcherCommonCmd.GameId).Restore() {
+		if userData.Metadata(path).Restore() {
 			commonLogger.Println("Successfully restored metadata")
 			restoredMetadata = true
 		} else {
@@ -177,7 +186,7 @@ func runRevert(args []string) error {
 	}
 	if doRestoreProfiles {
 		commonLogger.Println("Restoring profiles")
-		if userData.RestoreProfiles(launcherCommonCmd.GameId, reverseFailed) {
+		if userData.RestoreProfiles(path, reverseFailed) {
 			commonLogger.Println("Successfully restored profiles")
 			restoredProfiles = true
 		} else {
@@ -271,7 +280,7 @@ func runRevert(args []string) error {
 			}
 		}
 		if failedStopAgent {
-			exeFileName := executables.Filename(true, executables.LauncherConfigAdminAgent)
+			exeFileName := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
 			if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
 				if isAdmin {
 					if err := commonProcess.KillPidProc(pid, proc); err == nil {

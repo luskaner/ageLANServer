@@ -55,7 +55,9 @@ func main() {
 	commonLogger.Printf("Battle Server region: %s\n", battleServerRegion)
 	logRoot := os.Args[8]
 	commonLogger.Printf("Log root: %s\n", logRoot)
-	if logRoot != "-" {
+	basePath := os.Args[9]
+	commonLogger.Printf("Base path: %s\n", basePath)
+	if logRoot != "-" && basePath != "-" {
 		internal.Initialize(logRoot)
 	}
 	sigs := make(chan os.Signal, 1)
@@ -118,6 +120,7 @@ func main() {
 	}()
 	watch.Watch(
 		gameId,
+		basePath,
 		logRoot,
 		steamProcess,
 		xboxProcess,
