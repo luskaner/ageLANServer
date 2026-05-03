@@ -37,7 +37,7 @@ func run(executor wine.CustomExec, alt bool) (path string) {
 }
 
 func OutputLauncherConfigHelper(executor wine.CustomExec, method string, args []string) (output string) {
-	absExePath, err := filepath.Abs(executables.FileName(false, executables.ConfigHelper, executables.WindowsFileName))
+	absExePath, err := filepath.Abs(executables.ArchFileName(false, executables.ConfigHelper, executables.WindowsFileName))
 	if err != nil {
 		return
 	}

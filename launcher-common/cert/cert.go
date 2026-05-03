@@ -28,14 +28,16 @@ func ReadFromFile(filePath string) (keys []string, keyToIndex map[string]int, va
 	if err != nil {
 		return
 	}
+	return ReadFromData(pemData)
+}
 
+func ReadFromData(data []byte) (keys []string, keyToIndex map[string]int, values []*x509.Certificate, err error) {
 	keys = make([]string, 0)
 	values = make([]*x509.Certificate, 0)
 	keyToIndex = make(map[string]int)
 	var cert *x509.Certificate
 	for {
-		var block *pem.Block
-		block, pemData = pem.Decode(pemData)
+		block, pemData := pem.Decode(data)
 		if block == nil {
 			break
 		}
@@ -60,6 +62,5 @@ func ReadFromFile(filePath string) (keys []string, keyToIndex map[string]int, va
 			break
 		}
 	}
-
 	return
 }

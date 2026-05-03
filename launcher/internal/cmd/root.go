@@ -73,7 +73,7 @@ func Execute() error {
 	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
 	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS != "linux" {
 		canTrustCertificateStr += `, "user"`
 	}
 	canTrustCertificateStr += ` or local (will require admin privileges). Ignored if 'clientExeArgs' contains '{CertFilePath}'.`
@@ -99,19 +99,32 @@ func Execute() error {
 	serverExe := executables.NativeFileName(false, executables.Server)
 	fs.StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
 	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
-	clientExeTip := `The type of game client or the path. "auto" will use Steam`
+	clientExeTip := `The type of game client or the path. "auto" will use `
+	if runtime.GOOS != "darwin" {
+		clientExeTip = "Steam"
+	}
+	unixClientExeTip := `Steam (CrossOver) and then the Steam (Wine) one if found`
 	if runtime.GOOS == "windows" {
 		clientExeTip += ` and then the Xbox one if found`
 	}
-	clientExeTip += `. Use a path to the game launcher`
-	if runtime.GOOS == "windows" {
-		clientExeTip += `,`
-	} else {
-		clientExeTip += " or"
+	if runtime.GOOS == "linux" {
+		clientExeTip += `, `
 	}
-	clientExeTip += ` "steam"`
+	if runtime.GOOS != "windows" {
+		clientExeTip += unixClientExeTip
+	}
+	clientExeTip += `. Use a path to the game launcher,`
+	if runtime.GOOS != "darwin" {
+		clientExeTip += ` "steam"`
+	}
+	if runtime.GOOS == "linux" {
+		clientExeTip += `,`
+	}
+	if runtime.GOOS != "windows" {
+		clientExeTip += ` "steam_crossover" or "steam_wine"`
+	}
 	if runtime.GOOS == "windows" {
-		clientExeTip += `or "msstore"`
+		clientExeTip += ` or "msstore"`
 	}
 	clientExeTip += " to use the default launcher."
 	fs.StringP("clientExe", "l", "auto", clientExeTip)
@@ -162,7 +175,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	logger.WriteFileLog(gameId, "start")
 	isAdmin := commonExecutor.IsAdmin()
 	canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "linux" {
 		canTrustCertificateValues.Remove("user")
 	}
 	if !canTrustCertificateValues.Contains(canTrustCertificate) {

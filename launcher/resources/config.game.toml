@@ -14,8 +14,8 @@ RevertCommand = []
 # Windows:
 # 1. Steam ('steam').
 # 2. Microsoft Store - Xbox ('msstore'). Not available for AoM: RT.
-# Linux:
-# 1. Steam ('steam').
+# Unix-like:
+# 1. Steam ('steam'). Only on Linux.
 # 2. Steam with CrossOver ('steam_crossover').
 # 3. Steam with Wine ('steam_wine').
 # When using an official launcher, Client.Isolation.Metadata and Client.Isolation.Profiles must be 'required' or 'true'.

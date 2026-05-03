@@ -92,7 +92,7 @@ func allRevertFlags(gameId string, logRoot string, stopAgent bool) []string {
 	options := &ConfigRevertFlagOptions{
 		GameId:          gameId,
 		UnmapIPs:        true,
-		RemoveUserCert:  runtime.GOOS == "windows",
+		RemoveUserCert:  runtime.GOOS != "linux",
 		RemoveLocalCert: true,
 		LogRoot:         logRoot,
 		StopAgent:       stopAgent,

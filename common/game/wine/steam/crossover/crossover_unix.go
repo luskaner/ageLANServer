@@ -10,7 +10,6 @@ import (
 )
 
 const prefixEnvVar = "$CX_BOTTLE"
-const baseDir = "$HOME/.cxoffice"
 
 func Prefix(gameId string) string {
 	var prefix string
@@ -18,8 +17,10 @@ func Prefix(gameId string) string {
 	if prefix == "" {
 		prefix = defaultBottleName(gameId)
 	}
-	if f, err := os.Stat(filepath.Join(os.ExpandEnv(baseDir), prefix)); err == nil && f.IsDir() {
-		return prefix
+	for _, baseDir := range baseDirs {
+		if f, err := os.Stat(filepath.Join(os.ExpandEnv(baseDir), prefix)); err == nil && f.IsDir() {
+			return prefix
+		}
 	}
 	return ""
 }

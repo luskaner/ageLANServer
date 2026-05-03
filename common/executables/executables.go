@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -32,14 +33,14 @@ var directories = []string{
 }
 
 func NativeFileName(bin bool, executable string) string {
-	return FileName(bin, executable, nil)
+	return ArchFileName(bin, executable, nil)
 }
 
-func FileName(bin bool, executable string, transfileName func(name string) string) string {
+func ArchFileName(bin bool, executable string, transfileName func(name string) string) string {
 	if transfileName == nil {
 		transfileName = fileName
 	}
-	filename := transfileName(executable)
+	filename := transfileName(fmt.Sprintf("%s_%s", executable, runtime.GOARCH))
 	if !bin {
 		filename = filepath.Join("bin", filename)
 	}

@@ -1,9 +1,11 @@
 package steam
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/game/wine"
 )
 
 const suffixDir = ".steam/steam"
@@ -36,4 +38,12 @@ func ConfigPath() string {
 func ConfigPathAlt() (path string) {
 	// No known alternatives
 	return
+}
+
+func UserProfilePath(gameId string) string {
+	suffix := ConfigPath()
+	if suffix == "" {
+		return ""
+	}
+	return filepath.Join(suffix, "steamapps", "compatdata", appId(gameId), "pfx", wine.UserProfile("steamuser"))
 }

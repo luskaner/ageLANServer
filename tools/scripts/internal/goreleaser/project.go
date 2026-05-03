@@ -37,7 +37,7 @@ func GenerateConfig(archives ...*Archive) error {
 	main := "./config-helper"
 	for target, archs := range *Targets64Windows {
 		for arch := range archs {
-			binary := filepath.Join("bin", main)
+			binary := filepath.Join("bin", fmt.Sprintf("%s_%s", main, arch.Goarch()))
 			id := fmt.Sprintf("%s_%s_%s", binary, target.Goos(), arch.Goarch())
 			project.Builds = append(
 				project.Builds,
@@ -52,17 +52,7 @@ func GenerateConfig(archives ...*Archive) error {
 		}
 	}
 	for i, arch := range project.Archives {
-		if !strings.Contains(arch.ID, "linux") {
-			continue
-		}
-		amd64 := strings.Contains(arch.ID, "amd64")
-		arm64 := strings.Contains(arch.ID, "arm64")
-		var name string
-		if amd64 {
-			name = "dist/bin/config-helper_windows_amd64_windows_amd64_v1"
-		} else if arm64 {
-			name = "dist/bin/config-helper_windows_arm64_windows_arm64_v8.0"
-		} else {
+		if strings.Contains(arch.ID, "win") {
 			continue
 		}
 		var targets []string
@@ -73,11 +63,26 @@ func GenerateConfig(archives ...*Archive) error {
 		} else {
 			continue
 		}
-		for _, target := range targets {
-			project.Archives[i].Files = append(project.Archives[i].Files, config.File{
-				Source:      name,
-				Destination: target,
-			})
+		amd64 := strings.Contains(arch.ID, "amd64")
+		arm64 := strings.Contains(arch.ID, "arm64")
+		if !amd64 && !arm64 {
+			amd64 = true
+			arm64 = true
+		}
+		var names []string
+		if amd64 {
+			names = append(names, "dist/bin/config-helper_amd64_windows_amd64_windows_amd64_v1")
+		}
+		if arm64 {
+			names = append(names, "dist/bin/config-helper_arm64_windows_arm64_windows_arm64_v8.0")
+		}
+		for _, name := range names {
+			for _, target := range targets {
+				project.Archives[i].Files = append(project.Archives[i].Files, config.File{
+					Source:      name,
+					Destination: target,
+				})
+			}
 		}
 	}
 	project.UniversalBinaries = universalBinaries(project.Builds)
