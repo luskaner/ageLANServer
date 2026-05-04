@@ -42,6 +42,8 @@ func ReadFromData(data []byte) (keys []string, keyToIndex map[string]int, values
 			break
 		}
 
+		data = pemData
+
 		if block.Type != "CERTIFICATE" {
 			continue
 		}
@@ -58,7 +60,7 @@ func ReadFromData(data []byte) (keys []string, keyToIndex map[string]int, values
 		values = append(values, cert)
 		keyToIndex[fingerprint] = len(keys) - 1
 
-		if len(pemData) == 0 {
+		if len(data) == 0 {
 			break
 		}
 	}
