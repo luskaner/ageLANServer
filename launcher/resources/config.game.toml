@@ -41,7 +41,7 @@ Path = 'auto'
 
 [Client.Isolation]
 # Path to the game data, if 'auto' it will be detected automatically based on the game and Client.Executable.
-# Linux Note: Required to be set to the path if Client.Executable is set to a custom launcher (and some isolation is enabled).
+# Unix-like Note: Required to be set to the path if Client.Executable is set to a custom launcher (and some isolation is enabled).
 Path = 'auto'
 # If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
 # If it resolves to 'true', the launcher will isolate the metadata cache of the game, otherwise, it will be shared

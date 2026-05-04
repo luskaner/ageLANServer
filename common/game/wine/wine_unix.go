@@ -13,6 +13,7 @@ var mainDirs = []string{
 }
 
 var altDirs = []string{
+	// TODO: Add system wide installation for macOS
 	"$HOME/.wine",
 }
 
