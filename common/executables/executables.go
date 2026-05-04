@@ -33,7 +33,7 @@ var directories = []string{
 }
 
 func NativeFileName(bin bool, executable string) string {
-	return ArchFileName(bin, executable, nil)
+	return FileName(bin, executable, nil)
 }
 
 func FileName(bin bool, executable string, transfileName func(name string) string) string {
