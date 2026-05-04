@@ -101,7 +101,7 @@ func Execute() error {
 	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use `
 	if runtime.GOOS != "darwin" {
-		clientExeTip = "Steam"
+		clientExeTip += "Steam"
 	}
 	unixClientExeTip := `Steam (CrossOver) and then the Steam (Wine) one if found`
 	if runtime.GOOS == "windows" {
@@ -175,7 +175,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	logger.WriteFileLog(gameId, "start")
 	isAdmin := commonExecutor.IsAdmin()
 	canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS == "linux" {
 		canTrustCertificateValues.Remove("user")
 	}
 	if !canTrustCertificateValues.Contains(canTrustCertificate) {
