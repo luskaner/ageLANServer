@@ -39,6 +39,6 @@ tasks:
       - build/launcher/bin/config-helper.exe
     method: checksum
     cmds:
-      - GOOS=windows GOARCH={{.GOARCH}} go build -o build/launcher/bin/config-helper.exe ./config-helper
+      - GOOS=windows GOARCH={{.GOARCH}} go build -o build/launcher/bin/config-helper_{{.GOARCH}}.exe ./config-helper
       - mkdir -p build/battle-server-manager/bin
       - cp build/launcher/bin/config-helper.exe build/battle-server-manager/bin
