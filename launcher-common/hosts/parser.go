@@ -2,6 +2,8 @@ package hosts
 
 import (
 	"net"
+	"regexp"
+	"runtime"
 	"strings"
 
 	"golang.org/x/net/idna"
@@ -35,9 +37,29 @@ func ParseLine(line string, ignoreLimit bool) (ok bool, overLimit bool, l Line) 
 	} else {
 		usableLength = actualLength
 	}
-	split := strings.SplitN(line[:usableLength], commentMarker, 2)
+	usableLine := line[:usableLength]
+	var split []string
+	if runtime.GOOS == "darwin" {
+		var re = regexp.MustCompile(`\s#$`)
+		presplit := strings.SplitAfter(usableLine, string(commentMarker))
+		for i := 0; i < len(presplit)-1; i++ {
+			if re.MatchString(presplit[i]) {
+				presplit[i] = presplit[i][:len(presplit[i])-2]
+			} else {
+				presplit[i+1] = presplit[i] + presplit[i+1]
+				presplit[i] = ""
+			}
+		}
+		for _, s := range presplit {
+			if s != "" {
+				split = append(split, s)
+			}
+		}
+	} else {
+		split = strings.SplitN(usableLine, string(commentMarker), 2)
+	}
 	if len(split) > 1 {
-		l.comments = strings.Split(split[1], commentMarker)
+		l.comments = strings.Split(split[1], string(commentMarker))
 	}
 	lineWithoutComment := split[0]
 	if lineWithoutComment == "" {

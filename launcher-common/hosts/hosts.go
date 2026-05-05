@@ -83,7 +83,7 @@ func GetAllLines(f *os.File) (err error, encType int, lines []Line) {
 }
 
 func commentLineStr(line string) (ok bool, l Line) {
-	line = commentMarker + line
+	line = string(commentMarker) + line
 	ok, _, l = ParseLine(line, true)
 	if !ok {
 		return

@@ -48,8 +48,9 @@ func (l Line) String() string {
 		sb.WriteString(strings.Join(hostsStr, ` `))
 	}
 	if len(l.comments) > 0 {
-		sb.WriteString(commentMarker)
-		sb.WriteString(strings.Join(l.comments, commentMarker))
+		sb.WriteByte(' ')
+		sb.WriteRune(commentMarker)
+		sb.WriteString(strings.Join(l.comments, string(commentMarker)))
 	}
 	return sb.String()
 }
@@ -58,7 +59,7 @@ func (l Line) Commented() (ok bool, nl Line) {
 	if l.OnlyComments() {
 		return true, l
 	}
-	commented := fmt.Sprintf("%s%s", commentMarker, l.String())
+	commented := fmt.Sprintf("%c%s", commentMarker, l.String())
 	ok, _, nl = ParseLine(commented, true)
 	return
 }
@@ -70,8 +71,8 @@ func (l Line) Uncommented() (nl string) {
 	sb := strings.Builder{}
 	sb.WriteString(l.comments[0])
 	if len(l.comments) > 1 {
-		sb.WriteString(commentMarker)
-		sb.WriteString(strings.Join(l.comments[1:], commentMarker))
+		sb.WriteRune(commentMarker)
+		sb.WriteString(strings.Join(l.comments[1:], string(commentMarker)))
 	}
 	return sb.String()
 }
