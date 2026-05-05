@@ -35,8 +35,7 @@ func ParseLine(line string, ignoreLimit bool) (ok bool, overLimit bool, l Line) 
 	} else {
 		usableLength = actualLength
 	}
-	usableLine := line[:usableLength]
-	split := splitLine(usableLine)
+	split := splitLine(line[:usableLength])
 	if len(split) > 1 {
 		l.comments = strings.Split(split[1], string(commentMarker))
 	}

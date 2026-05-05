@@ -22,5 +22,8 @@ func splitLine(line string) (splitted []string) {
 			splitted = append(splitted, s)
 		}
 	}
+	if len(splitted) == 0 {
+		splitted = append(splitted, "")
+	}
 	return
 }
