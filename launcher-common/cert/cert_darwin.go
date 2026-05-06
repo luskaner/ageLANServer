@@ -2,7 +2,7 @@ package cert
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"crypto/sha1"
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
@@ -62,7 +62,17 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 	}
 	certs = make([]*x509.Certificate, 0, len(existing))
 	for _, cert := range existing {
-		fingerprint := sha256.Sum256(cert.Raw)
+		match := false
+		for _, org := range cert.Subject.Organization {
+			if org == common.CertSubjectOrganization {
+				match = true
+				break
+			}
+		}
+		if !match {
+			continue
+		}
+		fingerprint := sha1.Sum(cert.Raw)
 		fingerprintHex := strings.ToUpper(hex.EncodeToString(fingerprint[:]))
 		_, err = runCommand(asAdmin, "delete-certificate", "-Z", fingerprintHex, keychain)
 		if err != nil {

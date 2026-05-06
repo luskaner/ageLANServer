@@ -3,9 +3,11 @@ package exec
 func terminalArgs() []string {
 	script := `
 		on run argv
+			set AppleScript's text item delimiters to " "
+			set cmd to argv as string
 			tell application "Terminal"
 				activate
-				do script (item 1 of argv)
+				do script cmd
 			end tell
 		end run
 	`
