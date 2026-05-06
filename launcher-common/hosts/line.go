@@ -48,7 +48,9 @@ func (l Line) String() string {
 		sb.WriteString(strings.Join(hostsStr, ` `))
 	}
 	if len(l.comments) > 0 {
-		sb.WriteByte(' ')
+		if sb.Len() > 0 {
+			sb.WriteByte(' ')
+		}
 		sb.WriteRune(commentMarker)
 		sb.WriteString(strings.Join(l.comments, string(commentMarker)))
 	}
