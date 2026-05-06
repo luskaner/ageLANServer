@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -44,6 +45,10 @@ func FileName(bin bool, executable string, transfileName func(name string) strin
 		filename = filepath.Join("bin", filename)
 	}
 	return filename
+}
+
+func ArchFileName(bin bool, executable string, transfileName func(name string) string) string {
+	return FileName(bin, fmt.Sprintf("%s_%s", executable, runtime.GOARCH), transfileName)
 }
 
 func WindowsFileName(name string) string {

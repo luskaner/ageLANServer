@@ -1,4 +1,4 @@
 package hosts
 
-const commentMarker = "#"
+const commentMarker rune = '#'
 const WindowsLineEnding = "\r\n"

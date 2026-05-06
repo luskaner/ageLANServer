@@ -14,7 +14,7 @@ Log = false
 # Whether or not to trust the certificate of the server in user or local store, or not at all.
 # false: do not trust the certificate. You will have to trust it manually in the proper store.
 # local: trust the certificate in the local store. Requires admin rights.
-# user: trust the certificate in the user store. Requires user consent. Only on Windows.
+# user: trust the certificate in the user store. Requires user consent. Unavailable in Linux.
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
 CanTrustInPc = 'local'
 # Whether to trust the certificate of the server in the game's certificate store.
