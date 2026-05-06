@@ -293,9 +293,8 @@ func psmjWithReadWrite[T any](p *PersistentStringJsonMap, key string, fn func(da
 		return p.file.WithWriter(func(writer io.Writer) error {
 			return json.NewEncoder(writer).Encode(p.cachedRawData)
 		})
-	} else {
-		return err
 	}
+	return err
 }
 
 type PersistentJsonData[T any] struct {

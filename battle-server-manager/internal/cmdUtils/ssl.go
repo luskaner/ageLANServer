@@ -36,14 +36,12 @@ func ResolveSSLFilesPath(gameId string, ssl internal.SSL) (resolvedCertFile stri
 	if f, path, err = common.ParsePath(common.EnhancedViperStringToStringSlice(ssl.CertFile), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid certificate file")
 		return
-	} else {
-		resolvedCertFile = path
 	}
+	resolvedCertFile = path
 	if f, path, err = common.ParsePath(common.EnhancedViperStringToStringSlice(ssl.KeyFile), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid key file")
 		return
-	} else {
-		resolvedKeyFile = path
 	}
+	resolvedKeyFile = path
 	return
 }

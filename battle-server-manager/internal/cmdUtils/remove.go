@@ -16,10 +16,9 @@ func Kill(config battleServerConfig.Config) bool {
 		if err = process.KillProc(proc); err == nil {
 			commonLogger.Println(str + " OK")
 			return true
-		} else {
-			commonLogger.Println(str+" failed with error: ", err)
-			return false
 		}
+		commonLogger.Println(str+" failed with error: ", err)
+		return false
 	}
 	return true
 }

@@ -268,11 +268,13 @@ func runSetUp(args []string) error {
 			result := admin.StartAgentIfNeeded()
 			if !result.Success() {
 				commonLogger.Println("Failed to start 'config-admin-agent'")
-				if result.Err != nil {
-					commonLogger.Println(result.Err)
-				}
-				if result.ExitCode != common.ErrSuccess {
-					commonLogger.Println(result.ExitCode)
+				if result != nil {
+					if result.Err != nil {
+						commonLogger.Println(result.Err)
+					}
+					if result.ExitCode != common.ErrSuccess {
+						commonLogger.Println(result.ExitCode)
+					}
 				}
 				errorCode = internal.ErrStartAgent
 				undoSetUp()
