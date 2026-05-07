@@ -1,6 +1,6 @@
 go 1.26.0
 
-toolchain go1.26.2
+toolchain go1.26.3
 
 godebug (
 	// Always use native DNS resolver, otherwise unexpected IPs may be returned

@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26.2'
+          go-version: '1.26.3'
           cache-dependency-path: |
             go.work.sum
       - name: Set up Go legacy
@@ -27,7 +27,7 @@ jobs:
         run: |
           dir="${{ vars.GOROOT_LEGACY }}"
           subdir="go-legacy-win7"
-          curl -L https://github.com/thongtech/$subdir/releases/download/v1.26.2-1/$subdir-1.26.2-1.linux_amd64.tar.gz -o go.tar.gz
+          curl -L https://github.com/thongtech/$subdir/releases/download/v1.26.3-1/$subdir-1.26.3-1.linux_amd64.tar.gz -o go.tar.gz
           sudo mkdir -p "$dir"
           sudo tar -C "$dir" --strip-components=1 -xzf go.tar.gz
           rm go.tar.gz
