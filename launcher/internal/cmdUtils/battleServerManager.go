@@ -16,7 +16,7 @@ import (
 
 func (c *Config) RunBattleServerManager(executable string, args []string, stop bool) (errorCode int) {
 	if executable == "auto" {
-		executable = executables.FindPath(executables.Filename(true, "battle-server-manager"))
+		executable = executables.FindPath(executables.NativeFileName(true, "battle-server-manager"))
 		if executable == "" {
 			logger.Println("Could not find 'battle-server-manager' executable")
 			return internal.ErrBattleServerManagerRun

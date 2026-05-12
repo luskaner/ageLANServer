@@ -36,6 +36,7 @@ const (
 	ErrInvalidClientArgs
 	ErrInvalidSetupCommand
 	ErrInvalidRevertCommand
+	ErrInvalidIsolationPath
 	ErrSetupCommand
 	ErrSteamRoot
 	ErrAnnouncementMulticastGroup

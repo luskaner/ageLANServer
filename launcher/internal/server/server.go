@@ -109,7 +109,7 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 
 func GetExecutablePath(executable string) string {
 	if executable == "auto" {
-		return executables.FindPath(executables.Filename(true, executables.Server))
+		return executables.FindPath(executables.NativeFileName(true, executables.Server))
 	}
 	return executable
 }

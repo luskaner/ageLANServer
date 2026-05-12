@@ -1,20 +1,11 @@
 package executor
 
-import (
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-)
-
-func modifyOptions(options *exec.Options) {
-	wineOptions := exec.Options{
-		File:        "wine",
-		Args:        []string{"--version"},
-		SpecialFile: true,
-		ExitCode:    true,
-		Wait:        true,
+func resolveAutoPath(gameId string, battleServerPath string) (path string) {
+	if path = steamPath(gameId, battleServerPath); path != "" {
+		return
 	}
-	if result := wineOptions.Exec(); result.Success() {
-		options.Args = append([]string{options.File}, options.Args...)
-		options.File = wineOptions.File
-		options.SpecialFile = wineOptions.SpecialFile
+	if path = steamCrossOverPath(gameId, battleServerPath); path != "" {
+		return
 	}
+	return steamWinePath(gameId, battleServerPath)
 }

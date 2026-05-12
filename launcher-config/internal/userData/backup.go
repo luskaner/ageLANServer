@@ -43,7 +43,7 @@ func (d Data) switchPaths(backupPath string, currentPath string) (ok bool) {
 		newParent := filepath.Dir(oldParent)
 		var info os.FileInfo
 		for {
-			if runtime.GOOS == "linux" {
+			if runtime.GOOS != "windows" {
 				if oldParent == newParent {
 					return
 				}

@@ -7,18 +7,31 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game/appx"
-	"github.com/luskaner/ageLANServer/common/game/steam"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
-func ResolvePath(gameId string, executablePath string) (resolvedPath string, err error) {
-	validPath := func(path string) bool {
-		if f, localErr := os.Stat(path); localErr == nil && !f.IsDir() {
-			return true
-		}
-		return false
+func validPath(path string) bool {
+	if f, localErr := os.Stat(path); localErr == nil && !f.IsDir() {
+		return true
 	}
+	return false
+}
+
+func locatablePath(locFn func(gameId string) (game game.Locatable, ok bool), gameId string, battleServerPath string, name string) (path string) {
+	if locatable, ok := locFn(gameId); ok {
+		if folder := locatable.Path(); folder != "" {
+			tmpPath := filepath.Join(folder, battleServerPath)
+			if validPath(tmpPath) {
+				path = tmpPath
+				commonLogger.Printf("\tFound in %s\n", name)
+			}
+		}
+	}
+	return
+}
+
+func ResolvePath(gameId string, executablePath string) (resolvedPath string, err error) {
 	var path string
 	if executablePath == "auto" {
 		commonLogger.Println("Auto resolving executable path...")
@@ -32,29 +45,13 @@ func ResolvePath(gameId string, executablePath string) (resolvedPath string, err
 		if gameId == common.GameAoE2 {
 			battleServerPath = filepath.Join("BattleServer", battleServerPath)
 		}
-		game := steam.NewGame(gameId)
-		libraryFolder := game.LibraryFolder()
-		if libraryFolder != "" {
-			folder := game.Path(libraryFolder)
-			if folder != "" {
-				path = filepath.Join(folder, battleServerPath)
-				if validPath(path) {
-					commonLogger.Println("\tFound in Steam")
-					return path, nil
-				}
-			}
+		if path = resolveAutoPath(gameId, battleServerPath); path == "" {
+			err = fmt.Errorf("could not find battle server executable")
+		} else if validPath(path) {
+			resolvedPath = path
 		}
-		if ok, folder := appx.GameInstallLocation(gameId); ok {
-			path = filepath.Join(folder, battleServerPath)
-			if validPath(path) {
-				commonLogger.Println("\tFound on Xbox")
-				return path, nil
-			}
-		}
-		err = fmt.Errorf("could not find battle server executable")
 		return
 	}
-
 	var pathErr error
 	_, path, pathErr = common.ParsePath(common.EnhancedViperStringToStringSlice(executablePath), nil)
 	if pathErr != nil {
@@ -101,7 +98,6 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 		Args:           args,
 		Pid:            true,
 	}
-	modifyOptions(&options)
 	if hideWindow && logRoot != "" {
 		var f *os.File
 		if _, f, err = commonLogger.NewFileLogger("battle-server", logRoot, "", true); err != nil {
@@ -112,7 +108,7 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 		}
 	}
 	commonLogger.Println("Executing:", options)
-	if result := options.Exec(); result.Success() {
+	if result := execWithOptions(gameId, &options); result.Success() {
 		pid = result.Pid
 	} else {
 		err = result.Err

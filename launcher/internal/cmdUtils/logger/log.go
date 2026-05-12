@@ -23,6 +23,7 @@ var processesLog = []string{executables.LauncherAgent, executables.LauncherConfi
 var allHosts []string
 var Cacert *cert.CA
 var LogEnabled bool
+var BasePath string
 var dataTypeToString = map[int]string{
 	userData.TypeServer: "Own Backup",
 	userData.TypeBackup: "Original Backup",
@@ -94,7 +95,7 @@ func Println(a ...any) {
 func writeProcessesStatus(_ string) error {
 	for _, processName := range processesLog {
 		str := processName + ": "
-		path := executables.Filename(false, processName)
+		path := executables.NativeFileName(false, processName)
 		_, proc, err := process.Process(path)
 		if err != nil {
 			str += "unknown"
@@ -208,7 +209,11 @@ func writePcCertificateInfo(_ string) error {
 }
 
 func writeMetadataInfo(gameId string) error {
-	if err, metadatas := userData.Metadatas(gameId); err != nil {
+	if BasePath == "" {
+		commonLogger.Println("Unknown")
+		return nil
+	}
+	if err, metadatas := userData.NewPath(BasePath, gameId).Metadatas(); err != nil {
 		return err
 	} else {
 		writeDataInfo(metadatas)
@@ -217,7 +222,11 @@ func writeMetadataInfo(gameId string) error {
 }
 
 func writeProfilesInfo(gameId string) error {
-	if err, metadatas := userData.Profiles(gameId); err != nil {
+	if BasePath == "" {
+		commonLogger.Println("Unknown")
+		return nil
+	}
+	if err, metadatas := userData.NewPath(BasePath, gameId).Profiles(); err != nil {
 		return err
 	} else {
 		writeDataInfo(metadatas)
@@ -231,7 +240,7 @@ func writeDataInfo(datas mapset.Set[userData.Data]) {
 		counter[typ] = 0
 	}
 	for data := range datas.Iter() {
-		counter[data.Type]++
+		counter[data.Type()]++
 	}
 	for typ, count := range counter {
 		commonLogger.Printf("%s: %d\n", dataTypeToString[typ], count)

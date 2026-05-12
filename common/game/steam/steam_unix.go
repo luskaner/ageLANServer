@@ -4,6 +4,8 @@ package steam
 
 import (
 	"path/filepath"
+
+	"github.com/luskaner/ageLANServer/common/game/wine"
 )
 
 func UserProfilePath(gameId string) string {
@@ -11,5 +13,5 @@ func UserProfilePath(gameId string) string {
 	if suffix == "" {
 		return ""
 	}
-	return filepath.Join(suffix, "steamapps", "compatdata", AppId(gameId), "pfx", "drive_c", "users", "steamuser")
+	return filepath.Join(suffix, "steamapps", "compatdata", appId(gameId), "pfx", wine.UserProfile("steamuser"))
 }

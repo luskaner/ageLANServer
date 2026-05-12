@@ -100,9 +100,17 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	var err error
 	var setupErr error
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
-		if result := executor.RunSetUp(gameId, nil, addUserCertData, addLocalCertData, nil, false, false, false, "", c.certFilePath, "", writer, func(options exec.Options) {
-			commonLogger.Println("run config setup for CA store cert", options.String())
-		}); !result.Success() {
+		cfgSetupOpts := &executor.ConfigSetupOptions{
+			GameId:           gameId,
+			AddUserCertData:  addUserCertData,
+			AddLocalCertData: addLocalCertData,
+			CertFilePath:     c.certFilePath,
+			Out:              writer,
+			OptionsFn: func(options exec.Options) {
+				commonLogger.Println("run config setup for CA store cert", options.String())
+			},
+		}
+		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			if customCertFile {
 				logger.Println("Failed to save certificate to file")
 			} else {

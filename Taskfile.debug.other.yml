@@ -4,3 +4,7 @@ tasks:
   # No-op
   prepare-launcher:
     internal: true
+  build-config-helper-amd64:
+    internal: true
+  build-config-helper-arm64:
+    internal: true
