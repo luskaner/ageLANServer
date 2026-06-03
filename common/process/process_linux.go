@@ -77,7 +77,9 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 			}
 			cmdlineName := filepath.Base(args[0])
 			if slices.Contains(names, cmdlineName) {
-				processesPid[cmdlineName] = &os.Process{Pid: int(pid)}
+				if localProc, err := FindProcess(int(pid)); err == nil {
+					processesPid[cmdlineName] = localProc
+				}
 			}
 		}
 	}

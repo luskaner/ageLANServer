@@ -9,13 +9,11 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/hosts"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd"
-	"github.com/luskaner/ageLANServer/launcher-common/hosts"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
 func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (errorCode int) {
@@ -29,7 +27,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 					return
 				}
 				mapIP = true
-			} else if !server.CheckConnectionFromServer(domain, true, nil) {
+			} else if !common.CheckConnectionFromServer(domain, true, nil) {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
 				errorCode = internal.ErrServerUnreachable
 				return
@@ -60,16 +58,14 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 		logger.Println(str + "...")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
-			cfgSetupOps := executor.ConfigSetupOptions{
-				GameId:           c.gameId,
-				MapIp:            ip,
-				ExitAgentOnError: true,
-				HostFilePath:     c.hostFilePath,
-				Out:              writer,
-				OptionsFn: func(options exec.Options) {
-					commonLogger.Println("run config setup for hosts", options.String())
-				},
+			cfgSetupOps := executor.NewConfigSetupOptions()
+			cfgSetupOps.Out = writer
+			cfgSetupOps.OptionsFn = func(options exec.Options) {
+				commonLogger.Println("run config setup for hosts", options.String())
 			}
+			cfgSetupOps.GameId = gameId
+			cfgSetupOps.MapIp = net.ParseIP(ip)
+			cfgSetupOps.HostFilePath = c.hostFilePath
 			if result := cfgSetupOps.RunSetUp(); !result.Success() {
 				logger.Println("Failed to add hosts.")
 				if result.Err != nil {
@@ -81,11 +77,12 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 				errorCode = internal.ErrConfigIpMapAdd
 			} else if customHostFile {
 				if parsedIP := net.ParseIP(ip); parsedIP != nil {
-					cmd.MapIP = parsedIP
-				}
-				mappings := hosts.Mappings(gameId)
-				for hostToCache, ipToCache := range mappings {
-					common.CacheMapping(string(hostToCache), ipToCache.String())
+					mappings := hosts.Mappings(gameId, parsedIP)
+					for hostToCache, ipToCache := range mappings {
+						common.CacheMapping(string(hostToCache), ipToCache.String())
+					}
+				} else {
+					errorCode = internal.ErrConfigIpMapAdd
 				}
 			}
 		}); err != nil {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/login"
@@ -19,15 +19,15 @@ func LoginUserMiddleware(next http.HandlerFunc) http.Handler {
 			login.PlatformLoginError(t, w)
 			return
 		}
-		game := models.G(r)
-		title := game.Title()
+		g := models.G(r)
+		title := g.Title()
 		var avatarStatDefinitions models.AvatarStatDefinitions = nil
-		if title != common.GameAoE1 {
-			avatarStatDefinitions = game.LeaderboardDefinitions().AvatarStatDefinitions()
+		if title != game.AoE1 {
+			avatarStatDefinitions = g.LeaderboardDefinitions().AvatarStatDefinitions()
 		}
-		u := game.Users().GetOrCreateUser(
+		u := g.Users().GetOrCreateUser(
 			title,
-			game.Items(),
+			g.Items(),
 			avatarStatDefinitions,
 			r.RemoteAddr,
 			req.MacAddress,

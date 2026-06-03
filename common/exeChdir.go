@@ -11,5 +11,5 @@ func ChdirToExe() {
 		return
 	}
 	exeDir := filepath.Dir(exePath)
-	err = os.Chdir(exeDir)
+	_ = os.Chdir(exeDir)
 }

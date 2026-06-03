@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal/routes/apiAgeOfEmpires/textmoderation"
 )
 
@@ -39,7 +40,7 @@ type Aoe4ApiAgeOfEmpires struct {
 }
 
 func (a *Aoe4ApiAgeOfEmpires) Initialize(gameId string) bool {
-	return gameId == common.GameAoE4
+	return gameId == game.AoE4
 }
 
 func NewAoe4ApiAgeOfEmpires() *Aoe4ApiAgeOfEmpires {

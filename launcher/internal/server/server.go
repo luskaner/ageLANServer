@@ -1,38 +1,33 @@
 package server
 
 import (
-	"crypto/x509"
-	"encoding/json"
-	"io"
 	"net"
-	"net/http"
 	"net/netip"
-	"net/url"
 	"slices"
-	"strconv"
 	"sync"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
+	"github.com/spf13/pflag"
 	"golang.org/x/net/ipv4"
 )
-
-const latencyMeasurementCount = 3
 
 type MesuredIpAddress struct {
 	Ip      net.IP
 	Latency time.Duration
 }
 
-func StartServer(gameTitle string, stop string, executable string, args []string, id uuid.UUID, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result, executablePath string, ip string) {
+func StartServer(gameTitle string, stop string, executable string, flags *pflag.FlagSet, values *cmdServer.Values, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
@@ -43,19 +38,19 @@ func StartServer(gameTitle string, stop string, executable string, args []string
 	} else {
 		showWindow = true
 	}
-	options := commonExecutor.Options{File: executablePath, Args: args, ShowWindow: showWindow, Pid: true}
+	options := commonExecutor.Options{File: executablePath, Args: cmd.FlagSetToArgs(flags, false), ShowWindow: showWindow, Pid: true}
 	optionsFn(options)
 	result = options.Exec()
 	if result.Success() {
 		localIPs := common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(netip.IPv4Unspecified().String())))
-		timeout := time.After(time.Duration(localIPs.Cardinality()) * (latencyMeasurementCount + 1) * time.Second)
+		timeout := time.After(time.Duration(localIPs.Cardinality()) * (common.LatencyMeasurementCount + 1) * time.Second)
 	loop:
 		for {
 			select {
 			case <-timeout:
 				break loop
 			default:
-				if _, measuredIpAddrs, data := FilterServerIPs(id, "", gameTitle, localIPs); data != nil {
+				if _, measuredIpAddrs, data := FilterServerIPs(uuid.MustParse(values.Id), "", gameTitle, localIPs); data != nil {
 					ip = measuredIpAddrs[0].Ip.String()
 					return
 				}
@@ -114,26 +109,13 @@ func GetExecutablePath(executable string) string {
 	return executable
 }
 
-func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {
-	ipAddrs := common.HostOrIpToIps(host)
-	if len(ipAddrs) == 0 {
-		return
-	}
-	for _, ipAddr := range ipAddrs {
-		if ok, _, _, _ = lanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, rootCAs, true); !ok {
-			return
-		}
-	}
-	return true
-}
-
-func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possibleIpAddrs mapset.Set[netip.Addr]) (actualId uuid.UUID, measuredIpAddresses []MesuredIpAddress, data *AnnounceMessageDataSupportedLatest) {
+func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possibleIpAddrs mapset.Set[netip.Addr]) (actualId uuid.UUID, measuredIpAddresses []MesuredIpAddress, data *common.AnnounceMessageDataSupportedLatest) {
 	for ipAddr := range possibleIpAddrs.Iter() {
 		ip := common.NetIPAddrToNetIP(ipAddr)
 		var ok bool
 		var latency time.Duration
-		var tmpData *AnnounceMessageDataSupportedLatest
-		if ok, actualId, latency, tmpData = lanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
+		var tmpData *common.AnnounceMessageDataSupportedLatest
+		if ok, actualId, latency, tmpData = common.LanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
 			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
 				Ip:      ip,
 				Latency: latency,
@@ -146,82 +128,6 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 	slices.SortStableFunc(measuredIpAddresses, func(a, b MesuredIpAddress) int {
 		return int(a.Latency - b.Latency)
 	})
-	return
-}
-
-func lanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
-	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify, rootCAs),
-	}
-	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
-	u := url.URL{
-		Scheme: "https",
-		Host:   net.JoinHostPort(ipAddr.String(), ""),
-		Path:   "test",
-	}
-	if !ignoreLatency {
-		var latencyAccumulator time.Duration
-		for i := 0; i < latencyMeasurementCount; i++ {
-			start := time.Now()
-			req, err := http.NewRequest("HEAD", u.String(), nil)
-			if err != nil {
-				return
-			}
-			req.Header.Set("User-Agent", common.UserAgent())
-			req.Host = serverName
-			if //goland:noinspection ALL
-			_, err = client.Do(req); err != nil {
-				return
-			}
-			latencyAccumulator += time.Since(start)
-		}
-		latency = latencyAccumulator / latencyMeasurementCount
-	}
-	req, err := http.NewRequest(
-		"GET",
-		u.String(),
-		nil,
-	)
-	if err != nil {
-		return
-	}
-	req.Host = serverName
-	resp, err := client.Do(req)
-	if err != nil {
-		return
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-	version := resp.Header.Get(common.VersionHeader)
-	serverIdStr := resp.Header.Get(common.IdHeader)
-	if version == "" || serverIdStr == "" {
-		return
-	}
-	versionInt, _ := strconv.Atoi(version)
-	if versionInt > common.AnnounceVersionLatest {
-		return
-	}
-	var serverIdUuid uuid.UUID
-	serverIdUuid, err = uuid.Parse(serverIdStr)
-	if err != nil {
-		return
-	}
-	if id != uuid.Nil && id != serverIdUuid {
-		return
-	}
-	serverId = serverIdUuid
-	data = &AnnounceMessageDataSupportedLatest{}
-	if err = json.NewDecoder(resp.Body).Decode(data); err != nil {
-		return
-	}
-	if data.GameTitle != gameTitle {
-		return
-	}
-	ok = true
 	return
 }
 

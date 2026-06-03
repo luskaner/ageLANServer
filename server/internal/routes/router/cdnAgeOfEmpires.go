@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal/routes/cdnAgeOfEmpires/aoe/serverStatus"
 )
 
@@ -17,13 +18,13 @@ func (c *CdnAgeOfEmpires) Name() string {
 }
 
 func (c *CdnAgeOfEmpires) Initialize(gameId string) bool {
-	return gameId != common.GameAoE4
+	return gameId != game.AoE4
 }
 
 func (c *CdnAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {
 	c.Proxy = NewProxy(common.CdnAgeOfEmpires, func(gameId string, next http.Handler) http.Handler {
 		var prefix string
-		if gameId == common.GameAoM {
+		if gameId == game.AoM {
 			prefix = "athens"
 		} else {
 			prefix = "rl"

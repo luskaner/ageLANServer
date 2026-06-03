@@ -1,6 +1,8 @@
 package internal
 
-import "github.com/luskaner/ageLANServer/common/battleServerConfig"
+import (
+	"github.com/luskaner/ageLANServer/common/battleServer"
+)
 
 type Announcement struct {
 	Enabled        bool
@@ -10,7 +12,7 @@ type Announcement struct {
 }
 
 type BattleServer struct {
-	battleServerConfig.BaseConfig `koanf:",squash"`
+	battleServer.Base `koanf:",squash"`
 }
 
 type Game struct {

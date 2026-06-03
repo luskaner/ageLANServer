@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/common/process/game"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/gameLogs"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 
@@ -28,25 +31,24 @@ func waitUntilAnyProcessExist(names []string) (processes map[string]*os.Process)
 	return
 }
 
-func Watch(gameId string, basePath string, logRoot string, steamProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
-	battleServerExe string, battleServerRegion string, exitCode *int) {
+func Watch(values *agent.Values, exitCode *int) {
 	*exitCode = common.ErrSuccess
-	if serverExe != "-" {
+	if values.ServerExecutable != "" {
 		defer func() {
 			commonLogger.Println("Killing server...")
-			if err := serverKill.Do(serverExe); err != nil {
+			if err := serverKill.Do(values.ServerExecutable); err != nil {
 				commonLogger.Println("Failed to kill server.")
 				commonLogger.Println(err.Error())
 				if *exitCode == common.ErrSuccess {
 					*exitCode = internal.ErrFailedStopServer
 				}
 			}
-			if battleServerExe != "-" && battleServerRegion != "-" {
+			if values.BattleServerManagerExecutable != "" && values.BattleServerRegion != "" {
 				commonLogger.Println("Shutting down battle-server...")
 				var result *exec.Result
 				if logErr := internal.Logger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
 					result = launcherCommon.RemoveBattleServerRegion(
-						battleServerExe, gameId, battleServerRegion, writer, func(options exec.Options) {
+						values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options exec.Options) {
 							if writer != nil {
 								commonLogger.Println("run battle-server-manager", options.String())
 							}
@@ -85,7 +87,7 @@ func Watch(gameId string, basePath string, logRoot string, steamProcess bool, xb
 	}()
 	defer func() {
 		_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
-			if !launcherCommon.ConfigRevert(gameId, logRoot, true, writer, func(options exec.Options) {
+			if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, writer, func(options exec.Options) {
 				if writer != nil {
 					commonLogger.Println("run config revert", options.String())
 				}
@@ -95,21 +97,16 @@ func Watch(gameId string, basePath string, logRoot string, steamProcess bool, xb
 		})
 	}()
 	commonLogger.Println("Waiting up to 1 minute for game to start...")
-	processes := waitUntilAnyProcessExist(commonProcess.GameProcesses(gameId, steamProcess, xboxProcess))
+	processes := waitUntilAnyProcessExist(game.Processes(values.GameId, !values.NoSteamProcess, values.XboxProcess))
 	if len(processes) == 0 {
 		commonLogger.Println("Failed to find the game.")
 		*exitCode = internal.ErrGameTimeoutStart
 		return
 	}
-	if broadcastBattleServer {
-		var port int
-		if gameId == common.GameAoE1 {
-			port = 8888
-		} else {
-			port = 9999
-		}
+	if values.BattleServerLANRebroadcast {
+		port := battleServer.BroadcastPort(values.GameId)
 		commonLogger.Printf("Broadcasting BattleServer port to %d...\n", port)
-		rebroadcastBattleServer(exitCode, port)
+		rebroadcastBattleServer(exitCode, int(port))
 	}
 	var proc *os.Process
 	for _, p := range processes {
@@ -123,7 +120,7 @@ func Watch(gameId string, basePath string, logRoot string, steamProcess bool, xb
 		*exitCode = internal.ErrFailedWaitForProcess
 		return
 	}
-	if logRoot != "-" {
-		gameLogs.CopyGameLogs(gameId, basePath, logRoot)
+	if values.LogRoot != "" && values.BaseDataPath != "" {
+		gameLogs.CopyGameLogs(values.GameId, values.BaseDataPath, values.LogRoot)
 	}
 }

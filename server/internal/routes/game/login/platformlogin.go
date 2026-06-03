@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
@@ -26,10 +26,10 @@ func PlatformLoginError(t time.Time, w http.ResponseWriter) {
 }
 
 func Platformlogin(w http.ResponseWriter, r *http.Request) {
-	game := models.G(r)
-	title := game.Title()
-	users := game.Users()
-	sessions := game.Sessions()
+	g := models.G(r)
+	title := g.Title()
+	users := g.Users()
+	sessions := g.Sessions()
 	u := r.Context().Value("user").(models.User)
 	sess, ok := sessions.GetByUserId(u.GetId())
 	if ok {
@@ -38,10 +38,10 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	req := r.Context().Value("request").(PlatformLoginRequest)
 	sessionId := sessions.Create(u.GetId(), req.ClientLibVersion)
 	sess, _ = sessions.GetById(sessionId)
-	presenceDefinitions := game.PresenceDefinitions()
+	presenceDefinitions := g.PresenceDefinitions()
 	relationship.ChangePresence(req.ClientLibVersion, sessions, users, u, presenceDefinitions, 1)
 	profileInfo := u.EncodeProfileInfo(req.ClientLibVersion)
-	if title == common.GameAoE3 || title == common.GameAoM || title == common.GameAoE4 {
+	if title == game.AoE3 || title == game.AoM || title == game.AoE4 {
 		for user := range users.GetUserIds() {
 			if user != u.GetId() {
 				currentSess, currentOk := sessions.GetByUserId(user)
@@ -57,17 +57,17 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
-	if title == common.GameAoE2 {
+	if title == game.AoE2 {
 		extraProfileInfoList = append(extraProfileInfoList, u.EncodeExtraProfileInfo(req.ClientLibVersion))
 	}
-	battleServers := game.BattleServers()
+	battleServers := g.BattleServers()
 	servers := battleServers.Encode(r)
 	if len(servers) == 0 {
 		server := battleServers.NewBattleServer("")
 		server.SetIPv4("127.0.0.1")
 		server.SetBsPort(27012)
 		server.SetWebSocketPort(27112)
-		if title != common.GameAoE1 {
+		if title != game.AoE1 {
 			server.SetName("localhost")
 			server.SetOutOfBandPort(27212)
 		}
@@ -95,7 +95,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		nil,
 	}
 	var avatarStats i.A
-	if title == common.GameAoE1 {
+	if title == game.AoE1 {
 		response = append(response, i.A{})
 	} else {
 		avatarStats = u.EncodeAvatarStats()
@@ -111,14 +111,14 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		nil,
 		1,
 	}
-	if title != common.GameAoE1 {
+	if title != game.AoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
 	if req.ClientLibVersion >= 193 {
 		allProfileInfo = append(allProfileInfo, -1)
 	}
 	response = append(response,
-		game.Resources().LoginData(),
+		g.Resources().LoginData(),
 		allProfileInfo,
 		i.A{},
 		0,

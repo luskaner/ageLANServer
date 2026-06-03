@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	game2 "github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/common/process/game"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
@@ -82,7 +85,7 @@ func (c *Config) Revert() {
 				if result.ExitCode != common.ErrSuccess {
 					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 				}
-				logger.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
+				logger.Printf("You may try killing it manually. Kill process '%s' if it is running in your task manager.\n", battleServer.Executable)
 			}
 		})
 	}
@@ -120,8 +123,8 @@ func anyProcessExists(names []string) bool {
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
 	var gameProcesses []string
-	for gameId := range common.AllGames.Iter() {
-		gameProcesses = append(gameProcesses, commonProcess.GameProcesses(gameId, true, xbox)...)
+	for gameId := range game2.AllGames.Iter() {
+		gameProcesses = append(gameProcesses, game.Processes(gameId, true, xbox)...)
 	}
 	someProcessRunning := func() bool {
 		return anyProcessExists(gameProcesses)
@@ -171,6 +174,6 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		result.ExitCode = common.ErrFileLog
 	}
 	certStore.ReloadSystemCertificates()
-	common.ClearCache()
+	common.ClearDNSCache()
 	return
 }

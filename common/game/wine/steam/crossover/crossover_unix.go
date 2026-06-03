@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 const prefixEnvVar = "$CX_BOTTLE"
@@ -27,15 +27,15 @@ func Prefix(gameId string) string {
 
 func baseDefaultBottleName(gameId string) (name string) {
 	switch gameId {
-	case common.GameAoE1:
+	case game.AoE1:
 		name = "Age of Empires Definitive Edition"
-	case common.GameAoE2:
+	case game.AoE2:
 		name = "Age of Empires II Definitive Edition"
-	case common.GameAoE3:
+	case game.AoE3:
 		name = "Age of Empires III Definitive Edition"
-	case common.GameAoE4:
+	case game.AoE4:
 		name = "Age of Empires IV Anniversary Edition"
-	case common.GameAoM:
+	case game.AoM:
 		name = "Age of Mythology Retold"
 	}
 	return

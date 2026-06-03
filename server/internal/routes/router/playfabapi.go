@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
 	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Catalog"
@@ -31,7 +32,7 @@ func (p *PlayfabApi) Check(r *http.Request) bool {
 }
 
 func (p *PlayfabApi) Initialize(gameId string) bool {
-	return gameId == common.GameAoE4 || gameId == common.GameAoM
+	return gameId == game.AoE4 || gameId == game.AoM
 }
 
 func (p *PlayfabApi) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
@@ -39,11 +40,11 @@ func (p *PlayfabApi) InitializeRoutes(gameId string, _ http.Handler) http.Handle
 	playfabClientGroup := p.group.Subgroup("/Client")
 	playfabClientGroup.HandleFunc("POST", "/GetPlayerCombinedInfo", Client.GetPlayerCombinedInfo)
 	playfabClientGroup.HandleFunc("POST", "/GetTime", Client.GetTime)
-	if gameId == common.GameAoE4 {
+	if gameId == game.AoE4 {
 		playfabClientGroup.HandleFunc("POST", "/LoginWithCustomID", Client.LoginWithCustomID)
 		playfabClientGroup.HandleFunc("POST", "/GetUserData", Client.GetUserData)
 	}
-	if gameId == common.GameAoM {
+	if gameId == game.AoM {
 		playfabClientGroup.HandleFunc("POST", "/GetTitleData", Client.GetTitleData)
 		playfabClientGroup.HandleFunc("POST", "/GetUserReadOnlyData", Client.GetUserReadOnlyData)
 		playfabClientGroup.HandleFunc("POST", "/LoginWithSteam", Client.LoginWithSteam)
@@ -53,7 +54,7 @@ func (p *PlayfabApi) InitializeRoutes(gameId string, _ http.Handler) http.Handle
 	playfabEventGroup := p.group.Subgroup("/Event")
 	playfabEventGroup.HandleFunc("POST", "/WriteTelemetryEvents", Event.WriteTelemetryEvents)
 
-	if gameId == common.GameAoM {
+	if gameId == game.AoM {
 		playfabInventoryGroup := p.group.Subgroup("/Inventory")
 		playfabInventoryGroup.HandleFunc("POST", "/GetInventoryItems", Inventory.GetInventoryItems)
 	}
@@ -65,7 +66,7 @@ func (p *PlayfabApi) InitializeRoutes(gameId string, _ http.Handler) http.Handle
 	playfabPartyGroup := p.group.Subgroup("/Party")
 	playfabPartyGroup.HandleFunc("POST", "/RequestParty", Party.RequestParty)
 
-	if gameId == common.GameAoM {
+	if gameId == game.AoM {
 		catalogGroup := p.group.Subgroup("/Catalog")
 		catalogGroup.HandleFunc("POST", "/GetItems", Catalog.GetItems)
 

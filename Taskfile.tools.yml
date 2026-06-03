@@ -5,6 +5,7 @@ version: '3'
 tasks:
   build:
     label: "Build {{.PROGRAM}}{{exeExt}}"
+    run: when_changed
     internal: true
     sources:
       - tools/scripts/**/*
@@ -38,3 +39,5 @@ tasks:
       - task: "{{.PROGRAM}}"
     cmds:
       - ./.tools/{{.PROGRAM}}{{exeExt}}
+includes:
+  mock: ./Taskfile.tools.mock.yml

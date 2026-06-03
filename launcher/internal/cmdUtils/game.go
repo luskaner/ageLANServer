@@ -13,9 +13,9 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher/internal"
-	"github.com/luskaner/ageLANServer/launcher/internal/battleServerBroadcast"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
 )
 
 func (c *Config) KillAgent() {
@@ -26,10 +26,6 @@ func (c *Config) KillAgent() {
 		logger.Println("Failed to kill it: ", err, ", try using the task manager.")
 		return
 	}
-}
-
-func (c *Config) NeedsGamePath() bool {
-	return c.gameId != common.GameAoE1 && c.gameId != common.GameAoE4
 }
 
 func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (errorCode int) {

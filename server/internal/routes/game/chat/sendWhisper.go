@@ -3,7 +3,7 @@ package chat
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -19,7 +19,7 @@ type recipientID struct {
 
 func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 	response := i.A{code}
-	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE4 || gameId == game.AoM {
 		// FIXME: Is it the 0 repeated for each recipient?
 		response = append(response, i.A{0})
 	}
@@ -27,8 +27,8 @@ func whisperResult(w *http.ResponseWriter, gameId string, code int) {
 }
 
 func SendWhisper(w http.ResponseWriter, r *http.Request) {
-	game := models.G(r)
-	gameTitle := game.Title()
+	g := models.G(r)
+	gameTitle := g.Title()
 	var req textRequest
 	err := i.Bind(r, &req)
 	if err != nil {
@@ -37,7 +37,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var targetUserIds recipientIDs
-	if gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
+	if gameTitle == game.AoE4 || gameTitle == game.AoM {
 		if err := i.Bind(r, &targetUserIds); err != nil {
 			whisperResult(&w, gameTitle, 2)
 			return
@@ -50,7 +50,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		}
 		targetUserIds.IDs.Data = append(targetUserIds.IDs.Data, recpId.ID)
 	}
-	users := game.Users()
+	users := g.Users()
 	receivers := make([]models.User, len(targetUserIds.IDs.Data))
 	var ok bool
 
@@ -62,14 +62,14 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	currentSession := models.SessionOrPanic(r)
-	currentUser, ok := game.Users().GetUserById(currentSession.GetUserId())
+	currentUser, ok := users.GetUserById(currentSession.GetUserId())
 	if !ok {
 		whisperResult(&w, gameTitle, 2)
 		return
 	}
 
 	message := i.A{""}
-	if gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
+	if gameTitle == game.AoE4 || gameTitle == game.AoM {
 		message = append(
 			message,
 			i.A{
@@ -79,7 +79,7 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 	message = append(message, req.Message)
-	sessions := game.Sessions()
+	sessions := g.Sessions()
 	var receiverSession models.Session
 	for _, receiver := range receivers {
 		receiverSession, ok = sessions.GetByUserId(receiver.GetId())

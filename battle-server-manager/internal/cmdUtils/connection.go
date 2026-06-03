@@ -3,10 +3,10 @@ package cmdUtils
 import (
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 )
 
-func WaitForBattleServerInit(config battleServerConfig.Config) (ok bool) {
+func WaitForBattleServerInit(config battleServer.Config) (ok bool) {
 	// Wait up to 10s to initialize
 	timeout := time.After(10 * time.Second)
 loop:

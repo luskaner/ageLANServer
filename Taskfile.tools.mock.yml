@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: '3'
+
+tasks:
+  createGame:
+    internal: true
+    cmds:
+      - task: :build
+        vars: { PROGRAM: 'createGameMock' }
+  build-battleserver:
+    vars:
+      SUFFIX: '{{.SUFFIX | default "BattleServer"}}'
+    internal: true
+    env:
+      GOOS: windows
+      GOARCH: amd64
+    deps:
+      - createGame
+    run: when_changed
+    sources:
+      - common/**/*
+      - tools/mock/battle-server/**/*
+    generates:
+      - build/mock/game/{{.GAME_ID}}/{{.SUFFIX}}.exe
+    method: checksum
+    cmds:
+      - go build -ldflags="-X 'battle-server/internal/cmd.defaultRelayBroadcastPortStr={{.DEF_RELAY_BS_PORT}}' -X 'battle-server/internal/cmd.defaultBsPublicPortStr={{.DEF_BS_PUBLIC_PORT}}' -X 'battle-server/internal/cmd.defaultOutOfBandStr={{.DEF_OOB_PORT}}'" -o build/mock/game/{{.GAME_ID}}/{{.SUFFIX}}.exe ./tools/mock/battle-server
+  build-launcher:
+    internal: true
+    env:
+      GOOS: windows
+      GOARCH: amd64
+    deps:
+      - createGame
+    run: when_changed
+    sources:
+      - common/**/*
+      - tools/mock/launcher/**/*
+    generates:
+      - build/mock/game/{{.GAME_ID}}/launcher.exe
+    method: checksum
+    cmds:
+      - go build -ldflags="-X 'launcher/internal/cmd.executableGame={{.GAME_BIN_NAME}}.exe'" -o build/mock/game/{{.GAME_ID}}/launcher.exe ./tools/mock/launcher
+  build-game:
+    internal: true
+    env:
+      GOOS: windows
+      GOARCH: amd64
+    deps:
+      - createGame
+    run: when_changed
+    sources:
+      - common/**/*
+      - tools/mock/game/**/*
+    generates:
+      - build/mock/game/{{.GAME_ID}}/{{.GAME_BIN_NAME}}.exe
+    method: checksum
+    cmds:
+      - go build -o build/mock/game/{{.GAME_ID}}/{{.GAME_BIN_NAME}}.exe ./tools/mock/game
+  build-common:
+    internal: true
+    cmds:
+      - task: build-game
+        vars: { GAME_ID: '{{.GAME_ID}}', GAME_BIN_NAME: '{{.GAME_BIN_NAME}}' }
+      - task: build-launcher
+        vars: { GAME_ID: '{{.GAME_ID}}', GAME_BIN_NAME: '{{.GAME_BIN_NAME}}' }
+  build-age1:
+    cmds:
+      - task: build-common
+        vars: { GAME_ID: 'age1', GAME_BIN_NAME: 'AoEDE_s' }
+      - task: build-battleserver
+        vars: { GAME_ID: 'age1', DEF_RELAY_BS_PORT: '8888', DEF_BS_PUBLIC_PORT: '8888', DEF_OOB_PORT: '' }
+  build-age2:
+    cmds:
+      - task: build-common
+        vars: { GAME_ID: 'age2', GAME_BIN_NAME: 'AoE2DE_s' }
+      - task: build-battleserver
+        vars: { GAME_ID: 'age2', BS_SUFFIX: 'BattleServer/BattleServer', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '27012', DEF_OOB_PORT: '27212' }
+  build-age3:
+    cmds:
+      - task: build-common
+        vars: { GAME_ID: 'age3', GAME_BIN_NAME: 'AoE3DE_s' }
+      - task: build-battleserver
+        vars: { GAME_ID: 'age3', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '8888', DEF_OOB_PORT: '9888' }
+  build-age4:
+    cmds:
+      - task: build-common
+        vars: { GAME_ID: 'age4', GAME_BIN_NAME: 'RelicCardinal' }
+  build-aom:
+    cmds:
+      - task: build-common
+        vars: { GAME_ID: 'aom', GAME_BIN_NAME: 'AoMRT_s' }

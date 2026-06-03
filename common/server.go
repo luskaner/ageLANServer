@@ -1,0 +1,142 @@
+package common
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/json"
+	"io"
+	"net"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type AnnounceMessageDataSupportedLatest = AnnounceMessageData002
+
+const LatencyMeasurementCount = 3
+
+func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Config {
+	return &tls.Config{
+		InsecureSkipVerify: insecureSkipVerify,
+		ServerName:         serverName,
+		RootCAs:            rootCAs,
+	}
+}
+
+func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Conn {
+	ips := HostOrIpToIps(host)
+	var ip string
+	if len(ips) == 0 {
+		ip = host
+	} else {
+		ip = ips[0]
+	}
+	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify, rootCAs))
+	if err != nil {
+		return nil
+	}
+	return conn
+}
+
+func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) bool {
+	conn := connectToServer(host, insecureSkipVerify, rootCAs)
+	if conn == nil {
+		return false
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+	return conn != nil
+}
+
+func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {
+	ipAddrs := HostOrIpToIps(host)
+	if len(ipAddrs) == 0 {
+		return
+	}
+	for _, ipAddr := range ipAddrs {
+		if ok, _, _, _ = LanServerIP(id, gameTitle, net.ParseIP(ipAddr), host, insecureSkipVerify, rootCAs, true); !ok {
+			return
+		}
+	}
+	return true
+}
+
+func LanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool, ignoreLatency bool) (ok bool, serverId uuid.UUID, latency time.Duration, data *AnnounceMessageDataSupportedLatest) {
+	tr := &http.Transport{
+		TLSClientConfig: TlsConfig(serverName, insecureSkipVerify, rootCAs),
+	}
+	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
+	u := url.URL{
+		Scheme: "https",
+		Host:   net.JoinHostPort(ipAddr.String(), ""),
+		Path:   "test",
+	}
+	if !ignoreLatency {
+		var latencyAccumulator time.Duration
+		for i := 0; i < LatencyMeasurementCount; i++ {
+			start := time.Now()
+			req, err := http.NewRequest("HEAD", u.String(), nil)
+			if err != nil {
+				return
+			}
+			req.Header.Set("User-Agent", UserAgent())
+			req.Host = serverName
+			if //goland:noinspection ALL
+			_, err = client.Do(req); err != nil {
+				return
+			}
+			latencyAccumulator += time.Since(start)
+		}
+		latency = latencyAccumulator / LatencyMeasurementCount
+	}
+	req, err := http.NewRequest(
+		"GET",
+		u.String(),
+		nil,
+	)
+	if err != nil {
+		return
+	}
+	req.Host = serverName
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+	version := resp.Header.Get(VersionHeader)
+	serverIdStr := resp.Header.Get(IdHeader)
+	if version == "" || serverIdStr == "" {
+		return
+	}
+	versionInt, _ := strconv.Atoi(version)
+	if versionInt > AnnounceVersionLatest {
+		return
+	}
+	var serverIdUuid uuid.UUID
+	serverIdUuid, err = uuid.Parse(serverIdStr)
+	if err != nil {
+		return
+	}
+	if id != uuid.Nil && id != serverIdUuid {
+		return
+	}
+	serverId = serverIdUuid
+	data = &AnnounceMessageDataSupportedLatest{}
+	if err = json.NewDecoder(resp.Body).Decode(data); err != nil {
+		return
+	}
+	if data.GameTitle != gameTitle {
+		return
+	}
+	ok = true
+	return
+}

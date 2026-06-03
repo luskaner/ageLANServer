@@ -5,7 +5,6 @@ import (
 )
 
 var Version string
-var logRoot string
 var rootFlagSet *cmd.RootFlagSet
 
 func Execute() error {

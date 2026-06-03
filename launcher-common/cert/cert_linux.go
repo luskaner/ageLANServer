@@ -87,7 +87,7 @@ func TrustCertificates(_ bool, certs []*x509.Certificate) error {
 			return err
 		}
 
-		err = WriteAsPem(cert.Raw, certFile)
+		err = common.WriteAsPem(cert.Raw, certFile)
 
 		if err != nil {
 			return err

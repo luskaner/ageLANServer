@@ -7,47 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 )
 
 const PidFileSize = 16 // uint64 PID + uint64 StartTime
 
 var waitDuration = 3 * time.Second
-
-func steamProcess(gameId string) string {
-	switch gameId {
-	case common.GameAoE1:
-		return "AoEDE_s.exe"
-	case common.GameAoE2:
-		return "AoE2DE_s.exe"
-	case common.GameAoE3:
-		return "AoE3DE_s.exe"
-	case common.GameAoE4:
-		return "RelicCardinal.exe"
-	case common.GameAoM:
-		return "AoMRT_s.exe"
-	default:
-		return ""
-	}
-}
-
-func xboxProcess(gameId string) string {
-	switch gameId {
-	case common.GameAoE1:
-		return "AoEDE.exe"
-	case common.GameAoE2:
-		return "AoE2DE.exe"
-	case common.GameAoE3:
-		return "AoE3DE.exe"
-	case common.GameAoE4:
-		return "RelicCardinal_ws.exe"
-	case common.GameAoM:
-		return "AoMRT.exe"
-	default:
-		return ""
-	}
-}
 
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
@@ -121,15 +86,4 @@ func Kill(exe string) error {
 		return KillPidProc(pidPath, proc)
 	}
 	return nil
-}
-
-func GameProcesses(gameId string, steam bool, xbox bool) []string {
-	processes := mapset.NewThreadUnsafeSet[string]()
-	if steam {
-		processes.Add(steamProcess(gameId))
-	}
-	if xbox {
-		processes.Add(xboxProcess(gameId))
-	}
-	return processes.ToSlice()
 }

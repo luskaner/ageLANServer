@@ -100,9 +100,8 @@ func (r *ReadOnlyItemMetadata) UnmarshalJSON(data []byte) error {
 		return err
 	} else if allStr == "" {
 		return nil
-	} else {
-		allData = []byte(allStr)
 	}
+	allData = []byte(allStr)
 	if err := json.Unmarshal(allData, &all); err != nil {
 		return nil
 	}

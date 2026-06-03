@@ -5,7 +5,7 @@ import (
 	"battle-server-manager/internal/cmdUtils"
 	"os"
 
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/pflag"
@@ -26,7 +26,7 @@ func runRemoveAll(args []string) error {
 	}
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
-		configs, err := battleServerConfig.Configs(g, false)
+		configs, err := battleServer.Configs(g, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 type AvatarMetadataUpgradableDefaultData struct {
@@ -19,9 +19,9 @@ func NewAvatarMetadataUpgradableDefaultData(gameId string) *AvatarMetadataUpgrad
 func (p *AvatarMetadataUpgradableDefaultData) Default() *string {
 	var metadata string
 	switch p.gameId {
-	case common.GameAoE3, common.GameAoM:
+	case game.AoE3, game.AoM:
 		metadata = `{"v":1,"twr":0,"wlr":0,"ai":1,"ac":0}`
-	case common.GameAoE4:
+	case game.AoE4:
 		metadata = `{"sharedHistory":1,"hardwareType":0,"inputDeviceType":0}`
 	}
 	return &metadata

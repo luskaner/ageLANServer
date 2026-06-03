@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	c "scripts/internal/constants"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	p "github.com/luskaner/ageLANServer/common/paths"
 )
 
@@ -28,8 +28,8 @@ func CopyGameConfigs(module string) {
 	dstPath := BuildResourcePath(module)
 	MkdirP(dstPath)
 	src := filepath.Join(ResourcePath(module), fmt.Sprintf(c.GameConfigFileName, "game"))
-	for game := range common.SupportedGames.Iter() {
-		dst := filepath.Join(dstPath, fmt.Sprintf(c.GameConfigFileName, game))
+	for g := range game.SupportedGames.Iter() {
+		dst := filepath.Join(dstPath, fmt.Sprintf(c.GameConfigFileName, g))
 		if err := Cp(src, dst); err != nil {
 			log.Fatal(err)
 		}

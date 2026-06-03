@@ -23,6 +23,9 @@ use (
 	server-genCert
 	tools/scripts
 	tools/server-replay
+	./tools/mock/game
+	./tools/mock/launcher
+	./tools/mock/battle-server
 	./config-helper
 )
 

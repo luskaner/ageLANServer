@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -34,8 +34,8 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var toProfileIds profileIds
-	game := models.G(r)
-	if game.Title() == common.GameAoE3 {
+	g := models.G(r)
+	if g.Title() == game.AoE3 {
 		var toProfileId profileId
 		if err := i.Bind(r, &toProfileId); err != nil {
 			i.JSON(&w, i.A{2})
@@ -47,7 +47,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adv, ok := game.Advertisements().GetAdvertisement(req.MatchID)
+	adv, ok := g.Advertisements().GetAdvertisement(req.MatchID)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -63,8 +63,8 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users := game.Users()
-	if game.Title() == common.GameAoM {
+	users := g.Users()
+	if g.Title() == game.AoM {
 		toProfileIds.Ids.Data = slices.DeleteFunc(toProfileIds.Ids.Data, func(id int32) bool { return id == currentUserId })
 	}
 	receivers := make([]models.User, len(toProfileIds.Ids.Data))
@@ -77,7 +77,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	currentUser, ok := game.Users().GetUserById(currentUserId)
+	currentUser, ok := g.Users().GetUserById(currentUserId)
 	if !ok {
 		i.JSON(&w, i.A{2})
 		return
@@ -91,7 +91,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 	)
 
 	messageEncoded := message.Encode()
-	sessions := game.Sessions()
+	sessions := g.Sessions()
 	var receiverSession models.Session
 	for _, receiver := range receivers {
 		receiverSession, ok = sessions.GetByUserId(receiver.GetId())

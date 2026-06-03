@@ -44,12 +44,8 @@ func writePid(f *os.File) error {
 	return f.Sync()
 }
 
-func removeFile(f *os.File) error {
-	err := f.Close()
-	if err != nil {
-		return err
-	}
-	err = os.Remove(f.Name())
+func removeFile(name string) error {
+	err := os.Remove(name)
 	if err != nil {
 		return err
 	}
@@ -79,11 +75,12 @@ func (l *PidLock) Lock() error {
 }
 
 func (l *PidLock) Unlock() error {
+	name := l.fileLock.BaseLock.File.Name()
 	err := l.fileLock.Unlock()
 	if err != nil {
 		return err
 	}
-	err = removeFile(l.fileLock.BaseLock.File)
+	err = removeFile(name)
 	if err != nil {
 		return err
 	}

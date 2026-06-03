@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -119,7 +119,7 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 		)
 	}
 	var profileProperties *PersistentJsonData[*map[string]string]
-	if gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		profileProperties, _ = NewPersistentJsonData[*map[string]string](
 			persistentData,
 			"profileProperties",
@@ -135,7 +135,7 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 		)
 	}
 	var itemLoadouts *PersistentJsonData[*MainItemLoadouts]
-	if gameId != common.GameAoE1 {
+	if gameId != game.AoE1 {
 		itemLoadouts, _ = NewPersistentJsonData[*MainItemLoadouts](
 			persistentData,
 			"itemLoadouts",
@@ -153,7 +153,7 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 		NewAuthUpgradableDefaultData(),
 	)
 	var presenceProperties *i.SafeMap[int32, string]
-	if gameId != common.GameAoE1 {
+	if gameId != game.AoE1 {
 		presenceProperties = i.NewSafeMap[int32, string]()
 	}
 	return &MainUser{

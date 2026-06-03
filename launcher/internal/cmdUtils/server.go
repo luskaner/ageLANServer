@@ -12,11 +12,13 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
+	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
+	"github.com/spf13/pflag"
 )
 
 type processedServer struct {
@@ -120,7 +122,7 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 	return
 }
 
-func (c *Config) StartServer(executable string, args []string, stop bool, serverId uuid.UUID) (errorCode int, ip string) {
+func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (errorCode int, ip string) {
 	logger.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
@@ -130,7 +132,7 @@ func (c *Config) StartServer(executable string, args []string, stop bool, server
 	}
 	var result *commonExecutor.Result
 	var serverExe string
-	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, args, serverId, func(options commonExecutor.Options) {
+	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, flags, values, func(options commonExecutor.Options) {
 		commonLogger.Println("start server", options.String())
 	})
 	if result.Success() {

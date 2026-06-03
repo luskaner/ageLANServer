@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -32,11 +32,11 @@ type BattleServer interface {
 }
 
 type MainBattleServer struct {
-	battleServerConfig.BaseConfig `koanf:",squash"`
-	lan                           *bool
-	hasOobPort                    bool
-	battleServerName              string
-	lanMu                         sync.RWMutex
+	battleServer.Base `koanf:",squash"`
+	lan               *bool
+	hasOobPort        bool
+	battleServerName  string
+	lanMu             sync.RWMutex
 }
 
 func (battleServer *MainBattleServer) SetBattleServerName(battleServerName string) {
@@ -75,7 +75,7 @@ func (battleServer *MainBattleServer) LAN() bool {
 		battleServer.lanMu.Lock()
 		battleServer.lan = &lan
 		defer battleServer.lanMu.Unlock()
-		if guid, err := uuid.Parse(battleServer.BaseConfig.Region); err == nil && guid.Version() == 4 {
+		if guid, err := uuid.Parse(battleServer.Base.Region); err == nil && guid.Version() == 4 {
 			lan = true
 		}
 	} else {
@@ -101,12 +101,12 @@ func (battleServer *MainBattleServer) SetLAN(enable bool) {
 }
 
 func (battleServer *MainBattleServer) Region() string {
-	return battleServer.BaseConfig.Region
+	return battleServer.Base.Region
 }
 
 func (battleServer *MainBattleServer) EncodeLogin(r *http.Request) internal.A {
 	encoded := internal.A{
-		battleServer.BaseConfig.Region,
+		battleServer.Base.Region,
 	}
 	battleServer.AppendName(&encoded)
 	encoded = append(encoded, battleServer.ResolveIPv4(r))
@@ -143,7 +143,7 @@ func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) string {
 func (battleServer *MainBattleServer) String() string {
 	str := fmt.Sprintf(
 		"Region: %s (Name: %s), IPv4: %s, Ports: ",
-		battleServer.BaseConfig.Region,
+		battleServer.Base.Region,
 		battleServer.Name,
 		battleServer.IPv4,
 	)
@@ -213,14 +213,14 @@ func (battleSrvs *MainBattleServers) Get(region string) (BattleServer, bool) {
 }
 
 func (battleSrvs *MainBattleServers) NewLANBattleServer(region string) BattleServer {
-	battleServer := battleSrvs.NewBattleServer(region)
-	battleServer.SetLAN(true)
-	return battleServer
+	bs := battleSrvs.NewBattleServer(region)
+	bs.SetLAN(true)
+	return bs
 }
 
 func (battleSrvs *MainBattleServers) NewBattleServer(region string) BattleServer {
 	return &MainBattleServer{
-		BaseConfig: battleServerConfig.BaseConfig{
+		Base: battleServer.Base{
 			Region: region,
 		},
 		hasOobPort:       battleSrvs.haveOobPort,
