@@ -6,13 +6,13 @@ import (
 	"strconv"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 func (u *Path) profileFolder() string {
 	var p string
 	switch u.GameId() {
-	case common.GameAoE1, common.GameAoE4:
+	case game.AoE1, game.AoE4:
 		p = "Users"
 	}
 	return p
@@ -29,7 +29,7 @@ func (u *Path) Profiles() (err error, profiles mapset.Set[Data]) {
 	for _, entry := range entries {
 		if entry.IsDir() {
 			t, _ := typ(entry.Name())
-			if u.gameId != common.GameAoE1 {
+			if u.gameId != game.AoE1 {
 				if _, localErr := strconv.ParseUint(entry.Name(), 10, 64); localErr != nil {
 					continue
 				}

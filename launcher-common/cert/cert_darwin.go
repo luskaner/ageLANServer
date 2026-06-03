@@ -13,6 +13,8 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
+// TODO: Test in mac
+
 func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	keychain, asAdmin, err := keychainPath(userStore)
 	if err != nil {
@@ -46,6 +48,8 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	}
 	return nil
 }
+
+// TODO: Test in mac
 
 func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 	var existing []*x509.Certificate
@@ -82,6 +86,8 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 	}
 	return
 }
+
+// TODO: Test in mac
 
 func EnumCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 	var keychain string

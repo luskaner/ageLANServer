@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/spf13/pflag"
 )
 
@@ -24,7 +24,7 @@ func GameVarCommand(flags *pflag.FlagSet, gameId *string) {
 		fmt.Sprintf(
 			`%s %s %s`,
 			descriptionStart,
-			strings.Join(common.SupportedGames.ToSlice(), ", "),
+			strings.Join(game.SupportedGames.ToSlice(), ", "),
 			descriptionEnd,
 		),
 	)
@@ -34,7 +34,7 @@ func gamesDescription() string {
 	return fmt.Sprintf(
 		`%s %s %s`,
 		descriptionMultipleStart,
-		strings.Join(common.SupportedGames.ToSlice(), ", "),
+		strings.Join(game.SupportedGames.ToSlice(), ", "),
 		descriptionEnd,
 	)
 }
@@ -44,16 +44,7 @@ func GamesVarCommand(flags *pflag.FlagSet, gameIds *[]string) {
 		gameIds,
 		GamesIdentifier,
 		shorthand,
-		common.SupportedGames.ToSlice(),
-		gamesDescription(),
-	)
-}
-
-func GamesCommand(flags *pflag.FlagSet) {
-	flags.StringArrayP(
-		GamesIdentifier,
-		shorthand,
-		common.SupportedGames.ToSlice(),
+		game.SupportedGames.ToSlice(),
 		gamesDescription(),
 	)
 }
@@ -65,4 +56,28 @@ func LogRootCommand(flags *pflag.FlagSet, logRoot *string) {
 		"",
 		"Path to the log folder. If not empty, enables extra logging.",
 	)
+}
+
+type LogRootBase interface {
+	LogRootRef() *string
+}
+
+type LogRootValues struct {
+	LogRoot string
+}
+
+func (v *LogRootValues) LogRootRef() *string {
+	return &v.LogRoot
+}
+
+type GameIdBase interface {
+	GameIdRef() *string
+}
+
+type GameIdValues struct {
+	GameId string
+}
+
+func (v *GameIdValues) GameIdRef() *string {
+	return &v.GameId
 }

@@ -7,13 +7,13 @@ import (
 	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
 )
 
-var header = []byte{0x21, 0x24, 0x00}
+var Header = []byte{0x21, 0x24, 0x00}
 
-const guidLength = 36
+const GuidLength = 36
 
-const uint16Size = 2
+const PortSize = 2
 
-var minimumSize = len(header) + guidLength + uint16Size + 1 + 3*uint16Size
+var MinimumSize = len(Header) + GuidLength + PortSize + 1 + 3*PortSize
 
 func RetrieveBsInterfaceAddresses() (mostPriority *net.IPNet, restInterfaces []*net.IPNet, err error) {
 	var interfaces []net.Interface
@@ -59,6 +59,10 @@ func calculateBroadcastIp(ip net.IP, mask net.IPMask) net.IP {
 		broadcast[i] = ip[i] | ^mask[i]
 	}
 	return broadcast
+}
+
+func ValidData(data []byte, length int) bool {
+	return length >= MinimumSize || bytes.HasPrefix(data, Header)
 }
 
 func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet, port int) (err error) {
@@ -112,7 +116,7 @@ func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet, po
 
 	for {
 		n, addr, err = conn.ReadFromUDP(buffer)
-		if err != nil || n < minimumSize || !bytes.HasPrefix(buffer, header) || !addr.IP.Equal(mostPriority.IP) {
+		if err != nil || !ValidData(buffer, n) || !addr.IP.Equal(mostPriority.IP) {
 			continue
 		}
 		data := buffer[:n]

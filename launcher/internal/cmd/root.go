@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -23,7 +22,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
+	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
+	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/game/cert"
 	gameExecutor "github.com/luskaner/ageLANServer/common/game/executor"
 	"github.com/luskaner/ageLANServer/common/game/executor/custom"
 	"github.com/spf13/pflag"
@@ -38,7 +40,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/paths"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
@@ -184,7 +185,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		return nil
 	}
 	canBroadcastBattleServer := "false"
-	if runtime.GOOS == "windows" && (gameId != common.GameAoM && gameId != common.GameAoE4) {
+	if runtime.GOOS == "windows" && (gameId != game.AoM && gameId != game.AoE4) {
 		canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
 		if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 			logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
@@ -225,7 +226,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrInvalidIsolateProfiles))
 		return nil
 	}
-	if !common.SupportedGames.ContainsOne(gameId) {
+	if !game.SupportedGames.ContainsOne(gameId) {
 		logger.Println("Invalid game type")
 		errorCode.Store(int32(launcherCommon.ErrInvalidGame))
 		return nil
@@ -235,18 +236,18 @@ func runRoot(fs *pflag.FlagSet) error {
 		"Game": gameId,
 		"Id":   uuid.NewString(),
 	}
-	serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues)
-	serverId := uuid.Nil
-	if err == nil {
-		for i, arg := range serverArgs {
-			if arg == "--id" && i+1 < len(serverArgs) {
-				if id, err := uuid.Parse(serverArgs[i+1]); err == nil {
-					serverId = id
-				}
-				break
-			}
+	var serverArgsValues *cmdServer.Values
+	var serverFlags *pflag.FlagSet
+	if serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues); err == nil {
+		var serverSingleFlagSet *commonCmd.SingleFlagSet
+		serverArgsValues, serverSingleFlagSet = cmdServer.SingleFlagSet("", nil, nil)
+		serverFlags = serverSingleFlagSet.Fs()
+		if err = serverFlags.Parse(serverArgs); err != nil {
+			logger.Println("Failed to parse 'server' executable arguments")
+			errorCode.Store(int32(internal.ErrInvalidServerArgs))
+			return nil
 		}
-		if serverId == uuid.Nil {
+		if _, err := uuid.Parse(serverArgsValues.Id); err != nil {
 			logger.Println("You must provide a valid UUID for the server ID using the '--id' argument in 'server' executable arguments")
 			errorCode.Store(int32(internal.ErrInvalidServerArgs))
 			return nil
@@ -256,8 +257,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrInvalidServerArgs))
 		return nil
 	}
-	var battleServerManagerArgs []string
-	battleServerManagerArgs, err = cmdUtils.ParseCommandArgs(
+	battleServerManagerArgs, err := cmdUtils.ParseCommandArgs(
 		cfg.Server.BattleServerManager.Args,
 		serverValues,
 	)
@@ -291,7 +291,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		clientExecutableOfficial = true
 	}
 	var isolateMetadata bool
-	if gameId != common.GameAoE1 {
+	if gameId != game.AoE1 {
 		isolateMetadata = cmdUtils.ResolveIsolateValue(isolateMetadataStr, clientExecutableOfficial)
 	}
 	isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
@@ -302,10 +302,9 @@ func runRoot(fs *pflag.FlagSet) error {
 			logger.Println("Invalid isolation path")
 			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
 			return nil
-		} else {
-			logger.BasePath = isolationPath
-			logger.WriteFileLog(gameId, "post isolation path")
 		}
+		logger.BasePath = isolationPath
+		logger.WriteFileLog(gameId, "post isolation path")
 	} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
 		logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
 		errorCode.Store(int32(internal.ErrInvalidIsolationPath))
@@ -336,7 +335,7 @@ func runRoot(fs *pflag.FlagSet) error {
 			errorCode.Store(int32(internal.ErrInvalidClientPath))
 			return nil
 		}
-	} else if !isolateProfiles || (gameId != common.GameAoE1 && !isolateMetadata) {
+	} else if !isolateProfiles || (gameId != game.AoE1 && !isolateMetadata) {
 		logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
 		errorCode.Store(int32(internal.ErrRequiredIsolation))
 		return nil
@@ -365,7 +364,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	serverHost := cfg.Server.Host
 
 	logger.Printf("Game %s.\n", gameId)
-	if clientExecutable == "msstore" && gameId == common.GameAoM {
+	if clientExecutable == "msstore" && gameId == game.AoM {
 		logger.Println("The Microsoft Store (Xbox) version is not supported on this game.")
 		errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 		return nil
@@ -393,7 +392,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	var customExecutor custom.Exec
 	var ok bool
 	if customExecutor, ok = executer.(custom.Exec); ok {
-		if config.NeedsGamePath() {
+		if cert.HasCA(gameId) {
 			if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 				logger.Println("Invalid client path")
 				errorCode.Store(int32(internal.ErrInvalidClientPath))
@@ -402,12 +401,12 @@ func runRoot(fs *pflag.FlagSet) error {
 				gamePath = clientPath
 			}
 		}
-	} else if config.NeedsGamePath() {
+	} else if cert.HasCA(gameId) {
 		gamePath = executer.(game.Locatable).Path()
 	}
 	var gameCaCertPath string
 	if gamePath != "" {
-		caCert := cert.NewCA(gameId, gamePath)
+		_, caCert := cert.NewCA(gameId, gamePath)
 		gameCaCertPath = caCert.OriginalPath()
 		if commonLogger.FileLogger != nil {
 			logger.Cacert = &caCert
@@ -512,8 +511,7 @@ func runRoot(fs *pflag.FlagSet) error {
 				return nil
 			}
 		}
-		var selectedServerIp net.IP
-		serverId, selectedServerIp = cmdUtils.DiscoverServersAndSelectBestIpAddr(
+		serverId, selectedServerIp := cmdUtils.DiscoverServersAndSelectBestIpAddr(
 			gameId,
 			cfg.Server.SingleAutoSelect,
 			multicastIPs,
@@ -522,6 +520,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		if serverId != uuid.Nil {
 			serverIP = selectedServerIp.String()
 			serverStart = "false"
+			serverArgsValues.Id = serverId.String()
 			if serverStop == "auto" && (!isAdmin || runtime.GOOS == "windows") {
 				serverStop = "false"
 			}
@@ -558,28 +557,20 @@ func runRoot(fs *pflag.FlagSet) error {
 				return nil
 			} else {
 				serverIP = measuredServerIPAddrs[0].Ip.String()
-				serverId = id
+				serverArgsValues.Id = id.String()
 			}
 		}
 	} else {
 		if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
-			if !slices.Contains(serverArgs, "--log") {
-				serverArgs = append(serverArgs, "--log")
-			}
-			if !slices.Contains(serverArgs, "--logRoot") {
-				serverArgs = append(serverArgs, "--logRoot", logRoot)
-			}
-			if !slices.Contains(serverArgs, "--flatLog") {
-				serverArgs = append(serverArgs, "--flatLog")
-			}
-			if !slices.Contains(serverArgs, "--deterministic") {
-				serverArgs = append(serverArgs, "--deterministic")
-			}
+			serverArgsValues.Log = true
+			serverArgsValues.LogRoot = logRoot
+			serverArgsValues.Flatlog = true
+			serverArgsValues.Deterministic = true
 		}
-		if (gameId == common.GameAoM || gameId == common.GameAoE4) && battleServerManagerRun == "false" {
+		if (gameId == game.AoM || gameId == game.AoE4) && battleServerManagerRun == "false" {
 			logger.Println("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 		}
-		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && (gameId == common.GameAoM || gameId == common.GameAoE4))
+		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && (gameId == game.AoM || gameId == game.AoE4))
 		if cfg.Server.Start == "auto" {
 			str := "No 'server's were found, proceeding to"
 			if runBattleServerManager {
@@ -604,9 +595,16 @@ func runRoot(fs *pflag.FlagSet) error {
 			return nil
 		}
 		if runBattleServerManager {
+			values, flags := bsManager.StartFlagSet(nil)
+			if err = flags.Parse(battleServerManagerArgs); err != nil {
+				logger.Println("Failed to parse 'battle-server-manager' executable arguments")
+				errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
+				return nil
+			}
 			ec := config.RunBattleServerManager(
 				battleServerManagerExecutable,
-				battleServerManagerArgs,
+				flags,
+				values,
 				serverStop == "true",
 			)
 			if ec != common.ErrSuccess {
@@ -615,7 +613,7 @@ func runRoot(fs *pflag.FlagSet) error {
 			}
 		}
 		var ec int
-		ec, serverIP = config.StartServer(serverExecutablePath, serverArgs, serverStop == "true", serverId)
+		ec, serverIP = config.StartServer(serverExecutablePath, serverFlags, serverArgsValues, serverStop == "true")
 		if ec != common.ErrSuccess {
 			errorCode.Store(int32(ec))
 			return nil
@@ -634,7 +632,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		return nil
 	}
 	logger.WriteFileLog(gameId, "post host mapping")
-	errorCode.Store(int32(config.AddCert(gameId, serverId, serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
+	errorCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
 		return strings.Contains(s, "{CertFilePath}")
 	}))))
 	if errorCode.Load() != int32(common.ErrSuccess) {
@@ -647,7 +645,7 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	logger.WriteFileLog(gameId, "post isolate user data")
 	if gamePath != "" {
-		errorCode.Store(int32(config.AddCACertToGame(gameId, serverId, serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
+		errorCode.Store(int32(config.AddCACertToGame(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
 		if errorCode.Load() != int32(common.ErrSuccess) {
 			return nil
 		}
@@ -686,7 +684,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Server.BattleServerManager.Executable":     "auto",
 		"Server.BattleServerManager.ExecutableArgs": []string{"-e", "{Game}", "-r"},
 	}
-	for g := range common.SupportedGames.Iter() {
+	for g := range game.SupportedGames.Iter() {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
 	}
 	bindings := map[string]string{
@@ -735,7 +733,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 	}
 	var gameFileCandidates []string
 	if gameCfgFile != "" {
-		gameFileCandidates = append(gameFileCandidates, cfgFile)
+		gameFileCandidates = append(gameFileCandidates, gameCfgFile)
 	} else {
 		for _, configPath := range configPaths {
 			gameFileCandidates = append(gameFileCandidates, filepath.Join(configPath, fmt.Sprintf("config.%s.toml", gameId)))

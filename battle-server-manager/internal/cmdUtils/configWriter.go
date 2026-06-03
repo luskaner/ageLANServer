@@ -6,15 +6,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/pelletier/go-toml/v2"
 )
 
-func WriteConfig(gameId string, config battleServerConfig.Config) (err error) {
-	folder := battleServerConfig.Folder(gameId)
+func WriteConfig(gameId string, config battleServer.Config) (err error) {
+	folder := battleServer.Folder(gameId)
 	err = os.MkdirAll(folder, 0755)
 	if err != nil {
-		return fmt.Errorf("error while creating folder \"%s\": %v (or it's parents)", battleServerConfig.Folder(gameId), err)
+		return fmt.Errorf("error while creating folder \"%s\": %v (or it's parents)", battleServer.Folder(gameId), err)
 	}
 	var tomlBytes []byte
 	tomlBytes, err = toml.Marshal(config)
@@ -31,13 +31,13 @@ func WriteConfig(gameId string, config battleServerConfig.Config) (err error) {
 		if entry.IsDir() {
 			continue
 		}
-		index, localErr := battleServerConfig.ParseFileName(entry.Name())
+		index, localErr := battleServer.ParseFileName(entry.Name())
 		if localErr != nil {
 			continue
 		}
 		i = index
 	}
-	name := battleServerConfig.Name(i + 1)
+	name := battleServer.Name(i + 1)
 	err = os.WriteFile(filepath.Join(folder, name), tomlBytes, 0644)
 	if err != nil {
 		return fmt.Errorf("error while writing battle server config to file \"%s\": %v", name, err)

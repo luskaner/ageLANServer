@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/cloudfiles"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/account"
@@ -42,7 +42,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	itemGroup.HandleFunc("GET", "/getItemDefinitionsJson", item.GetItemDefinitionsJson)
 	itemGroup.HandleFunc("GET", "/getItemLoadouts", item.GetItemLoadouts)
 	itemGroup.HandleFunc("POST", "/signItems", item.SignItems)
-	if gameId != common.GameAoE1 {
+	if gameId != game.AoE1 {
 		itemGroup.HandleFunc("GET", "/getItemBundleItemsJson", item.GetItemBundleItemsJson)
 		itemGroup.HandleFunc("GET", "/getInventoryByProfileIDs", item.GetInventoryByProfileIDs)
 		itemGroup.HandleFunc("POST", "/detachItems", item.DetachItems)
@@ -63,25 +63,25 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	communityEventGroup := gameGroup.Subgroup("/CommunityEvent")
 	communityEventGroup.HandleFunc("GET", "/getAvailableCommunityEvents", communityEvent.GetAvailableCommunityEvents)
 
-	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE4 || gameId == game.AoM {
 		communityEventGroup.HandleFunc("GET", "/getEventStats", communityEvent.GetEventStats)
 		communityEventGroup.HandleFunc("GET", "/getEventLeaderboard", communityEvent.GetEventLeaderboard)
 	}
 	// TODO: GET getEventChallengeProgress ?
 	// TODO: POST updateEventChallengeProgressBatched ?
 	challengeGroup := gameGroup.Subgroup("/challenge")
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		challengeGroup.HandleFunc("POST", "/updateProgress", challenge.UpdateProgress)
 	}
-	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE4 || gameId == game.AoM {
 		challengeGroup.HandleFunc("POST", "/updateProgressBatched", challenge.UpdateProgressBatched)
 	}
 	ChallengeGroup := gameGroup.Subgroup("/Challenge")
 	// TODO: GET getChallengeProgressByProfileID ?
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		ChallengeGroup.HandleFunc("POST", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		ChallengeGroup.HandleFunc("GET", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
 	ChallengeGroup.HandleFunc("GET", "/getChallenges", challenge.GetChallenges)
@@ -109,17 +109,17 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	accountGroup.HandleFunc("POST", "/FindProfilesByPlatformID", account.FindProfilesByPlatformID)
 	accountGroup.HandleFunc("GET", "/FindProfiles", account.FindProfiles)
 	accountGroup.HandleFunc("GET", "/getProfileName", account.GetProfileName)
-	if gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		accountGroup.HandleFunc("GET", "/getProfileProperty", account.GetProfileProperty)
 		accountGroup.HandleFunc("POST", "/addProfileProperty", account.AddProfileProperty)
 		accountGroup.HandleFunc("POST", "/clearProfileProperty", account.ClearProfileProperty)
 	}
 
 	LeaderboardGroup := gameGroup.Subgroup("/Leaderboard")
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		LeaderboardGroup.HandleFunc("POST", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		LeaderboardGroup.HandleFunc("GET", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
 	}
 	LeaderboardGroup.HandleFunc("GET", "/getLeaderBoard", leaderboard.GetLeaderBoard)
@@ -127,10 +127,10 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	LeaderboardGroup.HandleFunc("GET", "/getStatGroupsByProfileIDs", leaderboard.GetStatGroupsByProfileIDs)
 	LeaderboardGroup.HandleFunc("GET", "/getStatsForLeaderboardByProfileName", leaderboard.GetStatsForLeaderboardByProfileName)
 	LeaderboardGroup.HandleFunc("GET", "/getPartyStat", leaderboard.GetPartyStat)
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		LeaderboardGroup.HandleFunc("GET", "/getAvatarStatLeaderBoard", leaderboard.GetAvatarStatLeaderBoard)
 	}
-	if gameId == common.GameAoE4 {
+	if gameId == game.AoE4 {
 		LeaderboardGroup.HandleFunc("GET", "/getRecentMatchSinglePlayerHistory", leaderboard.GetRecentMatchSinglePlayerHistory)
 	}
 	// Implement getPersonalStat ?
@@ -138,7 +138,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	leaderboardGroup.HandleFunc("POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
 	leaderboardGroup.HandleFunc("POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
 
-	if gameId == common.GameAoE4 {
+	if gameId == game.AoE4 {
 		automatchGroup := gameGroup.Subgroup("/automatch")
 		automatchGroup.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
 	} else {
@@ -156,86 +156,86 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	achievementGroup.HandleFunc("POST", "/syncStats", achievement.SyncStats)
 
 	advertisementGroup := gameGroup.Subgroup("/advertisement")
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformSessionID", advertisement.UpdatePlatformSessionID)
 	}
 	advertisementGroup.HandleFunc("POST", "/join", advertisement.Join)
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("POST", "/updateTags", advertisement.UpdateTags)
 	}
 	advertisementGroup.HandleFunc("POST", "/update", advertisement.Update)
 	advertisementGroup.HandleFunc("POST", "/leave", advertisement.Leave)
 	advertisementGroup.HandleFunc("POST", "/host", advertisement.Host)
-	if gameId == common.GameAoE1 || gameId == common.GameAoE3 {
+	if gameId == game.AoE1 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
 	}
-	if gameId == common.GameAoE2 {
+	if gameId == game.AoE2 {
 		advertisementGroup.HandleFunc("GET", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
 	}
-	if gameId == common.GameAoE1 || gameId == common.GameAoE3 {
+	if gameId == game.AoE1 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformLobbyID", advertisement.UpdatePlatformLobbyID)
 	}
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
 	}
 	advertisementGroup.HandleFunc("GET", "/getAdvertisements", advertisement.GetAdvertisements)
-	if gameId == common.GameAoE1 || gameId == common.GameAoE3 {
+	if gameId == game.AoE1 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/findAdvertisements", advertisement.FindAdvertisements)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
 	}
 
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)
 
-	if gameId == common.GameAoE2 || gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("POST", "/startObserving", advertisement.StartObserving)
 		advertisementGroup.HandleFunc("POST", "/stopObserving", advertisement.StopObserving)
 	}
 
 	chatGroup := gameGroup.Subgroup("/chat")
-	if gameId == common.GameAoE1 || gameId == common.GameAoE3 {
+	if gameId == game.AoE1 || gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/getChatChannels", chat.GetChatChannels)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		chatGroup.HandleFunc("GET", "/getChatChannels", chat.GetChatChannels)
 	}
 	chatGroup.HandleFunc("GET", "/getOfflineMessages", chat.GetOfflineMessages)
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/joinChannel", chat.JoinChannel)
 	}
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/leaveChannel", chat.LeaveChannel)
 	}
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/sendText", chat.SendText)
 	}
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/sendWhisper", chat.SendWhisper)
 	}
-	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE4 || gameId == game.AoM {
 		chatGroup.HandleFunc("POST", "/sendWhispers", chat.SendWhisper)
 	}
-	if gameId == common.GameAoM {
+	if gameId == game.AoM {
 		chatGroup.HandleFunc("POST", "/deleteOfflineMessage", chat.DeleteOfflineMessage)
 	}
 
 	relationshipGroup := gameGroup.Subgroup("/relationship")
-	if gameId == common.GameAoE1 || gameId == common.GameAoE3 {
+	if gameId == game.AoE1 || gameId == game.AoE3 {
 		relationshipGroup.HandleFunc("POST", "/getRelationships", relationship.GetRelationships)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		relationshipGroup.HandleFunc("GET", "/getRelationships", relationship.GetRelationships)
 	}
 	relationshipGroup.HandleFunc("GET", "/getPresenceData", relationship.GetPresenceData)
 	relationshipGroup.HandleFunc("POST", "/setPresence", relationship.SetPresence)
-	if gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		relationshipGroup.HandleFunc("POST", "/setPresenceProperty", relationship.SetPresenceProperty)
 	}
-	if gameId == common.GameAoE3 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		relationshipGroup.HandleFunc("POST", "/addfriend", relationship.Addfriend)
 	}
 	relationshipGroup.HandleFunc("POST", "/ignore", relationship.Ignore)
@@ -248,12 +248,12 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	partyGroup.HandleFunc("POST", "/reportMatch", party.ReportMatch)
 	partyGroup.HandleFunc("POST", "/finalizeReplayUpload", party.FinalizeReplayUpload)
 	partyGroup.HandleFunc("POST", "/updateHost", party.UpdateHost)
-	if gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE4 || gameId == game.AoM {
 		partyGroup.HandleFunc("POST", "/createOrReportSinglePlayer", party.CreateOrReportSinglePlayer)
 	}
 	playerReportGroup := gameGroup.Subgroup("/playerreport")
 	// TODO: Check if it applies to AoE III
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 || gameId == common.GameAoM {
+	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		playerReportGroup.HandleFunc("POST", "/reportUser", playerreport.ReportUser)
 	}
 
@@ -263,10 +263,10 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	invitationGroup.HandleFunc("POST", "/replyToInvitation", invitation.ReplyToInvitation)
 
 	cloudGroup := gameGroup.Subgroup("/cloud")
-	if gameId == common.GameAoE3 {
+	if gameId == game.AoE3 {
 		cloudGroup.HandleFunc("POST", "/getFileURL", cloud.GetFileURL)
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoE4 {
+	if gameId == game.AoE2 || gameId == game.AoE4 {
 		cloudGroup.HandleFunc("GET", "/getFileURL", cloud.GetFileURL)
 	}
 
@@ -279,7 +279,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 
 	// Artificial path needed for cloudGroup
 	// TODO: Enable to AoM if/when it gets cloud support
-	if gameId == common.GameAoE2 || gameId == common.GameAoE3 {
+	if gameId == game.AoE2 || gameId == game.AoE3 {
 		g.group.HandleFunc("GET", "/cloudfiles/", cloudfiles.Cloudfiles)
 	}
 	return SessionMiddleware(g.group.mux)

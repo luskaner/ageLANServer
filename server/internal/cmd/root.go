@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,7 +20,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
+	"github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -39,11 +40,7 @@ import (
 )
 
 var configPaths = []string{paths.ConfigsPath, "."}
-var id string
-var logRoot string
-var flatLog bool
-var deterministic bool
-var cfgFile string
+var values *server.Values
 
 var (
 	Version              string
@@ -51,20 +48,8 @@ var (
 )
 
 func Execute() error {
-	singleFs := cmd.NewSingleFlagSet(runRoot, Version)
-	fs := singleFs.Fs()
-	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	fs.StringP("announce", "a", "true", "Respond to discove 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
-	fs.IntP("announcePort", "p", common.AnnouncePort, "Port to respond to discovery requests. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
-	fs.StringP("announceMulticast", "m", "true", "Whether to respond to discovery queries using Multicast.")
-	fs.StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Multicast address to respond to discovery queries if 'announce' is enabled.")
-	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
-	fs.BoolVar(&flatLog, "flatLog", false, "Whether to log in a flat structure in --logRoot. Only applicable if --log is passed.")
-	fs.BoolVar(&deterministic, "deterministic", false, "Whether to be as deterministic as possible.")
-	cmd.GamesCommand(fs)
-	cmd.LogRootCommand(fs, &logRoot)
-	fs.BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
-	fs.StringVar(&id, "id", "", "Server instance ID to identify it.")
+	var singleFs *cmd.SingleFlagSet
+	values, singleFs = server.SingleFlagSet(Version, configPaths, runRoot)
 	return singleFs.Execute()
 }
 
@@ -79,10 +64,10 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	cfg, usedFile := initConfig(fs)
 	commonLogger.Initialize(nil)
-	if logRoot == "" {
-		logRoot = commonLogger.LogRootDate("")
+	if values.LogRoot == "" {
+		values.LogRoot = commonLogger.LogRootDate("")
 	}
-	if err := logger.OpenMainFileLog(logRoot, cfg.Log); err != nil {
+	if err := logger.OpenMainFileLog(values.LogRoot, cfg.Log); err != nil {
 		logger.Printf("Failed to open main log file: %v", err)
 		os.Exit(common.ErrFileLog)
 	}
@@ -116,12 +101,12 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	internal.Authentication = cfg.Authentication
 	var seed uint64
-	if !deterministic {
+	if !values.Deterministic {
 		seed = uint64(time.Now().UnixNano())
 	}
 	internal.InitializeRng(seed)
-	if id == "" {
-		id = uuid.NewString()
+	if values.Id == "" {
+		values.Id = uuid.NewString()
 	}
 	var closables []io.Closer
 	defer func() {
@@ -138,7 +123,7 @@ func runRoot(fs *pflag.FlagSet) error {
 		os.Exit(exitCode)
 	}()
 	var err error
-	if internal.Id, err = uuid.Parse(id); err != nil {
+	if internal.Id, err = uuid.Parse(values.Id); err != nil {
 		logger.Println("Invalid server instance ID")
 		exitCode = internal.ErrInvalidId
 		return nil
@@ -153,9 +138,9 @@ func runRoot(fs *pflag.FlagSet) error {
 		exitCode = internal.ErrGames
 		return nil
 	}
-	for game := range gameSet.Iter() {
-		if !common.SupportedGames.ContainsOne(game) {
-			logger.Println("Invalid game specified:", game)
+	for g := range gameSet.Iter() {
+		if !game.SupportedGames.ContainsOne(g) {
+			logger.Println("Invalid game specified:", g)
 			exitCode = internal.ErrGames
 			return nil
 		}
@@ -213,9 +198,9 @@ func runRoot(fs *pflag.FlagSet) error {
 		}
 		var writer io.Writer
 		var root *commonLogger.Root
-		gameLogRoot := logRoot
+		gameLogRoot := values.LogRoot
 		var filePrefix string
-		if flatLog {
+		if values.Flatlog {
 			filePrefix = fmt.Sprintf("%s_", gameId)
 		} else {
 			gameLogRoot = filepath.Join(gameLogRoot, gameId)
@@ -278,7 +263,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					return nil
 				}
 			}
-			server := &http.Server{
+			s := &http.Server{
 				Addr:         addr.String() + ":443",
 				Handler:      mux,
 				ErrorLog:     customLogger,
@@ -287,7 +272,7 @@ func runRoot(fs *pflag.FlagSet) error {
 				WriteTimeout: time.Second * 30,
 			}
 
-			logger.Println("\tListening on " + server.Addr)
+			logger.Println("\tListening on " + s.Addr)
 			go func() {
 				if len(listenConns) > 0 {
 					for _, conn := range listenConns {
@@ -298,7 +283,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					}
 					ip.ListenQueryConnections(listenConns)
 				}
-				err := server.ListenAndServeTLS(certFile, keyFile)
+				err := s.ListenAndServeTLS(certFile, keyFile)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
 					logger.Println("\tFailed to start 'server'")
 					logger.Printf("%s\n", err)
@@ -306,7 +291,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					return
 				}
 			}()
-			servers = append(servers, server)
+			servers = append(servers, s)
 		}
 	}
 
@@ -318,12 +303,12 @@ func runRoot(fs *pflag.FlagSet) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	for _, server := range servers {
+	for _, s := range servers {
 		wg.Go(func() {
-			if err := server.Shutdown(ctx); err != nil {
-				fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
+			if err := s.Shutdown(ctx); err != nil {
+				fmt.Printf("'Server' %s forced to shutdown: %v\n", s.Addr, err)
 			}
-			logger.Println("'Server'", server.Addr, "stopped")
+			logger.Println("'Server'", s.Addr, "stopped")
 		})
 	}
 	wg.Wait()
@@ -342,8 +327,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Announcement.Port":           common.AnnouncePort,
 		"Games.Enabled":               []string{},
 	}
-	for game := range common.SupportedGames.Iter() {
-		defaults[fmt.Sprintf("Games.%s.Hosts", game)] = []string{netip.IPv4Unspecified().String()}
+	for g := range game.SupportedGames.Iter() {
+		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
 	}
 	bindings := map[string]string{
 		"log":                    "Log",
@@ -356,8 +341,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		cmd.GamesIdentifier:      "Games.Enabled",
 	}
 	var fileCandidates []string
-	if cfgFile != "" {
-		fileCandidates = append(fileCandidates, cfgFile)
+	if values.CfgFile != "" {
+		fileCandidates = append(fileCandidates, values.CfgFile)
 	} else {
 		for _, configPath := range configPaths {
 			fileCandidates = append(fileCandidates, filepath.Join(configPath, "config.toml"))
@@ -373,7 +358,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		}
 		os.Exit(common.ErrConfigParse)
 	}
-	if cfgFile != "" && usedFile == "" {
+	if values.CfgFile != "" && usedFile == "" {
 		logger.Println("No config file found, using defaults.")
 	}
 	if usedFile != "" {

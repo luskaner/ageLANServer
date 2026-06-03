@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/andygrunwald/vdf"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 type ConfigPathFn func() string
@@ -31,15 +31,15 @@ func NewCustomGame(gameId string, configPathFn ConfigPathFn, configPathAltFn Con
 
 func appId(id string) string {
 	switch id {
-	case common.GameAoE1:
+	case game.AoE1:
 		return "1017900"
-	case common.GameAoE2:
+	case game.AoE2:
 		return "813780"
-	case common.GameAoE3:
+	case game.AoE3:
 		return "933110"
-	case common.GameAoE4:
+	case game.AoE4:
 		return "1466860"
-	case common.GameAoM:
+	case game.AoM:
 		return "1934680"
 	default:
 		return ""

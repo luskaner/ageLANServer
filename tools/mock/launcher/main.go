@@ -1,0 +1,40 @@
+package main
+
+import (
+	"io"
+	"launcher/internal/cmd"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime/debug"
+	"time"
+)
+
+func main() {
+	dir := filepath.Join("logs", "launcher")
+	if err := os.MkdirAll(dir, 0666); err != nil {
+		panic(err)
+	}
+	file, err := os.OpenFile(
+		filepath.Join(dir, time.Now().Format("2006-01-02_15-04-05"+".log")),
+		os.O_CREATE|os.O_WRONLY,
+		0666,
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+	multiWriter := io.MultiWriter(os.Stdout, file)
+	log.SetOutput(multiWriter)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic: %v\nStack Trace:\n%s", r, debug.Stack())
+			panic(r)
+		}
+	}()
+	if err := cmd.Execute(); err != nil {
+		panic(err)
+	}
+}

@@ -1,7 +1,7 @@
 package initializer
 
 import (
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/age1"
@@ -17,19 +17,19 @@ func InitializeGame(gameId string, configBattleServers []i.BattleServer) error {
 	if err := models.InitializeBattleServers(gameId, configBattleServers); err != nil {
 		return err
 	}
-	var game models.Game
+	var g models.Game
 	switch gameId {
-	case common.GameAoE1:
-		game = age1.CreateGame()
-	case common.GameAoE2:
-		game = age2.CreateGame()
-	case common.GameAoE3:
-		game = age3.CreateGame()
-	case common.GameAoE4:
-		game = age4.CreateGame()
-	case common.GameAoM:
-		game = athens.CreateGame()
+	case game.AoE1:
+		g = age1.CreateGame()
+	case game.AoE2:
+		g = age2.CreateGame()
+	case game.AoE3:
+		g = age3.CreateGame()
+	case game.AoE4:
+		g = age4.CreateGame()
+	case game.AoM:
+		g = athens.CreateGame()
 	}
-	Games[gameId] = game
+	Games[gameId] = g
 	return nil
 }

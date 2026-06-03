@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -123,7 +123,7 @@ func NewAvatarStatsUpgradableDefaultData(gameId string, definitions AvatarStatDe
 func (a *AvatarStatsUpgradableDefaultData) Default() *AvatarStats {
 	var values map[string]int64
 	switch a.gameId {
-	case common.GameAoE2:
+	case game.AoE2:
 		// TODO: Remove the ones not needed
 		values = map[string]int64{
 			"STAT_NUM_MVP_AWARDS":           0,
@@ -143,12 +143,12 @@ func (a *AvatarStatsUpgradableDefaultData) Default() *AvatarStats {
 			"STAT_TOTAL_GAMES":              0,
 		}
 	// TODO: What benefits Aoe4 here ?
-	case common.GameAoE3:
+	case game.AoE3:
 		// FIXME: Is this even needed?
 		values = map[string]int64{
 			"STAT_EVENT_EXPLORER_SKIN_CHALLENGE_14c": 16,
 		}
-	case common.GameAoM:
+	case game.AoM:
 		values = map[string]int64{
 			"STAT_GAUNTLET_REWARD_XP":     2_147_483_647,
 			"STAT_GAUNTLET_REWARD_FAVOUR": 19_500,

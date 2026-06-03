@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -31,7 +31,7 @@ type cdnPathConfig struct {
 	CdnBundles []cdnBundle
 }
 
-var BaseDir = path.Join(models.ResponsesFolder, common.GameAoM, "playfab")
+var BaseDir = path.Join(models.ResponsesFolder, game.AoM, "playfab")
 var StaticConfig string
 
 const StaticSuffix = "/static"

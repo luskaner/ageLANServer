@@ -4,30 +4,29 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
 )
 
-func Kill(config battleServerConfig.Config) bool {
+func Kill(config battleServer.Config) bool {
 	proc, err := process.FindProcess(int(config.PID))
 	if err == nil && proc != nil {
 		str := "\t\tProcess still running, killing it..."
 		if err = process.KillProc(proc); err == nil {
 			commonLogger.Println(str + " OK")
 			return true
-		} else {
-			commonLogger.Println(str+" failed with error: ", err)
-			return false
 		}
+		commonLogger.Println(str+" failed with error: ", err)
+		return false
 	}
 	return true
 }
 
-func remove(gameId string, config battleServerConfig.Config) bool {
+func remove(gameId string, config battleServer.Config) bool {
 	commonLogger.Println("\tRemoving:", config.Region)
 	_ = Kill(config)
-	folder := battleServerConfig.Folder(gameId)
+	folder := battleServer.Folder(gameId)
 	if f, err := os.Stat(folder); err != nil || !f.IsDir() {
 		return false
 	}
@@ -45,7 +44,7 @@ func remove(gameId string, config battleServerConfig.Config) bool {
 	return true
 }
 
-func Remove(gameId string, configs []battleServerConfig.Config, onlyInvalid bool) bool {
+func Remove(gameId string, configs []battleServer.Config, onlyInvalid bool) bool {
 	var removedAny bool
 	for _, config := range configs {
 		var doRemove bool

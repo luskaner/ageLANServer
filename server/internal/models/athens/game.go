@@ -2,7 +2,7 @@ package athens
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/game/communityEvent"
@@ -25,7 +25,7 @@ type Game struct {
 
 func CreateGame() models.Game {
 	mainGame := models.CreateMainGame(
-		common.GameAoM,
+		game.AoM,
 		&models.CreateMainGameOpts{
 			Instances: &models.InstanceOpts{
 				Users: &user.Users{},

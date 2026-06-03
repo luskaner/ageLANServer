@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
@@ -63,7 +63,7 @@ func (users *Users) Generate(_ string, persistentData *models.PersistentStringJs
 	if err != nil {
 		return nil
 	}
-	mainUser := users.MainUsers.Generate(common.GameAoM, persistentData, itemDefinitions, avatarStatsDefinitions, identifier, isXbox, platformUserId, alias)
+	mainUser := users.MainUsers.Generate(game.AoM, persistentData, itemDefinitions, avatarStatsDefinitions, identifier, isXbox, platformUserId, alias)
 	return &User{
 		MainUser:    mainUser.(*models.MainUser),
 		PlayfabData: d,

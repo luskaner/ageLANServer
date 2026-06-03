@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 const elementSepDotGlob = "."
@@ -24,11 +25,11 @@ type Game interface {
 }
 
 var gameIdToGame = map[string]Game{
-	common.GameAoE1: GameAoE1{},
-	common.GameAoE2: GameAoE2{},
-	common.GameAoE3: GameAoE3{},
-	common.GameAoE4: GameAoE4{},
-	common.GameAoM:  GameAoM{},
+	game.AoE1: GameAoE1{},
+	game.AoE2: GameAoE2{},
+	game.AoE3: GameAoE3{},
+	game.AoE4: GameAoE4{},
+	game.AoM:  GameAoM{},
 }
 
 func addNewestPath(basePath string, tmpPaths []string, checkFn func(info os.FileInfo) bool, paths *[]string) {
@@ -126,8 +127,9 @@ func sortByModTime(filesInfo *[]os.FileInfo) {
 
 func CopyGameLogs(gameId string, basePath string, logRoot string) {
 	commonLogger.Println("Copying game logs...")
-	if game, ok := gameIdToGame[gameId]; ok {
-		paths := game.Paths(basePath)
+	if g, ok := gameIdToGame[gameId]; ok {
+		finalPath := userData.NewPath(basePath, gameId).String()
+		paths := g.Paths(finalPath)
 		for _, path := range paths {
 			str := fmt.Sprintf("\tCopying %s... ", path)
 			if copyPathToDir(path, logRoot) {

@@ -1,114 +1,76 @@
 package executor
 
 import (
-	"encoding/base64"
 	"io"
-	"slices"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
+	"github.com/spf13/pflag"
 )
 
 type ConfigSetupOptions struct {
-	GameId           string
-	MapIp            string
-	AddUserCertData  []byte
-	AddLocalCertData []byte
-	AddGameCertData  []byte
-	BackupMetadata   bool
-	BackupProfiles   bool
-	ExitAgentOnError bool
-	HostFilePath     string
-	CertFilePath     string
-	GameBinPath      string
-	GameDataPath     string
-	Out              io.Writer
-	OptionsFn        func(options exec.Options)
+	*config.SetupValues
+	flags     *pflag.FlagSet
+	Out       io.Writer
+	OptionsFn func(options exec.Options)
 }
 
-func (c *ConfigSetupOptions) ConfigRevertFlagOptions(args []string) *launcherCommon.ConfigRevertFlagOptions {
-	return &launcherCommon.ConfigRevertFlagOptions{
-		GameId:          c.GameId,
-		UnmapIPs:        c.MapIp != "",
-		RemoveUserCert:  c.AddUserCertData != nil,
-		RemoveLocalCert: c.AddLocalCertData != nil,
-		RestoreGameCert: c.AddGameCertData != nil,
-		RestoreMetadata: c.BackupMetadata,
-		RestoreProfiles: c.BackupProfiles,
-		HostFilePath:    c.HostFilePath,
-		CertFilePath:    c.CertFilePath,
-		GameBinPath:     c.GameBinPath,
-		GameDataPath:    c.GameDataPath,
-		LogRoot:         commonLogger.FileLogger.Folder(),
-		StopAgent:       launcherCommon.RequiresStopConfigAgent(args),
-		FailFast:        true,
+func NewConfigSetupOptions() *ConfigSetupOptions {
+	setupValues, flags := config.RegularSetUpFlagSet()
+	return &ConfigSetupOptions{
+		flags:       flags,
+		SetupValues: setupValues,
 	}
+}
+
+func (c *ConfigSetupOptions) ConfigRevertFlagOptions() *launcherCommon.ConfigRevertFlagOptions {
+	options := launcherCommon.NewConfigRevertFlagOptions()
+	options.UnmapIPs = c.MapIp != nil
+	options.RemoveLocalCert = c.AddLocalCertData != nil
+	options.RemoveUserCert = c.AddUserCertData != nil
+	options.RestoreCAStoreCert = c.AddCACertData != nil
+	options.StopAgent = c.AgentStart
+	options.GameId = c.GameId
+	options.LogRoot = c.LogRoot
+	options.CertFilePath = c.CertFilePath
+	options.HostFilePath = c.HostFilePath
+	options.DataPath = c.DataPath
+	options.GamePath = c.GamePath
+	options.Metadata = c.Metadata
+	options.Profiles = c.Profiles
+	return options
+}
+
+func (c *ConfigSetupOptions) shouldStartAgent() bool {
+	if !launcherCommon.RequiresAdminElevation(false) {
+		return false
+	}
+	return (c.AddLocalCertData != nil && c.CertFilePath == "") ||
+		(c.MapIp != nil && c.HostFilePath == "")
 }
 
 func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
-	args := make([]string, 0)
-	args = append(args, "setup")
-	if c.GameId != "" {
-		args = append(args, "-e")
-		args = append(args, c.GameId)
+	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
+		c.LogRoot = logRoot
 	}
-	if !executor.IsAdmin() {
-		args = append(args, "-g")
-		if c.ExitAgentOnError {
-			args = append(args, "-r")
-		}
+	if c.AgentStart = c.shouldStartAgent(); c.AgentStart {
+		c.AgentEndOnError = true
 	}
-	if c.MapIp != "" {
-		args = append(args, "-i")
-		args = append(args, c.MapIp)
+	args := cmd.FlagSetToArgs(c.flags, true)
+	if c.MapIp != nil {
 		reloadHostMappings = true
 	}
-	if c.AddLocalCertData != nil {
+	if c.AddLocalCertData != nil || c.AddUserCertData != nil {
 		reloadSystemCertificates = true
-		args = append(args, "-l")
-		args = append(args, base64.StdEncoding.EncodeToString(c.AddLocalCertData))
-	}
-	if c.AddUserCertData != nil {
-		reloadSystemCertificates = true
-		args = append(args, "-u")
-		args = append(args, base64.StdEncoding.EncodeToString(c.AddUserCertData))
-	}
-	if c.AddGameCertData != nil {
-		args = append(args, "-s")
-		args = append(args, base64.StdEncoding.EncodeToString(c.AddGameCertData))
-	}
-	if c.BackupMetadata {
-		args = append(args, "-m")
-	}
-	if c.BackupProfiles {
-		args = append(args, "-p")
-	}
-	if c.HostFilePath != "" {
-		args = append(args, "-o")
-		args = append(args, c.HostFilePath)
-	}
-	if c.CertFilePath != "" {
-		args = append(args, "-t")
-		args = append(args, c.CertFilePath)
-	}
-	if c.GameDataPath != "" {
-		args = append(args, "--dataPath")
-		args = append(args, c.GameDataPath)
-	}
-	if c.GameBinPath != "" {
-		args = append(args, "--gamePath")
-		args = append(args, c.GameBinPath)
-	}
-	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
-		args = append(args, "--logRoot", logRoot)
 	}
 	options := exec.Options{File: executables.NativeFileName(false, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	c.OptionsFn(options)
@@ -121,10 +83,10 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 		certStore.ReloadSystemCertificates()
 	}
 	if reloadHostMappings {
-		common.ClearCache()
+		common.ClearDNSCache()
 	}
 	if result.Success() {
-		revertArgs := c.ConfigRevertFlagOptions(args).Flags()
+		revertArgs := c.ConfigRevertFlagOptions().Flags()
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
 			logger.Println("Failed to store revert arguments, reverting setup...")
 			result = RunRevert(revertArgs, false, c.Out, c.OptionsFn)
@@ -138,12 +100,16 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 }
 
 func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options exec.Options)) (result *exec.Result) {
+	values, flagSet := config.RegularRevertFlagSet()
+	if err := flagSet.Parse(flags); err != nil {
+		return &exec.Result{Err: err}
+	}
 	result = launcherCommon.RunRevert(flags, bin, out, optionFn)
-	if slices.Contains(flags, "-a") || slices.Contains(flags, "-u") || slices.Contains(flags, "-l") {
+	if values.RemoveAll || values.RemoveUserCert || values.RemoveLocalCert {
 		certStore.ReloadSystemCertificates()
 	}
-	if slices.Contains(flags, "-a") || slices.Contains(flags, "-i") || slices.Contains(flags, "-c") {
-		common.ClearCache()
+	if values.RemoveAll || values.UnmapIPs {
+		common.ClearDNSCache()
 	}
 	return
 }

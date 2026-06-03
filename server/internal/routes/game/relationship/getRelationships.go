@@ -3,7 +3,7 @@ package relationship
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
@@ -27,7 +27,7 @@ func Relationships(gameTitle string, clientLibVersion uint16, users models.Users
 	}, clientLibVersion)
 	friends := profileInfo
 	lastConnection := profileInfo
-	if gameTitle == common.GameAoE3 || gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
+	if gameTitle == game.AoE3 || gameTitle == game.AoE4 || gameTitle == game.AoM {
 		lastConnection = []i.A{}
 	} else {
 		friends = []i.A{}
@@ -39,11 +39,11 @@ func GetRelationships(w http.ResponseWriter, r *http.Request) {
 	// As we don't have knowledge of Steam/Xbox friends, nor it is supposed to be many players on the server
 	// just return all online users as if they were friends (AoE3/AoE4/AoM) or last connections (AoE2)
 	sess := models.SessionOrPanic(r)
-	game := models.G(r)
-	users := game.Users()
+	g := models.G(r)
+	users := g.Users()
 	currentUser, ok := users.GetUserById(sess.GetUserId())
 	if ok {
-		i.JSON(&w, Relationships(game.Title(), sess.GetClientLibVersion(), users, currentUser, game.PresenceDefinitions()))
+		i.JSON(&w, Relationships(g.Title(), sess.GetClientLibVersion(), users, currentUser, g.PresenceDefinitions()))
 	} else {
 		i.JSON(&w, relationshipResponse(0, []i.A{}, []i.A{}))
 	}

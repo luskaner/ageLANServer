@@ -8,14 +8,12 @@ import (
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
+	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
+	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
-	"github.com/spf13/pflag"
 )
 
 func untrustCertificate() bool {
@@ -30,29 +28,24 @@ func untrustCertificate() bool {
 }
 
 func runSetUp(args []string) error {
-	fs := pflag.NewFlagSet("setup", pflag.ContinueOnError)
-	// register flags using launcher-common helpers
-	launcherCommonCmd.InitSetUp(fs)
-	commonCmd.LogRootCommand(fs, &logRoot)
-
+	values, fs := launcherCommonCmd.AdminSetupFlagSet()
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 
 	// validate required flags
-	if launcherCommonCmd.GameId == "" {
+	if values.GameId == "" {
 		return errors.New("required flag 'game' not set")
 	}
 
-	// original run body
 	internal.SetUp = true
-	if logRoot != "" {
-		internal.Initialize(logRoot)
+	if values.LogRoot != "" {
+		internal.Initialize(values.LogRoot)
 	}
 	trustedCertificate := false
-	if len(launcherCommonCmd.AddLocalCertData) > 0 {
+	if len(values.AddLocalCertData) > 0 {
 		commonLogger.Println("Adding local certificate")
-		crt := cert.BytesToCertificate(launcherCommonCmd.AddLocalCertData)
+		crt := common.BytesToCertificate(values.AddLocalCertData)
 		if crt == nil {
 			commonLogger.Println("Failed to parse certificate")
 			os.Exit(internal.ErrLocalCertAddParse)
@@ -74,9 +67,9 @@ func runSetUp(args []string) error {
 			os.Exit(internal.ErrLocalCertAdd)
 		}
 	}
-	if len(launcherCommonCmd.MapIP) > 0 {
+	if len(values.MapIp) > 0 {
 		commonLogger.Println("Adding IP mappings")
-		if ok, _ := launcherCommonHosts.AddHosts(launcherCommonCmd.GameId, "", "", hosts.FlushDns); ok {
+		if ok, _ := launcherCommonHosts.AddHosts(values.MapIp, values.GameId, "", "", hosts.FlushDns); ok {
 			commonLogger.Println("Successfully added IP mappings")
 		} else {
 			errorCode := internal.ErrIpMapAdd

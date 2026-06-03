@@ -3,7 +3,7 @@ package advertisement
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
@@ -11,23 +11,23 @@ import (
 
 func updateReturnError(gameId string, w *http.ResponseWriter) {
 	response := i.A{2}
-	if gameId != common.GameAoE1 {
+	if gameId != game.AoE1 {
 		response = append(response, i.A{})
 	}
 	i.JSON(w, response)
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
-	game := models.G(r)
-	gameTitle := game.Title()
+	g := models.G(r)
+	gameTitle := g.Title()
 
 	var q shared.AdvertisementUpdateRequest
 	if err := i.Bind(r, &q); err != nil {
 		updateReturnError(gameTitle, &w)
 		return
 	}
-	advertisements := game.Advertisements()
-	battleServers := game.BattleServers()
+	advertisements := g.Advertisements()
+	battleServers := g.BattleServers()
 	var response i.A
 	var ok bool
 	advertisements.WithWriteLock(q.Id, func() {
@@ -37,15 +37,15 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if gameTitle == common.GameAoE1 || gameTitle == common.GameAoE3 {
+		if gameTitle == game.AoE1 || gameTitle == game.AoE3 {
 			q.Joinable = true
 		}
 		adv.UnsafeUpdate(&q)
-		if gameTitle == common.GameAoE1 || gameTitle == common.GameAoE3 {
+		if gameTitle == game.AoE1 || gameTitle == game.AoE3 {
 			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
 		}
 
-		if gameTitle == common.GameAoE1 || gameTitle == common.GameAoE3 || gameTitle == common.GameAoE4 {
+		if gameTitle == game.AoE1 || gameTitle == game.AoE3 || gameTitle == game.AoE4 {
 			response = adv.UnsafeEncode(gameTitle, battleServers)
 		}
 		ok = true

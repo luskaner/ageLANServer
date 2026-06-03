@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
@@ -21,14 +21,14 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 		i.JSON(&w, i.A{2, i.A{nil}})
 		return
 	}
-	game := models.G(r)
-	cloudFiles := game.Resources().CloudFiles()
+	g := models.G(r)
+	cloudFiles := g.Resources().CloudFiles()
 	if cloudFiles.Value == nil {
 		i.JSON(&w, i.A{2, slices.Repeat(i.A{nil}, len(req.Names.Data))})
 		return
 	}
 	descriptions := make(i.A, len(req.Names.Data))
-	gameTitle := game.Title()
+	gameTitle := g.Title()
 	var errorCode int
 	for j, name := range req.Names.Data {
 		fileData, ok := cloudFiles.Value[name]
@@ -44,7 +44,7 @@ func GetFileURL(w http.ResponseWriter, r *http.Request) {
 			fileData.Id,
 			fmt.Sprintf("https://%s/cloudfiles/%s", r.Host, finalPart),
 		}
-		if gameTitle == common.GameAoE2 {
+		if gameTitle == game.AoE2 {
 			description = append(
 				description,
 				finalPart,

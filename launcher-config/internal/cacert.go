@@ -7,8 +7,9 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
+	launcherCommonCert "github.com/luskaner/ageLANServer/common/game/cert"
 	"github.com/luskaner/ageLANServer/common/logger"
-	launcherCommonCert "github.com/luskaner/ageLANServer/launcher-common/cert"
 )
 
 type CACert struct {
@@ -16,7 +17,10 @@ type CACert struct {
 }
 
 func NewCACert(gameId string, gamePath string) *CACert {
-	return &CACert{launcherCommonCert.NewCA(gameId, gamePath)}
+	if ok, caCert := launcherCommonCert.NewCA(gameId, gamePath); ok {
+		return &CACert{caCert}
+	}
+	return nil
 }
 
 func (c *CACert) Backup() (err error) {
@@ -87,13 +91,13 @@ func (c *CACert) Restore() (err error, removedCerts []*x509.Certificate) {
 		return
 	}
 	commonLogger.Printf("Reading %s certificates\n", tmpPath)
-	backupHashes, backupHashToIndex, backupCerts, err := launcherCommonCert.ReadFromFile(tmpPath)
+	backupHashes, backupHashToIndex, backupCerts, err := common.ReadFromFile(tmpPath)
 	if err != nil {
 		revert()
 		return
 	}
 	commonLogger.Printf("Reading %s certificates\n", originalPath)
-	originalHashes, _, _, err := launcherCommonCert.ReadFromFile(originalPath)
+	originalHashes, _, _, err := common.ReadFromFile(originalPath)
 	if err != nil {
 		revert()
 		return
@@ -129,7 +133,7 @@ func (c *CACert) Append(certs []*x509.Certificate) (err error) {
 	}(file)
 	commonLogger.Println("Writing certs data")
 	for _, cert := range certs {
-		if err = launcherCommonCert.WriteAsPem(cert.Raw, file); err != nil {
+		if err = common.WriteAsPem(cert.Raw, file); err != nil {
 			return
 		}
 	}

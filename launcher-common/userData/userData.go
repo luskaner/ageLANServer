@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 const backupSuffix = ".bak"
@@ -54,16 +54,16 @@ func NewPath(path string, gameId string) *Path {
 	var s string
 	prefixToUse := prefix
 	switch gameId {
-	case common.GameAoE1:
+	case game.AoE1:
 		s = `Age of Empires DE`
-	case common.GameAoE2:
+	case game.AoE2:
 		s = `Age of Empires 2 DE`
-	case common.GameAoE3:
+	case game.AoE3:
 		s = `Age of Empires 3 DE`
-	case common.GameAoE4:
+	case game.AoE4:
 		s = `Age of Empires IV`
 		prefixToUse = aoe4Prefix
-	case common.GameAoM:
+	case game.AoM:
 		s = `Age of Mythology Retold`
 	}
 	return &Path{filepath.Join(path, prefixToUse, s), gameId}

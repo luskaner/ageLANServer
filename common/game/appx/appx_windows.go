@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"unsafe"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
@@ -55,13 +55,13 @@ const (
 
 func appNameSuffix(gameTitle string) string {
 	switch gameTitle {
-	case common.GameAoE1:
+	case game.AoE1:
 		return "Darwin"
-	case common.GameAoE2:
+	case game.AoE2:
 		return "MSPhoenix"
-	case common.GameAoE3:
+	case game.AoE3:
 		return "MSGPBoston"
-	case common.GameAoE4:
+	case game.AoE4:
 		return "Cardinal"
 	// FIXME: Add common.GameAoM
 	default:

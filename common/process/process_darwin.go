@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+// TODO: Test in mac
+
 func GetProcessStartTime(pid int) (int64, error) {
 	// Use ps command to get process start time (lstart format)
 	// This avoids brittle hardcoded struct offsets that vary between macOS versions/architectures
@@ -42,6 +44,8 @@ func parseProcessStartTime(timeStr string) (t time.Time, err error) {
 	t, err = time.ParseInLocation("Mon Jan _2 15:04:05 2006", timeStr, time.Local)
 	return
 }
+
+// TODO: Test in mac
 
 // ProcessesByNames returns a map of process names to their procs.
 // Note: If multiple processes share the same name, only one PID is stored per name.
@@ -76,7 +80,9 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		}
 		cmdlineName := filepath.Base(comm)
 		if slices.Contains(names, cmdlineName) {
-			processesPid[cmdlineName] = &os.Process{Pid: int(pid)}
+			if proc, err := FindProcess(int(pid)); err == nil {
+				processesPid[cmdlineName] = proc
+			}
 		}
 	}
 

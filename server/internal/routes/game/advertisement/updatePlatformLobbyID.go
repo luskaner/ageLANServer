@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -22,8 +22,8 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		return
 	}
 
-	game := models.G(r)
-	advertisements := game.Advertisements()
+	g := models.G(r)
+	advertisements := g.Advertisements()
 	var currentUserId int32
 	var peersId iter.Seq[int32]
 	var ok bool
@@ -57,9 +57,9 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		i.JSON(w, i.A{2})
 		return
 	}
-	sessions := game.Sessions()
+	sessions := g.Sessions()
 	message := i.A{req.MatchID, metadata, idValueUint}
-	if gameTitle := game.Title(); gameTitle == common.GameAoE2 || gameTitle == common.GameAoE4 || gameTitle == common.GameAoM {
+	if gameTitle := g.Title(); gameTitle == game.AoE2 || gameTitle == game.AoE4 || gameTitle == game.AoM {
 		message = append(message, 0, "", "")
 	}
 	for peerId := range peersId {

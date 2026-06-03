@@ -3,7 +3,7 @@ package advertisement
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
@@ -37,16 +37,16 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 		i.JSON(&w, findAdvResp(2, i.A{}))
 		return
 	}
-	game := models.G(r)
-	title := game.Title()
+	g := models.G(r)
+	title := g.Title()
 	sess := models.SessionOrPanic(r)
 	currentUserId := sess.GetUserId()
 	var battleServers models.BattleServers
 	if len(lanRegions) == 0 {
-		battleServers = game.BattleServers()
+		battleServers = g.BattleServers()
 	}
 	var tagsCheck func(models.Advertisement) bool
-	if battleServers != nil && (title == common.GameAoE2 || title == common.GameAoM || title == common.GameAoE4) {
+	if battleServers != nil && (title == game.AoE2 || title == game.AoM || title == game.AoE4) {
 		ok, numericTags, stringTags := parseTags(r)
 		if ok {
 			tagsCheck = func(adv models.Advertisement) bool {
@@ -54,7 +54,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			}
 		}
 	}
-	advs := game.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv models.Advertisement) bool {
+	advs := g.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv models.Advertisement) bool {
 		peers := adv.GetPeers()
 		_, isPeer := peers.Load(currentUserId)
 		var matchesBattleServer bool

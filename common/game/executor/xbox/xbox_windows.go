@@ -3,8 +3,8 @@ package xbox
 import (
 	"fmt"
 
-	"github.com/luskaner/ageLANServer/common"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/game/appx"
 )
 
@@ -38,7 +38,7 @@ func (exec Exec) String() string {
 }
 
 func NewExec(gameId string) (exec *Exec, ok bool) {
-	if gameId != common.GameAoM {
+	if gameId != game.AoM {
 		var g *appx.Game
 		if g, ok = appx.NewGame(gameId); ok {
 			exec = &Exec{g}
