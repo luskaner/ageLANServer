@@ -6,8 +6,8 @@ require (
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/hairyhenderson/go-which v0.2.3
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/net v0.54.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/net v0.55.0
+	golang.org/x/sys v0.45.0
 	golang.org/x/text v0.37.0
 )
 
