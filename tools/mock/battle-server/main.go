@@ -12,7 +12,7 @@ import (
 
 func main() {
 	dir := filepath.Join("logs", "battle-server")
-	if err := os.MkdirAll(dir, 0666); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		panic(err)
 	}
 	file, err := os.OpenFile(

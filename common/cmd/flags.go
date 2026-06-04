@@ -31,13 +31,7 @@ func FlagSetToArgs(fs *pflag.FlagSet, includeName bool) []string {
 			} else {
 				args = append(args, fmt.Sprintf("--%s=false", f.Name))
 			}
-		case "string":
-			if strings.Contains(valueStr, " ") {
-				args = append(args, fmt.Sprintf("--%s=%q", f.Name, valueStr))
-			} else {
-				args = append(args, fmt.Sprintf("--%s=%s", f.Name, valueStr))
-			}
-		case "int", "ip", "bytesHex", "bytesBase64":
+		case "string", "int", "ip", "bytesHex", "bytesBase64":
 			args = append(args, fmt.Sprintf("--%s=%s", f.Name, valueStr))
 		case "stringSlice", "stringArray":
 			val := strings.TrimPrefix(valueStr, "[")

@@ -103,7 +103,7 @@ func (r *ReadOnlyItemMetadata) UnmarshalJSON(data []byte) error {
 	}
 	allData = []byte(allStr)
 	if err := json.Unmarshal(allData, &all); err != nil {
-		return nil
+		return err
 	}
 	if attributes, ok := all["att"]; ok {
 		if err := json.Unmarshal(attributes, &r.attributes); err != nil {

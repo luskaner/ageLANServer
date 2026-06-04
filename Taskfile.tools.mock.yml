@@ -76,7 +76,7 @@ tasks:
       - task: build-common
         vars: { GAME_ID: 'age2', GAME_BIN_NAME: 'AoE2DE_s' }
       - task: build-battleserver
-        vars: { GAME_ID: 'age2', BS_SUFFIX: 'BattleServer/BattleServer', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '27012', DEF_OOB_PORT: '27212' }
+        vars: { GAME_ID: 'age2', SUFFIX: 'BattleServer/BattleServer', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '27012', DEF_OOB_PORT: '27212' }
   build-age3:
     cmds:
       - task: build-common

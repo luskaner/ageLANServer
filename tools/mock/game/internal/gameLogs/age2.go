@@ -20,7 +20,7 @@ func (g GameAoE2) CreateLogs(path string) (err error) {
 	return os.WriteFile(
 		filepath.Join(
 			logsPath,
-			fmt.Sprintf("%s_base_log.txt", time.Now().Format(`"2006.01.02-1504.0000`)),
+			fmt.Sprintf("%s_base_log.txt", time.Now().Format(`2006.01.02-1504.0000`)),
 		),
 		[]byte("Base log content"),
 		os.ModePerm,

@@ -15,12 +15,12 @@ func main() {
 	for g := range game.SupportedGames.Iter() {
 		gamePath := filepath.Join(constants.BuildDir, "mock", g)
 		internal.MkdirP(gamePath)
-		if ok, path := battleServer.ResolvePath(g); !ok {
-			internal.MkdirP(filepath.Dir(path))
+		if ok, path := battleServer.ResolvePath(g); ok {
+			internal.MkdirP(filepath.Join(gamePath, filepath.Dir(path)))
 		}
 		if ok, caCert := cert.NewCA(g, gamePath); ok {
 			originalPath := caCert.OriginalPath()
-			internal.MkdirP(originalPath)
+			internal.MkdirP(filepath.Dir(originalPath))
 			if _, err := os.Stat(originalPath); err != nil {
 				if f, err := os.Create(originalPath); err != nil {
 					panic(err)

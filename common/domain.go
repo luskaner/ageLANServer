@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	game2 "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageLANServer/common/game"
 )
 
 const Tld = "com"
@@ -41,19 +41,19 @@ func CertDomains() []string {
 }
 
 func SelfSignedCertGame(game string) bool {
-	return game != game2.AoE4 && game != game2.AoM
+	return game != commonGame.AoE4 && game != commonGame.AoM
 }
 
 func GameHostsDirect(gameId string) (domains []string) {
 	switch gameId {
-	case game2.AoE4:
+	case commonGame.AoE4:
 		for i := 1; i <= 2; i++ {
 			domains = append(domains, fmt.Sprintf("%s%d%s", aoe4SubDomainPrefix, i, apiWorldsEdge))
 		}
 		fallthrough
-	case game2.AoE1, game2.AoE2, game2.AoE3:
+	case commonGame.AoE1, commonGame.AoE2, commonGame.AoE3:
 		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
-	case game2.AoM:
+	case commonGame.AoM:
 		domains = []string{"athens-live" + apiWorldsEdge}
 	}
 	domains = append(domains, generateDomains(gameId)...)
@@ -66,13 +66,13 @@ func AllHosts(gameId string) (domains []string) {
 	}
 	domains = GameHostsDirect(gameId)
 	switch gameId {
-	case game2.AoM:
+	case commonGame.AoM:
 		domains = append(domains, "c15f9"+playFabSuffix)
-	case game2.AoE4:
+	case commonGame.AoE4:
 		domains = append(domains, "ed603"+playFabSuffix)
 	}
 	domains = append(domains, CdnAgeOfEmpires, ApiAgeOfEmpires)
-	if gameId == game2.AoE4 {
+	if gameId == commonGame.AoE4 {
 		domains = append(domains, Aoe4ApiAgeOfEmpires)
 	}
 	hostsCache[gameId] = domains
@@ -84,15 +84,15 @@ func generateDomains(gameId string) (domains []string) {
 	var releaseMin int
 	var subDomainReleasePart string
 	switch gameId {
-	case game2.AoE2:
+	case commonGame.AoE2:
 		prefix = SubDomainAge2Prefix
 		releaseMin = 2
 		subDomainReleasePart = stdSubDomainReleasePart
-	case game2.AoE4:
+	case commonGame.AoE4:
 		prefix = aoe4Marker
 		releaseMin = 2
 		subDomainReleasePart = "-activerelease"
-	case game2.AoM:
+	case commonGame.AoM:
 		prefix = "andromeda"
 		releaseMin = 15
 		subDomainReleasePart = stdSubDomainReleasePart

@@ -62,7 +62,7 @@ func calculateBroadcastIp(ip net.IP, mask net.IPMask) net.IP {
 }
 
 func ValidData(data []byte, length int) bool {
-	return length >= MinimumSize || bytes.HasPrefix(data, Header)
+	return length >= MinimumSize && bytes.HasPrefix(data, Header)
 }
 
 func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet, port int) (err error) {

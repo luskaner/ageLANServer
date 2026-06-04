@@ -8,7 +8,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	game2 "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/common/process/game"
@@ -123,7 +123,7 @@ func anyProcessExists(names []string) bool {
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
 	var gameProcesses []string
-	for gameId := range game2.AllGames.Iter() {
+	for gameId := range commonGame.AllGames.Iter() {
 		gameProcesses = append(gameProcesses, game.Processes(gameId, true, xbox)...)
 	}
 	someProcessRunning := func() bool {
