@@ -21,7 +21,6 @@ RevertCommand = []
 # When using an official launcher, Client.Isolation.Metadata and Client.Isolation.Profiles must be 'required' or 'true'.
 # Note: It is not recommended to use an executable that requires admin rights (but it is supported).
 # Note 2: You may use environment variables.
-#Executable = 'F:\ageLANServer\build\mock\game\age1\launcher.exe'
 Executable = 'auto'
 # The arguments to pass to the client launcher if it is custom.
 # {HostFilePath} will be replaced by the host file path.
@@ -32,7 +31,6 @@ Executable = 'auto'
 # The format is the same as the server stored certificate.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-#ExecutableArgs = ['--', '--dataPath', '"C:\\Users\\luska"', '--overrideHosts', '"{HostFilePath}"', '--overrideCerts', '"{CertFilePath}"']
 ExecutableArgs = []
 # The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam' or 'msstore' it will be detected automatically.
 # If 'Executable' is a custom launcher, this is required to be set. Otherwise, this will be ignored.

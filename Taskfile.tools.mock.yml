@@ -3,11 +3,6 @@
 version: '3'
 
 tasks:
-  createGame:
-    internal: true
-    cmds:
-      - task: :build
-        vars: { PROGRAM: 'createGameMock' }
   build-battleserver:
     vars:
       SUFFIX: '{{.SUFFIX | default "BattleServer"}}'
@@ -15,8 +10,6 @@ tasks:
     env:
       GOOS: windows
       GOARCH: amd64
-    deps:
-      - createGame
     run: when_changed
     sources:
       - common/**/*
@@ -31,8 +24,6 @@ tasks:
     env:
       GOOS: windows
       GOARCH: amd64
-    deps:
-      - createGame
     run: when_changed
     sources:
       - common/**/*
@@ -47,8 +38,6 @@ tasks:
     env:
       GOOS: windows
       GOARCH: amd64
-    deps:
-      - createGame
     run: when_changed
     sources:
       - common/**/*
@@ -77,12 +66,16 @@ tasks:
         vars: { GAME_ID: 'age2', GAME_BIN_NAME: 'AoE2DE_s' }
       - task: build-battleserver
         vars: { GAME_ID: 'age2', SUFFIX: 'BattleServer/BattleServer', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '27012', DEF_OOB_PORT: '27212' }
+      - task: :run
+        vars: { PROGRAM: 'createGameMockCA', ARGS: 'age2' }
   build-age3:
     cmds:
       - task: build-common
         vars: { GAME_ID: 'age3', GAME_BIN_NAME: 'AoE3DE_s' }
       - task: build-battleserver
         vars: { GAME_ID: 'age3', DEF_RELAY_BS_PORT: '9999', DEF_BS_PUBLIC_PORT: '8888', DEF_OOB_PORT: '9888' }
+      - task: :run
+        vars: { PROGRAM: 'createGameMockCA', ARGS: 'age3' }
   build-age4:
     cmds:
       - task: build-common
@@ -91,3 +84,5 @@ tasks:
     cmds:
       - task: build-common
         vars: { GAME_ID: 'aom', GAME_BIN_NAME: 'AoMRT_s' }
+      - task: :run
+        vars: { PROGRAM: 'createGameMockCA', ARGS: 'aom' }

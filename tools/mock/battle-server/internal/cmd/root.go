@@ -17,7 +17,10 @@ var defaultRelayBroadcastPortStr = ""
 var defaultBsPublicPortStr = ""
 var defaultOutOfBandStr = ""
 
-// var region string
+// Unused
+var region string
+var simulationPeriod int
+
 var name string
 var publicPort uint
 var relayBroadcastPort uint
@@ -25,7 +28,6 @@ var bsPort uint
 var webSocketPort uint
 var outOfBandPort uint
 
-// var simulationPeriod int
 var sslCert string
 var sslKey string
 
@@ -99,15 +101,15 @@ func Execute() error {
 		}
 		flag.UintVar(&outOfBandPort, "outOfBandPort", uint(defaultOutOfBandPort), "Out of Band port of the battle server")
 	}
-	// Unnecessary
-	// flag.StringVar(&region, "region", "", "Region of the battle server")
+	// Unused
+	flag.StringVar(&region, "region", "", "Region of the battle server")
 	flag.StringVar(&name, "name", battleServer.DefaultName, "Name of the battle server")
 	flag.UintVar(&publicPort, "publicPort", uint(defaultBsPublicPort), "Public port of the battle server")
 	flag.UintVar(&relayBroadcastPort, "relaybroadcastPort", uint(defaultRelayBroadcastPort), "Relay broadcast port of the battle server")
 	flag.UintVar(&bsPort, "bsPort", uint(defaultBsPublicPort), "Battle server port")
 	flag.UintVar(&webSocketPort, "webSocketPort", 0, "WebSocket port of the battle server")
-	// Unnecessary
-	// flag.IntVar(&simulationPeriod, "simulationPeriod", 0, "Simulation period of the battle server")
+	// Unused
+	flag.IntVar(&simulationPeriod, "simulationPeriod", 0, "Simulation period of the battle server")
 	flag.StringVar(&sslCert, "sslCert", "", "Path to the SSL certificate file")
 	flag.StringVar(&sslKey, "sslKey", "", "Path to the SSL key file")
 	// TODO: Implement?

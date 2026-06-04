@@ -20,7 +20,6 @@ Host = 'auto'
 # AoM: RT: will search for AoE II: DE executable instead, as the one included does not work.
 # AoE IV: AE: will search for AoE II: DE executable instead, as it is missing it.
 # Note: You may use environment variables.
-# F:\ageLANServer\build\mock\game\age1\BattleServer.exe
 Path = 'auto'
 # Extra arguments to pass to the corresponding 'BattleServer.exe' executable.
 # You must not pass these arguments as they are already passed by default:

@@ -18,7 +18,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
 		logger.Println("Could not read game CA certificates:", err)
-		return common.ErrSuccess
+		return internal.ErrConfigCACertAdd
 	}
 	var addCert bool
 	addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)

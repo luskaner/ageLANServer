@@ -1,7 +1,6 @@
 package gameLogs
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,12 +16,20 @@ func (g GameAoE2) CreateLogs(path string) (err error) {
 	if err = os.WriteFile(filepath.Join(logsPath, "Age2SessionData.txt"), []byte("Age2 Session Data content"), os.ModePerm); err != nil {
 		return
 	}
+	subfolder := filepath.Join(logsPath, time.Now().Format(`2006.01.02-1504.00`))
+	if err = os.MkdirAll(subfolder, os.ModePerm); err != nil {
+		return
+	}
+	if err = os.WriteFile(
+		filepath.Join(subfolder, "Main.txt"),
+		[]byte("Main content"),
+		os.ModePerm,
+	); err != nil {
+		return
+	}
 	return os.WriteFile(
-		filepath.Join(
-			logsPath,
-			fmt.Sprintf("%s_base_log.txt", time.Now().Format(`2006.01.02-1504.0000`)),
-		),
-		[]byte("Base log content"),
+		filepath.Join(subfolder, "MainLog.txt"),
+		[]byte("Main log content"),
 		os.ModePerm,
 	)
 }
