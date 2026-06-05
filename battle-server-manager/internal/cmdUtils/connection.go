@@ -7,8 +7,8 @@ import (
 )
 
 func WaitForBattleServerInit(config battleServer.Config) (ok bool) {
-	// Wait up to 10s to initialize
-	timeout := time.After(10 * time.Second)
+	// Wait up to 30s to initialize
+	timeout := time.After(30 * time.Second)
 loop:
 	for {
 		select {

@@ -195,7 +195,7 @@ func runStart(args []string) error {
 	if allPorts[2] != -1 {
 		saveConfig.OutOfBandPort = allPorts[2]
 	}
-	commonLogger.Println("Waiting up to 10s for the initialization to complete...")
+	commonLogger.Println("Waiting up to 30s for the initialization to complete...")
 	if !cmdUtils.WaitForBattleServerInit(saveConfig) {
 		commonLogger.Printf("battle server initialization did not complete in time\n")
 		if proc, localErr := process.FindProcess(int(saveConfig.PID)); localErr == nil && proc != nil {
