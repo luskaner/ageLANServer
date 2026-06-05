@@ -64,6 +64,7 @@ func runSetUp(args []string) error {
 			}()
 		} else {
 			commonLogger.Println("Failed to add local certificate")
+			commonLogger.Println("Error:", err)
 			os.Exit(internal.ErrLocalCertAdd)
 		}
 	}

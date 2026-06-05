@@ -56,6 +56,7 @@ func runRevert(args []string) error {
 			}()
 		} else {
 			commonLogger.Println("Failed to remove local certificate")
+			commonLogger.Println("Error:", err)
 			if !values.RemoveAll {
 				os.Exit(internal.ErrLocalCertRemove)
 			}
