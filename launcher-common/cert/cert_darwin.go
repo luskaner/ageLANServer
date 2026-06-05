@@ -26,7 +26,7 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 			return err
 		}
 		certPath := certFile.Name()
-		if err = WriteAsPem(cert.Raw, certFile); err != nil {
+		if err = common.WriteAsPem(cert.Raw, certFile); err != nil {
 			_ = certFile.Close()
 			_ = os.Remove(certPath)
 			return err
@@ -101,7 +101,7 @@ func EnumCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 		return
 	}
 	data := []byte(output)
-	_, _, certs, err = ReadFromData(data)
+	_, _, certs, err = common.ReadFromData(data)
 	return
 }
 
