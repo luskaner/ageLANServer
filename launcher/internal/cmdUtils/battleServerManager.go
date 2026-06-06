@@ -3,6 +3,7 @@ package cmdUtils
 import (
 	"io"
 	"path/filepath"
+	"runtime"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
@@ -42,7 +43,12 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 	}
 	values.GameId = c.gameId
 	startArgs := cmd.FlagSetToArgs(flags, true)
-	logger.Println("Running 'battle-server-manager', you might to allow it in the firewall...")
+	str := "Running 'battle-server-manager, "
+	if runtime.GOOS != "windows" {
+		str += "it can take a while and "
+	}
+	str += "you might need to allow it in the firewall..."
+	logger.Println(str)
 	options := commonExecutor.Options{File: executable, Args: startArgs, Wait: true, ExitCode: true}
 	var result *commonExecutor.Result
 	if err := commonLogger.FileLogger.Buffer("battle-server-manager_start", func(writer io.Writer) {

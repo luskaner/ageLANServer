@@ -1,7 +1,5 @@
 package exec
 
-// TODO: Test in mac
-
 func terminalArgs() []string {
 	script := `
 		on run argv
@@ -15,8 +13,6 @@ func terminalArgs() []string {
 	`
 	return osascriptArgs(script)
 }
-
-// TODO: Test in mac
 
 func visualAdminArgs() []string {
 	script :=

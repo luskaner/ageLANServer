@@ -12,11 +12,12 @@ Log = false
 
 [Config.Certificate]
 # Whether or not to trust the certificate of the server in user or local store, or not at all.
-# false: do not trust the certificate. You will have to trust it manually in the proper store.
-# local: trust the certificate in the local store. Requires admin rights.
+# auto: resolves to 'user' in macOS and 'local' in the other systems.
+# local: trust the certificate in the local store. Requires admin rights. Requires user consent in macOS.
 # user: trust the certificate in the user store. Requires user consent. Unavailable in Linux.
+# false: do not trust the certificate. You will have to trust it manually in the proper store.
 # If using '{CertFilePath}' in 'Client.ExecutableArgs', this will be ignored.
-CanTrustInPc = 'local'
+CanTrustInPc = 'auto'
 # Whether to trust the certificate of the server in the game's certificate store.
 # Required for all games except AoE I: DE and AoE IV: AE.
 # false: do not trust the certificate. You will have to trust it manually if the game needs it.

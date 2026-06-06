@@ -2,6 +2,7 @@ package executor
 
 import (
 	"io"
+	"runtime"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
@@ -52,7 +53,7 @@ func (c *ConfigSetupOptions) shouldStartAgent() bool {
 	if !launcherCommon.RequiresAdminElevation(false) {
 		return false
 	}
-	return (c.AddLocalCertData != nil && c.CertFilePath == "") ||
+	return (runtime.GOOS != "darwin" && c.AddLocalCertData != nil && c.CertFilePath == "") ||
 		(c.MapIp != nil && c.HostFilePath == "")
 }
 

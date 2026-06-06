@@ -13,8 +13,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-// TODO: Test in mac
-
 func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	keychain, asAdmin, err := keychainPath(userStore)
 	if err != nil {
@@ -40,7 +38,7 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 			args = append(args, "-d")
 		}
 		args = append(args, "-k", keychain, certPath)
-		_, err = runCommand(asAdmin, args...)
+		err = runCommandWithoutOutput(asAdmin, args...)
 		_ = os.Remove(certPath)
 		if err != nil {
 			return err
@@ -48,8 +46,6 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	}
 	return nil
 }
-
-// TODO: Test in mac
 
 func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 	var existing []*x509.Certificate
@@ -78,7 +74,7 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 		}
 		fingerprint := sha1.Sum(cert.Raw)
 		fingerprintHex := strings.ToUpper(hex.EncodeToString(fingerprint[:]))
-		_, err = runCommand(asAdmin, "delete-certificate", "-Z", fingerprintHex, keychain)
+		err = runCommandWithoutOutput(asAdmin, "delete-certificate", "-Z", fingerprintHex, keychain)
 		if err != nil {
 			return
 		}
@@ -87,8 +83,6 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 	return
 }
 
-// TODO: Test in mac
-
 func EnumCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 	var keychain string
 	keychain, _, err = keychainPath(userStore)
@@ -96,7 +90,7 @@ func EnumCertificates(userStore bool) (certs []*x509.Certificate, err error) {
 		return
 	}
 	var output string
-	output, err = runCommand(false, "find-certificate", "-a", "-p", keychain)
+	output, err = runCommandWithOutput(false, "find-certificate", "-a", "-p", keychain)
 	if err != nil {
 		return
 	}
@@ -115,7 +109,7 @@ func keychainPath(userStore bool) (path string, asAdmin bool, err error) {
 
 func defaultUserKeychain() (value string, err error) {
 	var output string
-	output, err = runCommand(false, "default-keychain")
+	output, err = runCommandWithOutput(false, "default-keychain")
 	if err != nil {
 		return
 	}
@@ -124,19 +118,13 @@ func defaultUserKeychain() (value string, err error) {
 	return
 }
 
-func runCommand(asAdmin bool, args ...string) (string, error) {
+func runCommandWithOutput(asAdmin bool, args ...string) (output string, err error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	result := exec.Options{
-		File:        "security",
-		SpecialFile: true,
-		Args:        args,
-		AsAdmin:     asAdmin,
-		Wait:        true,
-		ExitCode:    true,
-		Stdout:      &stdout,
-		Stderr:      &stderr,
-	}.Exec()
+	result := runCommand(asAdmin, func(options *exec.Options) {
+		options.Stdout = &stdout
+		options.Stderr = &stderr
+	}, args...)
 	if result.Err != nil {
 		return "", result.Err
 	}
@@ -152,4 +140,31 @@ func runCommand(asAdmin bool, args ...string) (string, error) {
 		return "", fmt.Errorf("command failed: %s", errText)
 	}
 	return stdout.String(), nil
+}
+
+func runCommand(asAdmin bool, optionsFn func(options *exec.Options), args ...string) *exec.Result {
+	options := exec.Options{
+		File:        "security",
+		SpecialFile: true,
+		Args:        args,
+		AsAdmin:     asAdmin,
+		Wait:        true,
+		ExitCode:    true,
+	}
+	if optionsFn != nil {
+		optionsFn(&options)
+	}
+	return options.Exec()
+}
+
+func runCommandWithoutOutput(asAdmin bool, args ...string) error {
+	result := runCommand(asAdmin, func(options *exec.Options) {
+		options.ShowWindow = true
+	}, args...)
+	if result.Err != nil {
+		return result.Err
+	} else if result.ExitCode != 0 {
+		return fmt.Errorf("command failed with exit code %d", result.ExitCode)
+	}
+	return nil
 }

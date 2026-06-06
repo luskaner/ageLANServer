@@ -61,7 +61,7 @@ var (
 	gameId                         string
 	filesToPrint                   []string
 	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](falseValue, "user", "local")
+	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](autoValue, falseValue, "user", "local")
 	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
 	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
 )
@@ -589,6 +589,13 @@ func runRoot(fs *pflag.FlagSet) error {
 		}
 		if serverExecutable != serverExecutablePath {
 			logger.Println("Found 'server' executable path:", serverExecutablePath)
+		}
+		if canTrustCertificate == "auto" {
+			if runtime.GOOS == "darwin" {
+				canTrustCertificate = "user"
+			} else {
+				canTrustCertificate = "local"
+			}
 		}
 		if ec := server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); ec != common.ErrSuccess {
 			errorCode.Store(int32(ec))
