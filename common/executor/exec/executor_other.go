@@ -58,7 +58,7 @@ func shellArgs() []string {
 }
 
 func configureCmd(cmd *exec.Cmd, wait bool, _ bool, _ bool) {
-	if wait {
+	if !wait {
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			Setsid: true,
 		}

@@ -159,7 +159,9 @@ func runCommand(asAdmin bool, optionsFn func(options *exec.Options), args ...str
 
 func runCommandWithoutOutput(asAdmin bool, args ...string) error {
 	result := runCommand(asAdmin, func(options *exec.Options) {
-		options.ShowWindow = true
+		if !common.Interactive() {
+			options.ShowWindow = true
+		}
 	}, args...)
 	if result.Err != nil {
 		return result.Err
