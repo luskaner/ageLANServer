@@ -1,6 +1,6 @@
 package exec
 
-func terminalArgs() []string {
+func terminalArgs() []arg {
 	script := `
 		on run argv
 			set AppleScript's text item delimiters to " "
@@ -14,7 +14,7 @@ func terminalArgs() []string {
 	return osascriptArgs(script)
 }
 
-func visualAdminArgs() []string {
+func visualAdminArgs() []arg {
 	script :=
 		`on run argv
 			set curDir to do shell script "pwd"
@@ -29,10 +29,10 @@ func visualAdminArgs() []string {
 	return osascriptArgs(script)
 }
 
-func osascriptArgs(script string) []string {
-	return []string{
-		`osascript`,
-		`-e`,
-		script,
+func osascriptArgs(script string) []arg {
+	return []arg{
+		newSafeArg(`osascript`),
+		newSafeArg(`-e`),
+		newUnsafeArg(script),
 	}
 }

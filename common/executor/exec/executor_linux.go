@@ -39,7 +39,7 @@ var terminalApplications = []string{
 	"rio",
 }
 
-func terminalArgs() []string {
+func terminalArgs() []arg {
 	var terminal string
 	for _, executable := range terminalApplications {
 		expandedTerminal, err := shell.Expand(executable, nil)
@@ -52,11 +52,11 @@ func terminalArgs() []string {
 		}
 	}
 	if terminal == "" {
-		return []string{}
+		return []arg{}
 	}
-	return []string{terminal, "-e"}
+	return []arg{newUnsafeArg(terminal), newSafeArg("-e")}
 }
 
-func visualAdminArgs() []string {
-	return []string{"pkexec", "--keep-cwd"}
+func visualAdminArgs() []arg {
+	return []arg{newSafeArg("pkexec"), newSafeArg("--keep-cwd")}
 }
