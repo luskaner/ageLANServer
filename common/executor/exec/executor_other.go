@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
 	"mvdan.cc/sh/v3/syntax"
 )
+
+var safeStrings = []string{`&&`}
 
 type arg struct {
 	value string
@@ -73,7 +76,13 @@ func (options Options) exec() (result *Result) {
 		args = append(args, shellArgs()...)
 		joinArgsIndex = len(args)
 		if !options.UseWorkingPath {
-			args = append(args, []arg{newSafeArg("cd"), newUnsafeArg(filepath.Dir(options.File)), newSafeArg("&&")}...)
+			args = append(
+				args,
+				[]arg{
+					newSafeArg("cd"),
+					newUnsafeArg(filepath.Dir(options.File)),
+					newSafeArg("&&"),
+				}...)
 		}
 	}
 	args = append(args, newSafeArg(options.File))
@@ -81,7 +90,9 @@ func (options Options) exec() (result *Result) {
 	if joinArgsIndex != -1 {
 		argsQuoted := make([]string, len(args)-joinArgsIndex)
 		for i, val := range args[joinArgsIndex:] {
-			if quoted, err := val.String(); err == nil {
+			if slices.Contains(safeStrings, val.value) {
+				argsQuoted[i] = val.value
+			} else if quoted, err := val.String(); err == nil {
 				argsQuoted[i] = quoted
 			} else {
 				return &Result{

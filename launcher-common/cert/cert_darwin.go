@@ -38,8 +38,10 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 			args = append(args, "-d")
 		}
 		args = append(args, "-k", keychain, certPath)
-		err = runCommandWithoutOutput(asAdmin, args...)
-		_ = os.Remove(certPath)
+		args = append(args, "&&", "rm", "-f", certPath)
+		err = runCommandWithoutOutput(asAdmin, func(options *exec.Options) {
+			options.Shell = true
+		}, args...)
 		if err != nil {
 			return err
 		}
@@ -74,7 +76,7 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 		}
 		fingerprint := sha1.Sum(cert.Raw)
 		fingerprintHex := strings.ToUpper(hex.EncodeToString(fingerprint[:]))
-		err = runCommandWithoutOutput(asAdmin, "delete-certificate", "-Z", fingerprintHex, keychain)
+		err = runCommandWithoutOutput(asAdmin, nil, "delete-certificate", "-Z", fingerprintHex, keychain)
 		if err != nil {
 			return
 		}
@@ -157,11 +159,15 @@ func runCommand(asAdmin bool, optionsFn func(options *exec.Options), args ...str
 	return options.Exec()
 }
 
-func runCommandWithoutOutput(asAdmin bool, args ...string) error {
+func runCommandWithoutOutput(asAdmin bool, optionsFn func(*exec.Options), args ...string) error {
+	if optionsFn == nil {
+		optionsFn = func(c *exec.Options) {}
+	}
 	result := runCommand(asAdmin, func(options *exec.Options) {
 		if !common.Interactive() {
 			options.ShowWindow = true
 		}
+		optionsFn(options)
 	}, args...)
 	if result.Err != nil {
 		return result.Err
