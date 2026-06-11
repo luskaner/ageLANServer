@@ -1,11 +1,8 @@
 package exec
 
-import (
-	"github.com/hairyhenderson/go-which"
-	"mvdan.cc/sh/v3/shell"
-)
+import "slices"
 
-// Source: https://github.com/i3/i3/blob/next/i3-sensible-terminal
+// Source: https://github.com/i3/i3/blob/next/i3-sensible-terminal (removed legacy ones)
 var terminalApplications = []string{
 	"$TERMINAL",
 	"x-terminal-emulator",
@@ -13,50 +10,23 @@ var terminalApplications = []string{
 	"gnome-terminal",
 	"terminator",
 	"xfce4-terminal",
-	"urxvt",
-	"rxvt",
 	"termit",
-	"Eterm",
-	"aterm",
-	"uxterm",
-	"xterm",
-	"roxterm",
-	"termite",
 	"lxterminal",
 	"terminology",
-	"st",
 	"qterminal",
-	"lilyterm",
 	"tilix",
-	"terminix",
 	"konsole",
-	"kitty",
 	"guake",
 	"tilda",
-	"alacritty",
-	"hyper",
-	"wezterm",
-	"rio",
-}
-
-func terminalArgs() []arg {
-	var terminal string
-	for _, executable := range terminalApplications {
-		expandedTerminal, err := shell.Expand(executable, nil)
-		if err != nil {
-			continue
-		}
-		terminal = which.Which(expandedTerminal)
-		if terminal != "" {
-			break
-		}
-	}
-	if terminal == "" {
-		return []arg{}
-	}
-	return []arg{newUnsafeArg(terminal), newSafeArg("-e")}
 }
 
 func visualAdminArgs() []arg {
 	return []arg{newSafeArg("pkexec"), newSafeArg("--keep-cwd")}
+}
+
+func terminalArgs() []arg {
+	apps := slices.Clone(terminalApps)
+	apps = slices.Clone(terminalApplications)
+	apps = append(apps, x11TerminalApps...)
+	return baseTerminalArgs(apps)
 }

@@ -1,7 +1,11 @@
 package exec
 
+import "slices"
+
 func terminalArgs() []arg {
-	return []arg{newUnsafeArg("alacritty"), newSafeArg("-e")}
+	apps := slices.Clone(terminalApps)
+	apps = append(apps, x11TerminalApps...)
+	return baseTerminalArgs(apps)
 }
 
 func visualAdminArgs() []arg {
