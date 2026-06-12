@@ -10,9 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hairyhenderson/go-which"
 	"github.com/luskaner/ageLANServer/common"
-	"mvdan.cc/sh/v3/shell"
 	"mvdan.cc/sh/v3/syntax"
 )
 
@@ -130,38 +128,4 @@ func adminArgs(wait bool) []arg {
 		return visualAdminArgs()
 	}
 	return []arg{newSafeArg("sudo"), newSafeArg("-EH")}
-}
-
-var x11TerminalApps = []string{
-	"xterm",
-	"uxterm",
-	"urxvt",
-	"st",
-}
-
-var terminalApps = []string{
-	"kitty",
-	"alacritty",
-	"ghostty",
-	"hyper",
-	"wezterm",
-	"rio",
-}
-
-func baseTerminalArgs(apps []string) []arg {
-	var terminal string
-	for _, executable := range apps {
-		expandedTerminal, err := shell.Expand(executable, nil)
-		if err != nil {
-			continue
-		}
-		terminal = which.Which(expandedTerminal)
-		if terminal != "" {
-			break
-		}
-	}
-	if terminal == "" {
-		return []arg{}
-	}
-	return []arg{newUnsafeArg(terminal), newSafeArg("-e")}
 }

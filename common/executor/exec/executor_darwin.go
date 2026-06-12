@@ -1,13 +1,5 @@
 package exec
 
-import "slices"
-
-func terminalArgs() []arg {
-	apps := slices.Clone(terminalApps)
-	apps = append(apps, x11TerminalApps...)
-	return baseTerminalArgs(apps)
-}
-
 func visualAdminArgs() []arg {
 	script :=
 		`on run argv
