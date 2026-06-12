@@ -8,9 +8,12 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
 func main() {
+	common.ChdirToExe()
 	dir := filepath.Join("logs", "launcher")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		panic(err)

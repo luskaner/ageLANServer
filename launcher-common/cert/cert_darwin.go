@@ -13,6 +13,18 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
+func flushCerts() (result *exec.Result) {
+	options := exec.Options{
+		File:        "killall",
+		SpecialFile: true,
+		AsAdmin:     true,
+		Wait:        true,
+		ExitCode:    true,
+		Args:        []string{"trustd"},
+	}
+	return options.Exec()
+}
+
 func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 	keychain, asAdmin, err := keychainPath(userStore)
 	if err != nil {
@@ -43,6 +55,16 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 			options.Shell = true
 		}, args...)
 		if err != nil {
+			return err
+		}
+	}
+	if len(certs) > 0 {
+		if result := flushCerts(); !result.Success() {
+			if result.Err != nil {
+				err = result.Err
+			} else {
+				err = fmt.Errorf("error flushing certs, exit code %d", result.ExitCode)
+			}
 			return err
 		}
 	}
@@ -81,6 +103,16 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 			return
 		}
 		certs = append(certs, cert)
+	}
+	if len(certs) > 0 {
+		if result := flushCerts(); !result.Success() {
+			if result.Err != nil {
+				err = result.Err
+			} else {
+				err = fmt.Errorf("error flushing certs, exit code %d", result.ExitCode)
+			}
+			return
+		}
 	}
 	return
 }
