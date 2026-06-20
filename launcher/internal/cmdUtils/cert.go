@@ -7,12 +7,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
@@ -82,10 +82,8 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
 	} else {
 		certMsg = fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
-		if canAdd == "user" {
+		if runtime.GOOS == "darwin" || canAdd == "user" {
 			certMsg += ", accept the dialog"
-		} else if launcherCommon.RequiresAdminElevation(false) {
-			certMsg += `, authorize 'config-admin-agent' if needed`
 		}
 		if canAdd == "local" {
 			addLocalCertData = serverCertificate.Raw

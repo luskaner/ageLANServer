@@ -48,4 +48,5 @@ const (
 	ErrInvalidIsolateProfiles
 	ErrRequiredIsolation
 	ErrGameConfigParse
+	ErrFlushCache
 )

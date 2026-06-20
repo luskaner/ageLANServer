@@ -3,39 +3,46 @@ package config
 import (
 	"runtime"
 
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/spf13/pflag"
 )
 
-type RevertBaseValues struct {
-	UnmapIPs        bool
-	RemoveLocalCert bool
-	RemoveAll       bool
+type RevertMinimalValues struct {
+	IPs   bool
+	Certs bool
 }
 
-func (v *RevertBaseValues) UnmapIPsRef() *bool {
-	return &v.UnmapIPs
+func (v *RevertMinimalValues) IPsRef() *bool {
+	return &v.IPs
+}
+
+func (v *RevertMinimalValues) CertsRef() *bool {
+	return &v.Certs
+}
+
+func NewRevertMinimalValues() *RevertMinimalValues {
+	return &RevertMinimalValues{}
+}
+
+type RevertBaseValues struct {
+	*RevertMinimalValues
+	RemoveAll bool
 }
 
 func (v *RevertBaseValues) RemoveAllRef() *bool {
 	return &v.RemoveAll
 }
 
-func (v *RevertBaseValues) RemoveLocalCertRef() *bool {
-	return &v.RemoveLocalCert
-}
-
 func InitBaseRevert(flags *pflag.FlagSet) (values *RevertBaseValues) {
-	values = &RevertBaseValues{}
+	values = &RevertBaseValues{RevertMinimalValues: NewRevertMinimalValues()}
 	flags.BoolVarP(
-		values.UnmapIPsRef(),
+		values.IPsRef(),
 		"ip",
 		"i",
 		false,
 		"Remove the IP mappings from the local DNS server",
 	)
 	flags.BoolVarP(
-		values.RemoveLocalCertRef(),
+		values.CertsRef(),
 		"localCert",
 		"l",
 		false,
@@ -56,7 +63,6 @@ type RevertValues struct {
 	*RevertBaseValues
 	RemoveUserCert     bool
 	RestoreCAStoreCert bool
-	StopAgent          bool
 }
 
 func NewRevertValues() RevertValues {
@@ -74,11 +80,7 @@ func (v *RevertValues) RestoreCAStoreCertRef() *bool {
 	return &v.RestoreCAStoreCert
 }
 
-func (v *RevertValues) StopAgentRef() *bool {
-	return &v.StopAgent
-}
-
-func RegularRevertFlagSet() (values *RevertValues, flags *pflag.FlagSet) {
+func RevertFlagSet() (values *RevertValues, flags *pflag.FlagSet) {
 	values = new(NewRevertValues())
 	flags = pflag.NewFlagSet("revert", pflag.ContinueOnError)
 	values.RevertBaseValues = InitBaseRevert(flags)
@@ -93,27 +95,5 @@ func RegularRevertFlagSet() (values *RevertValues, flags *pflag.FlagSet) {
 		flags.BoolVarP(values.RemoveUserCertRef(), "userCert", "u", false, "Remove the certificate from the user's trusted root store")
 	}
 	flags.BoolVarP(values.RestoreCAStoreCertRef(), "caStoreCert", "s", false, "Restore the game's trusted root store. For all except AoE I: DE and AoE IV: AE.")
-	flags.BoolVarP(values.StopAgentRef(), "stopAgent", "g", false, "Stop the 'config-admin-agent' if it is running after all operations")
-	_ = flags.MarkHidden("stopAgent")
-	return
-}
-
-type AdminRevertValues struct {
-	*RevertBaseValues
-	*commonCmd.LogRootValues
-}
-
-func newAdminRevertValues() AdminRevertValues {
-	return AdminRevertValues{
-		RevertBaseValues: &RevertBaseValues{},
-		LogRootValues:    &commonCmd.LogRootValues{},
-	}
-}
-
-func AdminRevertFlagSet() (values *AdminRevertValues, flags *pflag.FlagSet) {
-	values = new(newAdminRevertValues())
-	flags = pflag.NewFlagSet("revert", pflag.ContinueOnError)
-	values.RevertBaseValues = InitBaseRevert(flags)
-	commonCmd.LogRootCommand(flags, values.LogRootRef())
 	return
 }

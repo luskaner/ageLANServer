@@ -101,7 +101,7 @@ var addedGameCert bool
 
 func runSetUp(args []string) error {
 	var flags *pflag.FlagSet
-	setupValues, flags = launcherCommonCmd.RegularSetUpFlagSet()
+	setupValues, flags = launcherCommonCmd.SetUpFlagSet()
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -251,29 +251,6 @@ func runSetUp(args []string) error {
 	}
 	if addLocalCertData != nil || len(ipToMap) > 0 {
 		agentStarted := admin.ConnectAgentIfNeeded() == nil
-		if !agentStarted && setupValues.AgentStart && !isAdmin {
-			result := admin.StartAgentIfNeeded()
-			if !result.Success() {
-				commonLogger.Println("Failed to start 'config-admin-agent'")
-				if result != nil {
-					if result.Err != nil {
-						commonLogger.Println(result.Err)
-					}
-					if result.ExitCode != common.ErrSuccess {
-						commonLogger.Println(result.ExitCode)
-					}
-				}
-				errorCode = internal.ErrStartAgent
-				undoSetUp()
-			} else {
-				agentStarted = admin.ConnectAgentIfNeededWithRetries(true)
-				if !agentStarted {
-					commonLogger.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
-					errorCode = internal.ErrStartAgentVerify
-					undoSetUp()
-				}
-			}
-		}
 		if agentStarted {
 			commonLogger.Println("Communicating with 'config-admin-agent' to add local cert and/or host mappings...")
 		} else {
@@ -302,25 +279,21 @@ func runSetUp(args []string) error {
 			errorCode = internal.ErrAdminSetup
 			if agentStarted {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
-				if setupValues.AgentEndOnError {
-					if err := admin.StopAgentIfNeeded(); err != nil {
-						failedStopAgent := true
-						if isAdmin {
-							err := commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
-							if err == nil {
-								commonLogger.Println("Successfully killed 'config-admin-agent'.")
-								failedStopAgent = false
-							}
+				if err := admin.StopAgentIfNeeded(); err != nil {
+					failedStopAgent := true
+					if isAdmin {
+						err := commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
+						if err == nil {
+							commonLogger.Println("Successfully killed 'config-admin-agent'.")
+							failedStopAgent = false
 						}
-						if failedStopAgent {
-							commonLogger.Println("Failed to stop 'config-admin-agent'. Kill it manually using the task manager")
-							commonLogger.Println("Error message: " + err.Error())
-						}
-					} else {
-						commonLogger.Println("Successfully stopped 'config-admin-agent'.")
+					}
+					if failedStopAgent {
+						commonLogger.Println("Failed to stop 'config-admin-agent'. Kill it manually using the task manager")
+						commonLogger.Println("Error message: " + err.Error())
 					}
 				} else {
-					commonLogger.Println("Failed to run 'config-admin'")
+					commonLogger.Println("Successfully stopped 'config-admin-agent'.")
 				}
 				undoSetUp()
 			}

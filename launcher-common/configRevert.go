@@ -25,7 +25,7 @@ type ConfigRevertFlagOptions struct {
 }
 
 func NewConfigRevertFlagOptions() *ConfigRevertFlagOptions {
-	values, flags := config.RegularRevertFlagSet()
+	values, flags := config.RevertFlagSet()
 	return &ConfigRevertFlagOptions{
 		RevertValues: values,
 		flags:        flags,
@@ -34,9 +34,9 @@ func NewConfigRevertFlagOptions() *ConfigRevertFlagOptions {
 
 func (c *ConfigRevertFlagOptions) Flags() []string {
 	if c.RemoveAll {
-		c.UnmapIPs = false
+		c.IPs = false
 		c.RemoveUserCert = false
-		c.RemoveLocalCert = false
+		c.Certs = false
 		c.Metadata = false
 		c.Profiles = false
 		c.RestoreCAStoreCert = false
@@ -44,11 +44,10 @@ func (c *ConfigRevertFlagOptions) Flags() []string {
 	return commonCmd.FlagSetToArgs(c.flags, false)
 }
 
-func allRevertFlags(gameId string, logRoot string, stopAgent bool) []string {
+func allRevertFlags(gameId string, logRoot string) []string {
 	options := NewConfigRevertFlagOptions()
 	options.GameId = gameId
 	options.LogRoot = logRoot
-	options.StopAgent = stopAgent
 	options.RemoveAll = true
 	return options.Flags()
 }
@@ -73,16 +72,12 @@ func ConfigRevert(
 	}
 	multipleRevertFlags := make([][]string, len(games))
 	if err != nil || len(revertFlags) > 0 {
-		var stopAgent bool
 		if err == nil {
-			values, flags := config.RegularRevertFlagSet()
+			_, flags := config.RevertFlagSet()
 			if err = flags.Parse(revertFlags); err != nil {
 				commonLogger.Printf("Failed to parse revert flags: %v\n", err)
 			} else {
 				multipleRevertFlags = [][]string{commonCmd.FlagSetToArgs(flags, false)}
-				if !headless && values.StopAgent {
-					stopAgent = true
-				}
 			}
 		}
 		if err != nil {
@@ -91,9 +86,8 @@ func ConfigRevert(
 			} else {
 				commonLogger.Printf("Failed to get revert flags: %v, will revert for all games\n", err)
 			}
-			stopAgent = ConfigAdminAgentRunning(headless)
 			for i, g := range games {
-				multipleRevertFlags[i] = allRevertFlags(g, logRoot, stopAgent)
+				multipleRevertFlags[i] = allRevertFlags(g, logRoot)
 			}
 		}
 		// This does not depend on the game type so compute it once
@@ -105,8 +99,6 @@ func ConfigRevert(
 		var revertEnd string
 		if requiresRevertAdminElevation {
 			revertEnd += `, authorize 'config-admin' if needed`
-		} else if stopAgent {
-			revertEnd += ` and stopping its agent`
 		}
 		for _, currentRevertFlags := range multipleRevertFlags {
 			commonLogger.Println("Reverting configuration" + revertEnd + `...`)
@@ -146,7 +138,7 @@ func RevertRequiresAdminElevation(args []string, bin bool) bool {
 	if !RequiresAdminElevation(bin) {
 		return false
 	}
-	values, flags := config.RegularRevertFlagSet()
+	values, flags := config.RevertFlagSet()
 	// If there is an error parsing the args assume worst-case scenario, admin is needed.
 	if err := flags.Parse(args); err != nil {
 		commonLogger.Println("Failed to parse revert flags: ", err, ", assuming admin elevation is needed")
@@ -156,8 +148,8 @@ func RevertRequiresAdminElevation(args []string, bin bool) bool {
 }
 
 func RevertRequiresAdminElevationValues(values *config.RevertValues) bool {
-	return (values.RemoveLocalCert && values.CertFilePath == "") ||
-		(values.UnmapIPs && values.HostFilePath == "")
+	return (values.Certs && values.CertFilePath == "") ||
+		(values.IPs && values.HostFilePath == "")
 }
 
 func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {

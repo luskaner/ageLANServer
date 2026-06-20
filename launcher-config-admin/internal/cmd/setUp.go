@@ -11,7 +11,7 @@ import (
 	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 )
@@ -28,7 +28,7 @@ func untrustCertificate() bool {
 }
 
 func runSetUp(args []string) error {
-	values, fs := launcherCommonCmd.AdminSetupFlagSet()
+	values, fs := admin.SetupFlagSet()
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func runSetUp(args []string) error {
 		return errors.New("required flag 'game' not set")
 	}
 
-	internal.SetUp = true
+	internal.SetUp = new(true)
 	if values.LogRoot != "" {
 		internal.Initialize(values.LogRoot)
 	}

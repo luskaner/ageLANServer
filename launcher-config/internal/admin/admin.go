@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
@@ -94,6 +93,34 @@ func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (e
 	return
 }
 
+func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode int) {
+	if ipc != nil {
+		return fmt.Errorf("cannot flush cache if agent is already started"), internal.ErrAgentAlreadyStarted
+	}
+	var result *exec.Result
+	var file *commonLogger.Root
+	if logRoot != "" {
+		if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
+			exitCode = common.ErrFileLog
+			return
+		}
+	}
+	if bufferErr := file.Buffer("config-admin_flushCache", func(writer io.Writer) {
+		_, result = executor.RunFlushCache(ips, certs, file.Folder(), writer, func(options exec.Options) {
+			if writer != nil {
+				options.Stdout = writer
+				options.Stderr = writer
+			}
+		})
+	}); bufferErr == nil {
+		err, exitCode = result.Err, result.ExitCode
+	} else {
+		err = bufferErr
+		exitCode = common.ErrFileLog
+	}
+	return
+}
+
 func StopAgentIfNeeded() (err error) {
 	commonLogger.Println("Stopping agent")
 	if ipc != nil {
@@ -156,21 +183,16 @@ func ConnectAgentIfNeeded() (err error) {
 	return
 }
 
-func StartAgentIfNeeded() (result *exec.Result) {
+func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	commonLogger.Println("Starting agent")
-	if ipc != nil {
-		commonLogger.Println("Already started")
-		return
-	}
-	file := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
-	options := exec.Options{File: file, AsAdmin: true, Pid: true}
+	var file string
+	var logRoot string
 	if internal.Logger != nil {
-		options.Args = []string{internal.Logger.Folder()}
-		commonLogger.Println("start config-admin-agent:", options.String())
-	} else {
-		options.Args = []string{"-"}
+		logRoot = internal.Logger.Folder()
 	}
-	result = options.Exec()
+	file, result = executor.RunFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options exec.Options) {
+		commonLogger.Println("start config-admin-agent:", options.String())
+	})
 	if result.Success() {
 		if !postAgentStart(result.Pid, file) {
 			result.Err = fmt.Errorf("agent process failed to start")

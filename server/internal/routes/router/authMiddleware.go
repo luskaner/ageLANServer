@@ -125,7 +125,7 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 				return
 			}
 
-			if int(errorCode) != 0 {
+			if int(errorCode) != common.ErrSuccess {
 				i.RawJSON(&w, respBody)
 				return
 			}

@@ -1,3 +1,3 @@
 package internal
 
-var SetUp bool
+var SetUp *bool

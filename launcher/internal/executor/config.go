@@ -2,11 +2,11 @@ package executor
 
 import (
 	"io"
-	"runtime"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -24,7 +24,7 @@ type ConfigSetupOptions struct {
 }
 
 func NewConfigSetupOptions() *ConfigSetupOptions {
-	setupValues, flags := config.RegularSetUpFlagSet()
+	setupValues, flags := config.SetUpFlagSet()
 	return &ConfigSetupOptions{
 		flags:       flags,
 		SetupValues: setupValues,
@@ -33,11 +33,10 @@ func NewConfigSetupOptions() *ConfigSetupOptions {
 
 func (c *ConfigSetupOptions) ConfigRevertFlagOptions() *launcherCommon.ConfigRevertFlagOptions {
 	options := launcherCommon.NewConfigRevertFlagOptions()
-	options.UnmapIPs = c.MapIp != nil
-	options.RemoveLocalCert = c.AddLocalCertData != nil
+	options.IPs = c.MapIp != nil
+	options.Certs = c.AddLocalCertData != nil
 	options.RemoveUserCert = c.AddUserCertData != nil
 	options.RestoreCAStoreCert = c.AddCACertData != nil
-	options.StopAgent = c.AgentStart
 	options.GameId = c.GameId
 	options.LogRoot = c.LogRoot
 	options.CertFilePath = c.CertFilePath
@@ -49,22 +48,11 @@ func (c *ConfigSetupOptions) ConfigRevertFlagOptions() *launcherCommon.ConfigRev
 	return options
 }
 
-func (c *ConfigSetupOptions) shouldStartAgent() bool {
-	if !launcherCommon.RequiresAdminElevation(false) {
-		return false
-	}
-	return (runtime.GOOS != "darwin" && c.AddLocalCertData != nil && c.CertFilePath == "") ||
-		(c.MapIp != nil && c.HostFilePath == "")
-}
-
 func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
 	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
 		c.LogRoot = logRoot
-	}
-	if c.AgentStart = c.shouldStartAgent(); c.AgentStart {
-		c.AgentEndOnError = true
 	}
 	args := cmd.FlagSetToArgs(c.flags, true)
 	if c.MapIp != nil {
@@ -101,16 +89,84 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 }
 
 func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options exec.Options)) (result *exec.Result) {
-	values, flagSet := config.RegularRevertFlagSet()
+	values, flagSet := config.RevertFlagSet()
 	if err := flagSet.Parse(flags); err != nil {
 		return &exec.Result{Err: err}
 	}
 	result = launcherCommon.RunRevert(flags, bin, out, optionFn)
-	if values.RemoveAll || values.RemoveUserCert || values.RemoveLocalCert {
+	if values.RemoveAll || values.RemoveUserCert || values.Certs {
 		certStore.ReloadSystemCertificates()
 	}
-	if values.RemoveAll || values.UnmapIPs {
+	if values.RemoveAll || values.IPs {
 		common.ClearDNSCache()
+	}
+	return
+}
+
+type ConfigFlushCacheOptions struct {
+	*config.FlushCacheValues
+	flags *pflag.FlagSet
+}
+
+func NewConfigFlushCacheOptions(canAddHost bool, canTrustCertificate string, customHostFile bool, customCertFile bool) *ConfigFlushCacheOptions {
+	ips := !customHostFile && canAddHost
+	certs := !customCertFile && canTrustCertificate != "false"
+	if !ips && !certs {
+		return nil
+	}
+	flushCacheValues, flags := config.FlushCacheFlagSet()
+	flushCacheValues.IPs = ips
+	flushCacheValues.Certs = certs
+	return &ConfigFlushCacheOptions{
+		flags:            flags,
+		FlushCacheValues: flushCacheValues,
+	}
+}
+
+func (c *ConfigFlushCacheOptions) RunFlushCache() (result *exec.Result) {
+	reloadSystemCertificates := false
+	reloadHostMappings := false
+	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
+		c.LogRoot = logRoot
+	}
+	if c.IPs {
+		reloadHostMappings = true
+	}
+	if c.Certs {
+		reloadSystemCertificates = true
+	}
+	str := "Flushing cache"
+	options := exec.Options{File: executables.NativeFileName(false, executables.LauncherConfig), Wait: true, Args: cmd.FlagSetToArgs(c.flags, true), ExitCode: true}
+	if executor.IsAdmin() {
+		if err := commonLogger.FileLogger.Buffer("config_flushCache", func(writer io.Writer) {
+			options.Stdout = writer
+			options.Stderr = writer
+		}); err != nil {
+			return &exec.Result{ExitCode: common.ErrFileLog}
+		}
+	} else {
+		str += ", authorize 'config-admin-agent' if needed"
+	}
+	str += "..."
+	logger.Println(str)
+	commonLogger.Println("run config flushCache", options.String())
+	result = options.Exec()
+	if reloadSystemCertificates {
+		certStore.ReloadSystemCertificates()
+	}
+	if reloadHostMappings {
+		common.ClearDNSCache()
+	}
+	if !result.Success() {
+		commonLogger.Println("Failed to flush cache")
+		if result.Err != nil {
+			commonLogger.Println("Received error:")
+			commonLogger.Println(result.Err)
+		}
+		if result.ExitCode != common.ErrSuccess {
+			commonLogger.Println("Received exit code:")
+			commonLogger.Println(result.ExitCode)
+		}
 	}
 	return
 }

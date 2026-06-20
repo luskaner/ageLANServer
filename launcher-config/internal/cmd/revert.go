@@ -96,7 +96,7 @@ var restoredProfiles bool
 
 func runRevert(args []string) error {
 	var flags *pflag.FlagSet
-	revertValues, flags = launcherCommonCmd.RegularRevertFlagSet()
+	revertValues, flags = launcherCommonCmd.RevertFlagSet()
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -118,8 +118,8 @@ func runRevert(args []string) error {
 	isAdmin := executor.IsAdmin()
 	reverseFailed := true
 	if revertValues.RemoveAll {
-		revertValues.UnmapIPs = true
-		revertValues.RemoveLocalCert = true
+		revertValues.IPs = true
+		revertValues.Certs = true
 		if runtime.GOOS != "linux" {
 			revertValues.RemoveUserCert = true
 		}
@@ -199,10 +199,10 @@ func runRevert(args []string) error {
 			undoRevert()
 		}
 	}
-	var agentConnected bool
+	var agentConnected *bool
 	if launcherCommon.RevertRequiresAdminElevationValues(revertValues) {
-		agentConnected = admin.ConnectAgentIfNeeded() == nil
-		if agentConnected {
+		agentConnected = new(admin.ConnectAgentIfNeeded() == nil)
+		if *agentConnected {
 			commonLogger.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
 		} else {
 			str := "Running 'config-admin' to remove local cert and/or host mappings"
@@ -212,9 +212,9 @@ func runRevert(args []string) error {
 			commonLogger.Println(str + "...")
 		}
 		var err error
-		err, errorCode = admin.RunRevert(revertValues.LogRoot, revertValues.UnmapIPs, revertValues.RemoveLocalCert, !revertValues.RemoveAll)
+		err, errorCode = admin.RunRevert(revertValues.LogRoot, revertValues.IPs, revertValues.Certs, !revertValues.RemoveAll)
 		if err == nil && errorCode == common.ErrSuccess {
-			if agentConnected {
+			if *agentConnected {
 				commonLogger.Println("Successfully communicated with 'config-admin-agent'")
 			} else {
 				commonLogger.Println("Successfully ran 'config-admin'")
@@ -230,7 +230,7 @@ func runRevert(args []string) error {
 			}
 			errorCode = internal.ErrAdminRevert
 			undoRevert()
-			if agentConnected {
+			if *agentConnected {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'")
 			} else {
 				commonLogger.Println("Failed to run 'config-admin'")
@@ -247,9 +247,9 @@ func runRevert(args []string) error {
 	if errorCode == common.ErrSuccess && revertValues.CertFilePath != "" {
 		_ = os.Remove(revertValues.CertFilePath)
 	}
-	if revertValues.StopAgent {
+	if agentConnected != nil {
 		failedStopAgent := true
-		if agentConnected {
+		if *agentConnected {
 			commonLogger.Println("Trying to stop 'config-admin-agent'.")
 			err := admin.StopAgentIfNeeded()
 			if err == nil {
@@ -284,7 +284,7 @@ func runRevert(args []string) error {
 		if failedStopAgent && errorCode == common.ErrSuccess {
 			errorCode = internal.ErrRevertStopAgent
 		}
-		os.Exit(errorCode)
 	}
+	os.Exit(errorCode)
 	return nil
 }

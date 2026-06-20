@@ -10,4 +10,5 @@ const (
 	ErrCertAlreadyAdded
 	ErrIpsAlreadyMapped
 	ErrCertInvalid
+	ErrFlushCache
 )

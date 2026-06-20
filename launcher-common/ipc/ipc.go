@@ -4,12 +4,16 @@ import (
 	"net"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 )
 
-const Revert byte = 0
-const Setup byte = 1
-const Exit byte = 2
-const name = common.Name + `-launcher-config-admin-agent`
+const (
+	Revert byte = iota
+	Setup
+	Exit
+)
+
+const name = common.Name + `-` + executables.LauncherConfigAdminAgent
 
 type (
 	SetupCommand struct {

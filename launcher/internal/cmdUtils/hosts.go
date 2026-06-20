@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/hosts"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
@@ -51,9 +50,6 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 			}
 		} else {
 			str += "Adding hosts to hosts file"
-			if !commonExecutor.IsAdmin() {
-				str += ", authorize 'config-admin-agent' if needed"
-			}
 		}
 		logger.Println(str + "...")
 		var err error

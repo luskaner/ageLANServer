@@ -13,7 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
-func flushCerts() (result *exec.Result) {
+func FlushCerts() (result *exec.Result) {
 	options := exec.Options{
 		File:        "killall",
 		SpecialFile: true,
@@ -59,7 +59,7 @@ func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
 		}
 	}
 	if len(certs) > 0 {
-		if result := flushCerts(); !result.Success() {
+		if result := FlushCerts(); !result.Success() {
 			if result.Err != nil {
 				err = result.Err
 			} else {
@@ -105,7 +105,7 @@ func UntrustCertificates(userStore bool) (certs []*x509.Certificate, err error) 
 		certs = append(certs, cert)
 	}
 	if len(certs) > 0 {
-		if result := flushCerts(); !result.Success() {
+		if result := FlushCerts(); !result.Success() {
 			if result.Err != nil {
 				err = result.Err
 			} else {
@@ -162,7 +162,7 @@ func runCommandWithOutput(asAdmin bool, args ...string) (output string, err erro
 	if result.Err != nil {
 		return "", result.Err
 	}
-	if result.ExitCode != 0 {
+	if result.ExitCode != common.ErrSuccess {
 		errText := stderr.String()
 		if errText == "" {
 			errText = stdout.String()
@@ -203,7 +203,7 @@ func runCommandWithoutOutput(asAdmin bool, optionsFn func(*exec.Options), args .
 	}, args...)
 	if result.Err != nil {
 		return result.Err
-	} else if result.ExitCode != 0 {
+	} else if result.ExitCode != common.ErrSuccess {
 		return fmt.Errorf("command failed with exit code %d", result.ExitCode)
 	}
 	return nil

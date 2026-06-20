@@ -42,10 +42,10 @@ var certStoreBundlePaths = []string{
 	"/etc/ssl/ca-bundle.pem",
 }
 
-func updateStore() error {
+func FlushCerts() (result *exec.Result) {
 	binary := which.Which(updateStoreBinaries...)
 	if binary == "" {
-		return fmt.Errorf("update store binary not found")
+		return &exec.Result{Err: fmt.Errorf("update store binary not found")}
 	}
 	return exec.Options{
 		File:        binary,
@@ -53,7 +53,7 @@ func updateStore() error {
 		AsAdmin:     true,
 		Wait:        true,
 		ExitCode:    true,
-	}.Exec().Err
+	}.Exec()
 }
 
 func getCertPath() (err error, certPath string) {
@@ -144,7 +144,7 @@ func TrustCertificates(_ bool, certs []*x509.Certificate) error {
 		}
 	}
 
-	return updateStore()
+	return FlushCerts().Err
 }
 
 func UntrustCertificates(_ bool) (certs []*x509.Certificate, err error) {
@@ -185,7 +185,7 @@ func UntrustCertificates(_ bool) (certs []*x509.Certificate, err error) {
 		return
 	}
 
-	err = updateStore()
+	err = FlushCerts().Err
 	if err != nil {
 		certs = []*x509.Certificate{cert}
 	}

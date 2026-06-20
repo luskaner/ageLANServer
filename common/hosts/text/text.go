@@ -37,19 +37,6 @@ func Decode(buf []byte) (text string, encType int, err error) {
 	return
 }
 
-/*func Encode(text string, encType int) (buf []byte, err error) {
-	if !utf8.ValidString(text) {
-		err = fmt.Errorf("encoded text is not valid UTF-8")
-	}
-	var enc encoding.Encoding
-	enc, err = GetEncoding(encType)
-	if err != nil {
-		return
-	}
-	buf, err = enc.NewEncoder().Bytes([]byte(text))
-	return
-}*/
-
 func Encoding(buf []byte) (enc int) {
 	enc = EncodingOther
 	n := len(buf)

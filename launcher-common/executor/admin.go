@@ -11,10 +11,12 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
+	"github.com/spf13/pflag"
 )
 
 func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
-	values, flags := config.AdminSetupFlagSet()
+	values, flags := admin.SetupFlagSet()
 	values.GameId = gameId
 	values.MapIp = IP
 	values.LogRoot = logRoot
@@ -34,11 +36,11 @@ func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot s
 }
 
 func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
-	values, flags := config.AdminRevertFlagSet()
+	values, flags := admin.RevertFlagSet()
 	values.LogRoot = logRoot
 	if failfast {
-		values.UnmapIPs = IPs
-		values.RemoveLocalCert = certificate
+		values.IPs = IPs
+		values.Certs = certificate
 	} else {
 		values.RemoveAll = true
 	}
@@ -52,4 +54,37 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 	}
 	result = options.Exec()
 	return
+}
+
+func runFlushCache(executableName string, wait bool, IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options), values *config.FlushCacheValues, flags *pflag.FlagSet) (file string, result *exec.Result) {
+	values.IPs = IPs
+	values.Certs = certificate
+	values.LogRoot = logRoot
+	file = executables.NativeFileName(true, executableName)
+	options := exec.Options{File: file, AsAdmin: true, Args: commonCmd.FlagSetToArgs(flags, wait)}
+	if wait {
+		options.Wait = true
+		options.ExitCode = true
+	} else {
+		options.Pid = true
+	}
+	if optionsFn != nil {
+		optionsFn(options)
+	}
+	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
+		options.Stdout = out
+		options.Stderr = out
+	}
+	result = options.Exec()
+	return
+}
+
+func RunFlushCacheAgent(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (file string, result *exec.Result) {
+	values, singleFs := config.FlushCacheSingleFlagSet("", nil)
+	return runFlushCache(executables.LauncherConfigAdminAgent, false, IPs, certificate, logRoot, out, optionsFn, values, singleFs.Fs())
+}
+
+func RunFlushCache(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (file string, result *exec.Result) {
+	values, flags := config.FlushCacheFlagSet()
+	return runFlushCache(executables.LauncherConfigAdmin, true, IPs, certificate, logRoot, out, optionsFn, values, flags)
 }

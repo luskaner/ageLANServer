@@ -423,18 +423,18 @@ func runRoot(fs *pflag.FlagSet) error {
 			os.Exit(int(errorCode.Load()))
 		}
 	}()
-	// Let the agent and config-admin-agent 10s to finish each before killing them
-	waitDuration := 10 * time.Second
+	agentWaitDuration := time.Minute
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
 	if _, proc, err := commonProcess.Process(agent); err == nil && proc != nil {
-		logger.Println("'agent' is running, waiting up to 10 seconds for it to end...")
-		if !commonProcess.WaitForProcess(proc, &waitDuration) {
+		logger.Printf("'agent' is running, waiting up to %s for it to end...\n", agentWaitDuration)
+		if !commonProcess.WaitForProcess(proc, &agentWaitDuration) {
 			logger.Println("'agent' did not exit on its own.")
 		}
 	}
+	cfgAdminAgentWaitDuration := 10 * time.Second
 	if _, proc, err := commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
-		logger.Println("'config-admin-agent' is running, waiting up to 10 seconds for it to end...")
-		if !commonProcess.WaitForProcess(proc, &waitDuration) {
+		logger.Printf("'config-admin-agent' is running, waiting up to %s for it to end...\n", cfgAdminAgentWaitDuration)
+		if !commonProcess.WaitForProcess(proc, &cfgAdminAgentWaitDuration) {
 			logger.Println("'config-admin-agent' did not exit on its own.")
 		}
 	}
@@ -452,6 +452,26 @@ func runRoot(fs *pflag.FlagSet) error {
 	}); err != nil {
 		errorCode.Store(int32(common.ErrFileLog))
 		return nil
+	}
+	if canTrustCertificate == "auto" {
+		if runtime.GOOS == "darwin" {
+			canTrustCertificate = "user"
+		} else {
+			canTrustCertificate = "local"
+		}
+	}
+	customHostFile := slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
+		return strings.Contains(s, "{HostFilePath}")
+	})
+	customCertFile := slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
+		return strings.Contains(s, "{CertFilePath}")
+	})
+	cfgFlushCacheOpts := executor.NewConfigFlushCacheOptions(canAddHost, canTrustCertificate, customHostFile, customCertFile)
+	if cfgFlushCacheOpts != nil {
+		if result := cfgFlushCacheOpts.RunFlushCache(); !result.Success() {
+			errorCode.Store(int32(internal.ErrFlushCache))
+			return nil
+		}
 	}
 	var proc *os.Process
 	_, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.Server))
@@ -590,13 +610,6 @@ func runRoot(fs *pflag.FlagSet) error {
 		if serverExecutable != serverExecutablePath {
 			logger.Println("Found 'server' executable path:", serverExecutablePath)
 		}
-		if canTrustCertificate == "auto" {
-			if runtime.GOOS == "darwin" {
-				canTrustCertificate = "user"
-			} else {
-				canTrustCertificate = "local"
-			}
-		}
 		if ec := server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); ec != common.ErrSuccess {
 			errorCode.Store(int32(ec))
 			return nil
@@ -632,16 +645,12 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrReadCert))
 		return nil
 	}
-	errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
-		return strings.Contains(s, "{HostFilePath}")
-	}))))
+	errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, customHostFile)))
 	if errorCode.Load() != int32(common.ErrSuccess) {
 		return nil
 	}
 	logger.WriteFileLog(gameId, "post host mapping")
-	errorCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, slices.ContainsFunc(cfg.Client.Args, func(s string) bool {
-		return strings.Contains(s, "{CertFilePath}")
-	}))))
+	errorCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, customCertFile)))
 	if errorCode.Load() != int32(common.ErrSuccess) {
 		return nil
 	}
