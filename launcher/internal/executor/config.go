@@ -124,16 +124,8 @@ func NewConfigFlushCacheOptions(canAddHost bool, canTrustCertificate string, cus
 }
 
 func (c *ConfigFlushCacheOptions) RunFlushCache() (result *exec.Result) {
-	reloadSystemCertificates := false
-	reloadHostMappings := false
 	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
 		c.LogRoot = logRoot
-	}
-	if c.IPs {
-		reloadHostMappings = true
-	}
-	if c.Certs {
-		reloadSystemCertificates = true
 	}
 	str := "Flushing cache"
 	options := exec.Options{File: executables.NativeFileName(false, executables.LauncherConfig), Wait: true, Args: cmd.FlagSetToArgs(c.flags, true), ExitCode: true}
@@ -151,10 +143,10 @@ func (c *ConfigFlushCacheOptions) RunFlushCache() (result *exec.Result) {
 	logger.Println(str)
 	commonLogger.Println("run config flushCache", options.String())
 	result = options.Exec()
-	if reloadSystemCertificates {
+	if c.Certs {
 		certStore.ReloadSystemCertificates()
 	}
-	if reloadHostMappings {
+	if c.IPs {
 		common.ClearDNSCache()
 	}
 	if !result.Success() {
