@@ -26,7 +26,7 @@ func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPoo
 	}
 }
 
-func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Conn {
+func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (conn *tls.Conn, err error) {
 	ips := HostOrIpToIps(host)
 	var ip string
 	if len(ips) == 0 {
@@ -34,22 +34,18 @@ func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPoo
 	} else {
 		ip = ips[0]
 	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify, rootCAs))
-	if err != nil {
-		return nil
-	}
-	return conn
+	return tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify, rootCAs))
 }
 
-func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) bool {
-	conn := connectToServer(host, insecureSkipVerify, rootCAs)
-	if conn == nil {
-		return false
+func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (err error) {
+	var conn *tls.Conn
+	conn, err = connectToServer(host, insecureSkipVerify, rootCAs)
+	if conn != nil {
+		defer func() {
+			_ = conn.Close()
+		}()
 	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	return conn != nil
+	return err
 }
 
 func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {

@@ -48,12 +48,12 @@ func rootCmd() error {
 	}
 	var someSucceeded bool
 	for _, domain := range common.AllHosts(gameId) {
-		var connectionInsecure bool
-		connectionSecure := common.CheckConnectionFromServer(domain, false, rootCAs)
-		if !connectionSecure {
-			connectionInsecure = common.CheckConnectionFromServer(domain, true, rootCAs)
+		var connectionInsecureErr error
+		connectionSecureErr := common.CheckConnectionFromServer(domain, false, rootCAs)
+		if connectionSecureErr != nil {
+			connectionInsecureErr = common.CheckConnectionFromServer(domain, true, rootCAs)
 		} else {
-			connectionInsecure = true
+			connectionInsecureErr = nil
 		}
 		var lanInsecure bool
 		lanSecure := common.LanServerHost(uuid.Nil, gameId, domain, false, rootCAs)
@@ -62,10 +62,10 @@ func rootCmd() error {
 		} else {
 			lanInsecure = true
 		}
-		if connectionSecure && lanSecure {
+		if connectionSecureErr == nil && lanSecure {
 			someSucceeded = true
 		}
-		log.Printf("Domain %s: connection secure: %t, connection insecure: %t, lan secure: %t, lan insecure: %t\n", domain, connectionSecure, connectionInsecure, lanSecure, lanInsecure)
+		log.Printf("Domain %s: connection secure: %s, connection insecure: %s, lan secure: %t, lan insecure: %t\n", domain, connectionSecureErr, connectionInsecureErr, lanSecure, lanInsecure)
 	}
 	if !someSucceeded {
 		return fmt.Errorf("no host could be connected to successfully")

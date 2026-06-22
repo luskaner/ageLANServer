@@ -21,21 +21,24 @@ import (
 
 func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, errorCode int) {
 	for _, host := range hosts {
-		if !common.CheckConnectionFromServer(host, false, rootCAs) {
+		if err := common.CheckConnectionFromServer(host, false, rootCAs); err != nil {
 			if fixable {
 				cert := server.ReadCACertificateFromServer(host)
 				if cert == nil {
 					logger.Println("Failed to read certificate from " + host + ".")
+					logger.Printf("Error: %s\n", err.Error())
 					errorCode = internal.ErrReadCert
 					return
 				} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 					logger.Println("The certificate for " + host + " does not match the server certificate.")
+					logger.Printf("Error: %s\n", err.Error())
 					errorCode = internal.ErrCertMismatch
 					return
 				}
 				requiresFixing = true
 			} else {
 				logger.Println(host + " must have been trusted manually.")
+				logger.Printf("Error: %s\n", err.Error())
 				errorCode = internal.ErrConfigCert
 				return
 			}
@@ -129,8 +132,9 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	if !customCertFile {
 		for _, host := range hosts {
-			if !common.CheckConnectionFromServer(host, false, nil) {
+			if err = common.CheckConnectionFromServer(host, false, nil); err != nil {
 				logger.Println(host + " must have been trusted automatically at this point.")
+				logger.Printf("Error: %s\n", err.Error())
 				errorCode = internal.ErrServerConnectSecure
 				return
 			} else if !common.LanServerHost(serverId, gameId, host, false, nil) {

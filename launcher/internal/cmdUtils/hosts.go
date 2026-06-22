@@ -26,8 +26,9 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 					return
 				}
 				mapIP = true
-			} else if !common.CheckConnectionFromServer(domain, true, nil) {
+			} else if err := common.CheckConnectionFromServer(domain, true, nil); err != nil {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
+				logger.Printf("Error: %s\n", err.Error())
 				errorCode = internal.ErrServerUnreachable
 				return
 			}
