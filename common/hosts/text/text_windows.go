@@ -111,8 +111,10 @@ func ansiToUtf8Encoding() encoding.Encoding {
 
 func GetEncoding(encodingType int) (enc encoding.Encoding, err error) {
 	switch encodingType {
-	case EncodingUTF8, EncodingUTF8BOM:
-		enc = encoding.Nop
+	case EncodingUTF8:
+		enc = unicode.UTF8
+	case EncodingUTF8BOM:
+		enc = unicode.UTF8BOM
 	case EncodingANSI:
 		enc = ansiToUtf8Encoding()
 	case EncodingUTF16LE:
