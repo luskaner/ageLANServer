@@ -343,22 +343,17 @@ func runRoot(fs *pflag.FlagSet) error {
 		logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
 	}
 
-	if isAdmin {
-		logger.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
-		if runtime.GOOS != "windows" {
-			logger.Println(" It can also cause issues and restrict the functionality.")
-		}
-	}
-
 	if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
 		logger.Println("Steam cannot be run as administrator. Either run this as a normal user or set Client.Executable to a custom launcher.")
 		errorCode.Store(int32(internal.ErrSteamRoot))
 		return nil
 	}
 
-	if cmdUtils.GameRunning() {
-		errorCode.Store(int32(internal.ErrGameAlreadyRunning))
-		return nil
+	if isAdmin {
+		logger.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
+		if runtime.GOOS != "windows" {
+			logger.Println(" It can also cause issues and restrict the functionality.")
+		}
 	}
 
 	serverHost := cfg.Server.Host
@@ -437,6 +432,10 @@ func runRoot(fs *pflag.FlagSet) error {
 		if !commonProcess.WaitForProcess(proc, &cfgAdminAgentWaitDuration) {
 			logger.Println("'config-admin-agent' did not exit on its own.")
 		}
+	}
+	if cmdUtils.GameRunning() {
+		errorCode.Store(int32(internal.ErrGameAlreadyRunning))
+		return nil
 	}
 	/*
 		Ensure:

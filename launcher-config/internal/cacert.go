@@ -48,7 +48,7 @@ func (c *CACert) Backup() (err error) {
 	defer func(backupFile *os.File) {
 		_ = backupFile.Close()
 	}(backupFile)
-	commonLogger.Printf("Copying data from %s to %s\n", backupPath, originalPath)
+	commonLogger.Printf("Copying data from %s to %s\n", originalPath, backupPath)
 	_, err = io.Copy(backupFile, originalFile)
 	if err != nil {
 		_ = backupFile.Close()

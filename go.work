@@ -10,6 +10,10 @@ godebug (
 )
 
 use (
+	./config-helper
+	./tools/mock/battle-server
+	./tools/mock/game
+	./tools/mock/launcher
 	battle-server-broadcast
 	battle-server-manager
 	common
@@ -23,10 +27,6 @@ use (
 	server-genCert
 	tools/scripts
 	tools/server-replay
-	./tools/mock/game
-	./tools/mock/launcher
-	./tools/mock/battle-server
-	./config-helper
 )
 
 replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 => ./battle-server-broadcast
