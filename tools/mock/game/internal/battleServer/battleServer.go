@@ -13,7 +13,69 @@ import (
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/process"
+	"golang.org/x/sys/windows"
 )
+
+func listenForBattleServerBroadcast(gameId string) (*battleServer.BroadcastMessage, net.IP, error) {
+	fd, err := windows.Socket(windows.AF_INET, windows.SOCK_DGRAM, windows.IPPROTO_UDP)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create socket: %w", err)
+	}
+	defer func() {
+		_ = windows.Closesocket(fd)
+	}()
+	if err = windows.SetsockoptInt(fd, windows.SOL_SOCKET, windows.SO_REUSEADDR, 1); err != nil {
+		return nil, nil, fmt.Errorf("failed to set SO_REUSEADDR: %w", err)
+	}
+	if err = windows.SetsockoptInt(fd, windows.SOL_SOCKET, windows.SO_RCVTIMEO, 15000); err != nil {
+		return nil, nil, fmt.Errorf("failed to set read timeout (SO_RCVTIMEO): %w", err)
+	}
+	port := int(battleServer.BroadcastPort(gameId))
+	addr := windows.SockaddrInet4{
+		Port: port,
+		Addr: [4]byte(net.IPv4zero.To4()),
+	}
+	if err = windows.Bind(fd, &addr); err != nil {
+		return nil, nil, fmt.Errorf("failed to bind socket on port %d: %w", port, err)
+	}
+	localIPs := common.ResolveUnspecifiedIps()
+	buffer := make([]byte, 65535)
+	var msg *battleServer.BroadcastMessage
+	var ip net.IP
+	log.Println("Listening on battle server broadcast messages")
+
+	for {
+		n, from, readErr := windows.Recvfrom(fd, buffer, 0)
+		if readErr != nil {
+			if errno, ok := errors.AsType[windows.Errno](readErr); ok && (errors.Is(errno, windows.WSAETIMEDOUT) || errors.Is(errno, windows.WSAEINTR)) {
+				break
+			}
+			return nil, nil, readErr
+		}
+		var senderIP net.IP
+		if sa, ok := from.(*windows.SockaddrInet4); ok {
+			senderIP = sa.Addr[:]
+		} else {
+			continue
+		}
+
+		if !slices.Contains(localIPs, senderIP.String()) {
+			continue
+		}
+
+		if tmpMsg, parseErr := battleServer.ParseBroadcastMessage(buffer[:n], n); parseErr == nil {
+			if tmpMsg.Name == battleServer.DefaultName {
+				msg = tmpMsg
+				ip = senderIP
+				break
+			}
+		} else {
+			return nil, nil, parseErr
+		}
+	}
+
+	return msg, ip, nil
+}
 
 func StartAndCheck(gameId string) (err error) {
 	var path string
@@ -34,49 +96,11 @@ func StartAndCheck(gameId string) (err error) {
 				_ = process.KillProc(proc)
 			}()
 		}
-		var conn *net.UDPConn
-		conn, err = net.ListenUDP(
-			"udp4",
-			&net.UDPAddr{IP: net.IPv4zero, Port: int(battleServer.BroadcastPort(gameId))},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to listen for battle server broadcast: %w", err)
-		}
-		defer func(conn *net.UDPConn) {
-			_ = conn.Close()
-		}(conn)
-
-		deadline := time.Now().Add(15 * time.Second)
-		err = conn.SetReadDeadline(deadline)
-		if err != nil {
-			return fmt.Errorf("failed to set read deadline: %w", err)
-		}
-		localIPs := common.ResolveUnspecifiedIps()
-		buffer := make([]byte, 65535)
 		var msg *battleServer.BroadcastMessage
 		var ip net.IP
-		log.Println("Listening on battle server broadcast messages...")
-		for {
-			n, addr, readErr := conn.ReadFromUDP(buffer)
-			if readErr != nil {
-				if netErr, ok := errors.AsType[net.Error](readErr); ok && netErr.Timeout() {
-					break
-				}
-				log.Printf("Network error: %v\n", readErr)
-				break
-			}
-			if !slices.Contains(localIPs, addr.IP.String()) {
-				continue
-			}
-			if tmpMsg, parseErr := battleServer.ParseBroadcastMessage(buffer, n); parseErr == nil {
-				if tmpMsg.Name == battleServer.DefaultName {
-					msg = tmpMsg
-					ip = addr.IP
-					break
-				}
-			} else {
-				log.Printf("Failed to parse broadcast message: %v\n", parseErr)
-			}
+		msg, ip, err = listenForBattleServerBroadcast(gameId)
+		if err != nil {
+			return err
 		}
 		if msg == nil {
 			return fmt.Errorf("did not receive an appropriate battle server broadcast message within the deadline")
