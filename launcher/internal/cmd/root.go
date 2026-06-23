@@ -296,8 +296,8 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
 	var isolationPath string
-	if cfg.Client.Isolation.Path != "auto" {
-		if isolateMetadata || isolateProfiles {
+	if isolateMetadata || isolateProfiles {
+		if cfg.Client.Isolation.Path != "auto" {
 			var isolationDir os.FileInfo
 			if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Isolation.Path), nil); err != nil || !isolationDir.IsDir() {
 				logger.Println("Invalid isolation path")
@@ -306,11 +306,11 @@ func runRoot(fs *pflag.FlagSet) error {
 			}
 			logger.BasePath = isolationPath
 			logger.WriteFileLog(gameId, "post isolation path")
+		} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
+			logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
+			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
+			return nil
 		}
-	} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
-		logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
-		errorCode.Store(int32(internal.ErrInvalidIsolationPath))
-		return nil
 	}
 	var serverExecutable string
 	if serverExecutable = cfg.Server.Executable.Path; serverExecutable != "auto" {
