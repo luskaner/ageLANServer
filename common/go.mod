@@ -12,7 +12,7 @@ require (
 	github.com/knadh/koanf/providers/posflag v1.0.1
 	github.com/knadh/koanf/v2 v2.3.5
 	github.com/miekg/dns v1.1.72
-	github.com/pelletier/go-toml/v2 v2.4.0
+	github.com/pelletier/go-toml/v2 v2.4.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/sys v0.46.0
 	golang.org/x/term v0.44.0
