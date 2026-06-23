@@ -295,8 +295,9 @@ func runRoot(fs *pflag.FlagSet) error {
 		isolateMetadata = cmdUtils.ResolveIsolateValue(isolateMetadataStr, clientExecutableOfficial)
 	}
 	isolateProfiles := cmdUtils.ResolveIsolateValue(isolateProfilesStr, clientExecutableOfficial)
+	isolation := isolateMetadata || isolateProfiles
 	var isolationPath string
-	if isolateMetadata || isolateProfiles {
+	if isolation {
 		if cfg.Client.Isolation.Path != "auto" {
 			var isolationDir os.FileInfo
 			if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Isolation.Path), nil); err != nil || !isolationDir.IsDir() {
@@ -377,14 +378,14 @@ func runRoot(fs *pflag.FlagSet) error {
 		errorCode.Store(int32(internal.ErrGameLauncherNotFound))
 		return nil
 	}
-	if isolationPath == "" {
+	if isolation && isolationPath == "" {
 		if isolationPath = config.IsolationPath(executer); isolationPath == "" {
 			logger.Println("Failed to auto retrieve isolation path")
 			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
-		} else {
-			logger.BasePath = isolationPath
-			logger.WriteFileLog(gameId, "post isolation path")
+			return nil
 		}
+		logger.BasePath = isolationPath
+		logger.WriteFileLog(gameId, "post isolation path")
 	}
 	var customExecutor custom.Exec
 	var ok bool
