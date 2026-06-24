@@ -32,8 +32,8 @@ func CertPool() *x509.CertPool {
 				keychain,
 			); err != nil {
 				return nil
-			} else if ok := cachedCertPool.AppendCertsFromPEM([]byte(output)); !ok {
-				return nil
+			} else {
+				cachedCertPool.AppendCertsFromPEM([]byte(output))
 			}
 		}
 	}
