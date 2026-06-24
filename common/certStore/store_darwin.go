@@ -26,12 +26,9 @@ func CertPool() *x509.CertPool {
 			}
 			if output, err := RunCommandWithOutput(
 				false,
-				`export`,
-				`t`,
-				`certs`,
-				`-f`,
-				`pemseq`,
-				`-k`,
+				`find-certificate`,
+				`-a`,
+				`-p`,
 				keychain,
 			); err != nil {
 				return nil
