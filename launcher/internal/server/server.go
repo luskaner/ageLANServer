@@ -15,6 +15,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
@@ -43,7 +44,7 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 	result = options.Exec()
 	if result.Success() {
 		localIPs := common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(netip.IPv4Unspecified().String())))
-		timeout := time.After(time.Duration(localIPs.Cardinality()) * (common.LatencyMeasurementCount + 1) * time.Second)
+		timeout := time.After(time.Duration(localIPs.Cardinality()) * (server.LatencyMeasurementCount + 1) * time.Second)
 	loop:
 		for {
 			select {
@@ -109,13 +110,13 @@ func GetExecutablePath(executable string) string {
 	return executable
 }
 
-func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possibleIpAddrs mapset.Set[netip.Addr]) (actualId uuid.UUID, measuredIpAddresses []MesuredIpAddress, data *common.AnnounceMessageDataSupportedLatest) {
+func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possibleIpAddrs mapset.Set[netip.Addr]) (actualId uuid.UUID, measuredIpAddresses []MesuredIpAddress, data *server.AnnounceMessageDataSupportedLatest) {
 	for ipAddr := range possibleIpAddrs.Iter() {
 		ip := common.NetIPAddrToNetIP(ipAddr)
 		var ok bool
 		var latency time.Duration
-		var tmpData *common.AnnounceMessageDataSupportedLatest
-		if ok, actualId, latency, tmpData = common.LanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
+		var tmpData *server.AnnounceMessageDataSupportedLatest
+		if ok, actualId, latency, tmpData = server.LanServerIP(id, gameTitle, ip, serverName, true, nil, false); ok {
 			measuredIpAddresses = append(measuredIpAddresses, MesuredIpAddress{
 				Ip:      ip,
 				Latency: latency,

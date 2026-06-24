@@ -1,4 +1,4 @@
-package common
+package server
 
 import (
 	"crypto/tls"
@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/certStore"
 )
 
-type AnnounceMessageDataSupportedLatest = AnnounceMessageData002
+type AnnounceMessageDataSupportedLatest = common.AnnounceMessageData002
 
 const LatencyMeasurementCount = 3
 
@@ -31,7 +32,7 @@ func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPoo
 }
 
 func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (conn *tls.Conn, err error) {
-	ips := HostOrIpToIps(host)
+	ips := common.HostOrIpToIps(host)
 	var ip string
 	if len(ips) == 0 {
 		ip = host
@@ -53,7 +54,7 @@ func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x5
 }
 
 func LanServerHost(id uuid.UUID, gameTitle string, host string, insecureSkipVerify bool, rootCAs *x509.CertPool) (ok bool) {
-	ipAddrs := HostOrIpToIps(host)
+	ipAddrs := common.HostOrIpToIps(host)
 	if len(ipAddrs) == 0 {
 		return
 	}
@@ -83,7 +84,7 @@ func LanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 			if err != nil {
 				return
 			}
-			req.Header.Set("User-Agent", UserAgent())
+			req.Header.Set("User-Agent", common.UserAgent())
 			req.Host = serverName
 			if //goland:noinspection ALL
 			_, err = client.Do(req); err != nil {
@@ -112,13 +113,13 @@ func LanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 	if resp.StatusCode != http.StatusOK {
 		return
 	}
-	version := resp.Header.Get(VersionHeader)
-	serverIdStr := resp.Header.Get(IdHeader)
+	version := resp.Header.Get(common.VersionHeader)
+	serverIdStr := resp.Header.Get(common.IdHeader)
 	if version == "" || serverIdStr == "" {
 		return
 	}
 	versionInt, _ := strconv.Atoi(version)
-	if versionInt > AnnounceVersionLatest {
+	if versionInt > common.AnnounceVersionLatest {
 		return
 	}
 	var serverIdUuid uuid.UUID

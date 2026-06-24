@@ -10,6 +10,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/hosts"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
@@ -26,7 +27,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 					return
 				}
 				mapIP = true
-			} else if err := common.CheckConnectionFromServer(domain, true, nil); err != nil {
+			} else if err := server.CheckConnectionFromServer(domain, true, nil); err != nil {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
 				logger.Printf("Error: %s\n", err.Error())
 				errorCode = internal.ErrServerUnreachable

@@ -14,11 +14,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/server"
 )
 
 func ReadCACertificateFromServer(host string) *x509.Certificate {
 	tr := &http.Transport{
-		TLSClientConfig: common.TlsConfig(host, true, nil),
+		TLSClientConfig: server.TlsConfig(host, true, nil),
 	}
 	ips := common.HostOrIpToIps(host)
 	var ip string

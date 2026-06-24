@@ -16,6 +16,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/game"
 	processGame "github.com/luskaner/ageLANServer/common/process/game"
+	"github.com/luskaner/ageLANServer/common/server"
 )
 
 var dataPath string
@@ -49,16 +50,16 @@ func rootCmd() error {
 	var someSucceeded bool
 	for _, domain := range common.AllHosts(gameId) {
 		var connectionInsecureErr error
-		connectionSecureErr := common.CheckConnectionFromServer(domain, false, rootCAs)
+		connectionSecureErr := server.CheckConnectionFromServer(domain, false, rootCAs)
 		if connectionSecureErr != nil {
-			connectionInsecureErr = common.CheckConnectionFromServer(domain, true, rootCAs)
+			connectionInsecureErr = server.CheckConnectionFromServer(domain, true, rootCAs)
 		} else {
 			connectionInsecureErr = nil
 		}
 		var lanInsecure bool
-		lanSecure := common.LanServerHost(uuid.Nil, gameId, domain, false, rootCAs)
+		lanSecure := server.LanServerHost(uuid.Nil, gameId, domain, false, rootCAs)
 		if !lanSecure {
-			lanInsecure = common.LanServerHost(uuid.Nil, gameId, domain, true, rootCAs)
+			lanInsecure = server.LanServerHost(uuid.Nil, gameId, domain, true, rootCAs)
 		} else {
 			lanInsecure = true
 		}
