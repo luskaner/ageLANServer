@@ -2,8 +2,10 @@ package executor
 
 import (
 	"io"
+	"runtime"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/certStore"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
@@ -12,7 +14,6 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 	"github.com/spf13/pflag"
 )
 
@@ -110,7 +111,7 @@ type ConfigFlushCacheOptions struct {
 
 func NewConfigFlushCacheOptions(canAddHost bool, canTrustCertificate string, customHostFile bool, customCertFile bool) *ConfigFlushCacheOptions {
 	ips := !customHostFile && canAddHost
-	certs := !customCertFile && canTrustCertificate != "false"
+	certs := !customCertFile && runtime.GOOS == "linux" && canTrustCertificate != "false"
 	if !ips && !certs {
 		return nil
 	}

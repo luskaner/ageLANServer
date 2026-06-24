@@ -61,6 +61,12 @@ func KillPidProc(pidPath string, proc *os.Process) (err error) {
 	if err != nil {
 		return
 	}
+	if _, err = os.Stat(pidPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			err = nil
+		}
+		return err
+	}
 	return os.Remove(pidPath)
 }
 

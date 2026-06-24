@@ -13,3 +13,5 @@ var systemRoots *x509.CertPool
 func ReloadSystemCertificates() {
 	systemRoots, _ = loadSystemRoots()
 }
+
+func CertPool() *x509.CertPool { return nil }

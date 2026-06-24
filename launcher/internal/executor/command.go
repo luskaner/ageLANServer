@@ -4,9 +4,9 @@ import (
 	"io"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/certStore"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
 func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err error) {

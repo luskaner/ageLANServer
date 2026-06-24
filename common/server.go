@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/certStore"
 )
 
 type AnnounceMessageDataSupportedLatest = AnnounceMessageData002
@@ -19,6 +20,9 @@ type AnnounceMessageDataSupportedLatest = AnnounceMessageData002
 const LatencyMeasurementCount = 3
 
 func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Config {
+	if rootCAs == nil {
+		rootCAs = certStore.CertPool()
+	}
 	return &tls.Config{
 		InsecureSkipVerify: insecureSkipVerify,
 		ServerName:         serverName,

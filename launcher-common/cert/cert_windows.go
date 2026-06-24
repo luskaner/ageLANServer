@@ -5,13 +5,8 @@ import (
 	"unsafe"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"golang.org/x/sys/windows"
 )
-
-func FlushCerts() (result *exec.Result) {
-	return exec.ResultSuccess
-}
 
 func openStore(userStore bool) (windows.Handle, error) {
 	rootStr := windows.StringToUTF16Ptr("ROOT")

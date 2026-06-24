@@ -7,6 +7,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/certStore"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonGame "github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
@@ -16,7 +17,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
 type Config struct {
