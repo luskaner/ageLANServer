@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.9.0
+	github.com/ebitengine/purego v0.10.1
 	github.com/google/uuid v1.6.0
 	github.com/hairyhenderson/go-which v0.2.3
 	github.com/knadh/koanf/providers/confmap v1.0.0
@@ -12,6 +13,7 @@ require (
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/providers/posflag v1.0.1
 	github.com/knadh/koanf/v2 v2.3.5
+	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
 	github.com/miekg/dns v1.1.72
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/spf13/pflag v1.0.10

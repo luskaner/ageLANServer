@@ -1,90 +1,139 @@
 package process
 
 import (
-	"errors"
+	"bytes"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
 	"time"
+	"unsafe"
+
+	"github.com/ebitengine/purego"
 )
 
-// TODO: Test in mac
+const (
+	procAllPids    = 1
+	procPidbsdinfo = 1
+)
+
+type Timeval struct {
+	Sec  int64
+	Usec int32
+	Pad  int32 // padding para alinear a 16 bytes
+}
+
+// ProcPidBsdInfo The final fill is to approximate the real size (336 bytes).
+type ProcPidBsdInfo struct {
+	PbiFlags   uint32
+	PbiStatus  uint32
+	PbiXstatus uint32
+	PbiPid     uint32
+	PbiPpid    uint32
+	PbiUid     uint32
+	PbiGid     uint32
+	PbiRuid    uint32
+	PbiRgid    uint32
+	PbiSvuid   uint32
+	PbiSvgid   uint32
+	Rfu1       uint32
+	PbiComm    [16]byte
+	PbiName    [32]byte
+	PbiNfiles  uint32
+	PbiPgid    uint32
+	PbiPjobc   uint32
+	PbiTgid    uint32
+	PbiJobc    uint32
+	PbiBg      uint32
+	PbiStart   Timeval
+	Pad        [200]byte
+}
 
 func GetProcessStartTime(pid int) (int64, error) {
-	// Use ps command to get process start time (lstart format)
-	// This avoids brittle hardcoded struct offsets that vary between macOS versions/architectures
-	output, err := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "lstart=").Output()
+	lib, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
 	if err != nil {
 		return 0, err
 	}
-	timeStr := strings.TrimSpace(string(output))
-	if timeStr == "" {
-		return 0, errors.New("empty process start time")
-	}
-	t, err := parseProcessStartTime(timeStr)
-	if err != nil {
+	defer func(handle uintptr) {
+		_ = purego.Dlclose(handle)
+	}(lib)
+	var procPidinfo func(pid int32, flavor int32, arg uint64, buffer uintptr, buffersize int32) int32
+	purego.RegisterLibFunc(&procPidinfo, lib, "proc_pidinfo")
+	var info ProcPidBsdInfo
+	bufSize := int32(unsafe.Sizeof(info))
+	ret := procPidinfo(int32(pid), procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
+	if ret <= 0 {
 		return 0, err
 	}
-	return t.UnixNano(), nil
+	if ret != bufSize {
+		return 0, err
+	}
+	return (time.Duration(info.PbiStart.Sec)*time.Second + time.Duration(info.PbiStart.Usec)*time.Microsecond).Microseconds(), nil
 }
 
-func parseProcessStartTime(timeStr string) (t time.Time, err error) {
-	// lstart format examples:
-	//   "Tue Dec  3 10:30:00 2024" (single-digit day, space-padded)
-	//   "Tue Dec 24 10:30:00 2024" (double-digit day)
-	//
-	// Note: lstart output is in local time without timezone info.
-	// We parse in local timezone and convert to Unix nanoseconds (UTC).
-	// Limitation: During DST transitions, local times can be ambiguous
-	// (e.g., 2:30 AM may occur twice when clocks fall back). This could
-	// cause rare false matches during the ~1 hour DST transition window.
-	t, err = time.ParseInLocation("Mon Jan _2 15:04:05 2006", timeStr, time.Local)
-	return
-}
-
-// TODO: Test in mac
-
-// ProcessesByNames returns a map of process names to their procs.
-// Note: If multiple processes share the same name, only one PID is stored per name.
 func ProcessesByNames(names []string) map[string]*os.Process {
-	processesPid := make(map[string]*os.Process)
-
-	output, err := exec.Command("ps", "-axo", "pid,comm").Output()
-	if err != nil {
-		return processesPid
+	result := make(map[string]*os.Process, len(names))
+	if len(names) == 0 {
+		return result
 	}
-
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines[1:] { // Skip header
-		line = strings.TrimSpace(line)
-		if line == "" {
+	targets := make([]string, len(names))
+	for i, n := range names {
+		targets[i] = strings.ToLower(n)
+		result[n] = nil
+	}
+	lib, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
+	if err != nil {
+		return result
+	}
+	defer func(handle uintptr) {
+		_ = purego.Dlclose(handle)
+	}(lib)
+	var procListpids func(uint32, uint32, uintptr, int32) int32
+	var procPidinfo func(int32, int32, uint64, uintptr, int32) int32
+	purego.RegisterLibFunc(&procListpids, lib, "proc_listpids")
+	purego.RegisterLibFunc(&procPidinfo, lib, "proc_pidinfo")
+	const maxPids = 16384
+	pidBuf := make([]int32, maxPids)
+	bufBytes := int32(len(pidBuf) * int(unsafe.Sizeof(pidBuf[0])))
+	ret := procListpids(procAllPids, 0, uintptr(unsafe.Pointer(&pidBuf[0])), bufBytes)
+	if ret <= 0 {
+		return result
+	}
+	numPids := int(ret) / int(unsafe.Sizeof(pidBuf[0]))
+	if numPids > len(pidBuf) {
+		numPids = len(pidBuf)
+	}
+	remaining := make([]bool, len(names))
+	for i := range remaining {
+		remaining[i] = true
+	}
+	remainingCount := len(names)
+	for i := 0; i < numPids && remainingCount > 0; i++ {
+		pid := pidBuf[i]
+		if pid <= 0 {
 			continue
 		}
-		// Split only on first whitespace to handle process names with spaces
-		// Format: "  PID COMM" where COMM may contain spaces
-		fields := strings.SplitN(line, " ", 2)
-		if len(fields) < 2 {
+		var info ProcPidBsdInfo
+		infoSize := int32(unsafe.Sizeof(info))
+		r := procPidinfo(pid, procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
+		if r != infoSize {
 			continue
 		}
-		pidStr := strings.TrimSpace(fields[0])
-		comm := strings.TrimSpace(fields[1])
-		if pidStr == "" || comm == "" {
-			continue
+		nameBytes := info.PbiComm[:]
+		if idx := bytes.IndexByte(nameBytes, 0); idx >= 0 {
+			nameBytes = nameBytes[:idx]
 		}
-		pid, err := strconv.ParseUint(pidStr, 10, 32)
-		if err != nil {
-			continue
-		}
-		cmdlineName := filepath.Base(comm)
-		if slices.Contains(names, cmdlineName) {
-			if proc, err := FindProcess(int(pid)); err == nil {
-				processesPid[cmdlineName] = proc
+		name := strings.ToLower(string(nameBytes))
+		for ti, t := range targets {
+			if !remaining[ti] {
+				continue
+			}
+			if strings.Contains(name, t) {
+				if proc, err := FindProcess(int(pid)); err == nil {
+					result[names[ti]] = proc
+					remaining[ti] = false
+					remainingCount--
+				}
 			}
 		}
 	}
-
-	return processesPid
+	return result
 }
