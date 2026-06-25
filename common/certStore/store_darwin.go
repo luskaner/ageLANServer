@@ -19,7 +19,7 @@ func ReloadSystemCertificates() {
 func CertPool() *x509.CertPool {
 	if cachedCertPool == nil {
 		cachedCertPool = x509.NewCertPool()
-		for _, userStore := range []bool{false, false} {
+		for _, userStore := range []bool{false, true} {
 			keychain, _, err := KeychainPath(userStore)
 			if err != nil {
 				return nil

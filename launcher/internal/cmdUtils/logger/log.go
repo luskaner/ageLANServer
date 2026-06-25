@@ -2,6 +2,7 @@ package logger
 
 import (
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -49,7 +50,7 @@ func WriteFileLog(gameId string, name string) {
 		if err := writeLog(gameId, "Auxiliar processes status", writeProcessesStatus); err != nil {
 			log.Println(err)
 		}
-		if err := writeLog(gameId, "Relevant installed certificates", writePcCertificateInfo); err != nil {
+		if err := writeLog(gameId, "Relevant installed certificates", writeUserPcCertificateInfo); err != nil {
 			commonLogger.Println(err)
 		}
 		if Cacert != nil {
@@ -202,12 +203,19 @@ func writeGameCertificateInfo(_ string) error {
 	return nil
 }
 
-func writePcCertificateInfo(_ string) error {
-	certs, err := cert.EnumCertificates(true)
+func writePcCertificateInfo(userStore bool) error {
+	commonLogger.Printf("Certificates of user %t\n", userStore)
+	certs, err := cert.EnumCertificates(userStore)
 	if err != nil {
-		return fmt.Errorf("failed to enumerate certificates: %v", err)
+		return fmt.Errorf("failed to enumerate %t certificates: %v", userStore, err)
 	}
 	return writeCertificateInfo(certs)
+}
+
+func writeUserPcCertificateInfo(_ string) error {
+	localErr := writePcCertificateInfo(false)
+	userErr := writePcCertificateInfo(true)
+	return errors.Join(localErr, userErr)
 }
 
 func writeMetadataInfo(gameId string) error {
