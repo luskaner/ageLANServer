@@ -15,15 +15,10 @@ import (
 )
 
 const (
-	procAllPids    = 1
-	procPidbsdinfo = 3
+	procAllPids        = 1
+	procPidTaskAllInfo = 2
+	procPidBsdInfo     = 3
 )
-
-type Timeval struct {
-	Sec  int64
-	Usec int32
-	Pad  int32 // padding para alinear a 16 bytes
-}
 
 type ProcPidBsdInfo struct {
 	PbiFlags     uint32
@@ -107,7 +102,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	}
 	var info ProcTaskAllInfo
 	bufSize := int32(unsafe.Sizeof(info))
-	ret := procPidinfoPtr(int32(pid), procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
+	ret := procPidinfoPtr(int32(pid), procPidTaskAllInfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
 	if ret <= 0 {
 		return 0, unix.EPERM
 	}
@@ -157,7 +152,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		}
 		var info ProcPidBsdInfo
 		infoSize := int32(unsafe.Sizeof(info))
-		r := procPidinfoPtr(pid, procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
+		r := procPidinfoPtr(pid, procPidBsdInfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
 		if r != infoSize {
 			continue
 		}
