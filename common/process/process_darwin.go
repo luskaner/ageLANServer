@@ -1,8 +1,6 @@
 package process
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"os"
 	"strings"
@@ -46,7 +44,7 @@ func loadLib() {
 			r := procPidinfoPtr(pid, f, 0, uintptr(unsafe.Pointer(&buf[0])), int32(len(buf)))
 			if r > 0 {
 				for off := 0; off+4 <= int(r); off += 4 {
-					if binary.LittleEndian.Uint32(buf[off:off+4]) == uint32(pid) {
+					if uint32(pid) == *(*uint32)(unsafe.Pointer(&buf[off])) {
 						procPidBsdInfo = f
 						procBsdInfoSize = r
 						offsetPid = off
@@ -65,7 +63,7 @@ func loadLib() {
 		}
 
 		for off := offsetPid + 4; off+8 <= int(procBsdInfoSize); off += 8 {
-			sec := binary.LittleEndian.Uint64(buf[off : off+8])
+			sec := *(*uint64)(unsafe.Pointer(&buf[off]))
 			if sec > 1000000000 && sec < 5000000000 {
 				offsetStartSec = off
 				offsetStartUsec = off + 8
@@ -91,8 +89,8 @@ func GetProcessStartTime(pid int) (int64, error) {
 		return 0, unix.EPERM
 	}
 
-	sec := binary.LittleEndian.Uint64(buf[offsetStartSec : offsetStartSec+8])
-	usec := binary.LittleEndian.Uint64(buf[offsetStartUsec : offsetStartUsec+8])
+	sec := *(*uint64)(unsafe.Pointer(&buf[offsetStartSec]))
+	usec := *(*uint64)(unsafe.Pointer(&buf[offsetStartUsec]))
 
 	return int64(sec*1e6 + usec), nil
 }
@@ -103,7 +101,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		return result
 	}
 	loadLib()
-	if loadErr != nil {
+	if loadErr != nil || procListpidsPtr == nil || procPidinfoPtr == nil {
 		for _, n := range names {
 			result[n] = nil
 		}
@@ -129,40 +127,19 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		numPids = len(pidBuf)
 	}
 
-	remaining := make([]bool, len(names))
-	for i := range remaining {
-		remaining[i] = true
-	}
-	remainingCount := len(names)
-
-	for i := 0; i < numPids && remainingCount > 0; i++ {
+	for i := 0; i < numPids; i++ {
 		pid := pidBuf[i]
 		if pid <= 0 {
 			continue
 		}
-
-		buf := make([]byte, procBsdInfoSize)
-		r := procPidinfoPtr(pid, procPidBsdInfo, 0, uintptr(unsafe.Pointer(&buf[0])), procBsdInfoSize)
-		if r != procBsdInfoSize {
-			continue
-		}
-
-		nameBytes := buf[offsetPid+4 : offsetPid+4+1024]
-		if idx := bytes.IndexByte(nameBytes, 0); idx >= 0 {
-			nameBytes = nameBytes[:idx]
-		}
-		name := strings.ToLower(string(nameBytes))
-
-		for ti, t := range targets {
-			if !remaining[ti] {
+		for ti := range targets {
+			if result[names[ti]] != nil {
 				continue
 			}
-			if strings.Contains(name, t) {
+			if strings.Contains(fmt.Sprintf("%d", pid), targets[ti]) {
 				if proc, err := FindProcess(int(pid)); err == nil {
 					result[names[ti]] = proc
 				}
-				remaining[ti] = false
-				remainingCount--
 			}
 		}
 	}
