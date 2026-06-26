@@ -54,7 +54,7 @@ func loadLib() {
 	loadOnce.Do(func() {
 		h, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
 		if err != nil {
-			loadErr = fmt.Errorf("dlopen libSystem failed: %w", err)
+			loadErr = err
 			return
 		}
 		libHandle = h
@@ -64,10 +64,11 @@ func loadLib() {
 		var info ProcPidBsdInfo
 		size := int32(unsafe.Sizeof(info))
 		buf := uintptr(unsafe.Pointer(&info))
+		pid := int32(os.Getpid())
 
-		for f := int32(0); f < 20; f++ {
-			r := procPidinfoPtr(int32(os.Getpid()), f, 0, buf, size)
-			if r == size {
+		for f := int32(0); f < 256; f++ {
+			r := procPidinfoPtr(pid, f, 0, buf, size)
+			if r == size && info.PbiPid == uint32(pid) {
 				procPidBsdInfo = f
 				break
 			}
