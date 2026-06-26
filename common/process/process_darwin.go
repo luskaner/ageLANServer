@@ -64,6 +64,8 @@ type ProcTaskInfo struct {
 	Threadnum        int32
 	NumRunning       int32
 	Priority         int32
+	BsdThreadnum     int32
+	SuspendCount     int32
 }
 
 type ProcTaskAllInfo struct {
