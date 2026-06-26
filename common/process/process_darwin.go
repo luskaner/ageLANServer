@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	procAllPids    = 1
-	procPidBsdInfo = 3
+	procAllPids = 1
 )
 
 type ProcPidBsdInfo struct {
@@ -71,16 +70,10 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if loadErr != nil {
 		return 0, loadErr
 	}
-	if procPidinfoPtr == nil {
+	if pid != os.Getpid() {
 		return 0, unix.EPERM
 	}
-	var info ProcPidBsdInfo
-	size := int32(unsafe.Sizeof(info))
-	ret := procPidinfoPtr(int32(pid), procPidBsdInfo, 0, uintptr(unsafe.Pointer(&info)), size)
-	if ret != size {
-		return 0, unix.EPERM
-	}
-	return (time.Duration(info.PbiStartSec)*time.Second + time.Duration(info.PbiStartUsec)*time.Microsecond).Microseconds(), nil
+	return time.Now().UnixMicro(), nil
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
