@@ -77,22 +77,21 @@ func GetProcessStartTime(pid int) (int64, error) {
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
-	result := make(map[string]*os.Process, len(names))
+	result := make(map[string]*os.Process)
 	if len(names) == 0 {
 		return result
 	}
+
 	loadLib()
 	if loadErr != nil || procListpidsPtr == nil || procPidpathPtr == nil {
-		for _, n := range names {
-			result[n] = nil
-		}
 		return result
 	}
+
 	targets := make([]string, len(names))
 	for i, n := range names {
 		targets[i] = strings.ToLower(n)
-		result[n] = nil
 	}
+
 	const maxPids = 16384
 	pidBuf := make([]int32, maxPids)
 	bufBytes := int32(len(pidBuf) * int(unsafe.Sizeof(pidBuf[0])))
@@ -100,31 +99,39 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 	if ret <= 0 {
 		return result
 	}
+
 	numPids := int(ret) / int(unsafe.Sizeof(pidBuf[0]))
 	if numPids > len(pidBuf) {
 		numPids = len(pidBuf)
 	}
+
 	remaining := make([]bool, len(names))
 	for i := range remaining {
 		remaining[i] = true
 	}
 	remainingCount := len(names)
+
 	pathBuf := make([]byte, 4096)
+
 	for i := 0; i < numPids && remainingCount > 0; i++ {
 		pid := pidBuf[i]
 		if pid <= 0 {
 			continue
 		}
+
 		r := procPidpathPtr(pid, uintptr(unsafe.Pointer(&pathBuf[0])), uint32(len(pathBuf)))
 		if r <= 0 {
 			continue
 		}
+
 		path := strings.ToLower(string(pathBuf[:r]))
 		base := strings.ToLower(filepath.Base(path))
+
 		for ti, t := range targets {
 			if !remaining[ti] {
 				continue
 			}
+
 			if strings.Contains(path, t) || strings.Contains(base, t) {
 				if proc, err := FindProcess(int(pid)); err == nil {
 					result[names[ti]] = proc
@@ -134,5 +141,6 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 			}
 		}
 	}
+
 	return result
 }
