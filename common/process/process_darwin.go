@@ -2,12 +2,10 @@ package process
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
-	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -15,9 +13,8 @@ import (
 )
 
 const (
-	procAllPids        = 1
-	procPidTaskAllInfo = 2
-	procPidBsdInfo     = 3
+	procAllPids    = 1
+	procPidBsdInfo = 3
 )
 
 type ProcPidBsdInfo struct {
@@ -43,34 +40,6 @@ type ProcPidBsdInfo struct {
 	PbiNice      uint32
 	PbiStartSec  uint64
 	PbiStartUsec uint64
-}
-
-type ProcTaskInfo struct {
-	VirtualSize      uint64
-	ResidentSize     uint64
-	TotalUser        uint64
-	TotalSystem      uint64
-	ThreadsUser      uint64
-	ThreadsSystem    uint64
-	Policy           int32
-	Faults           int32
-	Pageins          int32
-	CowFaults        int32
-	MessagesSent     int32
-	MessagesReceived int32
-	SyscallsMach     int32
-	SyscallsUnix     int32
-	Csw              int32
-	Threadnum        int32
-	NumRunning       int32
-	Priority         int32
-	BsdThreadnum     int32
-	SuspendCount     int32
-}
-
-type ProcTaskAllInfo struct {
-	Pbsd   ProcPidBsdInfo
-	Ptinfo ProcTaskInfo
 }
 
 var (
@@ -99,19 +68,13 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if loadErr != nil {
 		return 0, loadErr
 	}
-	if procPidinfoPtr == nil {
-		return 0, errors.New("proc_pidinfo unavailable, this should not happen, create an issue")
-	}
-	var info ProcTaskAllInfo
-	bufSize := int32(unsafe.Sizeof(info))
-	ret := procPidinfoPtr(int32(pid), procPidTaskAllInfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
-	if ret <= 0 {
+	var info ProcPidBsdInfo
+	size := int32(unsafe.Sizeof(info))
+	ret := procPidinfoPtr(int32(pid), procPidBsdInfo, 0, uintptr(unsafe.Pointer(&info)), size)
+	if ret != size {
 		return 0, unix.EPERM
 	}
-	if ret != bufSize {
-		return 0, fmt.Errorf("proc_pidinfo: unexpected length, this should not happen, create an issue. For pid %d: got=%d want=%d", pid, ret, bufSize)
-	}
-	return (time.Duration(info.Pbsd.PbiStartSec)*time.Second + time.Duration(info.Pbsd.PbiStartUsec)*time.Microsecond).Microseconds(), nil
+	return int64(info.PbiStartSec*1e6 + info.PbiStartUsec), nil
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
