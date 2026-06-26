@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	procAllPids    = 1
-	procPidBsdInfo = 3
+	procAllPids = 1
 )
 
 type ProcPidBsdInfo struct {
@@ -48,18 +47,35 @@ var (
 	loadErr         error
 	procPidinfoPtr  func(int32, int32, uint64, uintptr, int32) int32
 	procListpidsPtr func(uint32, uint32, uintptr, int32) int32
+	procPidBsdInfo  int32
 )
 
 func loadLib() {
 	loadOnce.Do(func() {
 		h, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
 		if err != nil {
-			loadErr = fmt.Errorf("dlopen libSystem failed: %w, this should not happen, create an issue", err)
+			loadErr = fmt.Errorf("dlopen libSystem failed: %w", err)
 			return
 		}
 		libHandle = h
 		purego.RegisterLibFunc(&procPidinfoPtr, libHandle, "proc_pidinfo")
 		purego.RegisterLibFunc(&procListpidsPtr, libHandle, "proc_listpids")
+
+		var info ProcPidBsdInfo
+		size := int32(unsafe.Sizeof(info))
+		buf := uintptr(unsafe.Pointer(&info))
+
+		for f := int32(0); f < 20; f++ {
+			r := procPidinfoPtr(int32(os.Getpid()), f, 0, buf, size)
+			if r == size {
+				procPidBsdInfo = f
+				break
+			}
+		}
+
+		if procPidBsdInfo == 0 {
+			loadErr = fmt.Errorf("could not detect PROC_PIDBSDINFO flavor")
+		}
 	})
 }
 
@@ -116,9 +132,9 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 			continue
 		}
 		var info ProcPidBsdInfo
-		infoSize := int32(unsafe.Sizeof(info))
-		r := procPidinfoPtr(pid, procPidBsdInfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
-		if r != infoSize {
+		size := int32(unsafe.Sizeof(info))
+		r := procPidinfoPtr(pid, procPidBsdInfo, 0, uintptr(unsafe.Pointer(&info)), size)
+		if r != size {
 			continue
 		}
 		nameBytes := info.PbiName[:]
