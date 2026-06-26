@@ -25,30 +25,29 @@ type Timeval struct {
 	Pad  int32 // padding para alinear a 16 bytes
 }
 
-// ProcPidBsdInfo The final fill is to approximate the real size (336 bytes).
 type ProcPidBsdInfo struct {
-	PbiFlags   uint32
-	PbiStatus  uint32
-	PbiXstatus uint32
-	PbiPid     uint32
-	PbiPpid    uint32
-	PbiUid     uint32
-	PbiGid     uint32
-	PbiRuid    uint32
-	PbiRgid    uint32
-	PbiSvuid   uint32
-	PbiSvgid   uint32
-	Rfu1       uint32
-	PbiComm    [16]byte
-	PbiName    [32]byte
-	PbiNfiles  uint32
-	PbiPgid    uint32
-	PbiPjobc   uint32
-	PbiTgid    uint32
-	PbiJobc    uint32
-	PbiBg      uint32
-	PbiStart   Timeval
-	Pad        [200]byte
+	PbiFlags     uint32
+	PbiStatus    uint32
+	PbiXstatus   uint32
+	PbiPid       uint32
+	PbiPpid      uint32
+	PbiUid       uint32
+	PbiGid       uint32
+	PbiRuid      uint32
+	PbiRgid      uint32
+	PbiSvuid     uint32
+	PbiSvgid     uint32
+	Rfu1         uint32
+	PbiComm      [16]byte
+	PbiName      [1024]byte
+	PbiNfiles    uint32
+	PbiPgid      uint32
+	PbiPjobc     uint32
+	PbiTdev      uint32
+	PbiTpgid     uint32
+	PbiNice      uint32
+	PbiStartSec  uint64
+	PbiStartUsec uint64
 }
 
 var (
@@ -89,7 +88,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if ret != bufSize {
 		return 0, fmt.Errorf("proc_pidinfo: unexpected length, this should not happen, create an issue. For pid %d: got=%d want=%d", pid, ret, bufSize)
 	}
-	return (time.Duration(info.PbiStart.Sec)*time.Second + time.Duration(info.PbiStart.Usec)*time.Microsecond).Microseconds(), nil
+	return (time.Duration(info.PbiStartSec)*time.Second + time.Duration(info.PbiStartUsec)*time.Microsecond).Microseconds(), nil
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
@@ -136,7 +135,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		if r != infoSize {
 			continue
 		}
-		nameBytes := info.PbiComm[:]
+		nameBytes := info.PbiName[:]
 		if idx := bytes.IndexByte(nameBytes, 0); idx >= 0 {
 			nameBytes = nameBytes[:idx]
 		}
