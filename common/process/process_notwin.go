@@ -24,7 +24,8 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	if err != nil {
 		return
 	}
-	if err, _, permitted := status(proc); err != nil {
+	var permitted bool
+	if err, _, permitted = status(proc); err != nil {
 		proc = nil
 		return
 	} else if !permitted {
