@@ -50,6 +50,32 @@ type ProcPidBsdInfo struct {
 	PbiStartUsec uint64
 }
 
+type ProcTaskInfo struct {
+	VirtualSize      uint64
+	ResidentSize     uint64
+	TotalUser        uint64
+	TotalSystem      uint64
+	ThreadsUser      uint64
+	ThreadsSystem    uint64
+	Policy           int32
+	Faults           int32
+	Pageins          int32
+	CowFaults        int32
+	MessagesSent     int32
+	MessagesReceived int32
+	SyscallsMach     int32
+	SyscallsUnix     int32
+	Csw              int32
+	Threadnum        int32
+	NumRunning       int32
+	Priority         int32
+}
+
+type ProcTaskAllInfo struct {
+	Pbsd   ProcPidBsdInfo
+	Ptinfo ProcTaskInfo
+}
+
 var (
 	libHandle       uintptr
 	loadOnce        sync.Once
@@ -79,7 +105,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if procPidinfoPtr == nil {
 		return 0, errors.New("proc_pidinfo unavailable, this should not happen, create an issue")
 	}
-	var info ProcPidBsdInfo
+	var info ProcTaskAllInfo
 	bufSize := int32(unsafe.Sizeof(info))
 	ret := procPidinfoPtr(int32(pid), procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
 	if ret <= 0 {
@@ -88,7 +114,7 @@ func GetProcessStartTime(pid int) (int64, error) {
 	if ret != bufSize {
 		return 0, fmt.Errorf("proc_pidinfo: unexpected length, this should not happen, create an issue. For pid %d: got=%d want=%d", pid, ret, bufSize)
 	}
-	return (time.Duration(info.PbiStartSec)*time.Second + time.Duration(info.PbiStartUsec)*time.Microsecond).Microseconds(), nil
+	return (time.Duration(info.Pbsd.PbiStartSec)*time.Second + time.Duration(info.Pbsd.PbiStartUsec)*time.Microsecond).Microseconds(), nil
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
