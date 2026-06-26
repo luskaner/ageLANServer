@@ -16,15 +16,16 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func alive(proc *os.Process) bool {
-	err := proc.Signal(unix.Signal(0))
+func status(proc *os.Process) (err error, alive bool, permitted bool) {
+	err = proc.Signal(unix.Signal(0))
 	if err == nil {
-		return true
+		alive = true
+		permitted = true
+	} else if errors.Is(err, unix.EPERM) {
+		alive = true
+		err = nil
 	}
-	if errors.Is(err, unix.EPERM) {
-		return true
-	}
-	return false
+	return
 }
 
 func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
@@ -36,14 +37,14 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 		ticker := time.NewTicker(pollInterval)
 		defer ticker.Stop()
 		for {
-			if !alive(proc) {
+			if _, alive, _ := status(proc); !alive {
 				return true
 			}
 			select {
 			case <-timeoutChan:
 				return false
 			case <-ticker.C:
-				if !alive(proc) {
+				if _, alive, _ := status(proc); !alive {
 					return true
 				}
 			}

@@ -84,9 +84,6 @@ func GetProcessStartTime(pid int) (int64, error) {
 	bufSize := int32(unsafe.Sizeof(info))
 	ret := procPidinfoPtr(int32(pid), procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), bufSize)
 	if ret <= 0 {
-		if err := unix.Kill(pid, 0); err != nil {
-			return 0, err
-		}
 		return 0, unix.EPERM
 	}
 	if ret != bufSize {
@@ -112,21 +109,10 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		targets[i] = strings.ToLower(n)
 		result[n] = nil
 	}
-	lib, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
-	if err != nil {
-		return result
-	}
-	defer func(handle uintptr) {
-		_ = purego.Dlclose(handle)
-	}(lib)
-	var procListpids func(uint32, uint32, uintptr, int32) int32
-	var procPidinfo func(int32, int32, uint64, uintptr, int32) int32
-	purego.RegisterLibFunc(&procListpids, lib, "proc_listpids")
-	purego.RegisterLibFunc(&procPidinfo, lib, "proc_pidinfo")
 	const maxPids = 16384
 	pidBuf := make([]int32, maxPids)
 	bufBytes := int32(len(pidBuf) * int(unsafe.Sizeof(pidBuf[0])))
-	ret := procListpids(procAllPids, 0, uintptr(unsafe.Pointer(&pidBuf[0])), bufBytes)
+	ret := procListpidsPtr(procAllPids, 0, uintptr(unsafe.Pointer(&pidBuf[0])), bufBytes)
 	if ret <= 0 {
 		return result
 	}
@@ -146,7 +132,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		}
 		var info ProcPidBsdInfo
 		infoSize := int32(unsafe.Sizeof(info))
-		r := procPidinfo(pid, procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
+		r := procPidinfoPtr(pid, procPidbsdinfo, 0, uintptr(unsafe.Pointer(&info)), infoSize)
 		if r != infoSize {
 			continue
 		}
