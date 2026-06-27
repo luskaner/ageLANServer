@@ -11,9 +11,19 @@ package process
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"golang.org/x/sys/unix"
+	"mvdan.cc/sh/v3/shell"
 )
+
+func parseCmdline(cmdline []byte) []string {
+	cmdlineStr := strings.TrimSpace(
+		strings.ReplaceAll(strings.ReplaceAll(string(cmdline), "\x00", " "), "\\", "/"),
+	)
+	args, _ := shell.Fields(cmdlineStr, nil)
+	return args
+}
 
 func FindProcess(pid int) (proc *os.Process, err error) {
 	return FindProcessWithStartTime(pid, 0)

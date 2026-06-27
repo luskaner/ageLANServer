@@ -4,17 +4,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 	"unsafe"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ebitengine/purego"
 	"golang.org/x/sys/unix"
 )
 
 const (
 	procAllPids = 1
+	ProcPidargv = 3
 )
 
 type ProcPidBsdInfo struct {
@@ -51,6 +54,8 @@ var (
 	procPidpathPtr  func(int32, uintptr, uint32) int32
 )
 
+var wineBinaries = []string{"wine", "wine64", "wine-preloader", "wine64-preloader", "wineloader"}
+
 func loadLib() {
 	loadOnce.Do(func() {
 		h, err := purego.Dlopen("/usr/lib/libSystem.B.dylib", purego.RTLD_NOW)
@@ -76,71 +81,69 @@ func GetProcessStartTime(pid int) (int64, error) {
 	return time.Now().UnixMicro(), nil
 }
 
-func ProcessesByNames(names []string) map[string]*os.Process {
-	result := make(map[string]*os.Process)
-	if len(names) == 0 {
-		return result
+func getProcessArgs(pid int32) (args []string) {
+	buf := make([]byte, 8192)
+	r := procPidinfoPtr(pid, ProcPidargv, 0, uintptr(unsafe.Pointer(&buf[0])), int32(len(buf)))
+	if r <= 0 {
+		return
 	}
+	return parseCmdline(buf)
+}
 
+func ProcessesByNames(names []string) map[string]*os.Process {
+	processesPid := make(map[string]*os.Process)
+	if len(names) == 0 {
+		return processesPid
+	}
 	loadLib()
 	if loadErr != nil || procListpidsPtr == nil || procPidpathPtr == nil {
-		return result
+		return processesPid
 	}
-
 	targets := make([]string, len(names))
 	for i, n := range names {
 		targets[i] = strings.ToLower(n)
 	}
-
 	const maxPids = 16384
 	pidBuf := make([]int32, maxPids)
 	bufBytes := int32(len(pidBuf) * int(unsafe.Sizeof(pidBuf[0])))
 	ret := procListpidsPtr(procAllPids, 0, uintptr(unsafe.Pointer(&pidBuf[0])), bufBytes)
 	if ret <= 0 {
-		return result
+		return processesPid
 	}
-
 	numPids := int(ret) / int(unsafe.Sizeof(pidBuf[0]))
 	if numPids > len(pidBuf) {
 		numPids = len(pidBuf)
 	}
-
-	remaining := make([]bool, len(names))
-	for i := range remaining {
-		remaining[i] = true
-	}
-	remainingCount := len(names)
-
-	pathBuf := make([]byte, 4096)
-
-	for i := 0; i < numPids && remainingCount > 0; i++ {
+	namesLeft := mapset.NewThreadUnsafeSet[string](names...)
+	for i := 0; namesLeft.Cardinality() > 0 && i < numPids; i++ {
 		pid := pidBuf[i]
 		if pid <= 0 {
 			continue
 		}
-
-		r := procPidpathPtr(pid, uintptr(unsafe.Pointer(&pathBuf[0])), uint32(len(pathBuf)))
-		if r <= 0 {
+		args := getProcessArgs(pid)
+		if len(args) == 0 {
 			continue
 		}
-
-		path := strings.ToLower(string(pathBuf[:r]))
-		base := strings.ToLower(filepath.Base(path))
-
-		for ti, t := range targets {
-			if !remaining[ti] {
-				continue
-			}
-
-			if strings.Contains(path, t) || strings.Contains(base, t) {
-				if proc, err := FindProcess(int(pid)); err == nil {
-					result[names[ti]] = proc
+		args2OrMore := len(args) > 1
+		baseName := filepath.Base(args[0])
+		var matchingName string
+		for name := range namesLeft.Iter() {
+			if strings.HasSuffix(name, `.exe`) {
+				if args2OrMore && filepath.Base(args[1]) == name && slices.Contains(wineBinaries, baseName) {
+					matchingName = name
+					break
 				}
-				remaining[ti] = false
-				remainingCount--
+			} else if baseName == name {
+				matchingName = name
+				break
+			}
+		}
+		if matchingName != "" {
+			if localProc, err := FindProcess(int(pid)); err == nil {
+				processesPid[matchingName] = localProc
+				namesLeft.Remove(matchingName)
 			}
 		}
 	}
-
-	return result
+	return processesPid
 }

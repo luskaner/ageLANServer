@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
-	"mvdan.cc/sh/v3/shell"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // GetProcessStartTime returns the process start time as clock ticks since system boot.
@@ -58,8 +57,11 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 	if err != nil {
 		return processesPid
 	}
-
+	namesLeft := mapset.NewThreadUnsafeSet[string](names...)
 	for _, proc := range procs {
+		if namesLeft.IsEmpty() {
+			break
+		}
 		var pid uint64
 		if pid, err = strconv.ParseUint(proc.Name(), 10, 32); err == nil {
 			var cmdline []byte
@@ -67,18 +69,15 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 			if err != nil {
 				continue
 			}
-			cmdlineStr := strings.TrimSpace(
-				strings.ReplaceAll(strings.ReplaceAll(string(cmdline), "\x00", " "), "\\", "/"),
-			)
-			var args []string
-			args, err = shell.Fields(cmdlineStr, nil)
-			if err != nil || len(args) == 0 {
+			args := parseCmdline(cmdline)
+			if len(args) == 0 {
 				continue
 			}
-			cmdlineName := filepath.Base(args[0])
-			if slices.Contains(names, cmdlineName) {
+			name := filepath.Base(args[0])
+			if namesLeft.Contains(name) {git a
 				if localProc, err := FindProcess(int(pid)); err == nil {
-					processesPid[cmdlineName] = localProc
+					processesPid[name] = localProc
+					namesLeft.Remove(name)
 				}
 			}
 		}
