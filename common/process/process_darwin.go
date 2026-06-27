@@ -1,6 +1,7 @@
 package process
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,7 +18,10 @@ import (
 
 const (
 	procAllPids = 1
-	ProcPidargv = 3
+)
+
+const (
+	KernProcargs2 = 49
 )
 
 type ProcPidBsdInfo struct {
@@ -81,13 +85,35 @@ func GetProcessStartTime(pid int) (int64, error) {
 	return time.Now().UnixMicro(), nil
 }
 
-func getProcessArgs(pid int32) (args []string) {
-	buf := make([]byte, 8192)
-	r := procPidinfoPtr(pid, ProcPidargv, 0, uintptr(unsafe.Pointer(&buf[0])), int32(len(buf)))
-	if r <= 0 {
-		return
+func getProcessArgs(pid int) ([]string, error) {
+	buf, err := unix.SysctlRaw("kern.procargs2", pid)
+	if err != nil {
+		return nil, fmt.Errorf("sysctl kern.procargs2 failed: %w", err)
 	}
-	return parseCmdline(buf)
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("kern.procargs2 buffer too small")
+	}
+	argc := int(binary.LittleEndian.Uint32(buf[0:4]))
+	if argc <= 0 {
+		return nil, nil
+	}
+	i := 4
+	for i < len(buf) && buf[i] != 0 {
+		i++
+	}
+	for i < len(buf) && buf[i] == 0 {
+		i++
+	}
+	args := make([]string, 0, argc)
+	for len(args) < argc && i < len(buf) {
+		start := i
+		for i < len(buf) && buf[i] != 0 {
+			i++
+		}
+		args = append(args, string(buf[start:i]))
+		i++
+	}
+	return args, nil
 }
 
 func ProcessesByNames(names []string) map[string]*os.Process {
@@ -98,10 +124,6 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 	loadLib()
 	if loadErr != nil || procListpidsPtr == nil || procPidpathPtr == nil {
 		return processesPid
-	}
-	targets := make([]string, len(names))
-	for i, n := range names {
-		targets[i] = strings.ToLower(n)
 	}
 	const maxPids = 16384
 	pidBuf := make([]int32, maxPids)
