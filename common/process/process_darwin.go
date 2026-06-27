@@ -137,12 +137,16 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 		numPids = len(pidBuf)
 	}
 	namesLeft := mapset.NewThreadUnsafeSet[string](names...)
+	var err error
 	for i := 0; namesLeft.Cardinality() > 0 && i < numPids; i++ {
 		pid := pidBuf[i]
 		if pid <= 0 {
 			continue
 		}
-		args := getProcessArgs(pid)
+		var args []string
+		if args, err = getProcessArgs(int(pid)); err != nil {
+			continue
+		}
 		if len(args) == 0 {
 			continue
 		}
