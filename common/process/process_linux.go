@@ -74,7 +74,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 				continue
 			}
 			name := filepath.Base(args[0])
-			if namesLeft.Contains(name) {git a
+			if namesLeft.Contains(name) {
 				if localProc, err := FindProcess(int(pid)); err == nil {
 					processesPid[name] = localProc
 					namesLeft.Remove(name)
