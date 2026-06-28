@@ -1,7 +1,6 @@
 package process
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -12,18 +11,13 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-func parseCmdline(cmdline []byte) []string {
-	cmdline = bytes.TrimSuffix(cmdline, []byte("\x00"))
+func parseCmdline(cmdline string) []string {
+	cmdline = strings.TrimSuffix(cmdline, "\x00")
 	if len(cmdline) == 0 {
 		return nil
 	}
-	cmdline = bytes.ReplaceAll(cmdline, []byte(`\`), []byte(`/`))
-	parts := bytes.Split(cmdline, []byte("\x00"))
-	args := make([]string, len(parts))
-	for i, p := range parts {
-		args[i] = string(p)
-	}
-	return args
+	cmdline = filepath.ToSlash(cmdline)
+	return strings.Split(cmdline, "\x00")
 }
 
 // GetProcessStartTime returns the process start time as clock ticks since system boot.
@@ -84,7 +78,7 @@ func ProcessesByNames(names []string) map[string]*os.Process {
 			if err != nil {
 				continue
 			}
-			args := parseCmdline(cmdline)
+			args := parseCmdline(string(cmdline))
 			if len(args) == 0 {
 				continue
 			}
