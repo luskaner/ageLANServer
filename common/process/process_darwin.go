@@ -110,8 +110,11 @@ func getProcessArgs(pid int) ([]string, error) {
 		for i < len(buf) && buf[i] != 0 {
 			i++
 		}
-		args = append(args, filepath.ToSlash(string(buf[start:i])))
+		args = append(args, strings.ReplaceAll(string(buf[start:i]), `\`, `/`))
 		i++
+	}
+	if args[len(args)-1] == "" {
+		args = args[:len(args)-1]
 	}
 	return args, nil
 }

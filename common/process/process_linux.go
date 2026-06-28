@@ -16,7 +16,7 @@ func parseCmdline(cmdline string) []string {
 	if len(cmdline) == 0 {
 		return nil
 	}
-	cmdline = filepath.ToSlash(cmdline)
+	cmdline = strings.ReplaceAll(cmdline, `\`, `/`)
 	return strings.Split(cmdline, "\x00")
 }
 
