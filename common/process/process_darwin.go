@@ -110,7 +110,9 @@ func getProcessArgs(pid int) ([]string, error) {
 		for i < len(buf) && buf[i] != 0 {
 			i++
 		}
-		args = append(args, string(buf[start:i]))
+		arg := string(buf[start:i])
+		arg = strings.ReplaceAll(strings.TrimRight(arg, "\x00"), `\`, `/`)
+		args = append(args, arg)
 		i++
 	}
 	return args, nil
