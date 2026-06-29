@@ -13,17 +13,18 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 )
 
-func runFlushCache(args []string) error {
+func runFlushCache(args []string) (err error, exitCode int) {
 	flushCacheValues, flags := launcherCommonCmd.FlushCacheFlagSet()
-	if err := flags.Parse(args); err != nil {
-		return err
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, ok := <-sigs
 		if ok {
-			os.Exit(common.ErrSignal)
+			exitCode = common.ErrSignal
 		}
 	}()
 	if flushCacheValues.LogRoot != "" {
@@ -31,7 +32,7 @@ func runFlushCache(args []string) error {
 	}
 	if flushCacheValues.IPs || flushCacheValues.Certs {
 		if executor.IsAdmin() {
-			err, exitCode := admin.RunFlushCache(flushCacheValues.LogRoot, flushCacheValues.IPs, flushCacheValues.Certs)
+			err, exitCode = admin.RunFlushCache(flushCacheValues.LogRoot, flushCacheValues.IPs, flushCacheValues.Certs)
 			if err == nil && exitCode == common.ErrSuccess {
 				commonLogger.Println("Successfully ran 'config-admin'")
 			} else {
@@ -43,12 +44,13 @@ func runFlushCache(args []string) error {
 					commonLogger.Println("Received exit code:")
 					commonLogger.Println(exitCode)
 				}
-				os.Exit(internal.ErrAdminSetup)
+				exitCode = internal.ErrAdminSetup
 			}
 		} else {
 			agentStarted := admin.ConnectAgentIfNeeded() == nil
 			if agentStarted {
-				os.Exit(internal.ErrAgentAlreadyStarted)
+				exitCode = internal.ErrAgentAlreadyStarted
+				return
 			}
 			result := admin.StartAgent(flushCacheValues.IPs, flushCacheValues.Certs)
 			if !result.Success() {
@@ -61,15 +63,15 @@ func runFlushCache(args []string) error {
 						commonLogger.Println(result.ExitCode)
 					}
 				}
-				errorCode = internal.ErrStartAgent
+				exitCode = internal.ErrStartAgent
 			} else {
 				agentStarted = admin.ConnectAgentIfNeededWithRetries(true)
 				if !agentStarted {
 					commonLogger.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
-					errorCode = internal.ErrStartAgentVerify
+					exitCode = internal.ErrStartAgentVerify
 				}
 			}
 		}
 	}
-	return nil
+	return
 }

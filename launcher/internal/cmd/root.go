@@ -66,7 +66,7 @@ var (
 	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
 )
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	singleFs := commonCmd.NewSingleFlagSet(runRoot, Version)
 	fs := singleFs.Fs()
 	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
@@ -135,43 +135,48 @@ func Execute() error {
 	return singleFs.Execute()
 }
 
-func runRoot(fs *pflag.FlagSet) error {
+func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	// validate required flags
 	if gameId == "" {
-		return errors.New("required flag 'game' not set")
+		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
 
 	lock := &fileLock.PidLock{}
-	if err := lock.Lock(); err != nil {
+	if err = lock.Lock(); err != nil {
 		logger.Println("Failed to lock pid file. Kill process 'launcher' if it is running in your task manager.")
 		logger.Println(err.Error())
-		os.Exit(common.ErrPidLock)
+		exitCode = common.ErrPidLock
+		return
 	}
 	cfg := initConfig(fs)
 	logger.LogEnabled = cfg.Config.Log
-	if err := logger.OpenMainFileLog(gameId); err != nil {
+	if err = logger.OpenMainFileLog(gameId); err != nil {
 		logger.Println("Failed to open file log")
 		logger.Println(err.Error())
-		os.Exit(common.ErrFileLog)
+		exitCode = common.ErrFileLog
+		return
 	}
 	for _, fileToPrint := range filesToPrint {
 		logger.PrintFile("config", fileToPrint)
 	}
-	var errorCode atomic.Int32
-	errorCode.Store(int32(common.ErrSuccess))
+	var atomicExitCode atomic.Int32
+	atomicExitCode.Store(int32(common.ErrSuccess))
+	var signaled bool
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Println(r)
 			logger.Println(string(debug.Stack()))
-			errorCode.Store(int32(common.ErrGeneral))
+			atomicExitCode.Store(int32(common.ErrGeneral))
 		}
-		if errorCode.Load() != int32(common.ErrSuccess) {
-			config.Revert()
+		if !signaled {
+			if atomicExitCode.Load() != int32(common.ErrSuccess) {
+				config.Revert()
+			}
+			logger.WriteFileLog(gameId, "before exit")
+			commonLogger.CloseFileLog()
+			_ = lock.Unlock()
+			exitCode = int(atomicExitCode.Load())
 		}
-		logger.WriteFileLog(gameId, "before exit")
-		commonLogger.CloseFileLog()
-		_ = lock.Unlock()
-		os.Exit(int(errorCode.Load()))
 	}()
 	logger.WriteFileLog(gameId, "start")
 	isAdmin := commonExecutor.IsAdmin()
@@ -181,23 +186,23 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	if !canTrustCertificateValues.Contains(canTrustCertificate) {
 		logger.Printf("Invalid value for canTrustCertificate (%s): %s\n", strings.Join(canTrustCertificateValues.ToSlice(), "/"), canTrustCertificate)
-		errorCode.Store(int32(internal.ErrInvalidCanTrustCertificate))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidCanTrustCertificate))
+		return
 	}
 	canBroadcastBattleServer := "false"
 	if runtime.GOOS == "windows" && (gameId != game.AoM && gameId != game.AoE4) {
 		canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
 		if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
 			logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
-			errorCode.Store(int32(internal.ErrInvalidCanBroadcastBattleServer))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidCanBroadcastBattleServer))
+			return
 		}
 	}
 	serverStart := cfg.Server.Start
 	if !autoTrueFalseValues.Contains(serverStart) {
 		logger.Printf("Invalid value for serverStart (auto/true/false): %s\n", serverStart)
-		errorCode.Store(int32(internal.ErrInvalidServerStart))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidServerStart))
+		return
 	}
 	serverStop := cfg.Server.Stop
 	if runtime.GOOS != "windows" && isAdmin {
@@ -205,31 +210,31 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	if !autoTrueFalseValues.Contains(serverStop) {
 		logger.Printf("Invalid value for serverStop (%s): %s\n", strings.Join(autoTrueFalseValues.ToSlice(), "/"), serverStop)
-		errorCode.Store(int32(internal.ErrInvalidServerStop))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidServerStop))
+		return
 	}
 	battleServerManagerRun := cfg.Server.BattleServerManager.Run
 	if !requiredTrueFalseValues.Contains(battleServerManagerRun) {
 		logger.Printf("Invalid value for Server.BattleServerManager.Run (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), battleServerManagerRun)
-		errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerRun))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidServerBattleServerManagerRun))
+		return
 	}
 	isolateMetadataStr := cfg.Client.Isolation.Metadata
 	if !requiredTrueFalseValues.Contains(isolateMetadataStr) {
 		logger.Printf("Invalid value for Client.Isolation.Metadata (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateMetadataStr)
-		errorCode.Store(int32(internal.ErrInvalidIsolateMetadata))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidIsolateMetadata))
+		return
 	}
 	isolateProfilesStr := cfg.Client.Isolation.Profiles
 	if !requiredTrueFalseValues.Contains(isolateProfilesStr) {
 		logger.Printf("Invalid value for Client.Isolation.Profiles (%s): %s\n", strings.Join(requiredTrueFalseValues.ToSlice(), "/"), isolateProfilesStr)
-		errorCode.Store(int32(internal.ErrInvalidIsolateProfiles))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidIsolateProfiles))
+		return
 	}
 	if !game.SupportedGames.ContainsOne(gameId) {
 		logger.Println("Invalid game type")
-		errorCode.Store(int32(launcherCommon.ErrInvalidGame))
-		return nil
+		atomicExitCode.Store(int32(launcherCommon.ErrInvalidGame))
+		return
 	}
 	config.SetGameId(gameId)
 	serverValues := map[string]string{
@@ -238,47 +243,49 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	var serverArgsValues *cmdServer.Values
 	var serverFlags *pflag.FlagSet
-	if serverArgs, err := cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues); err == nil {
+	var serverArgs []string
+	if serverArgs, err = cmdUtils.ParseCommandArgs(cfg.Server.Args, serverValues); err == nil {
 		var serverSingleFlagSet *commonCmd.SingleFlagSet
 		serverArgsValues, serverSingleFlagSet = cmdServer.SingleFlagSet("", nil, nil)
 		serverFlags = serverSingleFlagSet.Fs()
 		if err = serverFlags.Parse(serverArgs); err != nil {
 			logger.Println("Failed to parse 'server' executable arguments")
-			errorCode.Store(int32(internal.ErrInvalidServerArgs))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
+			return
 		}
-		if _, err := uuid.Parse(serverArgsValues.Id); err != nil {
+		if _, err = uuid.Parse(serverArgsValues.Id); err != nil {
 			logger.Println("You must provide a valid UUID for the server ID using the '--id' argument in 'server' executable arguments")
-			errorCode.Store(int32(internal.ErrInvalidServerArgs))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
+			return
 		}
 	} else {
 		logger.Println("Failed to parse 'server' executable arguments")
-		errorCode.Store(int32(internal.ErrInvalidServerArgs))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
+		return
 	}
-	battleServerManagerArgs, err := cmdUtils.ParseCommandArgs(
+	var battleServerManagerArgs []string
+	battleServerManagerArgs, err = cmdUtils.ParseCommandArgs(
 		cfg.Server.BattleServerManager.Args,
 		serverValues,
 	)
 	if err != nil {
 		logger.Println("Failed to parse 'battle-server-manager' executable arguments")
-		errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
+		return
 	}
 	var setupCommand []string
 	setupCommand, err = cmdUtils.ParseCommandArgs(cfg.Config.SetupCommand, nil)
 	if err != nil {
 		logger.Println("Failed to parse setup command")
-		errorCode.Store(int32(internal.ErrInvalidSetupCommand))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidSetupCommand))
+		return
 	}
 	var revertCommand []string
 	revertCommand, err = cmdUtils.ParseCommandArgs(cfg.Config.RevertCommand, nil)
 	if err != nil {
 		logger.Println("Failed to parse revert command")
-		errorCode.Store(int32(internal.ErrInvalidRevertCommand))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrInvalidRevertCommand))
+		return
 	}
 	canAddHost := cfg.Config.CanAddHost
 	clientExecutable := cfg.Client.Executable.Path
@@ -302,15 +309,15 @@ func runRoot(fs *pflag.FlagSet) error {
 			var isolationDir os.FileInfo
 			if isolationDir, isolationPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Isolation.Path), nil); err != nil || !isolationDir.IsDir() {
 				logger.Println("Invalid isolation path")
-				errorCode.Store(int32(internal.ErrInvalidIsolationPath))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
+				return
 			}
 			logger.BasePath = isolationPath
 			logger.WriteFileLog(gameId, "post isolation path")
 		} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
 			logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
-			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
+			return
 		}
 	}
 	var serverExecutable string
@@ -318,8 +325,8 @@ func runRoot(fs *pflag.FlagSet) error {
 		var serverFile os.FileInfo
 		if serverFile, serverExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.Executable.Path), nil); err != nil || serverFile.IsDir() {
 			logger.Println("Invalid 'server' executable")
-			errorCode.Store(int32(internal.ErrInvalidServerPath))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidServerPath))
+			return
 		}
 	}
 	var battleServerManagerExecutable string
@@ -327,29 +334,23 @@ func runRoot(fs *pflag.FlagSet) error {
 		var battleServerManagerFile os.FileInfo
 		if battleServerManagerFile, battleServerManagerExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Server.BattleServerManager.Executable.Path), nil); err != nil || battleServerManagerFile.IsDir() {
 			logger.Println("Invalid 'battle-server-manager' executable")
-			errorCode.Store(int32(internal.ErrInvalidClientPath))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
+			return
 		}
 	}
 	if !clientExecutableOfficial {
 		var clientFile os.FileInfo
 		if clientFile, clientExecutable, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Executable.Path), nil); err != nil || clientFile.IsDir() {
 			logger.Println("Invalid client executable")
-			errorCode.Store(int32(internal.ErrInvalidClientPath))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
+			return
 		}
 	} else if !isolateProfiles || (gameId != game.AoE1 && !isolateMetadata) {
 		logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
-		errorCode.Store(int32(internal.ErrRequiredIsolation))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrRequiredIsolation))
+		return
 	} else {
 		logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
-	}
-
-	if runtime.GOOS != "windows" && isAdmin && (clientExecutable == "auto" || clientExecutable == "steam") {
-		logger.Println("Steam cannot be run as administrator. Either run this as a normal user or set Client.Executable to a custom launcher.")
-		errorCode.Store(int32(internal.ErrSteamRoot))
-		return nil
 	}
 
 	if isAdmin {
@@ -364,8 +365,8 @@ func runRoot(fs *pflag.FlagSet) error {
 	logger.Printf("Game %s.\n", gameId)
 	if clientExecutable == "msstore" && gameId == game.AoM {
 		logger.Println("The Microsoft Store (Xbox) version is not supported on this game.")
-		errorCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
+		return
 	}
 	config.SetGameId(gameId)
 	logger.Println("Looking for the game...")
@@ -375,14 +376,14 @@ func runRoot(fs *pflag.FlagSet) error {
 		logger.Printf("Game found on %s.\n", executer.String())
 	} else {
 		logger.Println("Game not found.")
-		errorCode.Store(int32(internal.ErrGameLauncherNotFound))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrGameLauncherNotFound))
+		return
 	}
 	if isolation && isolationPath == "" {
 		if isolationPath = config.IsolationPath(executer); isolationPath == "" {
 			logger.Println("Failed to auto retrieve isolation path")
-			errorCode.Store(int32(internal.ErrInvalidIsolationPath))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
+			return
 		}
 		logger.BasePath = isolationPath
 		logger.WriteFileLog(gameId, "post isolation path")
@@ -391,10 +392,12 @@ func runRoot(fs *pflag.FlagSet) error {
 	var ok bool
 	if customExecutor, ok = executer.(custom.Exec); ok {
 		if cert.HasCA(gameId) {
-			if clientFile, clientPath, err := common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
+			var clientFile os.FileInfo
+			var clientPath string
+			if clientFile, clientPath, err = common.ParsePath(common.EnhancedViperStringToStringSlice(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
 				logger.Println("Invalid client path")
-				errorCode.Store(int32(internal.ErrInvalidClientPath))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
+				return
 			} else {
 				gamePath = clientPath
 			}
@@ -418,27 +421,29 @@ func runRoot(fs *pflag.FlagSet) error {
 			config.Revert()
 			commonLogger.CloseFileLog()
 			_ = lock.Unlock()
-			os.Exit(int(errorCode.Load()))
+			exitCode = int(atomicExitCode.Load())
+			signaled = true
 		}
 	}()
 	agentWaitDuration := time.Minute
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
-	if _, proc, err := commonProcess.Process(agent); err == nil && proc != nil {
+	var proc *os.Process
+	if _, proc, err = commonProcess.Process(agent); err == nil && proc != nil {
 		logger.Printf("'agent' is running, waiting up to %s for it to end...\n", agentWaitDuration)
 		if !commonProcess.WaitForProcess(proc, &agentWaitDuration) {
 			logger.Println("'agent' did not exit on its own.")
 		}
 	}
 	cfgAdminAgentWaitDuration := 10 * time.Second
-	if _, proc, err := commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
+	if _, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
 		logger.Printf("'config-admin-agent' is running, waiting up to %s for it to end...\n", cfgAdminAgentWaitDuration)
 		if !commonProcess.WaitForProcess(proc, &cfgAdminAgentWaitDuration) {
 			logger.Println("'config-admin-agent' did not exit on its own.")
 		}
 	}
 	if cmdUtils.GameRunning() {
-		errorCode.Store(int32(internal.ErrGameAlreadyRunning))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrGameAlreadyRunning))
+		return
 	}
 	/*
 		Ensure:
@@ -452,8 +457,8 @@ func runRoot(fs *pflag.FlagSet) error {
 			commonLogger.Println("run config revert", options.String())
 		}, executor.RunRevert)
 	}); err != nil {
-		errorCode.Store(int32(common.ErrFileLog))
-		return nil
+		atomicExitCode.Store(int32(common.ErrFileLog))
+		return
 	}
 	if canTrustCertificate == "auto" {
 		if runtime.GOOS == "darwin" {
@@ -471,11 +476,10 @@ func runRoot(fs *pflag.FlagSet) error {
 	cfgFlushCacheOpts := executor.NewConfigFlushCacheOptions(canAddHost, canTrustCertificate, customHostFile, customCertFile)
 	if cfgFlushCacheOpts != nil {
 		if result := cfgFlushCacheOpts.RunFlushCache(); !result.Success() {
-			errorCode.Store(int32(internal.ErrFlushCache))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrFlushCache))
+			return
 		}
 	}
-	var proc *os.Process
 	_, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.Server))
 	if err == nil && proc != nil {
 		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
@@ -488,15 +492,15 @@ func runRoot(fs *pflag.FlagSet) error {
 			logger.Println("Error message: " + err.Error())
 		}
 	}); err != nil {
-		errorCode.Store(int32(common.ErrFileLog))
-		return nil
+		atomicExitCode.Store(int32(common.ErrFileLog))
+		return
 	}
 	logger.WriteFileLog(gameId, "post initial cleanup")
 	if len(revertCommand) > 0 {
-		if err := launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
+		if err = launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
 			logger.Println("Failed to store revert command")
-			errorCode.Store(int32(internal.ErrInvalidRevertCommand))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrInvalidRevertCommand))
+			return
 		}
 	}
 	// Setup
@@ -511,8 +515,8 @@ func runRoot(fs *pflag.FlagSet) error {
 			if result.ExitCode != common.ErrSuccess {
 				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 			}
-			errorCode.Store(int32(internal.ErrSetupCommand))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrSetupCommand))
+			return
 		}
 	}
 	var serverIP string
@@ -525,12 +529,13 @@ func runRoot(fs *pflag.FlagSet) error {
 		multicastIPsStr := cfg.Server.AnnounceMulticastGroups
 		multicastIPs := mapset.NewThreadUnsafeSetWithSize[netip.Addr](len(multicastIPsStr))
 		for _, str := range multicastIPsStr {
-			if IP, err := netip.ParseAddr(str); err == nil && IP.Is4() && IP.IsMulticast() {
+			var IP netip.Addr
+			if IP, err = netip.ParseAddr(str); err == nil && IP.Is4() && IP.IsMulticast() {
 				multicastIPs.Add(IP)
 			} else {
 				logger.Printf("Invalid multicast group \"%s\"\n", str)
-				errorCode.Store(int32(internal.ErrAnnouncementMulticastGroup))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrAnnouncementMulticastGroup))
+				return
 			}
 		}
 		serverId, selectedServerIp := cmdUtils.DiscoverServersAndSelectBestIpAddr(
@@ -560,13 +565,14 @@ func runRoot(fs *pflag.FlagSet) error {
 		if serverIP == "" {
 			if serverHost == "" {
 				logger.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
-				errorCode.Store(int32(internal.ErrInvalidServerHost))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
+				return
 			}
-			if addr, err := netip.ParseAddr(serverHost); err == nil && addr.Is6() {
+			var addr netip.Addr
+			if addr, err = netip.ParseAddr(serverHost); err == nil && addr.Is6() {
 				logger.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
-				errorCode.Store(int32(internal.ErrInvalidServerHost))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
+				return
 			}
 			if id, measuredServerIPAddrs, data := server.FilterServerIPs(
 				uuid.Nil,
@@ -575,8 +581,8 @@ func runRoot(fs *pflag.FlagSet) error {
 				common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(serverHost))),
 			); data == nil {
 				logger.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
-				errorCode.Store(int32(internal.ErrInvalidServerHost))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
+				return
 			} else {
 				serverIP = measuredServerIPAddrs[0].Ip.String()
 				serverArgsValues.Id = id.String()
@@ -606,22 +612,22 @@ func runRoot(fs *pflag.FlagSet) error {
 		serverExecutablePath := server.GetExecutablePath(serverExecutable)
 		if serverExecutablePath == "" {
 			logger.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
-			errorCode.Store(int32(internal.ErrServerExecutable))
-			return nil
+			atomicExitCode.Store(int32(internal.ErrServerExecutable))
+			return
 		}
 		if serverExecutable != serverExecutablePath {
 			logger.Println("Found 'server' executable path:", serverExecutablePath)
 		}
 		if ec := server.GenerateServerCertificates(serverExecutablePath, canTrustCertificate != "false"); ec != common.ErrSuccess {
-			errorCode.Store(int32(ec))
-			return nil
+			atomicExitCode.Store(int32(ec))
+			return
 		}
 		if runBattleServerManager {
 			values, flags := bsManager.StartFlagSet(nil)
 			if err = flags.Parse(battleServerManagerArgs); err != nil {
 				logger.Println("Failed to parse 'battle-server-manager' executable arguments")
-				errorCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
-				return nil
+				atomicExitCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
+				return
 			}
 			ec := config.RunBattleServerManager(
 				battleServerManagerExecutable,
@@ -630,47 +636,47 @@ func runRoot(fs *pflag.FlagSet) error {
 				serverStop == "true",
 			)
 			if ec != common.ErrSuccess {
-				errorCode.Store(int32(ec))
-				return nil
+				atomicExitCode.Store(int32(ec))
+				return
 			}
 		}
 		var ec int
 		ec, serverIP = config.StartServer(serverExecutablePath, serverFlags, serverArgsValues, serverStop == "true")
 		if ec != common.ErrSuccess {
-			errorCode.Store(int32(ec))
-			return nil
+			atomicExitCode.Store(int32(ec))
+			return
 		}
 	}
 	serverCertificate := server.ReadCACertificateFromServer(serverIP)
 	if serverCertificate == nil {
 		logger.Println("Failed to read certificate from " + serverIP + ". Try to access it with your browser and checking the certificate.")
-		errorCode.Store(int32(internal.ErrReadCert))
-		return nil
+		atomicExitCode.Store(int32(internal.ErrReadCert))
+		return
 	}
-	errorCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, customHostFile)))
-	if errorCode.Load() != int32(common.ErrSuccess) {
-		return nil
+	atomicExitCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, customHostFile)))
+	if atomicExitCode.Load() != int32(common.ErrSuccess) {
+		return
 	}
 	logger.WriteFileLog(gameId, "post host mapping")
-	errorCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, customCertFile)))
-	if errorCode.Load() != int32(common.ErrSuccess) {
-		return nil
+	atomicExitCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, customCertFile)))
+	if atomicExitCode.Load() != int32(common.ErrSuccess) {
+		return
 	}
 	logger.WriteFileLog(gameId, "post add cert")
-	errorCode.Store(int32(config.IsolateUserData(isolateMetadata, isolateProfiles, isolationPath)))
-	if errorCode.Load() != int32(common.ErrSuccess) {
-		return nil
+	atomicExitCode.Store(int32(config.IsolateUserData(isolateMetadata, isolateProfiles, isolationPath)))
+	if atomicExitCode.Load() != int32(common.ErrSuccess) {
+		return
 	}
 	logger.WriteFileLog(gameId, "post isolate user data")
 	if gamePath != "" {
-		errorCode.Store(int32(config.AddCACertToGame(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
-		if errorCode.Load() != int32(common.ErrSuccess) {
-			return nil
+		atomicExitCode.Store(int32(config.AddCACertToGame(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
+		if atomicExitCode.Load() != int32(common.ErrSuccess) {
+			return
 		}
 		logger.WriteFileLog(gameId, "post add game cert")
 	}
-	errorCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer, isolationPath)))
-	return nil
+	atomicExitCode.Store(int32(config.LaunchAgentAndGame(executer, customExecutor, cfg.Client.Args, canTrustCertificate, canBroadcastBattleServer, isolationPath)))
+	return
 }
 
 func initConfig(fs *pflag.FlagSet) *internal.Configuration {

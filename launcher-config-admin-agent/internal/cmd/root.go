@@ -26,24 +26,24 @@ var (
 	values  *config.FlushCacheValues
 )
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	var singleFs *cmd.SingleFlagSet
 	values, singleFs = config.FlushCacheSingleFlagSet(Version, runRoot)
 	return singleFs.Execute()
 }
 
-func runRoot(_ *pflag.FlagSet) error {
+func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	commonLogger.Initialize(nil)
 	if values.LogRoot != "" {
 		internal.InitializeOrExit(values.LogRoot)
 	}
 	lock := &fileLock.PidLock{}
-	if err := lock.Lock(); err != nil {
+	if err = lock.Lock(); err != nil {
 		commonLogger.Println("Failed to lock pid file. Kill process 'config-admin-agent' if it is running in your task manager.")
 		commonLogger.CloseFileLog()
-		os.Exit(common.ErrPidLock)
+		exitCode = common.ErrPidLock
+		return
 	}
-	exitCode := common.ErrSuccess
 	defer func() {
 		commonLogger.CloseFileLog()
 		if r := recover(); r != nil {
@@ -52,12 +52,11 @@ func runRoot(_ *pflag.FlagSet) error {
 			exitCode = common.ErrGeneral
 		}
 		_ = lock.Unlock()
-		os.Exit(exitCode)
 	}()
 	if !executor.IsAdmin() {
 		commonLogger.Println("Program must be run as admin")
 		exitCode = launcherCommon.ErrNotAdmin
-		return nil
+		return
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -66,7 +65,7 @@ func runRoot(_ *pflag.FlagSet) error {
 		if ok {
 			commonLogger.CloseFileLog()
 			_ = lock.Unlock()
-			os.Exit(common.ErrSignal)
+			exitCode = common.ErrSignal
 		}
 	}()
 	if values.IPs || values.Certs {
@@ -85,7 +84,7 @@ func runRoot(_ *pflag.FlagSet) error {
 			})
 		}); buffErr != nil {
 			exitCode = common.ErrFileLog
-			return nil
+			return
 		}
 		if !result.Success() {
 			commonLogger.Println("Failed to flush cache with exit code: ", result.ExitCode)
@@ -93,9 +92,9 @@ func runRoot(_ *pflag.FlagSet) error {
 				commonLogger.Println(result.Err.Error())
 			}
 			exitCode = internal.ErrFlushCache
-			return nil
+			return
 		}
 	}
 	exitCode = ipc.StartServer(values.LogRoot)
-	return nil
+	return
 }

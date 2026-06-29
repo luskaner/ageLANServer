@@ -38,7 +38,6 @@ const (
 	ErrInvalidRevertCommand
 	ErrInvalidIsolationPath
 	ErrSetupCommand
-	ErrSteamRoot
 	ErrAnnouncementMulticastGroup
 	ErrCertMismatch
 	ErrInvalidServerBattleServerManagerRun

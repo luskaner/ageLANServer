@@ -11,10 +11,11 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 )
 
-func runFlushCache(args []string) error {
+func runFlushCache(args []string) (err error, exitCode int) {
 	values, fs := config.FlushCacheFlagSet()
-	if err := fs.Parse(args); err != nil {
-		return err
+	if err = fs.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 	if values.LogRoot != "" {
 		internal.Initialize(values.LogRoot)
@@ -30,6 +31,7 @@ func runFlushCache(args []string) error {
 				if result.Err != nil {
 					commonLogger.Printf("Error: %v\n", result.Err)
 				}
+				exitCode = internal.ErrFlushCacheCerts
 			}
 		}
 	}
@@ -42,7 +44,12 @@ func runFlushCache(args []string) error {
 			if result.Err != nil {
 				commonLogger.Printf("Error: %v\n", result.Err)
 			}
+			if exitCode == internal.ErrFlushCacheCerts {
+				exitCode = internal.ErrFlushCache
+			} else {
+				exitCode = internal.ErrFlushCacheDNS
+			}
 		}
 	}
-	return nil
+	return
 }

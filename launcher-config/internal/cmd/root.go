@@ -8,9 +8,8 @@ import (
 var Version string
 var path *commonUserData.Path
 var rootFlagSet *commonCmd.RootFlagSet
-var errorCode int
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	rootFlagSet = commonCmd.NewRootFlagSet()
 	rootFlagSet.RegisterCommand("setup", runSetUp)
 	rootFlagSet.RegisterCommand("revert", runRevert)

@@ -25,7 +25,7 @@ func ResolveIsolateValue(value string, officialLauncher bool) bool {
 	}
 }
 
-func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (errorCode int) {
+func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exitCode int) {
 	if metadata || profiles {
 		var isolateItems []string
 		if metadata {
@@ -49,7 +49,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (err
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
 				logger.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
-				errorCode = internal.ErrMetadataProfilesSetup
+				exitCode = internal.ErrMetadataProfilesSetup
 				if result.Err != nil {
 					logger.Println("Error message: " + result.Err.Error())
 				}

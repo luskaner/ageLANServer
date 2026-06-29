@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/luskaner/ageLANServer/common"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmd"
@@ -12,7 +14,9 @@ func main() {
 	commonLogger.Initialize(nil)
 	cmd.Version = version
 	common.ChdirToExe()
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+	err, exitCode := cmd.Execute()
+	if err != nil {
+		print(err)
 	}
+	os.Exit(exitCode)
 }

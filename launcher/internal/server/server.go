@@ -72,23 +72,23 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 	return
 }
 
-func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (errorCode int) {
+func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (exitCode int) {
 	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
 			logger.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
-			errorCode = internal.ErrServerCertMissingExpired
+			exitCode = internal.ErrServerCertMissingExpired
 			return
 		}
 		if certificateFolder == "" {
 			logger.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
-			errorCode = internal.ErrServerCertDirectory
+			exitCode = internal.ErrServerCertDirectory
 			return
 		}
 		if result := GenerateCertificatePair(certificateFolder, func(options commonExecutor.Options) {
 
 		}); !result.Success() {
 			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")
-			errorCode = internal.ErrServerCertCreate
+			exitCode = internal.ErrServerCertCreate
 			if result != nil {
 				if result.Err != nil {
 					logger.Println("Error message: " + result.Err.Error())

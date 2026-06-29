@@ -24,7 +24,7 @@ type Values struct {
 	AnnounceMulticastGroup string
 }
 
-func SingleFlagSet(version string, configPaths []string, runFn func(*pflag.FlagSet) error) (values *Values, singleFs *cmd.SingleFlagSet) {
+func SingleFlagSet(version string, configPaths []string, runFn func(*pflag.FlagSet) (err error, exitCode int)) (values *Values, singleFs *cmd.SingleFlagSet) {
 	singleFs = cmd.NewSingleFlagSet(runFn, version)
 	values = &Values{
 		LogRootValues: &cmd.LogRootValues{},

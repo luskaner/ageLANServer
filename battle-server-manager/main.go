@@ -14,7 +14,9 @@ func main() {
 	commonLogger.Initialize(os.Stdout)
 	cmd.Version = version
 	common.ChdirToExe()
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+	err, exitCode := cmd.Execute()
+	if err != nil {
+		print(err)
 	}
+	os.Exit(exitCode)
 }

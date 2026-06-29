@@ -42,7 +42,7 @@ func FlushCacheFlagSet() (values *FlushCacheValues, flags *pflag.FlagSet) {
 	return
 }
 
-func FlushCacheSingleFlagSet(version string, runFn func(*pflag.FlagSet) error) (values *FlushCacheValues, singleFs *commonCmd.SingleFlagSet) {
+func FlushCacheSingleFlagSet(version string, runFn func(*pflag.FlagSet) (err error, exitCode int)) (values *FlushCacheValues, singleFs *commonCmd.SingleFlagSet) {
 	values = new(newFlushCacheValues())
 	singleFs = commonCmd.NewSingleFlagSet(runFn, version)
 	setFlushCacheFlags(values, singleFs.Fs())

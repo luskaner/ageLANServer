@@ -19,7 +19,7 @@ type Values struct {
 	BaseDataPath                  string
 }
 
-func SingleFlagSet(version string, runFn func(*pflag.FlagSet) error) (values *Values, singleFs *cmd.SingleFlagSet) {
+func SingleFlagSet(version string, runFn func(*pflag.FlagSet) (err error, exitCode int)) (values *Values, singleFs *cmd.SingleFlagSet) {
 	singleFs = cmd.NewSingleFlagSet(runFn, version)
 	values = &Values{
 		GameIdValues:  &cmd.GameIdValues{},

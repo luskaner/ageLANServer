@@ -22,19 +22,19 @@ import (
 var Version string
 var values *agent.Values
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	var singleFs *cmd.SingleFlagSet
 	values, singleFs = agent.SingleFlagSet(Version, runRoot)
 	return singleFs.Execute()
 }
 
-func runRoot(_ *pflag.FlagSet) error {
+func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	commonLogger.Initialize(os.Stdout)
 	lock := &fileLock.PidLock{}
-	exitCode := common.ErrSuccess
-	if err := lock.Lock(); err != nil {
+	if err = lock.Lock(); err != nil {
 		commonLogger.Println("Failed to lock pid file. Kill process 'agent' if it is running in your task manager.")
-		os.Exit(common.ErrPidLock)
+		exitCode = common.ErrPidLock
+		return
 	}
 	common.ChdirToExe()
 	if values.LogRoot != "" && values.BaseDataPath != "-" {
@@ -48,11 +48,10 @@ func runRoot(_ *pflag.FlagSet) error {
 			commonLogger.Println("Received terminate signal, shutting down...")
 			exitCode = common.ErrSignal
 			defer func() {
-				if err := lock.Unlock(); err != nil {
+				if err = lock.Unlock(); err != nil {
 					commonLogger.Printf("Failed to unlock: %v\n", err)
 				}
 				commonLogger.Printf("Exit code: %d\n", exitCode)
-				os.Exit(exitCode)
 			}()
 			_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
 				if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, nil, func(options exec.Options) {
@@ -64,7 +63,7 @@ func runRoot(_ *pflag.FlagSet) error {
 				}
 			})
 			_ = internal.Logger.Buffer("revert_command_end", func(writer io.Writer) {
-				if err := launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
+				if err = launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
 					if writer != nil {
 						commonLogger.Println("run revert command", options.String())
 					}
@@ -74,7 +73,7 @@ func runRoot(_ *pflag.FlagSet) error {
 			})
 			if values.ServerExecutable != "" {
 				commonLogger.Println("Killing server...")
-				if err := commonProcess.Kill(values.ServerExecutable); err != nil {
+				if err = commonProcess.Kill(values.ServerExecutable); err != nil {
 					commonLogger.Printf("Failed to kill server: %v\n", values.ServerExecutable)
 				}
 				if values.BattleServerManagerExecutable != "-" && values.BattleServerRegion != "-" {
@@ -103,5 +102,5 @@ func runRoot(_ *pflag.FlagSet) error {
 		&exitCode,
 	)
 	_ = lock.Unlock()
-	return nil
+	return
 }

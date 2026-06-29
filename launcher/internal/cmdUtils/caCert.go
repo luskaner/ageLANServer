@@ -13,7 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
-func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (errorCode int) {
+func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (exitCode int) {
 	logger.Println("Adding CA certificate to game if needed...")
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
@@ -21,8 +21,8 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		return internal.ErrConfigCACertAdd
 	}
 	var addCert bool
-	addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
-	if !addCert || errorCode != common.ErrSuccess {
+	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
+	if !addCert || exitCode != common.ErrSuccess {
 		return
 	}
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_game", func(writer io.Writer) {
@@ -36,7 +36,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		cfgSetupOpts.AddCACertData = serverCertificate.Raw
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			logger.Println("Failed to save CA certificate to game")
-			errorCode = internal.ErrConfigCACertAdd
+			exitCode = internal.ErrConfigCACertAdd
 			if result.Err != nil {
 				logger.Println("Error message: " + result.Err.Error())
 			}

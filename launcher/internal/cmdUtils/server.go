@@ -122,7 +122,7 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 	return
 }
 
-func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (errorCode int, ip string) {
+func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (exitCode int, ip string) {
 	logger.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
@@ -142,7 +142,7 @@ func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cm
 		}
 	} else {
 		logger.Println("Could not start 'server'.")
-		errorCode = internal.ErrServerStart
+		exitCode = internal.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
 				logger.Println("Error message: " + result.Err.Error())

@@ -88,7 +88,6 @@ func undoSetUp() {
 	if setupValues.CertFilePath != "" {
 		_ = os.Remove(setupValues.CertFilePath)
 	}
-	os.Exit(errorCode)
 }
 
 var setupValues *launcherCommonCmd.SetupValues
@@ -99,15 +98,16 @@ var backedUpMetadata bool
 var backedUpProfiles bool
 var addedGameCert bool
 
-func runSetUp(args []string) error {
+func runSetUp(args []string) (err error, exitCode int) {
 	var flags *pflag.FlagSet
 	setupValues, flags = launcherCommonCmd.SetUpFlagSet()
-	if err := flags.Parse(args); err != nil {
-		return err
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 
 	if setupValues.GameId == "" {
-		return errors.New("required flag 'game' not set")
+		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
 
 	// signal handler
@@ -116,7 +116,7 @@ func runSetUp(args []string) error {
 	go func() {
 		_, ok := <-sigs
 		if ok {
-			errorCode = common.ErrSignal
+			exitCode = common.ErrSignal
 			undoSetUp()
 		}
 	}()
@@ -130,12 +130,15 @@ func runSetUp(args []string) error {
 		setupValues.AddCACertData = nil
 	}
 	if setupValues.Metadata || setupValues.Profiles {
+		var fileInfo os.FileInfo
 		if !game.SupportedGames.ContainsOne(setupValues.GameId) {
 			commonLogger.Println("Invalid game type")
-			os.Exit(launcherCommon.ErrInvalidGame)
-		} else if fileInfo, err := os.Stat(setupValues.DataPath); err != nil || !fileInfo.IsDir() {
+			exitCode = launcherCommon.ErrInvalidGame
+			return
+		} else if fileInfo, err = os.Stat(setupValues.DataPath); err != nil || !fileInfo.IsDir() {
 			commonLogger.Println("Invalid data path")
-			os.Exit(internal.ErrInvalidDataPath)
+			exitCode = internal.ErrInvalidDataPath
+			return
 		}
 		path = commonUserData.NewPath(setupValues.DataPath, setupValues.GameId)
 	}
@@ -144,7 +147,8 @@ func runSetUp(args []string) error {
 	if setupValues.CertFilePath != "" {
 		if len(setupValues.AddLocalCertData) == 0 {
 			commonLogger.Println("Certificate file path is set but no local certificate data is provided")
-			os.Exit(internal.ErrMissingLocalCertData)
+			exitCode = internal.ErrMissingLocalCertData
+			return
 		}
 	} else {
 		addLocalCertData = setupValues.AddLocalCertData
@@ -156,17 +160,19 @@ func runSetUp(args []string) error {
 		crt := common.BytesToCertificate(setupValues.AddUserCertData)
 		if crt == nil {
 			commonLogger.Println("Failed to parse certificate")
-			errorCode = internal.ErrUserCertAddParse
+			exitCode = internal.ErrUserCertAddParse
 			undoSetUp()
+			return
 		}
-		if err := wrapper.AddUserCerts([]*x509.Certificate{crt}); err == nil {
+		if err = wrapper.AddUserCerts([]*x509.Certificate{crt}); err == nil {
 			commonLogger.Println("Successfully added user certificate")
 			addedUserCert = true
 		} else {
 			commonLogger.Println("Failed to add user certificate")
 			commonLogger.Println("Error message: " + err.Error())
-			errorCode = internal.ErrUserCertAdd
+			exitCode = internal.ErrUserCertAdd
 			undoSetUp()
+			return
 		}
 	}
 	if setupValues.Metadata {
@@ -176,8 +182,9 @@ func runSetUp(args []string) error {
 			backedUpMetadata = true
 		} else {
 			commonLogger.Println("Failed to back up metadata")
-			errorCode = internal.ErrMetadataBackup
+			exitCode = internal.ErrMetadataBackup
 			undoSetUp()
+			return
 		}
 	}
 	if setupValues.Profiles {
@@ -187,40 +194,45 @@ func runSetUp(args []string) error {
 			backedUpProfiles = true
 		} else {
 			commonLogger.Println("Failed to back up profiles")
-			errorCode = internal.ErrProfilesBackup
+			exitCode = internal.ErrProfilesBackup
 			undoSetUp()
+			return
 		}
 	}
 	if setupValues.AddCACertData != nil {
 		commonLogger.Println("Adding certificate to game's store...")
 		if setupValues.GamePath == "" {
 			commonLogger.Println("Game path is required to add certificate to game's store")
-			errorCode = internal.ErrGamePathMissing
+			exitCode = internal.ErrGamePathMissing
 			undoSetUp()
+			return
 		}
 		crt := common.BytesToCertificate(setupValues.AddCACertData)
 		if crt == nil {
 			commonLogger.Println("Failed to parse certificate")
-			errorCode = internal.ErrGameCertAddParse
+			exitCode = internal.ErrGameCertAddParse
 			undoSetUp()
+			return
 		}
 		gameCert := internal.NewCACert(setupValues.GameId, setupValues.GamePath)
-		if err := gameCert.Backup(); err == nil {
+		if err = gameCert.Backup(); err == nil {
 			commonLogger.Println("Successfully backed up game's store.")
 			addedGameCert = true
 		} else {
 			commonLogger.Println("Failed to add certificate to game's store.")
 			commonLogger.Println("Error message: " + err.Error())
-			errorCode = internal.ErrGameCertBackup
+			exitCode = internal.ErrGameCertBackup
 			undoSetUp()
+			return
 		}
-		if err := gameCert.Append([]*x509.Certificate{crt}); err == nil {
+		if err = gameCert.Append([]*x509.Certificate{crt}); err == nil {
 			commonLogger.Println("Successfully added certificate to game's store.")
 		} else {
 			commonLogger.Println("Failed to add certificate to game's store.")
 			commonLogger.Println("Error message: " + err.Error())
-			errorCode = internal.ErrGameCertAdd
+			exitCode = internal.ErrGameCertAdd
 			undoSetUp()
+			return
 		}
 	}
 	var ipToMap net.IP
@@ -233,20 +245,23 @@ func runSetUp(args []string) error {
 			commonLogger.Println("Successfully added host mappings")
 		} else {
 			commonLogger.Println("Failed to add host mappings")
-			errorCode = internal.ErrHostsAdd
+			exitCode = internal.ErrHostsAdd
 			undoSetUp()
+			return
 		}
 	}
 	if setupValues.CertFilePath != "" {
-		certFile, err := os.Create(setupValues.CertFilePath)
+		var certFile *os.File
+		certFile, err = os.Create(setupValues.CertFilePath)
 		if err == nil {
 			err = common.WriteAsPem(setupValues.AddLocalCertData, certFile)
 			_ = certFile.Close()
 		}
 		if err != nil {
 			commonLogger.Println("Error saving certificate file:", err)
-			errorCode = internal.ErrUserCertAdd
+			exitCode = internal.ErrUserCertAdd
 			undoSetUp()
+			return
 		}
 	}
 	if addLocalCertData != nil || len(ipToMap) > 0 {
@@ -260,7 +275,7 @@ func runSetUp(args []string) error {
 			}
 			commonLogger.Println(str + "...")
 		}
-		err, exitCode := admin.RunSetUp(setupValues.GameId, setupValues.LogRoot, ipToMap, addLocalCertData)
+		err, exitCode = admin.RunSetUp(setupValues.GameId, setupValues.LogRoot, ipToMap, addLocalCertData)
 		if err == nil && exitCode == common.ErrSuccess {
 			if agentStarted {
 				commonLogger.Println("Successfully communicated with 'config-admin-agent'")
@@ -276,13 +291,13 @@ func runSetUp(args []string) error {
 				commonLogger.Println("Received exit code:")
 				commonLogger.Println(exitCode)
 			}
-			errorCode = internal.ErrAdminSetup
+			exitCode = internal.ErrAdminSetup
 			if agentStarted {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
-				if err := admin.StopAgentIfNeeded(); err != nil {
+				if err = admin.StopAgentIfNeeded(); err != nil {
 					failedStopAgent := true
 					if isAdmin {
-						err := commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
+						err = commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
 						if err == nil {
 							commonLogger.Println("Successfully killed 'config-admin-agent'.")
 							failedStopAgent = false
@@ -299,5 +314,5 @@ func runSetUp(args []string) error {
 			}
 		}
 	}
-	return nil
+	return
 }

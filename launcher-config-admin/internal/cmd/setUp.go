@@ -22,20 +22,19 @@ func untrustCertificate() bool {
 		commonLogger.Println("Successfully removed local certificate")
 		return true
 	}
-
 	commonLogger.Println("Failed to remove local certificate")
 	return false
 }
 
-func runSetUp(args []string) error {
+func runSetUp(args []string) (err error, exitCode int) {
 	values, fs := admin.SetupFlagSet()
-	if err := fs.Parse(args); err != nil {
-		return err
+	if err = fs.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
 	}
 
 	// validate required flags
 	if values.GameId == "" {
-		return errors.New("required flag 'game' not set")
+		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
 
 	internal.SetUp = new(true)
@@ -48,9 +47,10 @@ func runSetUp(args []string) error {
 		crt := common.BytesToCertificate(values.AddLocalCertData)
 		if crt == nil {
 			commonLogger.Println("Failed to parse certificate")
-			os.Exit(internal.ErrLocalCertAddParse)
+			exitCode = internal.ErrLocalCertAddParse
+			return
 		}
-		if err := cert.TrustCertificates(false, []*x509.Certificate{crt}); err == nil {
+		if err = cert.TrustCertificates(false, []*x509.Certificate{crt}); err == nil {
 			commonLogger.Println("Successfully added local certificate")
 			trustedCertificate = true
 			sigs := make(chan os.Signal, 1)
@@ -59,13 +59,14 @@ func runSetUp(args []string) error {
 				_, ok := <-sigs
 				if ok {
 					untrustCertificate()
-					os.Exit(common.ErrSignal)
+					exitCode = common.ErrSignal
 				}
 			}()
 		} else {
 			commonLogger.Println("Failed to add local certificate")
 			commonLogger.Println("Error:", err)
-			os.Exit(internal.ErrLocalCertAdd)
+			exitCode = internal.ErrLocalCertAdd
+			return
 		}
 	}
 	if len(values.MapIp) > 0 {
@@ -73,15 +74,14 @@ func runSetUp(args []string) error {
 		if ok, _ := launcherCommonHosts.AddHosts(values.MapIp, values.GameId, "", "", hosts.FlushDns); ok {
 			commonLogger.Println("Successfully added IP mappings")
 		} else {
-			errorCode := internal.ErrIpMapAdd
+			exitCode = internal.ErrIpMapAdd
 			if trustedCertificate {
 				if !untrustCertificate() {
-					errorCode = internal.ErrIpMapAddRevert
+					exitCode = internal.ErrIpMapAddRevert
 				}
 			}
 			commonLogger.Println("Failed to add IP mappings")
-			os.Exit(errorCode)
 		}
 	}
-	return nil
+	return
 }

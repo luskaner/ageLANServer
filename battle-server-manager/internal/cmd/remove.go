@@ -3,29 +3,33 @@ package cmd
 import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
-	"os"
 	"slices"
 
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
-func runRemove(args []string) error {
+func runRemove(args []string) (err error, exitCode int) {
 	values, flags := bsManager.RemoveFlagSet()
-	if err := flags.Parse(args); err != nil {
-		return err
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
-
-	games, err := cmdUtils.ParsedGameIds(&values.GameIds)
+	var games mapset.Set[string]
+	games, err = cmdUtils.ParsedGameIds(&values.GameIds)
 	if err != nil {
 		commonLogger.Println(err.Error())
-		os.Exit(internal.ErrGames)
+		exitCode = internal.ErrGames
+		return
 	}
+	var configs []battleServer.Config
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
 		commonLogger.Printf("\tRemoving '%s' region...\n", values.Region)
-		configs, err := battleServer.Configs(g, false)
+		configs, err = battleServer.Configs(g, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue
@@ -37,5 +41,5 @@ func runRemove(args []string) error {
 			commonLogger.Println("\tNo configuration needs it.")
 		}
 	}
-	return nil
+	return
 }

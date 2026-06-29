@@ -16,21 +16,21 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
-func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (errorCode int) {
+func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (exitCode int) {
 	var mapIP bool
 	if !customHostFile {
 		for _, domain := range common.AllHosts(gameId) {
 			if !common.Matches(ip, domain) {
 				if !canMap {
 					logger.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
-					errorCode = internal.ErrConfigIpMap
+					exitCode = internal.ErrConfigIpMap
 					return
 				}
 				mapIP = true
 			} else if err := server.CheckConnectionFromServer(domain, true, nil); err != nil {
 				logger.Println("serverStart is false and host matches. " + domain + " must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
 				logger.Printf("Error: %s\n", err.Error())
-				errorCode = internal.ErrServerUnreachable
+				exitCode = internal.ErrServerUnreachable
 				return
 			}
 		}
@@ -72,7 +72,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 				if result.ExitCode != common.ErrSuccess {
 					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 				}
-				errorCode = internal.ErrConfigIpMapAdd
+				exitCode = internal.ErrConfigIpMapAdd
 			} else if customHostFile {
 				if parsedIP := net.ParseIP(ip); parsedIP != nil {
 					mappings := hosts.Mappings(gameId, parsedIP)
@@ -80,7 +80,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 						common.CacheMapping(string(hostToCache), ipToCache.String())
 					}
 				} else {
-					errorCode = internal.ErrConfigIpMapAdd
+					exitCode = internal.ErrConfigIpMapAdd
 				}
 			}
 		}); err != nil {

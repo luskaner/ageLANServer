@@ -7,7 +7,7 @@ import (
 var Version string
 var rootFlagSet *cmd.RootFlagSet
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	rootFlagSet = cmd.NewRootFlagSet()
 	rootFlagSet.RegisterCommand("setup", runSetUp)
 	rootFlagSet.RegisterCommand("revert", runRevert)

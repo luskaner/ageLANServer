@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common"
@@ -28,22 +29,25 @@ import (
 
 var configPaths = []string{paths.ResourcesDir, "."}
 
-func runStart(args []string) error {
+func runStart(args []string) (err error, exitCode int) {
 	values, flags := bsManager.StartFlagSet(configPaths)
-	if err := flags.Parse(args); err != nil {
-		return err
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 	// validate required flags
 	if values.GameId == "" {
-		return errors.New("required flag 'game' not set")
+		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
 
 	cfg := initConfig(flags, values)
 	gameIds := []string{values.GameId}
-	games, err := cmdUtils.ParsedGameIds(&gameIds)
+	var games mapset.Set[string]
+	games, err = cmdUtils.ParsedGameIds(&gameIds)
 	if err != nil {
 		commonLogger.Println(err.Error())
-		os.Exit(internal.ErrGames)
+		exitCode = internal.ErrGames
+		return
 	}
 	values.GameId, _ = games.Pop()
 	commonLogger.Println("Checking and resolving configuration...")
@@ -53,17 +57,21 @@ func runStart(args []string) error {
 	}
 	name := cfg.Name
 	region := cfg.Region
-	err, names, regions := cmdUtils.ExistingServers(values.GameId)
+	var names mapset.Set[string]
+	var regions mapset.Set[string]
+	err, names, regions = cmdUtils.ExistingServers(values.GameId)
 	if err != nil {
 		commonLogger.Printf("could not get existing servers: %s\n", err.Error())
-		os.Exit(internal.ErrReadConfig)
+		exitCode = internal.ErrReadConfig
+		return
 	}
 	if !values.Force && !regions.IsEmpty() {
 		if values.NoErrExisting {
-			return nil
+			return
 		}
 		commonLogger.Println("a Battle Server is already running, use --force to start another one")
-		os.Exit(internal.ErrAlreadyRunning)
+		exitCode = internal.ErrAlreadyRunning
+		return
 	}
 	if name == "auto" || region == "auto" {
 		if name == "auto" {
@@ -86,11 +94,13 @@ func runStart(args []string) error {
 	}
 	if lowerRegion := strings.ToLower(region); names.ContainsOne(lowerRegion) || regions.ContainsOne(lowerRegion) {
 		commonLogger.Printf("a Battle Server with the name/region '%s' already exists\n", region)
-		os.Exit(internal.ErrAlreadyExists)
+		exitCode = internal.ErrAlreadyExists
+		return
 	}
 	if lowerName := strings.ToLower(name); names.ContainsOne(lowerName) || regions.ContainsOne(lowerName) {
 		commonLogger.Printf("a Battle Server with the name/region '%s' already exists\n", region)
-		os.Exit(internal.ErrAlreadyExists)
+		exitCode = internal.ErrAlreadyExists
+		return
 	}
 	host := cfg.Host
 	var ip string
@@ -98,7 +108,8 @@ func runStart(args []string) error {
 		ips := common.HostOrIpToIps(host)
 		if len(ips) == 0 {
 			commonLogger.Println("could not resolve host to an IP address")
-			os.Exit(internal.ErrResolveHost)
+			exitCode = internal.ErrResolveHost
+			return
 		}
 		for _, currentIP := range ips {
 			if !net.ParseIP(currentIP).IsLoopback() {
@@ -107,7 +118,8 @@ func runStart(args []string) error {
 		}
 		if ip == "" {
 			commonLogger.Println("ip not valid or could not resolve host to a suitable IP address")
-			os.Exit(internal.ErrInvalidHost)
+			exitCode = internal.ErrInvalidHost
+			return
 		}
 		if ip != host {
 			commonLogger.Println("Resolved host to IP address:", ip)
@@ -123,20 +135,24 @@ func runStart(args []string) error {
 	}
 	if bsPort > 0 && !cmdUtils.Available(bsPort) {
 		commonLogger.Printf("bs port %d is already in use\n", bsPort)
-		os.Exit(internal.ErrBsPortInUse)
+		exitCode = internal.ErrBsPortInUse
+		return
 	}
 	if websocketPort > 0 && !cmdUtils.Available(websocketPort) {
 		commonLogger.Printf("websocket port %d is already in use\n", websocketPort)
-		os.Exit(internal.ErrWsPortInUse)
+		exitCode = internal.ErrWsPortInUse
+		return
 	}
 	if outOfBandPort > 0 && !cmdUtils.Available(outOfBandPort) {
 		commonLogger.Printf("out of band port %d is already in use\n", outOfBandPort)
-		os.Exit(internal.ErrOobPortInUse)
+		exitCode = internal.ErrOobPortInUse
+		return
 	}
 	allPorts, err := cmdUtils.GeneratePortsAsNeeded([]int{bsPort, websocketPort, outOfBandPort})
 	if err != nil {
 		commonLogger.Printf("could not generate ports: %s\n", err)
-		os.Exit(internal.ErrGenPorts)
+		exitCode = internal.ErrGenPorts
+		return
 	}
 	if bsPort != allPorts[0] {
 		commonLogger.Println("\tAuto-generated BsPort port:", allPorts[0])
@@ -153,17 +169,20 @@ func runStart(args []string) error {
 	)
 	if err != nil {
 		commonLogger.Printf("could not resolve SSL files: %s\n", err)
-		os.Exit(internal.ErrResolveSSLFiles)
+		exitCode = internal.ErrResolveSSLFiles
+		return
 	}
 	resolvedPath, err := resolver.ResolvePath(values.GameId, cfg.Executable.Path)
 	if err != nil {
 		commonLogger.Printf("could not resolve path: %s\n", err)
-		os.Exit(internal.ErrResolvePath)
+		exitCode = internal.ErrResolvePath
+		return
 	}
 	extraArgs, err := common.ParseCommandArgsFromSlice(cfg.Executable.ExtraArgs, nil, true)
 	if err != nil {
 		commonLogger.Printf("could not parse extra args: %s\n", err)
-		os.Exit(internal.ErrParseArgs)
+		exitCode = internal.ErrParseArgs
+		return
 	}
 	var pid uint32
 	pid, err = executor.ExecuteBattleServer(
@@ -180,7 +199,8 @@ func runStart(args []string) error {
 	)
 	if err != nil {
 		commonLogger.Printf("could not execute BattleServer: %s\n", err)
-		os.Exit(internal.ErrStartBattleServer)
+		exitCode = internal.ErrStartBattleServer
+		return
 	}
 	saveConfig := battleServer.Config{
 		Base: battleServer.Base{
@@ -206,16 +226,17 @@ func runStart(args []string) error {
 		} else if localErr != nil {
 			commonLogger.Println("Could not find the process to kill: ", localErr)
 		}
-		os.Exit(internal.ErrInitBattleServer)
+		exitCode = internal.ErrInitBattleServer
+		return
 	}
 	if err = cmdUtils.WriteConfig(values.GameId, saveConfig); err != nil {
 		commonLogger.Printf("could not write config: %s\n", err)
 		commonLogger.Println(err)
 		commonLogger.Println("Stopping started Battle Server...")
 		cmdUtils.Kill(saveConfig)
-		os.Exit(internal.ErrConfigWrite)
+		exitCode = internal.ErrConfigWrite
 	}
-	return nil
+	return
 }
 
 func initConfig(fs *pflag.FlagSet, values *bsManager.StartValues) *internal.Configuration {

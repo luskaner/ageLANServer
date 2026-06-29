@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet, values *bsManager.StartValues, stop bool) (errorCode int) {
+func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet, values *bsManager.StartValues, stop bool) (exitCode int) {
 	if executable == "auto" {
 		executable = executables.FindPath(executables.NativeFileName(true, "battle-server-manager"))
 		if executable == "" {

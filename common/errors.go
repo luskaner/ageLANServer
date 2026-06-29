@@ -3,6 +3,7 @@ package common
 const (
 	ErrSuccess = iota
 	ErrGeneral
+	ErrSyntax
 	ErrSignal
 	ErrPidLock
 	ErrFileLog

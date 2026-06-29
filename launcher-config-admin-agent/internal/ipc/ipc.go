@@ -174,11 +174,11 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 	return result.ExitCode
 }
 
-func StartServer(logRoot string) (errorCode int) {
+func StartServer(logRoot string) (exitCode int) {
 	l, err := SetupServer()
 	if err != nil {
 		commonLogger.Printf("Could not listen to IPC: %v\n", err)
-		errorCode = internal.ErrListen
+		exitCode = internal.ErrListen
 		return
 	}
 	defer func(l net.Listener) {

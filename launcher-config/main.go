@@ -18,8 +18,9 @@ func main() {
 	}
 	common.ChdirToExe()
 	cmd.Version = version
-	err := cmd.Execute()
+	err, exitCode := cmd.Execute()
 	if err != nil {
-		panic(err)
+		print(err)
 	}
+	os.Exit(exitCode)
 }

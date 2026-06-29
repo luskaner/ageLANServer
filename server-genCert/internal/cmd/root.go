@@ -15,34 +15,38 @@ import (
 var replace bool
 var Version string
 
-func rootCmd(_ *pflag.FlagSet) error {
-	exe, err := os.Executable()
+func rootCmd(_ *pflag.FlagSet) (err error, exitCode int) {
+	var exe string
+	exe, err = os.Executable()
 	if err != nil {
 		fmt.Println("Could not get executable path")
-		os.Exit(common.ErrGeneral)
+		exitCode = common.ErrGeneral
+		return
 	}
 	serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), executables.NativeFileName(true, executables.Server))
 	serverFolder := common.CertificatePairFolder(serverExe)
 	if serverFolder == "" {
 		fmt.Println("Failed to determine certificate pairs folder")
-		os.Exit(internal.ErrCertDirectory)
+		exitCode = internal.ErrCertDirectory
+		return
 	}
 	if !replace {
 		if exists, _, _, _, _, _, _ := common.CertificatePairs(serverExe); exists {
 			fmt.Println("Already have certificate pairs and force is false, set force to true or delete it manually.")
-			os.Exit(internal.ErrCertCreateExisting)
+			exitCode = internal.ErrCertCreateExisting
+			return
 		}
 	}
 	if !internal.GenerateCertificatePairs(serverFolder) {
 		fmt.Println("Could not generate certificate pair.")
-		os.Exit(internal.ErrCertCreate)
+		exitCode = internal.ErrCertCreate
+		return
 	}
-
 	fmt.Println("Certificate pair generated successfully.")
-	return nil
+	return
 }
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	singleFlagSet := cmd.NewSingleFlagSet(rootCmd, Version)
 	singleFlagSet.Fs().BoolVarP(&replace, "replace", "r", false, "Overwrite existing certificate pair.")
 	return singleFlagSet.Execute()

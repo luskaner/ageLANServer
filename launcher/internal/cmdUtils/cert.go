@@ -20,7 +20,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
-func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, errorCode int) {
+func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, exitCode int) {
 	for _, host := range hosts {
 		if err := server2.CheckConnectionFromServer(host, false, rootCAs); err != nil {
 			if fixable {
@@ -28,28 +28,28 @@ func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.C
 				if cert == nil {
 					logger.Println("Failed to read certificate from " + host + ".")
 					logger.Printf("Error: %s\n", err.Error())
-					errorCode = internal.ErrReadCert
+					exitCode = internal.ErrReadCert
 					return
 				} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 					logger.Println("The certificate for " + host + " does not match the server certificate.")
 					logger.Printf("Error: %s\n", err.Error())
-					errorCode = internal.ErrCertMismatch
+					exitCode = internal.ErrCertMismatch
 					return
 				}
 				requiresFixing = true
 			} else {
 				logger.Println(host + " must have been trusted manually.")
 				logger.Printf("Error: %s\n", err.Error())
-				errorCode = internal.ErrConfigCert
+				exitCode = internal.ErrConfigCert
 				return
 			}
 		} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 			logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
-			errorCode = internal.ErrCertMismatch
+			exitCode = internal.ErrCertMismatch
 			return
 		} else if !server2.LanServerHost(serverId, gameId, host, false, rootCAs) {
 			logger.Println("Something went wrong, " + host + " does not point to a lan server.")
-			errorCode = internal.ErrServerConnectSecure
+			exitCode = internal.ErrServerConnectSecure
 			return
 		}
 	}

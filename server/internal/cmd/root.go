@@ -47,29 +47,30 @@ var (
 	authenticationValues = mapset.NewThreadUnsafeSet[string]("required", "cached", "adaptive", "disabled")
 )
 
-func Execute() error {
+func Execute() (err error, exitCode int) {
 	var singleFs *cmd.SingleFlagSet
 	values, singleFs = server.SingleFlagSet(Version, configPaths, runRoot)
 	return singleFs.Execute()
 }
 
-func runRoot(fs *pflag.FlagSet) error {
+func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	lock := &fileLock.PidLock{}
-	exitCode := common.ErrSuccess
-	if err := lock.Lock(); err != nil {
+	if err = lock.Lock(); err != nil {
 		logger.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
 		logger.Println(err.Error())
 		commonLogger.CloseFileLog()
-		os.Exit(common.ErrPidLock)
+		exitCode = common.ErrPidLock
+		return
 	}
 	cfg, usedFile := initConfig(fs)
 	commonLogger.Initialize(nil)
 	if values.LogRoot == "" {
 		values.LogRoot = commonLogger.LogRootDate("")
 	}
-	if err := logger.OpenMainFileLog(values.LogRoot, cfg.Log); err != nil {
+	if err = logger.OpenMainFileLog(values.LogRoot, cfg.Log); err != nil {
 		logger.Printf("Failed to open main log file: %v", err)
-		os.Exit(common.ErrFileLog)
+		exitCode = common.ErrFileLog
+		return
 	}
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
@@ -80,10 +81,12 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	if !authenticationValues.ContainsOne(cfg.Authentication) {
 		logger.Printf("Invalid authentication value: %s", cfg.Authentication)
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	} else if cfg.Authentication == "required" && !internal.Connectivity {
 		logger.Println("Authentication is set to 'required' but there is no internet connectivity, which is required for authentication. Change the authentication method or fix the connectivity.")
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	}
 	if cfg.Authentication == "adaptive" {
 		if internal.Connectivity {
@@ -97,7 +100,8 @@ func runRoot(fs *pflag.FlagSet) error {
 		logger.Println("Authentication is disabled, you are responsible that users access it legally.")
 	} else if cfg.GeneratePlatformUserId {
 		logger.Println("Generating a platform User ID is not compatible with the Authentication resolving to a value other than 'disabled'.")
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	}
 	internal.Authentication = cfg.Authentication
 	var seed uint64
@@ -120,13 +124,11 @@ func runRoot(fs *pflag.FlagSet) error {
 			_ = f.Close()
 		}
 		_ = lock.Unlock()
-		os.Exit(exitCode)
 	}()
-	var err error
 	if internal.Id, err = uuid.Parse(values.Id); err != nil {
 		logger.Println("Invalid server instance ID")
 		exitCode = internal.ErrInvalidId
-		return nil
+		return
 	}
 	logger.Println("Server instance ID:", internal.Id)
 	if cfg.GeneratePlatformUserId {
@@ -136,13 +138,13 @@ func runRoot(fs *pflag.FlagSet) error {
 	if gameSet.IsEmpty() {
 		logger.Println("No games specified")
 		exitCode = internal.ErrGames
-		return nil
+		return
 	}
 	for g := range gameSet.Iter() {
 		if !game.SupportedGames.ContainsOne(g) {
 			logger.Println("Invalid game specified:", g)
 			exitCode = internal.ErrGames
-			return nil
+			return
 		}
 	}
 	if executor.IsAdmin() {
@@ -155,19 +157,20 @@ func runRoot(fs *pflag.FlagSet) error {
 	if certificatePairFolder == "" {
 		logger.Println("Failed to determine certificate pair folder")
 		exitCode = internal.ErrCertDirectory
-		return nil
+		return
 	}
 	announceEnabled := cfg.Announcement.Enabled
 	multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
 	if announceEnabled && cfg.Announcement.Multicast {
-		multicastIP, err := netip.ParseAddr(cfg.Announcement.MulticastGroup)
+		var multicastIP netip.Addr
+		multicastIP, err = netip.ParseAddr(cfg.Announcement.MulticastGroup)
 		if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
 			logger.Println("Invalid multicast IP")
 			if err != nil {
 				logger.Println(err.Error())
 			}
 			exitCode = internal.ErrMulticastGroup
-			return nil
+			return
 		}
 		multicastGroups.Add(multicastIP)
 	}
@@ -183,12 +186,12 @@ func runRoot(fs *pflag.FlagSet) error {
 		if addrs.IsEmpty() {
 			logger.Println("\tFailed to resolve host (or it was an IPv6 address)")
 			exitCode = internal.ErrResolveHost
-			return nil
+			return
 		}
 		if err = initializer.InitializeGame(gameId, cfg.GetGameBattleServers(gameId)); err != nil {
 			logger.Printf("\tFailed to initialize game: %v\n", err)
 			exitCode = internal.ErrGame
-			return nil
+			return
 		}
 		if battlesServers, ok := models.BattleServersStore[gameId]; ok && len(battlesServers) > 0 {
 			logger.Println("\tBattle Servers:")
@@ -210,18 +213,18 @@ func runRoot(fs *pflag.FlagSet) error {
 			writer = os.Stdout
 		} else {
 			customLoggerWriters = append(customLoggerWriters, &commonLogger.Buf)
+			var f *os.File
 			if err, root = commonLogger.NewFile(gameLogRoot, "", true); err != nil {
 				logger.Printf("\tFailed to prepare log folder: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
-				return nil
-			} else if f, err := root.Open(filePrefix + "access_log"); err != nil {
+				return
+			} else if f, err = root.Open(filePrefix + "access_log"); err != nil {
 				logger.Printf("\tFailed to open access log file: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
-				return nil
-			} else {
-				closables = append(closables, f)
-				writer = f
+				return
 			}
+			closables = append(closables, f)
+			writer = f
 		}
 		customLogger := log.New(
 			&internal.CustomWriter{OriginalWriter: io.MultiWriter(customLoggerWriters...)},
@@ -236,7 +239,8 @@ func runRoot(fs *pflag.FlagSet) error {
 		mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
 		mux = router.TitleMiddleware(gameId, mux)
 		if root != nil {
-			if f, err := root.Open(filePrefix + "communication_log"); err != nil {
+			var f *os.File
+			if f, err = root.Open(filePrefix + "communication_log"); err != nil {
 				logger.Printf("\tFailed to open communication log file: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
 			} else {
@@ -260,7 +264,7 @@ func runRoot(fs *pflag.FlagSet) error {
 				if err != nil {
 					logger.Println("\tFailed to listen to UDP connections for address", addr.String())
 					exitCode = internal.ErrAnnounce
-					return nil
+					return
 				}
 			}
 			s := &http.Server{
@@ -283,7 +287,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					}
 					ip.ListenQueryConnections(listenConns)
 				}
-				err := s.ListenAndServeTLS(certFile, keyFile)
+				err = s.ListenAndServeTLS(certFile, keyFile)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
 					logger.Println("\tFailed to start 'server'")
 					logger.Printf("%s\n", err)
@@ -305,14 +309,14 @@ func runRoot(fs *pflag.FlagSet) error {
 
 	for _, s := range servers {
 		wg.Go(func() {
-			if err := s.Shutdown(ctx); err != nil {
+			if err = s.Shutdown(ctx); err != nil {
 				fmt.Printf("'Server' %s forced to shutdown: %v\n", s.Addr, err)
 			}
 			logger.Println("'Server'", s.Addr, "stopped")
 		})
 	}
 	wg.Wait()
-	return nil
+	return
 }
 
 func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
