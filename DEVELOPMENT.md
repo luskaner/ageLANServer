@@ -3,7 +3,7 @@
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
 - Go 1.26:
     * Officially from https://go.dev/dl/ if not running Windows or is 10 and higher (or equivalent).
-    * Unnoficially from either [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) or [https://github.com/XTLS/go-win7](XTLS/go-win7) if running Windows
+    * Unofficially from either [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) or [XTLS/go-win7](https://github.com/XTLS/go-win7) if running Windows
       7-8.X (or equivalent). Regardless if you install the official version, you need to install this one too for
       release.
 - [Git](https://git-scm.com/downloads), with the latest supported for Windows 7-8 being v2.46.2.
