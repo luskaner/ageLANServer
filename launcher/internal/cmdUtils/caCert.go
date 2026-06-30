@@ -8,50 +8,35 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommonCert "github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
-func readCertsPool(path string) (pool *x509.CertPool, err error) {
-	var caCerts []*x509.Certificate
-	_, _, caCerts, err = launcherCommonCert.ReadFromFile(path)
-	if err != nil {
-		return
-	}
-	pool = x509.NewCertPool()
-	for _, caCert := range caCerts {
-		pool.AddCert(caCert)
-	}
-	return
-}
-
-func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (errorCode int) {
+func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (exitCode int) {
 	logger.Println("Adding CA certificate to game if needed...")
-	caPool, err := readCertsPool(caCertPath)
+	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
 		logger.Println("Could not read game CA certificates:", err)
-		return common.ErrSuccess
+		return internal.ErrConfigCACertAdd
 	}
 	var addCert bool
-	addCert, errorCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
-	if !addCert || errorCode != common.ErrSuccess {
+	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
+	if !addCert || exitCode != common.ErrSuccess {
 		return
 	}
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_game", func(writer io.Writer) {
-		cfgSetupOpts := &executor.ConfigSetupOptions{
-			GameId:          gameId,
-			AddGameCertData: serverCertificate.Raw,
-			GameBinPath:     gamePath,
-			Out:             writer,
-			OptionsFn: func(options exec.Options) {
-				commonLogger.Println("run config setup for CA game cert", options.String())
-			},
+		cfgSetupOpts := executor.NewConfigSetupOptions()
+		cfgSetupOpts.Out = writer
+		cfgSetupOpts.OptionsFn = func(options exec.Options) {
+			commonLogger.Println("run config setup for CA game cert", options.String())
 		}
+		cfgSetupOpts.GameId = gameId
+		cfgSetupOpts.GamePath = gamePath
+		cfgSetupOpts.AddCACertData = serverCertificate.Raw
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			logger.Println("Failed to save CA certificate to game")
-			errorCode = internal.ErrConfigCACertAdd
+			exitCode = internal.ErrConfigCACertAdd
 			if result.Err != nil {
 				logger.Println("Error message: " + result.Err.Error())
 			}

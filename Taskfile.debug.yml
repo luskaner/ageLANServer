@@ -134,4 +134,4 @@ tasks:
   build-config-all:
     deps: [ build-config, build-config-admin, build-config-admin-agent ]
 includes:
-  os: ./Taskfile.debug.{{if eq OS "linux"}}linux{{else}}other{{end}}.yml
+  os: ./Taskfile.debug.{{if eq OS "windows"}}other{{else}}unix{{end}}.yml

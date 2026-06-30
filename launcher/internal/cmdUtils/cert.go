@@ -7,45 +7,49 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	server2 "github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
-func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, errorCode int) {
+func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, exitCode int) {
 	for _, host := range hosts {
-		if !server.CheckConnectionFromServer(host, false, rootCAs) {
+		if err := server2.CheckConnectionFromServer(host, false, rootCAs); err != nil {
 			if fixable {
 				cert := server.ReadCACertificateFromServer(host)
 				if cert == nil {
 					logger.Println("Failed to read certificate from " + host + ".")
-					errorCode = internal.ErrReadCert
+					logger.Printf("Error: %s\n", err.Error())
+					exitCode = internal.ErrReadCert
 					return
 				} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 					logger.Println("The certificate for " + host + " does not match the server certificate.")
-					errorCode = internal.ErrCertMismatch
+					logger.Printf("Error: %s\n", err.Error())
+					exitCode = internal.ErrCertMismatch
 					return
 				}
 				requiresFixing = true
 			} else {
 				logger.Println(host + " must have been trusted manually.")
-				errorCode = internal.ErrConfigCert
+				logger.Printf("Error: %s\n", err.Error())
+				exitCode = internal.ErrConfigCert
 				return
 			}
 		} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 			logger.Println("The certificate for " + host + " does not match the server certificate (or could not be read).")
-			errorCode = internal.ErrCertMismatch
+			exitCode = internal.ErrCertMismatch
 			return
-		} else if !server.LanServerHost(serverId, gameId, host, false, rootCAs) {
+		} else if !server2.LanServerHost(serverId, gameId, host, false, rootCAs) {
 			logger.Println("Something went wrong, " + host + " does not point to a lan server.")
-			errorCode = internal.ErrServerConnectSecure
+			exitCode = internal.ErrServerConnectSecure
 			return
 		}
 	}
@@ -82,12 +86,8 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
 	} else {
 		certMsg = fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
-		if canAdd == "user" {
+		if runtime.GOOS == "darwin" || canAdd == "user" {
 			certMsg += ", accept the dialog"
-		} else {
-			if !launcherCommon.ConfigAdminAgentRunning(false) {
-				certMsg += `, authorize 'config-admin-agent' if needed`
-			}
 		}
 		if canAdd == "local" {
 			addLocalCertData = serverCertificate.Raw
@@ -100,16 +100,15 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	var err error
 	var setupErr error
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
-		cfgSetupOpts := &executor.ConfigSetupOptions{
-			GameId:           gameId,
-			AddUserCertData:  addUserCertData,
-			AddLocalCertData: addLocalCertData,
-			CertFilePath:     c.certFilePath,
-			Out:              writer,
-			OptionsFn: func(options exec.Options) {
-				commonLogger.Println("run config setup for CA store cert", options.String())
-			},
+		cfgSetupOpts := executor.NewConfigSetupOptions()
+		cfgSetupOpts.Out = writer
+		cfgSetupOpts.OptionsFn = func(options exec.Options) {
+			commonLogger.Println("run config setup for CA store cert", options.String())
 		}
+		cfgSetupOpts.GameId = gameId
+		cfgSetupOpts.AddUserCertData = addUserCertData
+		cfgSetupOpts.AddLocalCertData = addLocalCertData
+		cfgSetupOpts.CertFilePath = c.certFilePath
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			if customCertFile {
 				logger.Println("Failed to save certificate to file")
@@ -134,11 +133,12 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	if !customCertFile {
 		for _, host := range hosts {
-			if !server.CheckConnectionFromServer(host, false, nil) {
+			if err = server2.CheckConnectionFromServer(host, false, nil); err != nil {
 				logger.Println(host + " must have been trusted automatically at this point.")
+				logger.Printf("Error: %s\n", err.Error())
 				errorCode = internal.ErrServerConnectSecure
 				return
-			} else if !server.LanServerHost(serverId, gameId, host, false, nil) {
+			} else if !server2.LanServerHost(serverId, gameId, host, false, nil) {
 				logger.Println("Something went wrong, " + host + " either points to the original 'server' or there is a certificate issue.")
 				errorCode = internal.ErrTrustCert
 				return

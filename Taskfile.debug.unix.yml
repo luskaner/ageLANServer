@@ -1,0 +1,44 @@
+version: '3'
+
+tasks:
+  prepare-launcher:
+    platforms: [ linux, darwin ]
+    internal: true
+    deps: [ ":build-server" ]
+    method: checksum
+    cmds:
+      - task: prepare-server
+      - task: build-config-helper-amd64
+      - task: build-config-helper-arm64
+  prepare-server:
+    platforms: [ linux ]
+    internal: true
+    method: checksum
+    cmds:
+      - pkexec --keep-cwd setcap 'CAP_NET_BIND_SERVICE=+ep' build/server/server
+  build-config-helper-amd64:
+    internal: true
+    platforms: [linux/amd64, darwin/amd64]
+    method: checksum
+    cmds:
+      - task: build-config-helper
+        vars: { GOARCH: 'amd64' }
+  build-config-helper-arm64:
+    internal: true
+    platforms: [linux/arm64, darwin/arm64]
+    method: checksum
+    cmds:
+      - task: build-config-helper
+        vars: { GOARCH: 'arm64' }
+  build-config-helper:
+    sources:
+      - common/**/*
+      - launcher-common/**/*
+      - config-helper/**/*
+    generates:
+      - build/launcher/bin/config-helper_{{.GOARCH}}.exe
+    method: checksum
+    cmds:
+      - GOOS=windows GOARCH={{.GOARCH}} go build -o build/launcher/bin/config-helper_{{.GOARCH}}.exe ./config-helper
+      - mkdir -p build/battle-server-manager/bin
+      - cp build/launcher/bin/config-helper_{{.GOARCH}}.exe build/battle-server-manager/bin

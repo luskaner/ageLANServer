@@ -7,7 +7,6 @@ import (
 var UnixBasedOperatingSystems = mapset.NewSet(OSLinux, OSMacOS)
 var operatingSystems = UnixBasedOperatingSystems.Union(mapset.NewSet(OSWindowsLegacy, OSWindowsModern))
 var Targets64 *BinaryTargets
-var Targets64ExceptMacOS *BinaryTargets
 var Targets32 *BinaryTargets
 var Targets3264 *BinaryTargets
 var Targets64Windows *BinaryTargets
@@ -17,7 +16,6 @@ var x86Architectures = []Architecture{Arch386, ArchArm32}
 func init() {
 	Targets32 = NewBinaryTargets()
 	Targets64 = NewBinaryTargets()
-	Targets64ExceptMacOS = NewBinaryTargets()
 	Targets64Windows = NewBinaryTargets()
 	for os := range operatingSystems.Iter() {
 		for _, arch := range x86Architectures {
@@ -32,9 +30,6 @@ func init() {
 		for _, arch := range x64Architectures {
 			if os.Archs().ContainsOne(arch) {
 				Targets64.AddTarget(os, arch)
-				if os != OSMacOS {
-					Targets64ExceptMacOS.AddTarget(os, arch)
-				}
 				if os == OSWindowsModern {
 					Targets64Windows.AddTarget(os, arch)
 				}

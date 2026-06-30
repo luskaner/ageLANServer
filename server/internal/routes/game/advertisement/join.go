@@ -3,7 +3,7 @@ package advertisement
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
@@ -32,8 +32,8 @@ func encodeJoinResponse(errorCode int, ip string, battleServer models.BattleServ
 }
 
 func Join(w http.ResponseWriter, r *http.Request) {
-	game := models.G(r)
-	battleServers := game.BattleServers()
+	g := models.G(r)
+	battleServers := g.BattleServers()
 	var q JoinRequest
 	if err := i.Bind(r, &q); err != nil {
 		joinReturnError(battleServers, r, w)
@@ -41,15 +41,15 @@ func Join(w http.ResponseWriter, r *http.Request) {
 	}
 	sess := models.SessionOrPanic(r)
 
-	u, ok := game.Users().GetUserById(sess.GetUserId())
+	u, ok := g.Users().GetUserById(sess.GetUserId())
 	if !ok {
 		joinReturnError(battleServers, r, w)
 		return
 	}
-	advertisements := game.Advertisements()
+	advertisements := g.Advertisements()
 	// Leave the previous match if the user is already in one
 	// Necessary for AoE1 but might as well do it for all (except AoE4 which needs multiple for groups)
-	if game.Title() != common.GameAoE4 {
+	if g.Title() != game.AoE4 {
 		// FIXME: Exit in aoe4 if the currrent match is not a party
 		if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
 			advertisements.WithWriteLock(existingAdv.GetId(), func() {

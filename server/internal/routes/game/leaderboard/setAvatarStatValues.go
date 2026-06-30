@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -13,7 +13,7 @@ import (
 // TODO: Any fixed stats for aoe4?
 
 var fixedAvatarNames = map[string]mapset.Set[string]{
-	common.GameAoM: mapset.NewSet[string]("STAT_GAUNTLET_REWARD_FAVOUR", "STAT_GAUNTLET_REWARD_XP"),
+	game.AoM: mapset.NewSet[string]("STAT_GAUNTLET_REWARD_FAVOUR", "STAT_GAUNTLET_REWARD_XP"),
 }
 
 type setAvatarStatValuesRequest struct {
@@ -28,8 +28,8 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 	if err := i.Bind(r, &req); err != nil || len(req.Values.Data) < 1 || len(req.AvatarStatIds.Data) != len(req.Values.Data) || len(req.UpdateTypes.Data) != len(req.Values.Data) {
 		i.JSON(&w, i.A{2})
 	}
-	game := models.G(r)
-	users := game.Users()
+	g := models.G(r)
+	users := g.Users()
 	sess := models.SessionOrPanic(r)
 	u, ok := users.GetUserById(sess.GetUserId())
 	if !ok {
@@ -38,10 +38,10 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 	}
 	var encodedAvatarStats i.A
 	var currentGameFixedAvatarNames mapset.Set[string]
-	avatarStatDefinitions := game.LeaderboardDefinitions().AvatarStatDefinitions()
+	avatarStatDefinitions := g.LeaderboardDefinitions().AvatarStatDefinitions()
 	data := u.GetAvatarStats()
 	fixedAvatarIds := mapset.NewThreadUnsafeSet[int32]()
-	if currentGameFixedAvatarNames, ok = fixedAvatarNames[game.Title()]; ok {
+	if currentGameFixedAvatarNames, ok = fixedAvatarNames[g.Title()]; ok {
 		for name := range currentGameFixedAvatarNames.Iter() {
 			if id, ok := avatarStatDefinitions.GetIdByName(name); ok {
 				fixedAvatarIds.Add(id)

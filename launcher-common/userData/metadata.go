@@ -8,19 +8,19 @@ import (
 	"path/filepath"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 func (u *Path) metadataFolder() string {
 	var p string
 	switch u.GameId() {
-	case common.GameAoE2:
+	case game.AoE2:
 		p = "metadata"
-	case common.GameAoE3:
+	case game.AoE3:
 		p = filepath.Join("Common", "RLink")
-	case common.GameAoE4:
+	case game.AoE4:
 		p = "network"
-	case common.GameAoM:
+	case game.AoM:
 		p = filepath.Join("temp", "RLink")
 	}
 	return p

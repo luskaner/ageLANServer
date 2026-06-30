@@ -1,12 +1,10 @@
 package server
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,45 +14,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/server"
 )
-
-func TlsConfig(serverName string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Config {
-	return &tls.Config{
-		InsecureSkipVerify: insecureSkipVerify,
-		ServerName:         serverName,
-		RootCAs:            rootCAs,
-	}
-}
-
-func connectToServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) *tls.Conn {
-	ips := common.HostOrIpToIps(host)
-	var ip string
-	if len(ips) == 0 {
-		ip = host
-	} else {
-		ip = ips[0]
-	}
-	conn, err := tls.Dial("tcp4", net.JoinHostPort(ip, "443"), TlsConfig(host, insecureSkipVerify, rootCAs))
-	if err != nil {
-		return nil
-	}
-	return conn
-}
-
-func CheckConnectionFromServer(host string, insecureSkipVerify bool, rootCAs *x509.CertPool) bool {
-	conn := connectToServer(host, insecureSkipVerify, rootCAs)
-	if conn == nil {
-		return false
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	return conn != nil
-}
 
 func ReadCACertificateFromServer(host string) *x509.Certificate {
 	tr := &http.Transport{
-		TLSClientConfig: TlsConfig(host, true, nil),
+		TLSClientConfig: server.TlsConfig(host, true, nil),
 	}
 	ips := common.HostOrIpToIps(host)
 	var ip string

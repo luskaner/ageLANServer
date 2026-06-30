@@ -3,7 +3,7 @@ package advertisement
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
@@ -39,9 +39,9 @@ func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServ
 		0,
 	)
 	switch gameTitle {
-	case common.GameAoE1:
+	case game.AoE1:
 		response = append(response, metadata)
-	case common.GameAoE2, common.GameAoE4, common.GameAoM:
+	case game.AoE2, game.AoE4, game.AoM:
 		response = append(
 			response,
 			0,
@@ -57,14 +57,14 @@ func encodeHostResponse(gameTitle string, errorCode int, advId int32, battleServ
 }
 
 func Host(w http.ResponseWriter, r *http.Request) {
-	game := models.G(r)
-	gameTitle := game.Title()
-	battleServers := game.BattleServers()
+	g := models.G(r)
+	gameTitle := g.Title()
+	battleServers := g.BattleServers()
 	region := r.PostFormValue("relayRegion")
 	battleServer := battleServers.NewBattleServer(region)
 	if !battleServer.LAN() {
 		var ok bool
-		if battleServer, ok = game.BattleServers().Get(region); !ok {
+		if battleServer, ok = g.BattleServers().Get(region); !ok {
 			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
@@ -73,7 +73,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 	var adv shared.AdvertisementHostRequest
 	if err := i.Bind(r, &adv); err == nil {
 		// In AoE4 we cannot differentiate between Matchmaking and custom matches so just allow it
-		if gameTitle != common.GameAoE4 && adv.Description == "SESSION_MATCH_KEY" {
+		if gameTitle != game.AoE4 && adv.Description == "SESSION_MATCH_KEY" {
 			// Disallow Matchmaking as it is not implemented
 			returnError(battleServers, gameTitle, r, &w)
 			return
@@ -82,18 +82,18 @@ func Host(w http.ResponseWriter, r *http.Request) {
 			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
-		if gameTitle == common.GameAoE1 || gameTitle == common.GameAoE3 || gameTitle == common.GameAoM {
+		if gameTitle == game.AoE1 || gameTitle == game.AoE3 || gameTitle == game.AoM {
 			adv.Joinable = true
 		}
-		u, ok := game.Users().GetUserById(adv.HostId)
+		u, ok := g.Users().GetUserById(adv.HostId)
 		if !ok {
 			returnError(battleServers, gameTitle, r, &w)
 			return
 		}
-		advertisements := game.Advertisements()
+		advertisements := g.Advertisements()
 		// Leave the previous match if the user is already in one
 		// Necessary for AoE3 but might as well do it for all (except AoE4 which needs multiple for groups)
-		if gameTitle != common.GameAoE4 {
+		if gameTitle != game.AoE4 {
 			// FIXME: Exit in aoe4 if the currrent match is not a party
 			if existingAdv := advertisements.GetUserAdvertisement(u.GetId()); existingAdv != nil {
 				advertisements.WithWriteLock(existingAdv.GetId(), func() {

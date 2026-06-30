@@ -3,31 +3,40 @@ package cmdUtils
 import (
 	"io"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/certStore"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonGame "github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/common/process/game"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server/certStore"
 )
 
 type Config struct {
-	gameId             string
-	serverExe          string
-	setupCommandRan    bool
-	hostFilePath       string
-	certFilePath       string
-	battleServerRegion string
-	battleServerExe    string
+	gameId                  string
+	serverExe               string
+	setupCommandRan         bool
+	hostFilePath            string
+	certFilePath            string
+	battleServerRegion      string
+	battleServerExe         string
+	configAdminAgentStarted bool
 }
 
 func (c *Config) SetGameId(gameId string) {
 	c.gameId = gameId
+}
+
+func (c *Config) SetConfigAdminAgentStarted() {
+	c.configAdminAgentStarted = true
 }
 
 func (c *Config) RequiresConfigRevert() bool {
@@ -82,7 +91,7 @@ func (c *Config) Revert() {
 				if result.ExitCode != common.ErrSuccess {
 					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
 				}
-				logger.Println("You may try killing it manually. Kill process 'BattleServer.exe' if it is running in your task manager.")
+				logger.Printf("You may try killing it manually. Kill process '%s' if it is running in your task manager.\n", battleServer.Executable)
 			}
 		})
 	}
@@ -95,6 +104,19 @@ func (c *Config) Revert() {
 				logger.Println("Failed to clean up.")
 			}
 		})
+	} else if c.configAdminAgentStarted {
+		logger.Println("Stopping 'config-admin-agent'...")
+		if result := c.RunStopAgent(); result.Success() {
+			logger.Println("'Config-admin-agent' stopped.")
+		} else {
+			logger.Println("Failed to stop agent.")
+			if result.Err != nil {
+				logger.Println("Error message: " + result.Err.Error())
+			}
+			if result.ExitCode != common.ErrSuccess {
+				logger.Println("Exit code: " + strconv.Itoa(result.ExitCode))
+			}
+		}
 	}
 	if c.RequiresRunningRevertCommand() {
 		_ = commonLogger.FileLogger.Buffer("revert_command", func(writer io.Writer) {
@@ -120,8 +142,8 @@ func anyProcessExists(names []string) bool {
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
 	var gameProcesses []string
-	for gameId := range common.AllGames.Iter() {
-		gameProcesses = append(gameProcesses, commonProcess.GameProcesses(gameId, true, xbox)...)
+	for gameId := range commonGame.AllGames.Iter() {
+		gameProcesses = append(gameProcesses, game.Processes(gameId, true, xbox)...)
 	}
 	someProcessRunning := func() bool {
 		return anyProcessExists(gameProcesses)
@@ -171,6 +193,6 @@ func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
 		result.ExitCode = common.ErrFileLog
 	}
 	certStore.ReloadSystemCertificates()
-	common.ClearCache()
+	common.ClearDNSCache()
 	return
 }

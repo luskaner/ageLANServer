@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -266,9 +266,9 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 		// FIXME: This might be just slowing things down as the session is not valid
 		var scidEnd string
 		switch gameId {
-		case common.GameAoM:
+		case game.AoM:
 			scidEnd = "00006fe8b971"
-		case common.GameAoE4:
+		case game.AoE4:
 			scidEnd = "00007d18f66e"
 		default:
 			scidEnd = "000068a451d4"
@@ -478,9 +478,9 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers BattleSe
 		adv.id,
 		adv.platformSessionId,
 	}
-	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
+	if gameId == game.AoE2 || gameId == game.AoM || gameId == game.AoE4 {
 		// goodolggameslobbyid (GoG lobby ID), always 0
-		if gameId == common.GameAoE4 {
+		if gameId == game.AoE4 {
 			response = append(response, 0)
 		} else {
 			response = append(response, "0")
@@ -498,7 +498,7 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers BattleSe
 		adv.state,
 		adv.description,
 	)
-	if gameId == common.GameAoE2 || gameId == common.GameAoM || gameId == common.GameAoE4 {
+	if gameId == game.AoE2 || gameId == game.AoM || gameId == game.AoE4 {
 		response = append(response, adv.description)
 	}
 	response = append(

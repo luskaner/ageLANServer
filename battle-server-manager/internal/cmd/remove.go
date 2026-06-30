@@ -3,44 +3,43 @@ package cmd
 import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
-	"os"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
-	"github.com/luskaner/ageLANServer/common/cmd"
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/spf13/pflag"
 )
 
-var region string
-
-func runRemove(args []string) error {
-	fs := pflag.NewFlagSet("remove", pflag.ContinueOnError)
-	fs.StringVarP(&region, "region", "r", "", "Region of the battle server")
-	cmd.GamesVarCommand(fs, &cmdUtils.GameIds)
-	if err := fs.Parse(args); err != nil {
-		return err
+func runRemove(args []string) (err error, exitCode int) {
+	values, flags := bsManager.RemoveFlagSet()
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
-
-	games, err := cmdUtils.ParsedGameIds(nil)
+	var games mapset.Set[string]
+	games, err = cmdUtils.ParsedGameIds(&values.GameIds)
 	if err != nil {
 		commonLogger.Println(err.Error())
-		os.Exit(internal.ErrGames)
+		exitCode = internal.ErrGames
+		return
 	}
+	var configs []battleServer.Config
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
-		commonLogger.Printf("\tRemoving '%s' region...\n", region)
-		configs, err := battleServerConfig.Configs(g, false)
+		commonLogger.Printf("\tRemoving '%s' region...\n", values.Region)
+		configs, err = battleServer.Configs(g, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue
 		}
-		configs = slices.DeleteFunc(configs, func(c battleServerConfig.Config) bool {
-			return c.Region != region
+		configs = slices.DeleteFunc(configs, func(c battleServer.Config) bool {
+			return c.Region != values.Region
 		})
 		if !cmdUtils.Remove(g, configs, false) {
 			commonLogger.Println("\tNo configuration needs it.")
 		}
 	}
-	return nil
+	return
 }

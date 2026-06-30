@@ -13,26 +13,20 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher/internal"
-	"github.com/luskaner/ageLANServer/launcher/internal/battleServerBroadcast"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
+	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
 )
 
 func (c *Config) KillAgent() {
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
-	logger.Println("Killing 'agent' if needed...")
 	err := commonProcess.Kill(agent)
 	if err != nil {
 		logger.Println("Failed to kill it: ", err, ", try using the task manager.")
-		return
 	}
 }
 
-func (c *Config) NeedsGamePath() bool {
-	return c.gameId != common.GameAoE1 && c.gameId != common.GameAoE4
-}
-
-func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (errorCode int) {
+func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (exitCode int) {
 	if canBroadcastBattleServer != "false" {
 		if battleServerBroadcast.Required() {
 			canBroadcastBattleServer = "true"
@@ -73,7 +67,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		)
 		if !result.Success() {
 			logger.Println("Failed to start 'agent'.")
-			errorCode = internal.ErrAgentStart
+			exitCode = internal.ErrAgentStart
 			if result.Err != nil {
 				logger.Println("Error message: " + result.Err.Error())
 			}
@@ -112,7 +106,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	args, err := ParseCommandArgs(clientExecutableArgs, values)
 	if err != nil {
 		logger.Println("Failed to parse client executable arguments")
-		errorCode = internal.ErrInvalidClientArgs
+		exitCode = internal.ErrInvalidClientArgs
 		return
 	}
 
@@ -129,7 +123,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		}
 	}
 	if !result.Success() {
-		errorCode = internal.ErrGameLauncherStart
+		exitCode = internal.ErrGameLauncherStart
 		if result.Err != nil {
 			logger.Println("Game failed to start. Error message: " + result.Err.Error())
 		}

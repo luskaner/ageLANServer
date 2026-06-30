@@ -1,7 +1,7 @@
 package advertisement
 
 import (
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 
@@ -18,9 +18,9 @@ func FindObservableAdvertisements(w http.ResponseWriter, r *http.Request) {
 		findObsAdvErr(&w)
 		return
 	}
-	game := models.G(r)
-	title := game.Title()
-	if title == common.GameAoE3 {
+	g := models.G(r)
+	title := g.Title()
+	if title == game.AoE3 {
 		observerGroupID := r.URL.Query().Get("observerGroupID")
 		if observerGroupID != "0" {
 			findObsAdvErr(&w)

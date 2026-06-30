@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,7 +20,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
+	"github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -39,52 +40,37 @@ import (
 )
 
 var configPaths = []string{paths.ConfigsPath, "."}
-var id string
-var logRoot string
-var flatLog bool
-var deterministic bool
-var cfgFile string
+var values *server.Values
 
 var (
 	Version              string
 	authenticationValues = mapset.NewThreadUnsafeSet[string]("required", "cached", "adaptive", "disabled")
 )
 
-func Execute() error {
-	singleFs := cmd.NewSingleFlagSet(runRoot, Version)
-	fs := singleFs.Fs()
-	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	fs.StringP("announce", "a", "true", "Respond to discove 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
-	fs.IntP("announcePort", "p", common.AnnouncePort, "Port to respond to discovery requests. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
-	fs.StringP("announceMulticast", "m", "true", "Whether to respond to discovery queries using Multicast.")
-	fs.StringP("announceMulticastGroup", "i", common.AnnounceMulticastGroup, "Multicast address to respond to discovery queries if 'announce' is enabled.")
-	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
-	fs.BoolVar(&flatLog, "flatLog", false, "Whether to log in a flat structure in --logRoot. Only applicable if --log is passed.")
-	fs.BoolVar(&deterministic, "deterministic", false, "Whether to be as deterministic as possible.")
-	cmd.GamesCommand(fs)
-	cmd.LogRootCommand(fs, &logRoot)
-	fs.BoolP("generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
-	fs.StringVar(&id, "id", "", "Server instance ID to identify it.")
+func Execute() (err error, exitCode int) {
+	var singleFs *cmd.SingleFlagSet
+	values, singleFs = server.SingleFlagSet(Version, configPaths, runRoot)
 	return singleFs.Execute()
 }
 
-func runRoot(fs *pflag.FlagSet) error {
+func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	lock := &fileLock.PidLock{}
-	exitCode := common.ErrSuccess
-	if err := lock.Lock(); err != nil {
+	if err = lock.Lock(); err != nil {
 		logger.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
 		logger.Println(err.Error())
 		commonLogger.CloseFileLog()
-		os.Exit(common.ErrPidLock)
+		exitCode = common.ErrPidLock
+		return
 	}
 	cfg, usedFile := initConfig(fs)
 	commonLogger.Initialize(nil)
-	if logRoot == "" {
-		logRoot = commonLogger.LogRootDate("")
+	if values.LogRoot == "" {
+		values.LogRoot = commonLogger.LogRootDate("")
 	}
-	if err := logger.OpenMainFileLog(logRoot, cfg.Log); err != nil {
+	if err = logger.OpenMainFileLog(values.LogRoot, cfg.Log); err != nil {
 		logger.Printf("Failed to open main log file: %v", err)
-		os.Exit(common.ErrFileLog)
+		exitCode = common.ErrFileLog
+		return
 	}
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
@@ -95,10 +81,12 @@ func runRoot(fs *pflag.FlagSet) error {
 	}
 	if !authenticationValues.ContainsOne(cfg.Authentication) {
 		logger.Printf("Invalid authentication value: %s", cfg.Authentication)
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	} else if cfg.Authentication == "required" && !internal.Connectivity {
 		logger.Println("Authentication is set to 'required' but there is no internet connectivity, which is required for authentication. Change the authentication method or fix the connectivity.")
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	}
 	if cfg.Authentication == "adaptive" {
 		if internal.Connectivity {
@@ -112,16 +100,17 @@ func runRoot(fs *pflag.FlagSet) error {
 		logger.Println("Authentication is disabled, you are responsible that users access it legally.")
 	} else if cfg.GeneratePlatformUserId {
 		logger.Println("Generating a platform User ID is not compatible with the Authentication resolving to a value other than 'disabled'.")
-		os.Exit(internal.ErrInvalidAuthentication)
+		exitCode = internal.ErrInvalidAuthentication
+		return
 	}
 	internal.Authentication = cfg.Authentication
 	var seed uint64
-	if !deterministic {
+	if !values.Deterministic {
 		seed = uint64(time.Now().UnixNano())
 	}
 	internal.InitializeRng(seed)
-	if id == "" {
-		id = uuid.NewString()
+	if values.Id == "" {
+		values.Id = uuid.NewString()
 	}
 	var closables []io.Closer
 	defer func() {
@@ -135,13 +124,11 @@ func runRoot(fs *pflag.FlagSet) error {
 			_ = f.Close()
 		}
 		_ = lock.Unlock()
-		os.Exit(exitCode)
 	}()
-	var err error
-	if internal.Id, err = uuid.Parse(id); err != nil {
+	if internal.Id, err = uuid.Parse(values.Id); err != nil {
 		logger.Println("Invalid server instance ID")
 		exitCode = internal.ErrInvalidId
-		return nil
+		return
 	}
 	logger.Println("Server instance ID:", internal.Id)
 	if cfg.GeneratePlatformUserId {
@@ -151,13 +138,13 @@ func runRoot(fs *pflag.FlagSet) error {
 	if gameSet.IsEmpty() {
 		logger.Println("No games specified")
 		exitCode = internal.ErrGames
-		return nil
+		return
 	}
-	for game := range gameSet.Iter() {
-		if !common.SupportedGames.ContainsOne(game) {
-			logger.Println("Invalid game specified:", game)
+	for g := range gameSet.Iter() {
+		if !game.SupportedGames.ContainsOne(g) {
+			logger.Println("Invalid game specified:", g)
 			exitCode = internal.ErrGames
-			return nil
+			return
 		}
 	}
 	if executor.IsAdmin() {
@@ -170,19 +157,20 @@ func runRoot(fs *pflag.FlagSet) error {
 	if certificatePairFolder == "" {
 		logger.Println("Failed to determine certificate pair folder")
 		exitCode = internal.ErrCertDirectory
-		return nil
+		return
 	}
 	announceEnabled := cfg.Announcement.Enabled
 	multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
 	if announceEnabled && cfg.Announcement.Multicast {
-		multicastIP, err := netip.ParseAddr(cfg.Announcement.MulticastGroup)
+		var multicastIP netip.Addr
+		multicastIP, err = netip.ParseAddr(cfg.Announcement.MulticastGroup)
 		if err != nil || !multicastIP.Is4() || !multicastIP.IsMulticast() {
 			logger.Println("Invalid multicast IP")
 			if err != nil {
 				logger.Println(err.Error())
 			}
 			exitCode = internal.ErrMulticastGroup
-			return nil
+			return
 		}
 		multicastGroups.Add(multicastIP)
 	}
@@ -198,12 +186,12 @@ func runRoot(fs *pflag.FlagSet) error {
 		if addrs.IsEmpty() {
 			logger.Println("\tFailed to resolve host (or it was an IPv6 address)")
 			exitCode = internal.ErrResolveHost
-			return nil
+			return
 		}
 		if err = initializer.InitializeGame(gameId, cfg.GetGameBattleServers(gameId)); err != nil {
 			logger.Printf("\tFailed to initialize game: %v\n", err)
 			exitCode = internal.ErrGame
-			return nil
+			return
 		}
 		if battlesServers, ok := models.BattleServersStore[gameId]; ok && len(battlesServers) > 0 {
 			logger.Println("\tBattle Servers:")
@@ -213,9 +201,9 @@ func runRoot(fs *pflag.FlagSet) error {
 		}
 		var writer io.Writer
 		var root *commonLogger.Root
-		gameLogRoot := logRoot
+		gameLogRoot := values.LogRoot
 		var filePrefix string
-		if flatLog {
+		if values.Flatlog {
 			filePrefix = fmt.Sprintf("%s_", gameId)
 		} else {
 			gameLogRoot = filepath.Join(gameLogRoot, gameId)
@@ -225,18 +213,18 @@ func runRoot(fs *pflag.FlagSet) error {
 			writer = os.Stdout
 		} else {
 			customLoggerWriters = append(customLoggerWriters, &commonLogger.Buf)
+			var f *os.File
 			if err, root = commonLogger.NewFile(gameLogRoot, "", true); err != nil {
 				logger.Printf("\tFailed to prepare log folder: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
-				return nil
-			} else if f, err := root.Open(filePrefix + "access_log"); err != nil {
+				return
+			} else if f, err = root.Open(filePrefix + "access_log"); err != nil {
 				logger.Printf("\tFailed to open access log file: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
-				return nil
-			} else {
-				closables = append(closables, f)
-				writer = f
+				return
 			}
+			closables = append(closables, f)
+			writer = f
 		}
 		customLogger := log.New(
 			&internal.CustomWriter{OriginalWriter: io.MultiWriter(customLoggerWriters...)},
@@ -251,7 +239,8 @@ func runRoot(fs *pflag.FlagSet) error {
 		mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
 		mux = router.TitleMiddleware(gameId, mux)
 		if root != nil {
-			if f, err := root.Open(filePrefix + "communication_log"); err != nil {
+			var f *os.File
+			if f, err = root.Open(filePrefix + "communication_log"); err != nil {
 				logger.Printf("\tFailed to open communication log file: %v\n", err)
 				exitCode = internal.ErrCreateLogFile
 			} else {
@@ -275,10 +264,10 @@ func runRoot(fs *pflag.FlagSet) error {
 				if err != nil {
 					logger.Println("\tFailed to listen to UDP connections for address", addr.String())
 					exitCode = internal.ErrAnnounce
-					return nil
+					return
 				}
 			}
-			server := &http.Server{
+			s := &http.Server{
 				Addr:         addr.String() + ":443",
 				Handler:      mux,
 				ErrorLog:     customLogger,
@@ -287,7 +276,7 @@ func runRoot(fs *pflag.FlagSet) error {
 				WriteTimeout: time.Second * 30,
 			}
 
-			logger.Println("\tListening on " + server.Addr)
+			logger.Println("\tListening on " + s.Addr)
 			go func() {
 				if len(listenConns) > 0 {
 					for _, conn := range listenConns {
@@ -298,7 +287,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					}
 					ip.ListenQueryConnections(listenConns)
 				}
-				err := server.ListenAndServeTLS(certFile, keyFile)
+				err = s.ListenAndServeTLS(certFile, keyFile)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
 					logger.Println("\tFailed to start 'server'")
 					logger.Printf("%s\n", err)
@@ -306,7 +295,7 @@ func runRoot(fs *pflag.FlagSet) error {
 					return
 				}
 			}()
-			servers = append(servers, server)
+			servers = append(servers, s)
 		}
 	}
 
@@ -318,16 +307,16 @@ func runRoot(fs *pflag.FlagSet) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	for _, server := range servers {
+	for _, s := range servers {
 		wg.Go(func() {
-			if err := server.Shutdown(ctx); err != nil {
-				fmt.Printf("'Server' %s forced to shutdown: %v\n", server.Addr, err)
+			if err = s.Shutdown(ctx); err != nil {
+				fmt.Printf("'Server' %s forced to shutdown: %v\n", s.Addr, err)
 			}
-			logger.Println("'Server'", server.Addr, "stopped")
+			logger.Println("'Server'", s.Addr, "stopped")
 		})
 	}
 	wg.Wait()
-	return nil
+	return
 }
 
 func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
@@ -342,8 +331,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Announcement.Port":           common.AnnouncePort,
 		"Games.Enabled":               []string{},
 	}
-	for game := range common.SupportedGames.Iter() {
-		defaults[fmt.Sprintf("Games.%s.Hosts", game)] = []string{netip.IPv4Unspecified().String()}
+	for g := range game.SupportedGames.Iter() {
+		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
 	}
 	bindings := map[string]string{
 		"log":                    "Log",
@@ -356,8 +345,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		cmd.GamesIdentifier:      "Games.Enabled",
 	}
 	var fileCandidates []string
-	if cfgFile != "" {
-		fileCandidates = append(fileCandidates, cfgFile)
+	if values.CfgFile != "" {
+		fileCandidates = append(fileCandidates, values.CfgFile)
 	} else {
 		for _, configPath := range configPaths {
 			fileCandidates = append(fileCandidates, filepath.Join(configPath, "config.toml"))
@@ -373,7 +362,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		}
 		os.Exit(common.ErrConfigParse)
 	}
-	if cfgFile != "" && usedFile == "" {
+	if values.CfgFile != "" && usedFile == "" {
 		logger.Println("No config file found, using defaults.")
 	}
 	if usedFile != "" {

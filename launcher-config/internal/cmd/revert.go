@@ -2,19 +2,18 @@ package cmd
 
 import (
 	"crypto/x509"
+	"errors"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd"
+	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
@@ -29,7 +28,6 @@ func addUserCerts(removedUserCerts []*x509.Certificate) bool {
 		commonLogger.Println("Successfully added user certificate")
 		return true
 	}
-
 	commonLogger.Println("Failed to add user certificate")
 	return false
 }
@@ -40,7 +38,6 @@ func backupMetadata() bool {
 		commonLogger.Println("Successfully backed up metadata")
 		return true
 	}
-
 	commonLogger.Println("Failed to back up metadata")
 	return false
 }
@@ -51,24 +48,22 @@ func backupProfiles() bool {
 		commonLogger.Println("Successfully backed up profiles")
 		return true
 	}
-
 	commonLogger.Println("Failed to back up profiles")
 	return false
 }
 
 func addCaCerts(removedCaCerts []*x509.Certificate) bool {
 	commonLogger.Println("Restoring previously added game's certificate store...")
-	if err := internal.NewCACert(launcherCommonCmd.GameId, gamePath).Append(removedCaCerts); err == nil {
+	if err := internal.NewCACert(revertValues.GameId, revertValues.GamePath).Append(removedCaCerts); err == nil {
 		commonLogger.Println("Successfully restored game's certificate store.")
 		return true
 	}
-
 	commonLogger.Println("Failed to restore game's certificate store.")
 	return false
 }
 
 func undoRevert() {
-	if !launcherCommonCmd.RemoveAll {
+	if !revertValues.RemoveAll {
 		if removedCaCerts != nil {
 			addCaCerts(removedCaCerts)
 		}
@@ -81,15 +76,10 @@ func undoRevert() {
 		if restoredProfiles {
 			backupProfiles()
 		}
-		os.Exit(errorCode)
 	}
 }
 
-var doRemoveUserCert bool
-var doRestoreMetadata bool
-var doRestoreProfiles bool
-var doRestoreCaStoreCert bool
-var stopAgent bool
+var revertValues *launcherCommonCmd.RevertValues
 
 // State
 var removedUserCerts []*x509.Certificate
@@ -97,127 +87,122 @@ var removedCaCerts []*x509.Certificate
 var restoredMetadata bool
 var restoredProfiles bool
 
-func runRevert(args []string) error {
-	fs := pflag.NewFlagSet("revert", pflag.ContinueOnError)
-	launcherCommonCmd.InitRevert(fs)
-	addCommonFlags(fs)
-	commonCmd.LogRootCommand(fs, &logRoot)
-	commonCmd.GameVarCommand(fs, &launcherCommonCmd.GameId)
-	fs.StringVarP(&hostFilePath, "hostFilePath", "o", "", "Path to the host file.")
-	fs.StringVarP(&certFilePath, "certFilePath", "t", "", "Path to the certificate file.")
-	if runtime.GOOS != "linux" {
-		fs.BoolVarP(&doRemoveUserCert, "userCert", "u", false, "Remove the certificate from the user's trusted root store")
+func runRevert(args []string) (err error, exitCode int) {
+	var flags *pflag.FlagSet
+	revertValues, flags = launcherCommonCmd.RevertFlagSet()
+	if err = flags.Parse(args); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
-	fs.BoolVarP(&doRestoreMetadata, "metadata", "m", false, "Restore metadata. Not compatible with AoE:DE")
-	fs.BoolVarP(&doRestoreProfiles, "profiles", "p", false, "Restore profiles")
-	fs.BoolVarP(&doRestoreCaStoreCert, "caStoreCert", "s", false, "Restore the game's trusted root store. For all except AoE I: DE and AoE IV: AE.")
-	fs.BoolVarP(&stopAgent, "stopAgent", "g", false, "Stop the 'config-admin-agent' if it is running after all operations")
-	_ = fs.MarkHidden("stopAgent")
-
-	if err := fs.Parse(args); err != nil {
-		return err
+	if revertValues.GameId == "" {
+		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, ok := <-sigs
 		if ok {
 			undoRevert()
-			os.Exit(common.ErrSignal)
+			exitCode = common.ErrSignal
 		}
 	}()
-	if logRoot != "" {
-		internal.Initialize(logRoot)
+	if revertValues.LogRoot != "" {
+		internal.Initialize(revertValues.LogRoot)
 	}
 	isAdmin := executor.IsAdmin()
 	reverseFailed := true
-	if launcherCommonCmd.RemoveAll {
-		launcherCommonCmd.UnmapIPs = true
-		launcherCommonCmd.RemoveLocalCert = true
+	if revertValues.RemoveAll {
+		revertValues.IPs = true
+		revertValues.Certs = true
 		if runtime.GOOS != "linux" {
-			doRemoveUserCert = true
+			revertValues.RemoveUserCert = true
 		}
-		doRestoreMetadata = true
-		doRestoreProfiles = true
-		doRestoreCaStoreCert = true
+		revertValues.Metadata = true
+		revertValues.Profiles = true
+		revertValues.RestoreCAStoreCert = true
 		reverseFailed = false
 	}
-	if launcherCommonCmd.GameId == common.GameAoE1 {
-		doRestoreMetadata = false
-		doRestoreCaStoreCert = false
-	} else if launcherCommonCmd.GameId == common.GameAoE4 {
-		doRestoreCaStoreCert = false
+	if revertValues.GameId == game.AoE1 {
+		revertValues.Metadata = false
+		revertValues.RestoreCAStoreCert = false
+	} else if revertValues.GameId == game.AoE4 {
+		revertValues.RestoreCAStoreCert = false
 	}
-	if doRestoreMetadata || doRestoreProfiles {
-		if !common.SupportedGames.ContainsOne(launcherCommonCmd.GameId) {
+	if revertValues.Metadata || revertValues.Profiles {
+		var fileInfo os.FileInfo
+		if !game.SupportedGames.ContainsOne(revertValues.GameId) {
 			commonLogger.Println("Invalid game type")
-			errorCode = launcherCommon.ErrInvalidGame
+			exitCode = launcherCommon.ErrInvalidGame
 			undoRevert()
-		} else if fileInfo, err := os.Stat(dataPath); err != nil || !fileInfo.IsDir() {
+			return
+		} else if fileInfo, err = os.Stat(revertValues.DataPath); err != nil || !fileInfo.IsDir() {
 			commonLogger.Println("Invalid data path")
-			errorCode = internal.ErrInvalidDataPath
+			exitCode = internal.ErrInvalidDataPath
 			undoRevert()
-		} else {
-			path = commonUserData.NewPath(dataPath, launcherCommonCmd.GameId)
+			return
 		}
+		path = commonUserData.NewPath(revertValues.DataPath, revertValues.GameId)
 	}
-	commonLogger.Printf("Reverting configuration for %s...\n", launcherCommonCmd.GameId)
-	if doRemoveUserCert {
+	commonLogger.Printf("Reverting configuration for %s...\n", revertValues.GameId)
+	if revertValues.RemoveUserCert {
 		commonLogger.Println("Removing user certificates, authorize it if needed...")
 		if removedUserCerts, _ = wrapper.RemoveUserCerts(); removedUserCerts != nil {
 			commonLogger.Println("Successfully removed user certificates")
 		} else {
 			commonLogger.Println("Failed to remove user certificates")
-			errorCode = internal.ErrUserCertRemove
+			exitCode = internal.ErrUserCertRemove
 			undoRevert()
+			return
 		}
 	}
-	if doRestoreMetadata {
+	if revertValues.Metadata {
 		commonLogger.Println("Restoring metadata")
 		if userData.Metadata(path).Restore() {
 			commonLogger.Println("Successfully restored metadata")
 			restoredMetadata = true
 		} else {
 			commonLogger.Println("Failed to restore metadata")
-			errorCode = internal.ErrMetadataRestore
+			exitCode = internal.ErrMetadataRestore
 			undoRevert()
+			return
 		}
 	}
-	if doRestoreProfiles {
+	if revertValues.Profiles {
 		commonLogger.Println("Restoring profiles")
 		if userData.RestoreProfiles(path, reverseFailed) {
 			commonLogger.Println("Successfully restored profiles")
 			restoredProfiles = true
 		} else {
 			commonLogger.Println("Failed to restore profiles")
-			errorCode = internal.ErrProfilesRestore
+			exitCode = internal.ErrProfilesRestore
 			undoRevert()
+			return
 		}
 	}
-	if doRestoreCaStoreCert {
+	if revertValues.RestoreCAStoreCert {
 		commonLogger.Println("Restoring original certificate game's store...")
-		if gamePath == "" {
+		if revertValues.GamePath == "" {
 			commonLogger.Println("Game path is required to restore the original game's store")
-			errorCode = internal.ErrGamePathMissing
+			exitCode = internal.ErrGamePathMissing
 			undoRevert()
+			return
 		}
-		cert := internal.NewCACert(launcherCommonCmd.GameId, gamePath)
-		var err error
+		cert := internal.NewCACert(revertValues.GameId, revertValues.GamePath)
 		if err, removedCaCerts = cert.Restore(); err == nil {
 			commonLogger.Println("Successfully restored original game's store.")
 		} else {
 			commonLogger.Println("Failed to restore original game's store.")
 			commonLogger.Println("Received error:")
 			commonLogger.Println(err)
-			errorCode = internal.ErrGameCertRestore
+			exitCode = internal.ErrGameCertRestore
 			undoRevert()
+			return
 		}
 	}
-	var agentConnected bool
-	if launcherCommonCmd.RemoveLocalCert || launcherCommonCmd.UnmapIPs {
-		agentConnected = admin.ConnectAgentIfNeeded() == nil
-		if agentConnected {
+	var agentConnected *bool
+	if launcherCommon.RevertRequiresAdminElevationValues(revertValues) {
+		agentConnected = new(admin.ConnectAgentIfNeeded() == nil)
+		if *agentConnected {
 			commonLogger.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
 		} else {
 			str := "Running 'config-admin' to remove local cert and/or host mappings"
@@ -226,10 +211,9 @@ func runRevert(args []string) error {
 			}
 			commonLogger.Println(str + "...")
 		}
-		var err error
-		err, errorCode = admin.RunRevert(logRoot, launcherCommonCmd.UnmapIPs, launcherCommonCmd.RemoveLocalCert, !launcherCommonCmd.RemoveAll)
-		if err == nil && errorCode == common.ErrSuccess {
-			if agentConnected {
+		err, exitCode = admin.RunRevert(revertValues.LogRoot, revertValues.IPs, revertValues.Certs, !revertValues.RemoveAll)
+		if err == nil && exitCode == common.ErrSuccess {
+			if *agentConnected {
 				commonLogger.Println("Successfully communicated with 'config-admin-agent'")
 			} else {
 				commonLogger.Println("Successfully ran 'config-admin'")
@@ -239,67 +223,34 @@ func runRevert(args []string) error {
 				commonLogger.Println("Received error:")
 				commonLogger.Println(err)
 			}
-			if errorCode != common.ErrSuccess {
+			if exitCode != common.ErrSuccess {
 				commonLogger.Println("Received exit code:")
-				commonLogger.Println(errorCode)
+				commonLogger.Println(exitCode)
 			}
-			errorCode = internal.ErrAdminRevert
-			undoRevert()
-			if agentConnected {
+			exitCode = internal.ErrAdminRevert
+			if *agentConnected {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'")
 			} else {
 				commonLogger.Println("Failed to run 'config-admin'")
 			}
+			undoRevert()
+			return
 		}
 	}
 	// Ignore previous error if we don't failfast
-	if launcherCommonCmd.RemoveAll {
-		errorCode = common.ErrSuccess
+	if revertValues.RemoveAll {
+		exitCode = common.ErrSuccess
 	}
-	if errorCode == common.ErrSuccess && hostFilePath != "" {
-		_ = os.Remove(hostFilePath)
+	if exitCode == common.ErrSuccess && revertValues.HostFilePath != "" {
+		_ = os.Remove(revertValues.HostFilePath)
 	}
-	if errorCode == common.ErrSuccess && certFilePath != "" {
-		_ = os.Remove(certFilePath)
+	if exitCode == common.ErrSuccess && revertValues.CertFilePath != "" {
+		_ = os.Remove(revertValues.CertFilePath)
 	}
-	if stopAgent {
-		failedStopAgent := true
-		if agentConnected {
-			commonLogger.Println("Trying to stop 'config-admin-agent'.")
-			err := admin.StopAgentIfNeeded()
-			if err == nil {
-				if admin.ConnectAgentIfNeededWithRetries(false) {
-					commonLogger.Println("Stopped 'config-admin-agent'")
-					failedStopAgent = false
-				} else {
-					commonLogger.Println("Failed to stop 'config-admin-agent'")
-				}
-			} else {
-				commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
-				commonLogger.Println(err)
-			}
+	if agentConnected != nil {
+		if !admin.StopAgentIfNeeded() && exitCode == common.ErrSuccess {
+			exitCode = internal.ErrRevertStopAgent
 		}
-		if failedStopAgent {
-			exeFileName := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
-			if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
-				if isAdmin {
-					if err := commonProcess.KillPidProc(pid, proc); err == nil {
-						commonLogger.Println("Successfully killed 'config-admin-agent'.")
-						failedStopAgent = false
-					} else {
-						commonLogger.Println("Failed to kill 'config-admin-agent'")
-					}
-				} else {
-					commonLogger.Println("Re-run as administrator to kill 'config-admin-agent'")
-				}
-			} else if err == nil && proc == nil {
-				failedStopAgent = false
-			}
-		}
-		if failedStopAgent && errorCode == common.ErrSuccess {
-			errorCode = internal.ErrRevertStopAgent
-		}
-		os.Exit(errorCode)
 	}
-	return nil
+	return
 }

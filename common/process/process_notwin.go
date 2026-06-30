@@ -24,14 +24,12 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	if err != nil {
 		return
 	}
-	if err = proc.Signal(unix.Signal(0)); err != nil {
-		if errors.Is(err, unix.EPERM) {
-			// Process exists but we don't have permission to signal it
-			err = nil
-		} else {
-			proc = nil
-			return
-		}
+	var permitted bool
+	if err, _, permitted = status(proc); err != nil {
+		proc = nil
+		return
+	} else if !permitted {
+		err = nil
 	}
 	if expectedStartTime != 0 {
 		actualStartTime, startErr := GetProcessStartTime(pid)

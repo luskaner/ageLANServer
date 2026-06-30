@@ -3,8 +3,8 @@ package models
 import (
 	"fmt"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServerConfig"
+	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -14,19 +14,19 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 	var battleServers []BattleServer
 	for _, bs := range configBattleServers {
 		battleServers = append(battleServers, &MainBattleServer{
-			BaseConfig: bs.BaseConfig,
+			Base: bs.Base,
 		})
 	}
-	tmpBattleServer, err := battleServerConfig.Configs(gameId, true)
+	tmpBattleServer, err := battleServer.Configs(gameId, true)
 	if err != nil {
 		return err
 	}
 	for _, bs := range tmpBattleServer {
 		battleServers = append(battleServers, &MainBattleServer{
-			BaseConfig: bs.BaseConfig,
+			Base: bs.Base,
 		})
 	}
-	if (gameId == common.GameAoE4 || gameId == common.GameAoM) && len(battleServers) == 0 {
+	if (gameId == game.AoE4 || gameId == game.AoM) && len(battleServers) == 0 {
 		return fmt.Errorf("no battle server")
 	}
 	BattleServersStore[gameId] = battleServers

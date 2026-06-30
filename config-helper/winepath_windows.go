@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/luskaner/ageLANServer/common"
 	"golang.org/x/sys/windows"
 )
 
@@ -56,7 +57,7 @@ func WindowsToUnixPath(path string) (string, error) {
 		}
 		// Call wine_get_unix_file_name
 		ret, _, _ := procWineGetUnixFileName.Call(uintptr(unsafe.Pointer(ntpathPtr)))
-		if ret != 0 {
+		if ret != common.ErrSuccess {
 			// Convert the returned C string to Go string first.
 			unixName := cStringToGo(ret)
 			// Free the memory returned by Wine immediately after conversion.

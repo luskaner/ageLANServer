@@ -7,7 +7,7 @@ type Exec struct {
 }
 
 func (exec Exec) execute(args []string, admin bool, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result) {
-	options := commonExecutor.Options{File: exec.Executable, Args: args}
+	options := commonExecutor.Options{File: exec.Executable, Args: args, Pid: true}
 	if admin {
 		options.AsAdmin = true
 	}

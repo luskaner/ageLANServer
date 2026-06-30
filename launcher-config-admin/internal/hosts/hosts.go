@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common/fileLock"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/launcher-common/hosts"
-	"github.com/luskaner/ageLANServer/launcher-common/hosts/text"
+	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
+	"github.com/luskaner/ageLANServer/common/hosts/text"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 )

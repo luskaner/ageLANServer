@@ -14,8 +14,8 @@ RevertCommand = []
 # Windows:
 # 1. Steam ('steam').
 # 2. Microsoft Store - Xbox ('msstore'). Not available for AoM: RT.
-# Linux:
-# 1. Steam ('steam').
+# Unix-like:
+# 1. Steam ('steam'). Only on Linux.
 # 2. Steam with CrossOver ('steam_crossover').
 # 3. Steam with Wine ('steam_wine').
 # When using an official launcher, Client.Isolation.Metadata and Client.Isolation.Profiles must be 'required' or 'true'.
@@ -34,14 +34,14 @@ Executable = 'auto'
 ExecutableArgs = []
 # The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam' or 'msstore' it will be detected automatically.
 # If 'Executable' is a custom launcher, this is required to be set. Otherwise, this will be ignored.
-# Used to find the game certificate certificate store, file "cacert.pem".
+# Used to find the game certificate store, file "cacert.pem".
 # Required that the game path can be found in all games except AoE I: DE and AoE IV: AE.
 # Note: You may use environment variables.
 Path = 'auto'
 
 [Client.Isolation]
 # Path to the game data, if 'auto' it will be detected automatically based on the game and Client.Executable.
-# Linux Note: Required to be set to the path if Client.Executable is set to a custom launcher (and some isolation is enabled).
+# Unix-like Note: Required to be set to the path if Client.Executable is set to a custom launcher (and some isolation is enabled).
 Path = 'auto'
 # If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.
 # If it resolves to 'true', the launcher will isolate the metadata cache of the game, otherwise, it will be shared

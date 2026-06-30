@@ -12,4 +12,7 @@ const (
 	ErrLocalCertAddParse
 	ErrIpMapAdd
 	ErrIpMapAddRevert
+	ErrFlushCache
+	ErrFlushCacheDNS
+	ErrFlushCacheCerts
 )

@@ -10,9 +10,12 @@ import (
 )
 
 func FlushDns() (result *exec.Result) {
+	commonLogger.Println("Flushing DNS cache...")
 	options := exec.Options{File: "ipconfig", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"/flushdns"}}
 	var suffix string
-	if internal.SetUp {
+	if internal.SetUp == nil {
+		suffix = "_flushCache"
+	} else if *internal.SetUp {
 		suffix = "_setup"
 	} else {
 		suffix = "_revert"
@@ -25,9 +28,10 @@ func FlushDns() (result *exec.Result) {
 		}
 		result = options.Exec()
 	}); err != nil {
-		result = &exec.Result{}
-		result.ExitCode = common.ErrFileLog
-		result.Err = err
+		result = &exec.Result{
+			ExitCode: common.ErrFileLog,
+			Err:      err,
+		}
 	}
 	return
 }

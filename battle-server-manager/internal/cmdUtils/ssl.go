@@ -7,6 +7,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
@@ -22,7 +23,7 @@ func ResolveSSLFilesPath(gameId string, ssl internal.SSL) (resolvedCertFile stri
 		if !ok {
 			err = fmt.Errorf("no SSL certificate and keys found")
 		}
-		if gameId == common.GameAoE4 || gameId == common.GameAoM {
+		if gameId == game.AoE4 || gameId == game.AoM {
 			resolvedCertFile = cert
 			resolvedKeyFile = key
 		} else {
@@ -36,14 +37,12 @@ func ResolveSSLFilesPath(gameId string, ssl internal.SSL) (resolvedCertFile stri
 	if f, path, err = common.ParsePath(common.EnhancedViperStringToStringSlice(ssl.CertFile), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid certificate file")
 		return
-	} else {
-		resolvedCertFile = path
 	}
+	resolvedCertFile = path
 	if f, path, err = common.ParsePath(common.EnhancedViperStringToStringSlice(ssl.KeyFile), nil); err != nil || f.IsDir() {
 		err = fmt.Errorf("invalid key file")
 		return
-	} else {
-		resolvedKeyFile = path
 	}
+	resolvedKeyFile = path
 	return
 }

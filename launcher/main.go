@@ -1,20 +1,22 @@
 package main
 
 import (
+	"os"
+
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/logger"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmd"
-	"github.com/spf13/cobra"
 )
 
 var version = "development"
 
 func main() {
 	commonLogger.Initialize(nil)
-	cobra.MousetrapHelpText = ""
 	cmd.Version = version
 	common.ChdirToExe()
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+	err, exitCode := cmd.Execute()
+	if err != nil {
+		print(err)
 	}
+	os.Exit(exitCode)
 }

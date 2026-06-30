@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/luskaner/ageLANServer/common"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/spf13/pflag"
 )
 
-type commandHandler func(args []string) error
+type commandHandler func(args []string) (err error, exitCode int)
 type RootFlagSet struct {
 	fs       *pflag.FlagSet
 	commands map[string]commandHandler
@@ -27,15 +28,16 @@ func (r *RootFlagSet) RegisterCommand(name string, h commandHandler) {
 	r.commands[name] = h
 }
 
-func (r *RootFlagSet) Execute(version string) error {
+func (r *RootFlagSet) Execute(version string) (err error, exitCode int) {
 	var showHelp, showVersion bool
 	addDefaultFlags(r.fs, &showHelp, &showVersion)
-	if err := r.fs.Parse(os.Args[1:]); err != nil {
-		return err
+	if err = r.fs.Parse(os.Args[1:]); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 
 	if !checkVersion(showVersion, version) {
-		return nil
+		return
 	}
 
 	remaining := r.fs.Args()
@@ -51,14 +53,14 @@ func (r *RootFlagSet) Execute(version string) error {
 		for _, k := range keys {
 			commonLogger.Println("  ", k)
 		}
-		return nil
+		return
 	}
 
 	cmdName := remaining[0]
 	if h, ok := r.commands[cmdName]; ok {
 		return h(remaining[1:])
 	}
-	return errors.New("unknown command: " + cmdName + ", see --help")
+	return errors.New("unknown command: " + cmdName + ", see --help"), common.ErrSyntax
 }
 
 func checkVersion(showVersion bool, version string) bool {
@@ -79,7 +81,7 @@ func addDefaultFlags(fs *pflag.FlagSet, showHelp *bool, showVersion *bool) {
 	fs.BoolVarP(showVersion, "version", "v", false, "Show version")
 }
 
-type singleCommandHandler func(fs *pflag.FlagSet) error
+type singleCommandHandler func(fs *pflag.FlagSet) (err error, exitCode int)
 
 type SingleFlagSet struct {
 	command     singleCommandHandler
@@ -103,16 +105,17 @@ func (s *SingleFlagSet) Fs() *pflag.FlagSet {
 	return s.fs
 }
 
-func (s *SingleFlagSet) Execute() error {
-	if err := s.fs.Parse(os.Args[1:]); err != nil {
-		return err
+func (s *SingleFlagSet) Execute() (err error, exitCode int) {
+	if err = s.fs.Parse(os.Args[1:]); err != nil {
+		exitCode = common.ErrSyntax
+		return
 	}
 	if !checkVersion(s.showVersion, s.version) {
-		return nil
+		return
 	}
 	if s.showHelp {
 		s.fs.PrintDefaults()
-		return nil
+		return
 	}
 	return s.command(s.fs)
 }

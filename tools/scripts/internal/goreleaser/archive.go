@@ -9,7 +9,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/goreleaser/goreleaser/v2/pkg/config"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
 func extChange(ext string) DestinationFn {
@@ -211,8 +211,8 @@ func (a *Archive) AddSrcOsDstFile(source Renders[FileData], sourceIgnoreFn Sourc
 	for operatingSystem, osDestinationFns := range destinationsFns {
 		fileData := NewFileData(operatingSystem.Goos())
 		if perGame {
-			for game := range common.SupportedGames.Iter() {
-				fileData.Game = game
+			for g := range game.SupportedGames.Iter() {
+				fileData.Game = g
 				a.addFile(operatingSystem, fileMode, fileData, source, sourceIgnoreFn, osDestinationFns...)
 			}
 		} else {

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor"
 )
 
@@ -33,8 +34,10 @@ type Result struct {
 	Pid      uint32
 }
 
+var ResultSuccess = &Result{}
+
 func (result *Result) Success() bool {
-	return result != nil && result.Err == nil && (result.Pid != 0 || result.ExitCode == 0)
+	return result != nil && result.Err == nil && (result.Pid != 0 || result.ExitCode == common.ErrSuccess)
 }
 
 func (options Options) Exec() (result *Result) {

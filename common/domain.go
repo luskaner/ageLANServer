@@ -2,6 +2,8 @@ package common
 
 import (
 	"fmt"
+
+	commonGame "github.com/luskaner/ageLANServer/common/game"
 )
 
 const Tld = "com"
@@ -39,19 +41,19 @@ func CertDomains() []string {
 }
 
 func SelfSignedCertGame(game string) bool {
-	return game != GameAoE4 && game != GameAoM
+	return game != commonGame.AoE4 && game != commonGame.AoM
 }
 
 func GameHostsDirect(gameId string) (domains []string) {
 	switch gameId {
-	case GameAoE4:
+	case commonGame.AoE4:
 		for i := 1; i <= 2; i++ {
 			domains = append(domains, fmt.Sprintf("%s%d%s", aoe4SubDomainPrefix, i, apiWorldsEdge))
 		}
 		fallthrough
-	case GameAoE1, GameAoE2, GameAoE3:
+	case commonGame.AoE1, commonGame.AoE2, commonGame.AoE3:
 		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
-	case GameAoM:
+	case commonGame.AoM:
 		domains = []string{"athens-live" + apiWorldsEdge}
 	}
 	domains = append(domains, generateDomains(gameId)...)
@@ -64,14 +66,16 @@ func AllHosts(gameId string) (domains []string) {
 	}
 	domains = GameHostsDirect(gameId)
 	switch gameId {
-	case GameAoM:
+	case commonGame.AoM:
 		domains = append(domains, "c15f9"+playFabSuffix)
-	case GameAoE4:
+	case commonGame.AoE4:
 		domains = append(domains, "ed603"+playFabSuffix)
 	}
-	domains = append(domains, CdnAgeOfEmpires, ApiAgeOfEmpires)
-	if gameId == GameAoE4 {
+	domains = append(domains, CdnAgeOfEmpires)
+	if gameId == commonGame.AoE4 {
 		domains = append(domains, Aoe4ApiAgeOfEmpires)
+	} else {
+		domains = append(domains, ApiAgeOfEmpires)
 	}
 	hostsCache[gameId] = domains
 	return
@@ -82,17 +86,17 @@ func generateDomains(gameId string) (domains []string) {
 	var releaseMin int
 	var subDomainReleasePart string
 	switch gameId {
-	case GameAoE2:
+	case commonGame.AoE2:
 		prefix = SubDomainAge2Prefix
 		releaseMin = 2
 		subDomainReleasePart = stdSubDomainReleasePart
-	case GameAoE4:
+	case commonGame.AoE4:
 		prefix = aoe4Marker
 		releaseMin = 2
 		subDomainReleasePart = "-activerelease"
-	case GameAoM:
+	case commonGame.AoM:
 		prefix = "andromeda"
-		releaseMin = 15
+		releaseMin = 20
 		subDomainReleasePart = stdSubDomainReleasePart
 	default:
 		return

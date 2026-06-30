@@ -3,6 +3,7 @@ package ipc
 import (
 	"crypto/x509"
 	"encoding/gob"
+	"errors"
 	"io"
 	"net"
 
@@ -26,14 +27,18 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 
 	for !exit {
 		if err = decoder.Decode(&action); err != nil {
-			commonLogger.Println("Could not decode action:", err)
-			str := "-> ErrDecode: "
-			if err = encoder.Encode(internal.ErrDecode); err != nil {
-				str += err.Error()
+			if errors.Is(err, io.EOF) {
+				commonLogger.Println("Closing connection...")
 			} else {
-				str += "OK"
+				commonLogger.Println("Could not decode action:", err)
+				str := "-> ErrDecode: "
+				if err = encoder.Encode(internal.ErrDecode); err != nil {
+					str += err.Error()
+				} else {
+					str += "OK"
+				}
+				commonLogger.Println(str)
 			}
-			commonLogger.Println(str)
 			return
 		}
 
@@ -114,8 +119,6 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 
 		str += "OK"
 		commonLogger.Println(str)
-	} else {
-		commonLogger.Println("No certificate")
 	}
 	var suffix string
 	if cert != nil {
@@ -171,11 +174,11 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 	return result.ExitCode
 }
 
-func StartServer(logRoot string) (errorCode int) {
+func StartServer(logRoot string) (exitCode int) {
 	l, err := SetupServer()
 	if err != nil {
 		commonLogger.Printf("Could not listen to IPC: %v\n", err)
-		errorCode = internal.ErrListen
+		exitCode = internal.ErrListen
 		return
 	}
 	defer func(l net.Listener) {

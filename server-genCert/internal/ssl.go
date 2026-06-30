@@ -95,8 +95,11 @@ func getTemplate(typ string) *x509.Certificate {
 	} else if typ == "ca" {
 		template.Subject.CommonName += " CA"
 	}
+	if typ != "normal" {
+		template.KeyUsage = x509.KeyUsageCertSign
+	}
 	if typ != "ca" {
-		template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+		template.KeyUsage |= x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
 	}
 	if typ == "selfsigned" {
