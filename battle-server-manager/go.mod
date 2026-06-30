@@ -6,7 +6,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
 	github.com/knadh/koanf/v2 v2.3.5
-	github.com/pelletier/go-toml/v2 v2.4.0
+	github.com/pelletier/go-toml/v2 v2.4.2
 	github.com/spf13/pflag v1.0.10
 )
 
