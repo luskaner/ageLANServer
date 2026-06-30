@@ -36,9 +36,7 @@ func rootCmd(args []string) error {
 	return nil
 }
 
-func Execute() error {
-	log.Printf("Arguments: %s", os.Args)
-	flag.BoolVar(&exitBeforeRunning, "exitBeforeRunning", false, "Exit before running the game")
+	log.Printf("Arguments: %v", os.Args)
 	flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
 	flag.Parse()
 	return rootCmd(flag.Args())
