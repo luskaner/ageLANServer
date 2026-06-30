@@ -9,12 +9,10 @@ import (
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/hosts"
 	"github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
@@ -294,22 +292,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 			exitCode = internal.ErrAdminSetup
 			if agentStarted {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
-				if err = admin.StopAgentIfNeeded(); err != nil {
-					failedStopAgent := true
-					if isAdmin {
-						err = commonProcess.Kill(executables.NativeFileName(true, executables.LauncherConfigAdminAgent))
-						if err == nil {
-							commonLogger.Println("Successfully killed 'config-admin-agent'.")
-							failedStopAgent = false
-						}
-					}
-					if failedStopAgent {
-						commonLogger.Println("Failed to stop 'config-admin-agent'. Kill it manually using the task manager")
-						commonLogger.Println("Error message: " + err.Error())
-					}
-				} else {
-					commonLogger.Println("Successfully stopped 'config-admin-agent'.")
-				}
+				_ = admin.StopAgentIfNeeded()
 				undoSetUp()
 			}
 		}

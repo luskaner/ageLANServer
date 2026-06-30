@@ -479,6 +479,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			atomicExitCode.Store(int32(internal.ErrFlushCache))
 			return
 		}
+		config.SetConfigAdminAgentStarted()
 	}
 	_, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.Server))
 	if err == nil && proc != nil {

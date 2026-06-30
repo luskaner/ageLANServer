@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
+	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
@@ -121,7 +123,42 @@ func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode in
 	return
 }
 
-func StopAgentIfNeeded() (err error) {
+func StopAgentIfNeeded() bool {
+	agentConnected := ConnectAgentIfNeeded() == nil
+	exeFileName := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
+	if !agentConnected {
+		if _, proc, err := commonProcess.Process(exeFileName); err == nil && proc == nil {
+			return true
+		}
+	}
+	var stoppedAgent bool
+	commonLogger.Println("Trying to stop 'config-admin-agent'.")
+	if err := stopAgentIfNeeded(); err == nil {
+		if ConnectAgentIfNeededWithRetries(false) {
+			commonLogger.Println("Stopped 'config-admin-agent'")
+			stoppedAgent = true
+		} else {
+			commonLogger.Println("Failed to stop 'config-admin-agent'")
+		}
+	} else {
+		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
+		commonLogger.Println(err)
+	}
+	if !stoppedAgent {
+		if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
+			if err = commonProcess.KillPidProc(pid, proc); err == nil {
+				commonLogger.Println("Successfully killed 'config-admin-agent'.")
+				stoppedAgent = true
+			} else {
+				commonLogger.Println("Failed to kill 'config-admin-agent'")
+				commonLogger.Println(err)
+			}
+		}
+	}
+	return stoppedAgent
+}
+
+func stopAgentIfNeeded() (err error) {
 	commonLogger.Println("Stopping agent")
 	if ipc != nil {
 		str := "-> Exit: "

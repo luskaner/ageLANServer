@@ -20,11 +20,9 @@ import (
 
 func (c *Config) KillAgent() {
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
-	logger.Println("Killing 'agent' if needed...")
 	err := commonProcess.Kill(agent)
 	if err != nil {
 		logger.Println("Failed to kill it: ", err, ", try using the task manager.")
-		return
 	}
 }
 

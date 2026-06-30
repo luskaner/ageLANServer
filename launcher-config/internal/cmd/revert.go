@@ -9,11 +9,9 @@ import (
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
@@ -250,42 +248,7 @@ func runRevert(args []string) (err error, exitCode int) {
 		_ = os.Remove(revertValues.CertFilePath)
 	}
 	if agentConnected != nil {
-		failedStopAgent := true
-		if *agentConnected {
-			commonLogger.Println("Trying to stop 'config-admin-agent'.")
-			err = admin.StopAgentIfNeeded()
-			if err == nil {
-				if admin.ConnectAgentIfNeededWithRetries(false) {
-					commonLogger.Println("Stopped 'config-admin-agent'")
-					failedStopAgent = false
-				} else {
-					commonLogger.Println("Failed to stop 'config-admin-agent'")
-				}
-			} else {
-				commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
-				commonLogger.Println(err)
-			}
-		}
-		if failedStopAgent {
-			exeFileName := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
-			var pid string
-			var proc *os.Process
-			if pid, proc, err = commonProcess.Process(exeFileName); err == nil && proc != nil {
-				if isAdmin {
-					if err = commonProcess.KillPidProc(pid, proc); err == nil {
-						commonLogger.Println("Successfully killed 'config-admin-agent'.")
-						failedStopAgent = false
-					} else {
-						commonLogger.Println("Failed to kill 'config-admin-agent'")
-					}
-				} else {
-					commonLogger.Println("Re-run as administrator to kill 'config-admin-agent'")
-				}
-			} else if err == nil && proc == nil {
-				failedStopAgent = false
-			}
-		}
-		if failedStopAgent && exitCode == common.ErrSuccess {
+		if !admin.StopAgentIfNeeded() && exitCode == common.ErrSuccess {
 			exitCode = internal.ErrRevertStopAgent
 		}
 	}

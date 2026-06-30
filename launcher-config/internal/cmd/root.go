@@ -14,5 +14,6 @@ func Execute() (err error, exitCode int) {
 	rootFlagSet.RegisterCommand("setup", runSetUp)
 	rootFlagSet.RegisterCommand("revert", runRevert)
 	rootFlagSet.RegisterCommand("flushCache", runFlushCache)
+	rootFlagSet.RegisterCommand("stopAgent", runStopAgent)
 	return rootFlagSet.Execute(Version)
 }

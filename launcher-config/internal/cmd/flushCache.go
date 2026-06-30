@@ -68,6 +68,7 @@ func runFlushCache(args []string) (err error, exitCode int) {
 				agentStarted = admin.ConnectAgentIfNeededWithRetries(true)
 				if !agentStarted {
 					commonLogger.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
+					_ = admin.StopAgentIfNeeded()
 					exitCode = internal.ErrStartAgentVerify
 				}
 			}
