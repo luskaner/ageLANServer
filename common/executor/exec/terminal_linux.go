@@ -21,8 +21,7 @@ var terminalApplications = []string{
 }
 
 func terminalArgs() []arg {
-	apps := slices.Clone(terminalApps)
-	apps = slices.Clone(terminalApplications)
+	apps := append(slices.Clone(terminalApps), terminalApplications...)
 	apps = append(apps, x11TerminalApps...)
 	return baseTerminalArgs(apps)
 }
