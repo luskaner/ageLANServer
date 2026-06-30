@@ -17,7 +17,7 @@ func handle(conn net.Conn) {
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {
-				log.Printf("Cliente %s closed the connection.", conn.RemoteAddr().String())
+				log.Printf("Client %s closed the connection.", conn.RemoteAddr().String())
 			} else {
 				log.Printf("Error reading from %s: %v", conn.RemoteAddr().String(), err)
 			}

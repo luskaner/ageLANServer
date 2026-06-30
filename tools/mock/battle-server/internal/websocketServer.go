@@ -27,7 +27,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Cliente disconnected: %v", err)
+			log.Printf("Client disconnected: %v", err)
 			break
 		}
 		log.Printf("Message received: %s", p)
