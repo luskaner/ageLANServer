@@ -1,10 +1,19 @@
 package steam
 
 import (
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"runtime"
+
+	"github.com/luskaner/ageLANServer/common/game"
 )
 
-func (exec Exec) Do(_ []string, _ func(options commonExecutor.Options)) (result *commonExecutor.Result) {
-	// Should not get called
-	return nil
+func NewExec(gameId string) (exec *Exec, ok bool) {
+	if gameId == game.AoE2 && runtime.GOARCH == "arm64" {
+		return newExec(gameId)
+	}
+	return
+}
+
+func (exec Exec) GameProcesses() (steamProcess bool, steamMacOsNative bool, xboxProcess bool) {
+	steamMacOsNative = true
+	return
 }

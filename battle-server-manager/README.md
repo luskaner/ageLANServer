@@ -9,8 +9,11 @@ Servers.
     - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
 - Linux with kernel 3.2:
-    - x86-64 (recommended).
-    - ARM64.
+  - x86-64 (recommended).
+  - ARM64.
+- macOS Monterey (v12):
+  - Intel (recommended).
+  - Apple Silicon.
 
 ## Features
 

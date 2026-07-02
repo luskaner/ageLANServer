@@ -289,6 +289,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	canAddHost := cfg.Config.CanAddHost
 	clientExecutable := cfg.Client.Executable.Path
+	if clientExecutable == "steam" && runtime.GOOS == "darwin" && gameId != game.AoE2 {
+		logger.Println("Only AoE 2: DE is supported on 'steam'. Use 'steam_crossover' or 'steam_wine' instead.")
+		atomicExitCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
+		return
+	}
 	var clientExecutableOfficial bool
 	if clientExecutable == "auto" || clientExecutable == "steam" {
 		clientExecutableOfficial = true
@@ -407,11 +412,15 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	var gameCaCertPath string
 	if gamePath != "" {
-		_, caCert := cert.NewCA(gameId, gamePath)
+		_, caCert := cert.NewCA(gameId, config.GamePathToGameCertPath(executer, gamePath))
 		gameCaCertPath = caCert.OriginalPath()
 		if commonLogger.FileLogger != nil {
 			logger.Cacert = &caCert
 		}
+	}
+	macOsExclusiveMappings := config.NativeMacOsGame(executer, true)
+	if commonLogger.FileLogger != nil {
+		logger.MacOsExclusiveMappings = macOsExclusiveMappings
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -596,10 +605,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			serverArgsValues.Flatlog = true
 			serverArgsValues.Deterministic = true
 		}
-		if (gameId == game.AoM || gameId == game.AoE4) && battleServerManagerRun == "false" {
+		battleServerRequired := config.BattleServerRequired(executer)
+		if battleServerManagerRun == "false" && battleServerRequired {
 			logger.Println("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 		}
-		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && (gameId == game.AoM || gameId == game.AoE4))
+		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && battleServerRequired)
 		if cfg.Server.Start == "auto" {
 			str := "No 'server's were found, proceeding to"
 			if runBattleServerManager {
@@ -654,12 +664,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		atomicExitCode.Store(int32(internal.ErrReadCert))
 		return
 	}
-	atomicExitCode.Store(int32(config.MapHosts(gameId, serverIP, canAddHost, customHostFile)))
+	atomicExitCode.Store(int32(config.MapHosts(gameId, serverIP, macOsExclusiveMappings, canAddHost, customHostFile)))
 	if atomicExitCode.Load() != int32(common.ErrSuccess) {
 		return
 	}
 	logger.WriteFileLog(gameId, "post host mapping")
-	atomicExitCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, customCertFile)))
+	atomicExitCode.Store(int32(config.AddCert(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, canTrustCertificate, customCertFile, macOsExclusiveMappings)))
 	if atomicExitCode.Load() != int32(common.ErrSuccess) {
 		return
 	}
@@ -670,7 +680,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	logger.WriteFileLog(gameId, "post isolate user data")
 	if gamePath != "" {
-		atomicExitCode.Store(int32(config.AddCACertToGame(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, gamePath, gameCaCertPath, cfg.Config.Certificate.CanTrustInGame)))
+		atomicExitCode.Store(int32(config.AddCACertToGame(gameId, uuid.MustParse(serverArgsValues.Id), serverCertificate, config.GamePathToGameCertPath(executer, gamePath), gameCaCertPath, cfg.Config.Certificate.CanTrustInGame, macOsExclusiveMappings)))
 		if atomicExitCode.Load() != int32(common.ErrSuccess) {
 			return
 		}

@@ -176,6 +176,9 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Linux with kernel 3.2:
     - x86-64 (recommended).
     - ARM64.
+- macOS Monterey (v12):
+    - Intel (recommended).
+    - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
 
 **Note for launcher: If you allow (and is needed) to handle the hosts file, local certificate, or an elevated custom
 game launcher,
@@ -221,6 +224,7 @@ supported operating systems.
     * Linux:
         * **x86-64**: ...\_full\_*A.B.C*_linux_x86-64.tar.gz
         * **ARM64**: ...\_full\_*A.B.C*_linux_arm64.tar.gz
+    * macOS: ...\_full\_*A.B.C*_mac.tar.gz
 * Launcher:
     * Windows:
         * **7 on x86-64**: ...\_launcher\_*A.B.C*_win7_x86-64.zip
@@ -229,6 +233,7 @@ supported operating systems.
     * Linux:
         * **x86-64**: ...\_launcher\_*A.B.C*_linux_x86-64.tar.gz
         * **ARM64**: ...\_launcher\_*A.B.C*_linux_arm64.tar.gz
+    * macOS: ...\_launcher\_*A.B.C*_mac.tar.gz
 * Battle Server Manager:
     * Windows:
         * **7 on x86-64**: ...\_battle-server-manager\_*A.B.C*_win7_x86-64.zip
@@ -237,6 +242,7 @@ supported operating systems.
     * Linux:
         * **x86-64**: ...\_battle-server-manager\_*A.B.C*_linux_x86-64.tar.gz
         * **ARM64**: ...\_battle-server-manager\_*A.B.C*_linux_arm64.tar.gz
+    * macOS: ...\_battle-server-manager\_*A.B.C*_mac.tar.gz
 * Server:
     * Windows:
         * **7, Server 2008 R2, Home Server 2011, Embedded 7 on x86-64**:

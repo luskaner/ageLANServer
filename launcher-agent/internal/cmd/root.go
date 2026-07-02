@@ -37,7 +37,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 		return
 	}
 	common.ChdirToExe()
-	if values.LogRoot != "" && values.BaseDataPath != "-" {
+	if values.LogRoot != "" && values.BaseDataPath != "" {
 		internal.Initialize(values.LogRoot)
 	}
 	sigs := make(chan os.Signal, 1)

@@ -128,7 +128,7 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 	}
 	var result *exec.Result
 	if buffErr := commonLogger.FileLogger.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(msg.GameId, msg.IP, cert, logRoot, writer, func(options exec.Options) {
+		result = executor.RunSetUp(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, cert, logRoot, writer, func(options exec.Options) {
 			if writer != nil {
 				commonLogger.Println("run config admin setup", options.String())
 			}

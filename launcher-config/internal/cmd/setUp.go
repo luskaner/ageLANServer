@@ -239,7 +239,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 			ipToMap = setupValues.MapIp
 		}
 	} else if len(setupValues.MapIp) > 0 {
-		if ok, _ := hosts.AddHosts(setupValues.MapIp, setupValues.GameId, setupValues.HostFilePath, hosts.WindowsLineEnding, nil); ok {
+		if ok, _ := hosts.AddHosts(setupValues.MapIp, setupValues.GameId, setupValues.HostFilePath, hosts.WindowsLineEnding, setupValues.MacOsExclusiveMappings, nil); ok {
 			commonLogger.Println("Successfully added host mappings")
 		} else {
 			commonLogger.Println("Failed to add host mappings")
@@ -273,7 +273,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 			}
 			commonLogger.Println(str + "...")
 		}
-		err, exitCode = admin.RunSetUp(setupValues.GameId, setupValues.LogRoot, ipToMap, addLocalCertData)
+		err, exitCode = admin.RunSetUp(setupValues.GameId, setupValues.LogRoot, ipToMap, setupValues.MacOsExclusiveMappings, addLocalCertData)
 		if err == nil && exitCode == common.ErrSuccess {
 			if agentStarted {
 				commonLogger.Println("Successfully communicated with 'config-admin-agent'")

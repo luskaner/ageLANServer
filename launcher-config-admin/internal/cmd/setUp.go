@@ -71,7 +71,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 	}
 	if len(values.MapIp) > 0 {
 		commonLogger.Println("Adding IP mappings")
-		if ok, _ := launcherCommonHosts.AddHosts(values.MapIp, values.GameId, "", "", hosts.FlushDns); ok {
+		if ok, _ := launcherCommonHosts.AddHosts(values.MapIp, values.GameId, "", "", values.MacOsExclusiveMappings, hosts.FlushDns); ok {
 			commonLogger.Println("Successfully added IP mappings")
 		} else {
 			exitCode = internal.ErrIpMapAdd

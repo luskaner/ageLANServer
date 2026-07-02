@@ -15,10 +15,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func RunSetUp(gameId string, IP net.IP, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	values, flags := admin.SetupFlagSet()
 	values.GameId = gameId
 	values.MapIp = IP
+	values.MacOsExclusiveMappings = macOsExclusiveMappings
 	values.LogRoot = logRoot
 	if certificate != nil {
 		values.AddLocalCertData = certificate.Raw

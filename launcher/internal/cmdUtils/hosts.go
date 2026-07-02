@@ -16,10 +16,10 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
-func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile bool) (exitCode int) {
+func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool, canMap bool, customHostFile bool) (exitCode int) {
 	var mapIP bool
 	if !customHostFile {
-		for _, domain := range common.AllHosts(gameId) {
+		for _, domain := range common.AllHosts(gameId, macOsExclusiveMappings) {
 			if !common.Matches(ip, domain) {
 				if !canMap {
 					logger.Println("serverStart is false and canAddHost is false but 'server' does not match " + domain + ". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
@@ -63,6 +63,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 			}
 			cfgSetupOps.GameId = gameId
 			cfgSetupOps.MapIp = net.ParseIP(ip)
+			cfgSetupOps.MacOsExclusiveMappings = macOsExclusiveMappings
 			cfgSetupOps.HostFilePath = c.hostFilePath
 			if result := cfgSetupOps.RunSetUp(); !result.Success() {
 				logger.Println("Failed to add hosts.")
@@ -75,7 +76,7 @@ func (c *Config) MapHosts(gameId string, ip string, canMap bool, customHostFile 
 				exitCode = internal.ErrConfigIpMapAdd
 			} else if customHostFile {
 				if parsedIP := net.ParseIP(ip); parsedIP != nil {
-					mappings := hosts.Mappings(gameId, parsedIP)
+					mappings := hosts.Mappings(gameId, parsedIP, macOsExclusiveMappings)
 					for hostToCache, ipToCache := range mappings {
 						common.CacheMapping(string(hostToCache), ipToCache.String())
 					}

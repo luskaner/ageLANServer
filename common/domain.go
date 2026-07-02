@@ -23,6 +23,7 @@ const CdnAgeOfEmpiresSubdomain = "cdn"
 const apiAgeOfEmpiresSuffix = "." + AgeOfEmpires + dotTld
 const ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + apiAgeOfEmpiresSuffix
 const Aoe4ApiAgeOfEmpires = ApiAgeOfEmpiresSubdomain + "-" + aoe4Marker + apiAgeOfEmpiresSuffix
+const aoe2MacWorldsEdgeDomain = "arthurlive" + apiWorldsEdge
 const CdnAgeOfEmpires = CdnAgeOfEmpiresSubdomain + "." + AgeOfEmpires + dotTld
 const playFabSuffix = "." + PlayFabDomain + dotTld
 const SubDomainAge2Prefix = "pb"
@@ -44,7 +45,7 @@ func SelfSignedCertGame(game string) bool {
 	return game != commonGame.AoE4 && game != commonGame.AoM
 }
 
-func GameHostsDirect(gameId string) (domains []string) {
+func GameHostsDirect(gameId string, withMacOsExclusive bool) (domains []string) {
 	switch gameId {
 	case commonGame.AoE4:
 		for i := 1; i <= 2; i++ {
@@ -56,15 +57,18 @@ func GameHostsDirect(gameId string) (domains []string) {
 	case commonGame.AoM:
 		domains = []string{"athens-live" + apiWorldsEdge}
 	}
+	if gameId == commonGame.AoE2 && withMacOsExclusive {
+		domains = append(domains, aoe2MacWorldsEdgeDomain)
+	}
 	domains = append(domains, generateDomains(gameId)...)
 	return domains
 }
 
-func AllHosts(gameId string) (domains []string) {
+func AllHosts(gameId string, withMacOsExclusive bool) (domains []string) {
 	if cache, ok := hostsCache[gameId]; ok {
 		return cache
 	}
-	domains = GameHostsDirect(gameId)
+	domains = GameHostsDirect(gameId, withMacOsExclusive)
 	switch gameId {
 	case commonGame.AoM:
 		domains = append(domains, "c15f9"+playFabSuffix)

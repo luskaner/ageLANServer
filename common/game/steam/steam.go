@@ -18,6 +18,12 @@ type Game struct {
 	libraryPath string
 }
 
+func NewGame(gameId string) (game *Game, ok bool) {
+	return NewCustomGame(gameId, ConfigPath, ConfigPathAlt, func(s string) string {
+		return s
+	})
+}
+
 func NewCustomGame(gameId string, configPathFn ConfigPathFn, configPathAltFn ConfigPathFn, pathTransFn PathTranslateFn) (game *Game, ok bool) {
 	id := appId(gameId)
 	if libraryPath := libraryFolder(id, configPathFn, configPathAltFn); libraryPath != "" {

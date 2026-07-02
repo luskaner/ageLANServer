@@ -64,7 +64,7 @@ AnnounceMulticastGroups = ['239.31.97.8']
 # This section only applies if starting the server.
 [Server.BattleServerManager]
 # When to use the manager to start a new Battle Server running the manager; accepted values:
-# 'required': Only for games that require it to work (AoM: RT and AoE IV: AE).
+# 'required': Only for when it is required for it to work ('steam' on macOS and AoM: RT and AoE IV: AE for all platforms).
 # 'true'.
 # 'false'.
 # Note: by default the manager will only start a new instance if one is not already running for the given game.

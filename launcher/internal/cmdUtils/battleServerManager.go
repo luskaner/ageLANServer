@@ -12,6 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
 	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
@@ -90,4 +91,8 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 		logger.Println("Exit code:", result.ExitCode)
 	}
 	return internal.ErrBattleServerManagerRun
+}
+
+func (c *Config) gameRequiresBattleServer() bool {
+	return c.gameId == game.AoM || c.gameId == game.AoE4
 }

@@ -28,7 +28,7 @@ func (exec Exec) GamePath() string {
 	return exec.Path()
 }
 
-func (exec Exec) GameProcesses() (steamProcess bool, xboxProcess bool) {
+func (exec Exec) GameProcesses() (steamProcess bool, steamMacOsNative bool, xboxProcess bool) {
 	xboxProcess = true
 	return
 }

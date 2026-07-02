@@ -141,9 +141,10 @@ func anyProcessExists(names []string) bool {
 
 func GameRunning() bool {
 	xbox := runtime.GOOS == "windows"
+	steamMacOsNative := runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
 	var gameProcesses []string
 	for gameId := range commonGame.AllGames.Iter() {
-		gameProcesses = append(gameProcesses, game.Processes(gameId, true, xbox)...)
+		gameProcesses = append(gameProcesses, game.Processes(gameId, true, steamMacOsNative, xbox)...)
 	}
 	someProcessRunning := func() bool {
 		return anyProcessExists(gameProcesses)

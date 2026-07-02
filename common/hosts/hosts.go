@@ -246,7 +246,7 @@ func UpdateHosts(hostsLock *fileLock.Lock, updater func(file *os.File) error, fl
 	return err
 }
 
-func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, flushFn func() (result *exec.Result)) (ok bool, err error) {
+func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, withMacOsExclusive bool, flushFn func() (result *exec.Result)) (ok bool, err error) {
 	var systemHosts bool
 	if hostFilePath == "" {
 		systemHosts = true
@@ -256,7 +256,7 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 		lineEnding = LineEnding
 	}
 	var hostsFileLock *fileLock.Lock
-	mappings := Mappings(gameId, ip)
+	mappings := Mappings(gameId, ip, withMacOsExclusive)
 	var restLines []Line
 	hostsFileLock, err = openLockedHostsFile(hostFilePath, os.O_RDWR)
 	if err != nil {

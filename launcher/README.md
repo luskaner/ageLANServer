@@ -11,6 +11,9 @@ system and reverting that configuration upon exit.
 - Linux with kernel 3.2:
     - x86-64 (recommended).
     - ARM64.
+- macOS Monterey (v12):
+    - Intel (recommended).
+    - Apple Silicon. Required for AoE II: DE native Steam version.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**

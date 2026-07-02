@@ -27,6 +27,7 @@ var allHosts []string
 var Cacert *gameCert.CA
 var LogEnabled bool
 var BasePath string
+var MacOsExclusiveMappings bool
 var dataTypeToString = map[int]string{
 	userData.TypeServer: "Own Backup",
 	userData.TypeBackup: "Original Backup",
@@ -46,7 +47,7 @@ func OpenMainFileLog(gameId string) error {
 func WriteFileLog(gameId string, name string) {
 	if commonLogger.FileLogger != nil {
 		commonLogger.Prefix(name)
-		allHosts = common.AllHosts(gameId)
+		allHosts = common.AllHosts(gameId, MacOsExclusiveMappings)
 		if err := writeLog(gameId, "Auxiliar processes status", writeProcessesStatus); err != nil {
 			log.Println(err)
 		}
