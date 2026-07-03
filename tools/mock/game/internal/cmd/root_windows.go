@@ -30,7 +30,7 @@ func rootCmd() error {
 		return fmt.Errorf("failed to get executable path (for gameId): %w", err)
 	} else {
 		executable := filepath.Base(executablePath)
-		if gameId = processGame.Game(executable); gameId == "" {
+		if gameId = processGame.Game(executable, false); gameId == "" {
 			return fmt.Errorf("no game id could be derived from %s", executable)
 		}
 	}
@@ -48,7 +48,7 @@ func rootCmd() error {
 		}
 	}
 	var someSucceeded bool
-	for _, domain := range common.AllHosts(gameId) {
+	for _, domain := range common.AllHosts(gameId, false) {
 		var connectionInsecureErr error
 		connectionSecureErr := server.CheckConnectionFromServer(domain, false, rootCAs)
 		if connectionSecureErr != nil {

@@ -39,10 +39,10 @@ func (h *HostMappings) String(lineEnding string) string {
 	return sb.String()
 }
 
-func Mappings(gameId string, ip net.IP) HostMappings {
+func Mappings(gameId string, ip net.IP, withMacOsExclusive bool) HostMappings {
 	mappings := make(HostMappings)
 	if ip != nil {
-		for _, host := range common.AllHosts(gameId) {
+		for _, host := range common.AllHosts(gameId, withMacOsExclusive) {
 			mappings.Set(Host(host), ip)
 		}
 	}

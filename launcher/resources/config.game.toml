@@ -15,7 +15,7 @@ RevertCommand = []
 # 1. Steam ('steam').
 # 2. Microsoft Store - Xbox ('msstore'). Not available for AoM: RT.
 # Unix-like:
-# 1. Steam ('steam'). Only on Linux.
+# 1. Steam ('steam'). Only on Linux for all games and Mac for AoE II.
 # 2. Steam with CrossOver ('steam_crossover').
 # 3. Steam with Wine ('steam_wine').
 # When using an official launcher, Client.Isolation.Metadata and Client.Isolation.Profiles must be 'required' or 'true'.
@@ -32,7 +32,7 @@ Executable = 'auto'
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
 ExecutableArgs = []
-# The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam' or 'msstore' it will be detected automatically.
+# The path to the game installation path, if 'auto' and 'Executable' resolves to 'steam', 'steam_crossover', 'steam_wine' or 'msstore' it will be detected automatically.
 # If 'Executable' is a custom launcher, this is required to be set. Otherwise, this will be ignored.
 # Used to find the game certificate store, file "cacert.pem".
 # Required that the game path can be found in all games except AoE I: DE and AoE IV: AE.

@@ -17,9 +17,10 @@ const name = common.Name + `-` + executables.LauncherConfigAdminAgent
 
 type (
 	SetupCommand struct {
-		IP          net.IP
-		Certificate []byte
-		GameId      string
+		IP                     net.IP
+		MacOsExclusiveMappings bool
+		Certificate            []byte
+		GameId                 string
 	}
 	RevertCommand struct {
 		IPs         bool

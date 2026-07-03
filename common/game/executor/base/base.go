@@ -8,6 +8,6 @@ import (
 
 type Executor interface {
 	Do(args []string, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result)
-	GameProcesses() (steamProcess bool, xboxProcess bool)
+	GameProcesses() (steamProcess bool, steamMacOsNative bool, xboxProcess bool)
 	fmt.Stringer
 }

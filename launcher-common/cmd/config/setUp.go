@@ -8,8 +8,9 @@ import (
 )
 
 type SetupBaseValues struct {
-	MapIp            net.IP
-	AddLocalCertData []byte
+	MapIp                  net.IP
+	MacOsExclusiveMappings bool
+	AddLocalCertData       []byte
 }
 
 func (v *SetupBaseValues) MapIpRef() *net.IP {
@@ -18,6 +19,10 @@ func (v *SetupBaseValues) MapIpRef() *net.IP {
 
 func (v *SetupBaseValues) AddLocalCertDataRef() *[]byte {
 	return &v.AddLocalCertData
+}
+
+func (v *SetupBaseValues) MacOsExclusiveMappingsRef() *bool {
+	return &v.MacOsExclusiveMappings
 }
 
 type SetupValues struct {
@@ -58,6 +63,7 @@ func InitSetUp(flags *pflag.FlagSet) (values *SetupBaseValues) {
 		nil,
 		"Add the certificate to the local machine's trusted root store",
 	)
+	flags.BoolVar(values.MacOsExclusiveMappingsRef(), "macExclusiveDomain", false, "macOS exclusive domain")
 	return values
 }
 

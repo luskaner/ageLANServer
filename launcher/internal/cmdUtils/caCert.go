@@ -13,7 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
 
-func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool) (exitCode int) {
+func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool, macOsExclusiveMappings bool) (exitCode int) {
 	logger.Println("Adding CA certificate to game if needed...")
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
@@ -21,7 +21,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		return internal.ErrConfigCACertAdd
 	}
 	var addCert bool
-	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId), caPool, canAddCert)
+	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId, macOsExclusiveMappings), caPool, canAddCert)
 	if !addCert || exitCode != common.ErrSuccess {
 		return
 	}

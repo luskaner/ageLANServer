@@ -23,10 +23,10 @@ var ipc net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
-func RunSetUp(gameId string, logRoot string, ipToMap net.IP, addCertData []byte) (err error, exitCode int) {
+func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
 	if ipc != nil {
-		return runSetUpAgent(gameId, ipToMap, addCertData)
+		return runSetUpAgent(gameId, ipToMap, macOsExclusiveMappings, addCertData)
 	}
 
 	var certificate *x509.Certificate
@@ -52,7 +52,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, addCertData []byte)
 		suffix = "_hosts"
 	}
 	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(gameId, ipToMap, certificate, file.Folder(), writer, func(options exec.Options) {
+		result = executor.RunSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -272,7 +272,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	return
 }
 
-func runSetUpAgent(gameId string, mapIp net.IP, certificate []byte) (err error, exitCode int) {
+func runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, certificate []byte) (err error, exitCode int) {
 	str := "-> Setup: "
 	if err = encoder.Encode(commonIpc.Setup); err != nil {
 		commonLogger.Println(str + "Could not decode")
@@ -289,7 +289,7 @@ func runSetUpAgent(gameId string, mapIp net.IP, certificate []byte) (err error, 
 		return
 	}
 	commonLogger.Println(str + strconv.Itoa(exitCode))
-	data := commonIpc.SetupCommand{GameId: gameId, IP: mapIp, Certificate: certificate}
+	data := commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, Certificate: certificate}
 	str = fmt.Sprintf("-> %v: ", data)
 	if err = encoder.Encode(data); err != nil {
 		commonLogger.Println(str + "Could not encode")

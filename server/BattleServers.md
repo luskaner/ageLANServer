@@ -2,14 +2,13 @@
 
 ### Path
 
-Depending on the game and version, the path can be one of these two:
-
-* `Drive:\Path\To\Game\BattleServer.exe`
-* `Drive:\Path\To\Game\BattleServer\BattleServer.exe`
+Depending on the game and version, the `BattleServer.exe` is included in the game installation:
 
 There is an exception: AoM: RT includes a buggy implementation and requires a more modern version. The best is to use
 the newer version found in AoE II: DE. The same applies for AoE IV: AE as it does not include the Battle Server
 executable.
+
+Note: AoE II: DE natively on macOS does not include it.
 
 ### Executable
 

@@ -11,8 +11,7 @@ type Values struct {
 	*cmd.GameIdValues
 	*cmd.LogRootValues
 	ServerExecutable              string
-	NoSteamProcess                bool
-	XboxProcess                   bool
+	ProcessNames                  []string
 	BattleServerLANRebroadcast    bool
 	BattleServerManagerExecutable string
 	BattleServerRegion            string
@@ -32,10 +31,9 @@ func SingleFlagSet(version string, runFn func(*pflag.FlagSet) (err error, exitCo
 	flags.StringVar(&values.BattleServerManagerExecutable, "bsManagerExecutable", "", "Path to the Battle Server Manager executable to monitor.")
 	flags.StringVar(&values.BattleServerRegion, "bsRegion", "", "Region of the battle server for stopping it after game closes.")
 	if runtime.GOOS == "windows" {
-		flags.BoolVar(&values.NoSteamProcess, "noSteamProcess", false, "Whether to not monitor the Steam process for game start/stop events.")
 		flags.BoolVar(&values.BattleServerLANRebroadcast, "bsLanRebroadcast", false, "Whether to rebroadcast LAN packets from the Battle Server to the local network.")
-		flags.BoolVar(&values.XboxProcess, "xboxProcess", false, "Whether to monitor the Xbox process for game start/stop events.")
 	}
+	flags.StringSliceVar(&values.ProcessNames, "processes", nil, "Process names to monitor for game start/stop events.")
 	flags.StringVar(&values.BaseDataPath, "baseDataPath", "", "Base path for user data.")
 	return
 }

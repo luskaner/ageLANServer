@@ -1,27 +1,40 @@
 package executor
 
 import (
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/game/executor/base"
 	"github.com/luskaner/ageLANServer/common/game/executor/custom"
+	"github.com/luskaner/ageLANServer/common/game/executor/steam"
 	"github.com/luskaner/ageLANServer/common/game/executor/steam/wine"
 	"github.com/luskaner/ageLANServer/common/game/executor/steam/wine/crossover"
 )
 
 func MakeExec(gameId string, executable string) base.Executor {
 	if executable != "auto" {
-		switch executable {
-		case "steam_crossover":
-			if executor, ok := crossover.NewExec(gameId); ok {
+		if executable == "steam" && gameId == game.AoE2 {
+			if executor, ok := steam.NewExec(gameId); ok {
 				return executor
 			}
-		case "steam_wine":
-			if executor, ok := wine.NewExec(gameId); ok {
-				return executor
+		} else {
+			switch executable {
+			case "steam_crossover":
+				if executor, ok := crossover.NewExec(gameId); ok {
+					return executor
+				}
+			case "steam_wine":
+				if executor, ok := wine.NewExec(gameId); ok {
+					return executor
+				}
+			default:
+				return custom.Exec{Executable: executable}
 			}
-		default:
-			return custom.Exec{Executable: executable}
 		}
 		return nil
+	}
+	if gameId == game.AoE2 {
+		if executor, ok := steam.NewExec(gameId); ok {
+			return executor
+		}
 	}
 	if executor, ok := crossover.NewExec(gameId); ok {
 		return executor

@@ -1,6 +1,7 @@
 package game
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common/game"
 )
 
@@ -21,7 +22,7 @@ func xboxProcess(gameId string) string {
 	return gameToXboxProcess[gameId]
 }
 
-func Game(process string) (gameId string) {
+func Game(process string, _ bool) (gameId string) {
 	if steamProcessToGame == nil {
 		steamProcessToGame = make(map[string]string, len(gameToSteamProcess))
 		for curGameId, procName := range gameToSteamProcess {
@@ -38,4 +39,15 @@ func Game(process string) (gameId string) {
 		}
 	}
 	return xboxProcessToGame[process]
+}
+
+func Processes(gameId string, steam bool, _ bool, xbox bool) []string {
+	processes := mapset.NewThreadUnsafeSet[string]()
+	if steam {
+		processes.Add(steamProcess(gameId))
+	}
+	if xbox {
+		processes.Add(xboxProcess(gameId))
+	}
+	return processes.ToSlice()
 }

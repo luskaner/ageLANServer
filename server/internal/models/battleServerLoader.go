@@ -6,6 +6,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/logger"
 )
 
 var BattleServersStore = make(map[string][]BattleServer)
@@ -26,8 +27,13 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 			Base: bs.Base,
 		})
 	}
-	if (gameId == game.AoE4 || gameId == game.AoM) && len(battleServers) == 0 {
-		return fmt.Errorf("no battle server")
+	if len(battleServers) == 0 {
+		switch gameId {
+		case game.AoE2:
+			logger.Println("No Battle Server for AoE 2: DE. macOS native clients will not be able to play/observe games.")
+		case game.AoE4, game.AoM:
+			return fmt.Errorf("no battle server")
+		}
 	}
 	BattleServersStore[gameId] = battleServers
 	return nil

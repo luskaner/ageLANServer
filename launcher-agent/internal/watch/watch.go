@@ -10,7 +10,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/common/process/game"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/gameLogs"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
@@ -97,7 +96,7 @@ func Watch(values *agent.Values, exitCode *int) {
 		})
 	}()
 	commonLogger.Println("Waiting up to 1 minute for game to start...")
-	processes := waitUntilAnyProcessExist(game.Processes(values.GameId, !values.NoSteamProcess, values.XboxProcess))
+	processes := waitUntilAnyProcessExist(values.ProcessNames)
 	if len(processes) == 0 {
 		commonLogger.Println("Failed to find the game.")
 		*exitCode = internal.ErrGameTimeoutStart

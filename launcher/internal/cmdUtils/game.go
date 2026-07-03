@@ -43,7 +43,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 			str += ", authorize it in firewall if needed"
 		}
 		logger.Println(str + "...")
-		steamProcess, xboxProcess := executer.GameProcesses()
+		steamProcess, steamMacOsNative, xboxProcess := executer.GameProcesses()
 		var err error
 		var f *os.File
 		if f, err = commonLogger.FileLogger.Open("agent"); err != nil {
@@ -53,6 +53,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		result := executor.StartAgent(
 			c.gameId,
 			steamProcess,
+			steamMacOsNative,
 			xboxProcess,
 			c.serverExe,
 			canBroadcastBattleServer == "true",

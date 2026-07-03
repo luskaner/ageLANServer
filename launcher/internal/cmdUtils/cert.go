@@ -56,8 +56,8 @@ func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.C
 	return
 }
 
-func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, canAdd string, customCertFile bool) (errorCode int) {
-	hosts := common.AllHosts(gameId)
+func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, canAdd string, customCertFile bool, macOsExclusiveMappings bool) (errorCode int) {
+	hosts := common.AllHosts(gameId, macOsExclusiveMappings)
 	var addCert bool
 	if customCertFile {
 		addCert = true
