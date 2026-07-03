@@ -28,5 +28,5 @@ func UserProfilePath(gameId string) string {
 	if gameId != game.AoE2 {
 		return ""
 	}
-	return os.ExpandEnv(`HOME`) + applicationSupport + "Feral Interactive/Age Of Empires II/VFS/User"
+	return os.ExpandEnv("$HOME") + applicationSupport + "Feral Interactive/Age Of Empires II/VFS/User"
 }
