@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -14,7 +15,7 @@ func main() {
 	common.ChdirToExe()
 	err, exitCode := cmd.Execute()
 	if err != nil {
-		print(err)
+		fmt.Print(err)
 	}
 	os.Exit(exitCode)
 }

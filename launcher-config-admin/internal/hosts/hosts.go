@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common/fileLock"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
+	commonHosts "github.com/luskaner/ageLANServer/common/hosts"
 	"github.com/luskaner/ageLANServer/common/hosts/text"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 )
 
 func restoreBackup(backFile *os.File, mainLock *fileLock.Lock) error {
-	return launcherCommonHosts.UpdateHosts(mainLock, func(f *os.File) error {
+	return commonHosts.UpdateHosts(mainLock, func(f *os.File) error {
 		_, err := f.Seek(0, io.SeekStart)
 		if err != nil {
 			return err
@@ -48,7 +48,7 @@ func restoreInPlace(mainLock *fileLock.Lock) error {
 		_ = mainLock.Unlock()
 		return err
 	}
-	return launcherCommonHosts.UpdateHosts(mainLock, func(f *os.File) error {
+	return commonHosts.UpdateHosts(mainLock, func(f *os.File) error {
 		var lines []string
 		var line string
 
@@ -60,7 +60,7 @@ func restoreInPlace(mainLock *fileLock.Lock) error {
 		scanner := bufio.NewScanner(decodingReader)
 		for scanner.Scan() {
 			line = scanner.Text()
-			ok, _, parsedLine := launcherCommonHosts.ParseLine(line, true)
+			ok, _, parsedLine := commonHosts.ParseLine(line, true)
 			if !ok {
 				continue
 			}
@@ -86,7 +86,7 @@ func restoreInPlace(mainLock *fileLock.Lock) error {
 			return err
 		}
 
-		linesJoined := strings.Join(lines, launcherCommonHosts.LineEnding)
+		linesJoined := strings.Join(lines, commonHosts.LineEnding)
 		var linesJoinedEncoded string
 		linesJoinedEncoded, err = enc.NewEncoder().String(linesJoined)
 		if err != nil {
@@ -109,7 +109,7 @@ func restoreInPlace(mainLock *fileLock.Lock) error {
 func RemoveHosts() error {
 	var bakExists bool
 	var removeBak bool
-	bakLock, err := launcherCommonHosts.OpenLockedBackup(os.O_RDWR)
+	bakLock, err := commonHosts.OpenLockedBackup(os.O_RDWR)
 	if err == nil {
 		bakExists = true
 		defer func() {
@@ -120,12 +120,12 @@ func RemoveHosts() error {
 			}
 		}()
 	}
-	mainLock, err := launcherCommonHosts.OpenLockedMain(os.O_RDWR)
+	mainLock, err := commonHosts.OpenLockedMain(os.O_RDWR)
 	var createdMain bool
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			if bakExists {
-				mainLock, err = launcherCommonHosts.OpenLockedMain(os.O_RDWR | os.O_CREATE)
+				mainLock, err = commonHosts.OpenLockedMain(os.O_RDWR | os.O_CREATE)
 				if err != nil {
 					return err
 				}

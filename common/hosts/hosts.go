@@ -127,7 +127,7 @@ func missingIpMappings(mappings *HostMappings, hostFile *os.File) (restLines []L
 		var keptHosts []Host
 		var removedHosts bool
 		for i := 0; i < len(hosts); i++ {
-			if indexesToAvoid.ContainsOne(i) {
+			if indexesToAvoid.ContainsOne(i) || commentHost(hosts[i]) {
 				removedHosts = true
 			} else {
 				keptHosts = append(keptHosts, hosts[i])
