@@ -14,7 +14,7 @@ func FlushDns() (result *exec.Result) {
 	path := which.Which("resolvectl")
 	if path != "" {
 		commonLogger.Println("Flushing DNS cache...")
-		options := exec.Options{File: "systemctl", SpecialFile: true, ExitCode: true, Wait: true, Args: []string{"restart", "systemd-resolved"}}
+		options := exec.Options{File: "systemctl", SpecialFile: true, UseWorkingPath: true, ExitCode: true, Wait: true, Args: []string{"restart", "systemd-resolved"}}
 		var suffix string
 		if internal.SetUp == nil {
 			suffix = "_flushCache"
