@@ -15,6 +15,7 @@ var exitBeforeRunning bool
 var executableGame string
 
 func rootCmd(args []string) error {
+	log.Printf("Arguments: %v", os.Args)
 	if exitBeforeRunning {
 		log.Printf("Exiting before running the game")
 		return nil
@@ -36,7 +37,8 @@ func rootCmd(args []string) error {
 	return nil
 }
 
-	log.Printf("Arguments: %v", os.Args)
+func Execute() error {
+	log.Printf("Arguments: %s", os.Args)
 	flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
 	flag.Parse()
 	return rootCmd(flag.Args())
