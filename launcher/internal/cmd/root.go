@@ -161,22 +161,19 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	var atomicExitCode atomic.Int32
 	atomicExitCode.Store(int32(common.ErrSuccess))
-	var signaled bool
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Println(r)
 			logger.Println(string(debug.Stack()))
 			atomicExitCode.Store(int32(common.ErrGeneral))
 		}
-		if !signaled {
-			if atomicExitCode.Load() != int32(common.ErrSuccess) {
-				config.Revert()
-			}
-			logger.WriteFileLog(gameId, "before exit")
-			commonLogger.CloseFileLog()
-			_ = lock.Unlock()
-			exitCode = int(atomicExitCode.Load())
+		if atomicExitCode.Load() != int32(common.ErrSuccess) {
+			config.Revert()
 		}
+		logger.WriteFileLog(gameId, "before exit")
+		commonLogger.CloseFileLog()
+		_ = lock.Unlock()
+		exitCode = int(atomicExitCode.Load())
 	}()
 	logger.WriteFileLog(gameId, "start")
 	isAdmin := commonExecutor.IsAdmin()
@@ -430,8 +427,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			config.Revert()
 			commonLogger.CloseFileLog()
 			_ = lock.Unlock()
-			exitCode = int(atomicExitCode.Load())
-			signaled = true
+			os.Exit(int(atomicExitCode.Load()))
 		}
 	}()
 	agentWaitDuration := time.Minute
