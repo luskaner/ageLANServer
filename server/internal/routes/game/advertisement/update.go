@@ -45,7 +45,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
 		}
 
-		if gameTitle == game.AoE1 || gameTitle == game.AoE3 || gameTitle == game.AoE4 {
+		if gameTitle == game.AoE2 || gameTitle == game.AoM || gameTitle == game.AoE4 {
 			response = adv.UnsafeEncode(gameTitle, battleServers)
 		}
 		ok = true
