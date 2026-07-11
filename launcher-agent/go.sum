@@ -1,3 +1,4 @@
 github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0 h1:EB9EKyv7koSQSIR3+DvnwOjpGzCUD2HjtqPuFOFOj/k=
 github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
 github.com/spf13/pflag v1.0.10 h1:4EBh2KAYBwaONj6b2Ye1GiHfwjqyROoF4RwYO+vPwFk=
+github.com/spf13/pflag v1.0.10/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=

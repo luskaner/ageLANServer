@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26.4'
+          go-version: '1.26.5'
           cache-dependency-path: |
             go.work.sum
       - name: Set up Go legacy
@@ -28,7 +28,7 @@ jobs:
           dir="${{ vars.GOROOT_LEGACY }}"
           subdir="go-win7"
           finaldir="$dir/$subdir"
-          curl -L https://github.com/XTLS/go-win7/releases/download/patched-1.26.4/go-for-win7-linux-amd64.zip -o go.zip
+          curl -L https://github.com/XTLS/go-win7/releases/download/patched-1.26.5/go-for-win7-linux-amd64.zip -o go.zip
           sudo mkdir -p "$finaldir"
           sudo unzip -q go.zip -d "$finaldir"
           rm go.zip
