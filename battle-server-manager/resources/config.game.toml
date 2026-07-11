@@ -14,6 +14,15 @@ Name = 'auto'
 # Recommended: leave to 'auto'.
 # Note: This only applies to the server.
 Host = 'auto'
+# Path to the 'certificates' folder of the server.
+# AoE IV/AoM: Folder containing cert.pem and key.pem
+# Other games: Folder containing selfsigned_cert.pem and selfsigned_key.pem
+# If 'auto', it will be try to execute the server binary in this directory order:
+# 1. './server/resources/certificates/'
+# 2. '../server/resources/certificates/'
+# 3. '../../server/resources/certificates/'
+# Note: You may use environment variables.
+CertsPath = 'auto'
 [Executable]
 # Path to 'BattleServer.exe' executable including it.
 # If 'auto' it will try to find it using Steam and then Xbox (Windows-only).
@@ -49,25 +58,3 @@ WebSocket = 0
 # Mainly Observer port (Ignored for AoE: DE).
 # Argument: -outOfBandPort
 OutOfBand = 0
-
-# SSL files to use.
-# If 'auto' if 'auto', it will be try to execute the server binary in this directory order:
-# 1. './server/resources/certificates/'
-# 2. '../server/resources/certificates/'
-# 3. '../../server/resources/certificates/'
-[SSL]
-Auto = true
-# Path to the SSL certificate file to use.
-# If 'Auto' is true, this is ignored, otherwise:
-# AoE IV/AoM: Path to cert.pem
-# Other games: Path to selfsigned_cert.pem
-# Argument: -sslCert
-# Note: You may use environment variables.
-CertFile = ''
-# Path to the SSL key file to use.
-# If 'Auto' is true, this is ignored, otherwise:
-# AoE IV/AoM: Path to key.pem
-# Other games: Path to selfsigned_key.pem
-# Argument: -sslKey
-# Note: You may use environment variables.
-KeyFile = ''

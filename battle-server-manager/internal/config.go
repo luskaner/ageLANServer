@@ -11,17 +11,11 @@ type Ports struct {
 	OutOfBand int
 }
 
-type SSL struct {
-	Auto     bool
-	CertFile string
-	KeyFile  string
-}
-
 type Configuration struct {
 	Region     string
 	Name       string
 	Host       string
+	CertsPath  string
 	Executable Executable
 	Ports      Ports
-	SSL        SSL
 }

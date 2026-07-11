@@ -73,7 +73,8 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 }
 
 func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (exitCode int) {
-	if exists, certificateFolder, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(serverExecutablePath); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
+	certificateFolder := common.CertificatePairFolder(serverExecutablePath)
+	if exists, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(certificateFolder); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
 			logger.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
 			exitCode = internal.ErrServerCertMissingExpired

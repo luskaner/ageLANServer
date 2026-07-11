@@ -1,6 +1,5 @@
 .github
 .git
-battle-server-broadcast
 build
 launcher*/
 server/resources/unix

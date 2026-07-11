@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/cmd/genCert"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
@@ -73,7 +75,9 @@ func GenerateCertificatePair(certificateFolder string, optionsFn func(options ex
 	if _, err := os.Stat(exePath); err != nil {
 		return nil
 	}
-	options := exec.Options{File: exePath, Wait: true, Args: []string{"-r"}, ExitCode: true}
+	values, singleFs := genCert.SingleFlagSet("", nil)
+	values.Replace = true
+	options := exec.Options{File: exePath, Wait: true, Args: cmd.FlagSetToArgs(singleFs.Fs(), false), ExitCode: true}
 	optionsFn(options)
 	result = options.Exec()
 	return

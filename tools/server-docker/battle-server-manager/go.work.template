@@ -5,5 +5,5 @@ toolchain go1.26.4
 use (
 	common
 	battle-server-broadcast
-	server
+	battle-server-manager
 )
