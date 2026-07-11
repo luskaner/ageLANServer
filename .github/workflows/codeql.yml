@@ -94,9 +94,9 @@ jobs:
           go build -o build/tools/scripts/copyServerResources.exe ./tools/scripts/cmd/copyServerResources.go
           go build -o build/tools/scripts/createServerResourcesFolder.exe ./tools/scripts/cmd/createServerResourcesFolder.go
           go build -o build/tools/scripts/generateGoreleaserConfig.exe ./tools/scripts/cmd/generateGoreleaserConfig.go
-          go build -o build/tools/mock/battle-server.exe ./build/tools/mock/battle-server/main_windows.go
-          go build -o build/tools/mock/launcher.exe ./build/tools/mock/launcher/main.go
-          go build -o build/tools/mock/game.exe ./build/tools/mock/game/main_windows.go
+          go build -o build/tools/battle-server.exe ./build/tools/mock/battle-server/main_windows.go
+          go build -o build/tools/launcher.exe ./build/tools/mock/launcher/main.go
+          go build -o build/tools/game.exe ./build/tools/mock/game/main_windows.go
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
