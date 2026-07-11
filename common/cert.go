@@ -100,8 +100,7 @@ func CertificatePairFolder(executablePath string) string {
 	return folder
 }
 
-func CertificatePairs(executablePath string) (ok bool, parentDir string, cert string, key string, caCert string, selfSignedCert string, selfSignedKey string) {
-	parentDir = CertificatePairFolder(executablePath)
+func CertificatePairs(parentDir string) (ok bool, cert string, key string, caCert string, selfSignedCert string, selfSignedKey string) {
 	if parentDir == "" {
 		return
 	}

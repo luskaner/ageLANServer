@@ -165,7 +165,7 @@ func runStart(args []string) (err error, exitCode int) {
 	}
 	resolvedCertFile, resolvedKeyFile, err := cmdUtils.ResolveSSLFilesPath(
 		values.GameId,
-		cfg.SSL,
+		cfg.CertsPath,
 	)
 	if err != nil {
 		commonLogger.Printf("could not resolve SSL files: %s\n", err)
@@ -245,14 +245,12 @@ func initConfig(fs *pflag.FlagSet, values *bsManager.StartValues) *internal.Conf
 		"Region":               "auto",
 		"Name":                 "auto",
 		"Host":                 "auto",
+		"CertsPath":            "auto",
 		"Executable.Path":      "auto",
 		"Executable.ExtraArgs": []string{},
 		"Ports.Bs":             0,
 		"Ports.WebSocket":      0,
 		"Ports.OutOfBand":      0,
-		"SSL.Auto":             true,
-		"SSL.CertFile":         "",
-		"SSL.KeyFile":          "",
 	}
 
 	var fileCandidates []string

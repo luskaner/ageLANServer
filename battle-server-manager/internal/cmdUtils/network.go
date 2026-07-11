@@ -9,24 +9,25 @@ import (
 )
 
 func GeneratePortsAsNeeded(ports []int) (generatedPorts []int, err error) {
-	var portsToGenerate int
-	for _, port := range ports {
+	var missingIndexes []int
+	for i, port := range ports {
 		if port == 0 {
-			portsToGenerate++
+			missingIndexes = append(missingIndexes, i)
 		}
 	}
-	var finalPorts []int
-	if portsToGenerate > 0 {
+	missingIndexesCount := len(missingIndexes)
+	if missingIndexesCount > 0 {
 		commonLogger.Println("Generating ports...")
-		generatedPorts, err = findUnusedPorts(portsToGenerate)
+		generatedPorts, err = findUnusedPorts(missingIndexesCount)
 		if err != nil {
 			return nil, err
 		}
-		finalPorts = append(generatedPorts, ports[len(generatedPorts):]...)
-	} else {
-		finalPorts = ports
+		for _, i := range missingIndexes {
+			missingIndexesCount--
+			ports[i] = generatedPorts[missingIndexesCount]
+		}
 	}
-	return finalPorts, nil
+	return ports, nil
 }
 
 func Available(port int) bool {
@@ -43,10 +44,12 @@ func listenTCP(address string) (err error, listener net.Listener) {
 	var addr *net.TCPAddr
 	addr, err = net.ResolveTCPAddr("tcp4", address)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	listener, err = net.ListenTCP("tcp4", addr)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	return
