@@ -422,8 +422,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		_, ok := <-sigs
-		if ok {
+		_, sigOk := <-sigs
+		if sigOk {
 			config.Revert()
 			commonLogger.CloseFileLog()
 			_ = lock.Unlock()
@@ -432,15 +432,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}()
 	agentWaitDuration := time.Minute
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
-	var proc *os.Process
-	if _, proc, err = commonProcess.Process(agent); err == nil && proc != nil {
+	if _, proc, localErr := commonProcess.Process(agent); localErr == nil && proc != nil {
 		logger.Printf("'agent' is running, waiting up to %s for it to end...\n", agentWaitDuration)
 		if !commonProcess.WaitForProcess(proc, &agentWaitDuration) {
 			logger.Println("'agent' did not exit on its own.")
 		}
 	}
 	cfgAdminAgentWaitDuration := 10 * time.Second
-	if _, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); err == nil && proc != nil {
+	if _, proc, localErr := commonProcess.Process(executables.NativeFileName(false, executables.LauncherConfigAdminAgent)); localErr == nil && proc != nil {
 		logger.Printf("'config-admin-agent' is running, waiting up to %s for it to end...\n", cfgAdminAgentWaitDuration)
 		if !commonProcess.WaitForProcess(proc, &cfgAdminAgentWaitDuration) {
 			logger.Println("'config-admin-agent' did not exit on its own.")
@@ -486,8 +485,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 		config.SetConfigAdminAgentStarted()
 	}
-	_, proc, err = commonProcess.Process(executables.NativeFileName(false, executables.Server))
-	if err == nil && proc != nil {
+	if _, proc, localErr := commonProcess.Process(executables.NativeFileName(false, executables.Server)); localErr == nil && proc != nil {
 		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 	}
 	if err = commonLogger.FileLogger.Buffer("revert_command_initial", func(writer io.Writer) {
@@ -535,8 +533,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		multicastIPsStr := cfg.Server.AnnounceMulticastGroups
 		multicastIPs := mapset.NewThreadUnsafeSetWithSize[netip.Addr](len(multicastIPsStr))
 		for _, str := range multicastIPsStr {
-			var IP netip.Addr
-			if IP, err = netip.ParseAddr(str); err == nil && IP.Is4() && IP.IsMulticast() {
+			if IP, localErr := netip.ParseAddr(str); localErr == nil && IP.Is4() && IP.IsMulticast() {
 				multicastIPs.Add(IP)
 			} else {
 				logger.Printf("Invalid multicast group \"%s\"\n", str)
@@ -574,8 +571,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
 				return
 			}
-			var addr netip.Addr
-			if addr, err = netip.ParseAddr(serverHost); err == nil && addr.Is6() {
+			if addr, localErr := netip.ParseAddr(serverHost); localErr == nil && addr.Is6() {
 				logger.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
 				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
 				return
