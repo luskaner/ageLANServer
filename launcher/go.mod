@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
 	github.com/knadh/koanf/v2 v2.3.5
-	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.0
+	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.57.0
 	golang.org/x/sys v0.47.0
