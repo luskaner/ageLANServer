@@ -7,9 +7,9 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 #### Stable
 
-- **Windows**: 7 (or equivalent, 10 or higher recommended).
-- **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Monterey (v12).
+- **Windows**: 7 or equivalent (10 or higher recommended).
+- **Linux**: kernel 3.2 (5.10 or higher recommended, see [here](https://go.dev/wiki/Linux) for more details).
+- **macOS**: Monterey v12 (Sonoma v14 or higher recommended).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
@@ -31,6 +31,10 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 * `aoe-api.reliclink.com`: legacy domain for AoE I: DE, AoE II: DE, AoE III: DE and AoE IV: AE.
 * `*.worldsedgelink.com`: current domain for all games.
+
+#### AoE 2: DE - Steam macOS
+
+* `arthurlive-api.worldsedgelink.com`: exclusive domain.
 
 ### Playfab
 
@@ -177,8 +181,7 @@ the [`responses`](resources/responses) base directory.
           of all blessings, even blessings or levels not used. Used by the server to grant them all to the users.
         * [`gauntlet.json`](resources/responses/athens/playfab/public-production/2/gauntlet.json): General
           settings of the Challenge mode.
-        * [
-          `gauntlet_mission_poools.json`](resources/responses/athens/playfab/public-production/2/gauntlet_mission_pools.json):
+        * [`gauntlet_mission_poools.json`](resources/responses/athens/playfab/public-production/2/gauntlet_mission_pools.json):
           Listing of missions and their pools.
 
 ## Starting and configuring Online-like Battle Servers
