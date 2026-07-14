@@ -21,11 +21,9 @@ var sessionLetters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func generateSessionId() string {
 	sessionId := make([]rune, 30)
-	internal.WithRng(func(rand *internal.RandReader) {
-		for j := range sessionId {
-			sessionId[j] = sessionLetters[rand.IntN(len(sessionLetters))]
-		}
-	})
+	for j := range sessionId {
+		sessionId[j] = sessionLetters[internal.SecureIntN(len(sessionLetters))]
+	}
 	return string(sessionId)
 }
 

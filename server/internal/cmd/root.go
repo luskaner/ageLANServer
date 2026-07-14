@@ -109,6 +109,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if !values.Deterministic {
 		seed = uint64(time.Now().UnixNano())
 	}
+	internal.Deterministic = values.Deterministic
 	internal.InitializeRng(seed)
 	if values.Id == "" {
 		values.Id = uuid.NewString()

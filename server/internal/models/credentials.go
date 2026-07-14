@@ -11,13 +11,7 @@ import (
 const credentialsExpiry = time.Minute * 5
 
 func generateSignature() string {
-	b := make([]byte, 32)
-	i.WithRng(func(rand *i.RandReader) {
-		for j := 0; j < len(b); j++ {
-			b[j] = byte(rand.UintN(256))
-		}
-	})
-	hash := sha256.Sum256(b)
+	hash := sha256.Sum256(i.SecureBytes(32))
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
