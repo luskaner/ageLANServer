@@ -56,7 +56,11 @@ func (c *CACert) Backup() (err error) {
 		return
 	}
 
-	_ = backupFile.Sync()
+	if err = backupFile.Sync(); err != nil {
+		_ = backupFile.Close()
+		_ = os.Remove(backupPath)
+		return
+	}
 	return
 }
 

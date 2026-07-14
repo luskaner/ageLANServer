@@ -93,8 +93,10 @@ func (d *PersistentFile) WithWriter(fn func(writer io.Writer) error) (err error)
 	if err = d.fileLock.File.Truncate(0); err != nil {
 		return
 	}
-	err = fn(d.fileLock.File)
-	_ = d.fileLock.File.Sync()
+	if err = fn(d.fileLock.File); err != nil {
+		return
+	}
+	err = d.fileLock.File.Sync()
 	return err
 }
 

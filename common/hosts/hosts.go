@@ -183,10 +183,14 @@ func UpdateHosts(hostsLock *fileLock.Lock, updater func(file *os.File) error, fl
 	closed := false
 	var tmpLock *fileLock.Lock = nil
 
-	closeHostsFile := func() {
-		_ = hostsLock.File.Sync()
-		_ = hostsLock.Unlock()
+	closeHostsFile := func() error {
+		syncErr := hostsLock.File.Sync()
+		unlockErr := hostsLock.Unlock()
 		closed = true
+		if syncErr != nil {
+			return syncErr
+		}
+		return unlockErr
 	}
 
 	removeTmpFile := func() {
@@ -198,7 +202,7 @@ func UpdateHosts(hostsLock *fileLock.Lock, updater func(file *os.File) error, fl
 
 	defer func() {
 		if !closed {
-			closeHostsFile()
+			_ = closeHostsFile()
 		}
 		if tmpLock != nil {
 			removeTmpFile()
@@ -236,7 +240,9 @@ func UpdateHosts(hostsLock *fileLock.Lock, updater func(file *os.File) error, fl
 			return err
 		}
 		removeTmpFile()
-		closeHostsFile()
+		if err = closeHostsFile(); err != nil {
+			return err
+		}
 		if flushFn != nil {
 			_ = flushFn()
 		}
