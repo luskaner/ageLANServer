@@ -8,12 +8,12 @@ Servers.
 - Windows without S edition/mode (recommended):
     - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
-- Linux with kernel 3.2:
-  - x86-64 (recommended).
-  - ARM64.
-- macOS Monterey (v12):
-  - Intel (recommended).
-  - Apple Silicon.
+- Linux with kernel 3.2 (5.10 or higher recommended):
+    - x86-64 (recommended).
+    - ARM64.
+- macOS Monterey v12 (Sonoma v14 or higher recommended):
+    - Intel (recommended).
+    - Apple Silicon.
 
 ## Features
 
