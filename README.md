@@ -1,4 +1,5 @@
 # Age LAN Server
+<img width="1024" height="572" alt="ageLANServer logo" src="https://github.com/user-attachments/assets/3a467da6-048c-460e-b78f-1fdf46629f70" />
 
 Age LAN Server (formerly *AoE 2 DE LAN Server*) is a web server (with its launcher) that allows you to play multiplayer
 lobbies without having an
@@ -193,7 +194,7 @@ it will require admin rights elevation.**
 - Age of Empires II: Definitive Edition
   on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
-  compatible Windows version*). Recommended a late 2023 version or later.
+  compatible Windows version*). Minimum a mid 2024 version or later.
 - Age of Empires III: Definitive Edition
   on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
   or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
