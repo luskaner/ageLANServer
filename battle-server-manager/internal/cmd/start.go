@@ -264,11 +264,7 @@ func initConfig(fs *pflag.FlagSet, values *bsManager.StartValues) *internal.Conf
 
 	usedFile, err := common.LoadKoanfLayers(k, defaults, fileCandidates, toml.Parser(), fs, nil, executables.BattleServerManager)
 	if err != nil {
-		if fileErr, ok := errors.AsType[*common.KoanfFileLoadError](err); ok {
-			commonLogger.Println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
-		} else {
-			commonLogger.Println("Error loading config:", err.Error())
-		}
+		common.LogKoanfLoadError(commonLogger.Println, err)
 		os.Exit(common.ErrConfigParse)
 	}
 	if values.GameCfgFile != "" && usedFile == "" {

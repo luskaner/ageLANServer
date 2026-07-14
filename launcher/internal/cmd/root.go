@@ -744,11 +744,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 	}
 	usedFile, err := common.LoadKoanfLayers(k, defaults, mainfileCandidates, toml.Parser(), fs, bindings, executables.Launcher)
 	if err != nil {
-		if fileErr, ok := errors.AsType[*common.KoanfFileLoadError](err); ok {
-			logger.Println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
-		} else {
-			logger.Println("Error loading config:", err.Error())
-		}
+		common.LogKoanfLoadError(logger.Println, err)
 		os.Exit(common.ErrConfigParse)
 	}
 	if cfgFile != "" && usedFile == "" {

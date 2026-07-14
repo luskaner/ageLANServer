@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -25,6 +26,16 @@ func (e *KoanfFileLoadError) Error() string {
 
 func (e *KoanfFileLoadError) Unwrap() error {
 	return e.Err
+}
+
+// LogKoanfLoadError reports a config load error via the provided log function,
+// distinguishing a file parse error from a generic load error.
+func LogKoanfLoadError(println func(a ...any), err error) {
+	if fileErr, ok := errors.AsType[*KoanfFileLoadError](err); ok {
+		println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
+	} else {
+		println("Error loading config:", err.Error())
+	}
 }
 
 // LoadKoanfLayers applies config layers in this order:
