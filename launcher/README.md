@@ -8,12 +8,12 @@ system and reverting that configuration upon exit.
 - Windows without S edition/mode (recommended):
     - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
-- Linux with kernel 3.2:
+- Linux with kernel 3.2 (5.10 or higher recommended):
     - x86-64 (recommended).
     - ARM64.
-- macOS Monterey (v12):
+- macOS Monterey v12 (Sonoma v14 or higher recommended):
     - Intel (recommended).
-    - Apple Silicon. Required for AoE II: DE native Steam version.
+    - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
