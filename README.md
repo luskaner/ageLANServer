@@ -151,9 +151,9 @@ is in maintenance or is eventually shutdown.
 
 #### Stable
 
-- **Windows**: 7 (or equivalent, 10 or higher recommended).
-- **Linux**: kernel 3.2 (see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Monterey (v12).
+- **Windows**: 7 or equivalent (10 or higher recommended).
+- **Linux**: kernel 3.2 (5.10 or higher recommended, see [here](https://go.dev/wiki/Linux) for more details).
+- **macOS**: Monterey v12 (Sonoma v14 or higher recommended).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system and configuration.
@@ -174,10 +174,10 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Windows without S edition/mode (recommended):
     - 7 on x86-64 (10 or higher recommended).
     - 11 on ARM.
-- Linux with kernel 3.2:
+- Linux with kernel 3.2 (5.10 or higher recommended):
     - x86-64 (recommended).
     - ARM64.
-- macOS Monterey (v12):
+- macOS Monterey v12 (Sonoma v14 or higher recommended):
     - Intel (recommended).
     - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
 
