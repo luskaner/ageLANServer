@@ -1,0 +1,4 @@
+name: ageLANServer-server-host
+include:
+  - ./server/base.include.yml
+  - ./server/host.include.yml

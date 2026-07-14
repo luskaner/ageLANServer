@@ -1,0 +1,5 @@
+services:
+  server:
+    network_mode: bridge
+    ports:
+      - "443:443/tcp"

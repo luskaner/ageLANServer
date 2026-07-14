@@ -1,0 +1,4 @@
+services:
+  server:
+    ports:
+      - "31978:31978/udp"

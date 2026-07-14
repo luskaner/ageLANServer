@@ -1,0 +1,7 @@
+services:
+  server:
+    environment:
+      - GAME_ID=age1
+  battle-server-manager:
+    environment:
+      - GAME_ID=age1

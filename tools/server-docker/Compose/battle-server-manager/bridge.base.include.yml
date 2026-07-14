@@ -1,0 +1,7 @@
+services:
+  server:
+    network_mode: "service:battle-server-manager"
+  battle-server-manager:
+    ports:
+      - "27012:27012/tcp"
+      - "27112:27112/tcp"

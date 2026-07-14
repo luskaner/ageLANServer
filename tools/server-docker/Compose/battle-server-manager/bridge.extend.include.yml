@@ -1,0 +1,6 @@
+include:
+  - ./bridge.base.include.yml
+services:
+  battle-server-manager:
+    ports:
+      - "27212:27212/tcp"

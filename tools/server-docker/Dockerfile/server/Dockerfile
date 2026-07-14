@@ -3,7 +3,7 @@
 # Compile
 FROM golang:1.26-alpine3.24 AS compiler
 WORKDIR /app
-COPY tools/server-docker/server/go.work.template go.work
+COPY tools/server-docker/Dockerfile/server/go.work.template go.work
 COPY common common
 COPY battle-server-broadcast battle-server-broadcast
 COPY server server
@@ -26,8 +26,7 @@ EXPOSE 31978/udp
 VOLUME /app/server/resources/config
 VOLUME /app/server/resources/certificates
 VOLUME /tmp/ageLANServer/battle-servers
-VOLUME /app/logs
 WORKDIR /app/server
 COPY --from=compiler /app/build/resources resources
 COPY --from=compressor /app/server .
-ENTRYPOINT exec ./server -e $GAME_ID --logRoot=/app/logs/$GAME_ID/$LOG_SUBFOLDER $SERVER_ARGS
+ENTRYPOINT ["./server"]

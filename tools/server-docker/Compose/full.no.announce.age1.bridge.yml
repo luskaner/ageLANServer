@@ -1,0 +1,6 @@
+name: ageLANServer-server-no-announce-full-age1-bridge
+include:
+  - ./battle-server-manager/base.include.yml
+  - ./battle-server-manager/age1.include.yml
+  - ./server.no.announce.bridge.yml
+  - ./battle-server-manager/bridge.base.include.yml

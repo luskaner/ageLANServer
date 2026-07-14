@@ -3,7 +3,7 @@
 # Compile
 FROM golang:1.26-alpine3.24 AS compiler
 WORKDIR /app
-COPY tools/server-docker/genCert/go.work.template go.work
+COPY tools/server-docker/Dockerfile/genCert/go.work.template go.work
 COPY common common
 COPY server-genCert server-genCert
 RUN mkdir -p build/resources/certificates

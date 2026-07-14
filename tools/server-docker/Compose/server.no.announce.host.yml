@@ -1,0 +1,5 @@
+name: ageLANServer-server-no-announce-host
+include:
+  - ./server/base.include.yml
+  - ./server/host.include.yml
+  - ./server/no.announce.include.yml

@@ -1,11 +1,10 @@
-name: ageLANServer
 services:
   gen-cert:
     environment:
       - GENCERT_ARGS=${GENCERT_ARGS:-}
     build:
-      context: ../..
-      dockerfile: tools/server-docker/genCert/Dockerfile
+      context: ../../../..
+      dockerfile: tools/server-docker/Dockerfile/genCert/Dockerfile
     volumes:
       - certs:/app/server/resources/certificates
     network_mode: none
@@ -13,11 +12,10 @@ services:
   server:
     environment:
       - GAME_ID=${GAME_ID:-}
-      - LOG_SUBFOLDER=${LOG_SUBFOLDER:-}
       - SERVER_ARGS=${SERVER_ARGS:-}
     build:
-      context: ../..
-      dockerfile: tools/server-docker/server/Dockerfile
+      context: ../../../..
+      dockerfile: tools/server-docker/Dockerfile/server/Dockerfile
     depends_on:
       gen-cert:
         condition: service_completed_successfully
@@ -25,8 +23,11 @@ services:
       - config_server:/app/server/resources/config:ro
       - logs:/app/logs
       - certs:/app/server/resources/certificates:ro
-    command: $SERVER_ARGS
-    network_mode: "host"
+      - type: bind
+        source: "./entrypoint.sh"
+        target: /app/entrypoint.sh
+        read_only: true
+    entrypoint: /app/entrypoint.sh
 volumes:
   certs:
   config_server:

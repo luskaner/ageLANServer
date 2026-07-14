@@ -1,0 +1,5 @@
+name: ageLANServer-server-no-announce-bridge
+include:
+  - ./server/base.include.yml
+  - ./server/bridge.include.yml
+  - ./server/no.announce.include.yml

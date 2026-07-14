@@ -1,0 +1,4 @@
+services:
+  battle-server-manager:
+    environment:
+      - GAME_ID=${GAME_ID:-}

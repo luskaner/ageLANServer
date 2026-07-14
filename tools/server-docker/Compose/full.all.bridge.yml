@@ -1,0 +1,6 @@
+name: ageLANServer-server-full-all-bridge
+include:
+  - ./battle-server-manager/base.include.yml
+  - ./server.bridge.yml
+  - ./battle-server-manager/bridge.extend.include.yml
+  - ./battle-server-manager/all.include.yml

@@ -1,0 +1,6 @@
+name: ageLANServer-server-full-all-host
+include:
+  - ./battle-server-manager/base.include.yml
+  - ./server.host.yml
+  - ./battle-server-manager/host.include.yml
+  - ./battle-server-manager/all.include.yml

@@ -1,19 +1,16 @@
-name: ageLANServer
 services:
   server:
+    volumes:
+      - config_bs:/tmp/ageLANServer/battle-servers:ro
     depends_on:
       battle-server-manager:
         condition: service_healthy
-    volumes:
-      - config_bs:/tmp/ageLANServer/battle-servers:ro
   battle-server-manager:
     environment:
-      - GAME_ID=${GAME_ID:-}
-      - LOG_SUBFOLDER=${LOG_SUBFOLDER:-}
       - BS_MANAGER_ARGS=${BS_MANAGER_ARGS:-}
     build:
-      context: ../..
-      dockerfile: tools/server-docker/battle-server-manager/Dockerfile
+      context: ../../../..
+      dockerfile: tools/server-docker/Dockerfile/battle-server-manager/Dockerfile
     depends_on:
       gen-cert:
         condition: service_completed_successfully
@@ -23,8 +20,12 @@ services:
       - logs:/app/logs
       - certs:/app/server/resources/certificates:ro
       - type: bind
-        source: "${BATTLE_SERVER_EXE}"
+        source: "${BATTLE_SERVER_EXE:-}"
         target: /app/BattleServer.exe
+        read_only: true
+      - type: bind
+        source: "./entrypoint.sh"
+        target: /app/entrypoint.sh
         read_only: true
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f BattleServer.exe > /dev/null"]
@@ -32,7 +33,7 @@ services:
       timeout: 1s
       retries: 3
       start_period: 10s
-    network_mode: "host"
+    entrypoint: /app/entrypoint.sh
 volumes:
   config_bs_manager:
   config_bs:

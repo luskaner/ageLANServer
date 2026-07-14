@@ -1,0 +1,6 @@
+name: ageLANServer-server-no-announce-full-all-host
+include:
+  - ./battle-server-manager/base.include.yml
+  - ./server.no.announce.host.yml
+  - ./battle-server-manager/host.include.yml
+  - ./battle-server-manager/all.include.yml
