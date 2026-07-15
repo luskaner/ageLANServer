@@ -17,8 +17,8 @@ func (c *CdnAgeOfEmpires) Name() string {
 	return common.CdnAgeOfEmpires
 }
 
-func (c *CdnAgeOfEmpires) Initialize(gameId string) bool {
-	return gameId != game.AoE4
+func (c *CdnAgeOfEmpires) Initialize(_ string) bool {
+	return true
 }
 
 func (c *CdnAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {
