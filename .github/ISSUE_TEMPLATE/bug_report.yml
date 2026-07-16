@@ -1,0 +1,249 @@
+name: Bug report
+description: Create a report to help us fix issues.
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - luskaner
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before submitting this report
+
+        Please ensure you have:
+
+        * Read the wiki pages:
+          - [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
+          - [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA))
+        * Checked existing issues and discussions.
+        * Consulted the [deep wiki](https://deepwiki.com/luskaner/ageLANServer) and asked the AI about your issue.
+
+        **You are expected to follow up on any questions or tests required to reproduce or resolve the issue.**
+
+  - type: input
+    id: version
+    attributes:
+      label: Software version
+      description: |
+        Version of the server, launcher or tools you are using.
+        Only the latest version (and the latest stable if not the same) are supported.
+      placeholder: Eg. 1.5.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (crashes, data loss)
+        - Major (feature broken)
+        - Minor (unexpected behavior)
+        - Cosmetic (UI, text, visuals)
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Click on "Create Lobby"
+        2. Select "Private"
+        3. Select "Create"
+        4. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Always
+        - Often
+        - Sometimes
+        - Rarely
+        - Once
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: components
+    attributes:
+      label: Software Components
+      description: Check all that apply.
+      options:
+        - label: Server
+        - label: Server certificate generator (genCert)
+        - label: Launcher
+        - label: Launcher tools (bin subfolder)
+        - label: Battle Server Manager
+      default: 2
+      multiple: true
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: games
+    attributes:
+      label: Games
+      description: Check all that apply.
+      options:
+        - label: "Age of Empires: Definitive Edition"
+        - label: "Age of Empires II: Definitive Edition"
+        - label: "Age of Empires III: Definitive Edition"
+        - label: "Age of Empires IV: Anniversary Edition"
+        - label: "Age of Mythology: Retold"
+      default: 1
+      multiple: true
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - "other (specify in additional context)"
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS Version
+      description: The version, build or codename.
+      placeholder: Eg. 11, 26.04, 26 (Tahoe)
+    validations:
+      required: true
+
+  - type: input
+    id: linux-distro
+    attributes:
+      label: Linux Distribution
+      description: Only required if you selected `Linux` above.
+      placeholder: Eg. Ubuntu, Fedora, Arch
+
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: OS Architecture
+      options:
+        - "x86-64 (Intel, AMD, etc.)"
+        - "Arm64 (Snapdragon, Apple Silicon, Broadcom, etc.)"
+        - "x86-32 (old PC/servers, etc.)"
+        - "Arm32 (old single board computers, etc.)"
+        - "other (specify in additional context)"
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network environment
+      options:
+        - LAN
+        - VPN
+        - Internet
+        - Mixed
+      default: 0
+
+  - type: input
+    id: players
+    attributes:
+      label: Number of players involved
+      placeholder: Eg. 2-12
+
+  - type: markdown
+    attributes:
+      value: "### Logs and diagnostics"
+
+  - type: upload
+    id: full-log
+    attributes:
+      label: Full logs
+      description: |
+        Enable it in the launcher's `resources/config.toml` by setting `Log` to `true`. 
+        The respective `Log` config in server must be set to false.
+    validations:
+      accept: ".zip,.gz,.tar.gz,.log,.txt"
+
+  - type: upload
+    id: launcher-log
+    attributes:
+      label: Launcher logs
+      description: |
+        Required if you haven't uploaded the full log and the issue is related to the server.
+        Enable it in `resources/config.toml` by setting `Log` to `true`
+    validations:
+      accept: ".zip,.gz,.tar.gz,.log,.txt"
+
+  - type: upload
+    id: server-log
+    attributes:
+      label: Server logs
+      description: |
+        Required if you haven't uploaded the full log and the issue is related to the server.
+        Enable it in `resources/config.toml` by setting `Log` to `true`
+    validations:
+      accept: ".zip,.gz,.tar.gz,.log,.txt"
+
+  - type: upload
+    id: game-log
+    attributes:
+      label: Game logs
+      description: |
+        Required if you haven't uploaded the full log and it's launcher related and could start the game. 
+        If there is more than one player, upload for everyone involved.
+        See [here](https://support.ageofempires.com/hc/en-us/articles/360052281552-How-to-find-information-for-troubleshooting-with-Support) on how to get them.
+    validations:
+      accept: ".zip,.gz,.tar.gz,.log,.txt"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: |
+        Add any other context about the problem here or options selected as "other (specify in additional context)"
+
+  - type: upload
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Add any screenshots of the game or anything that's not in the logs.
+    validations:
+      accept: ".zip,.gz,.tar.gz,.png,.jpg,.jpeg,.webp"
+
+  - type: upload
+    id: crashdumps
+    attributes:
+      label: Crash dumps
+      description: Add any crash dump of the game.
+    validations:
+      accept: ".zip,.gz,.tar.gz"
