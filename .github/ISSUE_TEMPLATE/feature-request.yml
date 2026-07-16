@@ -1,0 +1,88 @@
+name: Feature request
+description: Suggest an idea or improvement.
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before submitting a feature request
+
+        Please ensure you have:
+
+        * Checked existing issues and discussions to see if this feature has already been requested.
+        * Read the wiki pages to understand current limitations or planned features.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of the limitation or frustration you face.
+      placeholder: |
+        e.g., I'm always frustrated when I have to manually copy the generated certificates to the client folder every time I update the server...
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear description of how you want the new feature to work.
+      placeholder: |
+        e.g., It would be great if the Launcher had an option to "Auto-Sync Certificates" with connected LAN clients upon startup.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Any workarounds you currently use to solve this.
+      placeholder: |
+        e.g., Currently, I am using a custom .bat script that copies the files before launching the game, but it's hard to maintain for other players.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: components
+    attributes:
+      label: Software Components
+      description: Which components would this feature affect? Check all that apply.
+      options:
+        - label: Server
+        - label: Server certificate generator (genCert)
+        - label: Launcher
+        - label: Launcher tools (bin subfolder)
+        - label: Battle Server Manager
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: games
+    attributes:
+      label: Games
+      description: Which games would benefit from this feature? Check all that apply.
+      options:
+        - label: "Age of Empires: Definitive Edition"
+        - label: "Age of Empires II: Definitive Edition"
+        - label: "Age of Empires III: Definitive Edition"
+        - label: "Age of Empires IV: Anniversary Edition"
+        - label: "Age of Mythology: Retold"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, API references, or design details about the feature request here.
+      placeholder: |
+        e.g., You can find a similar implementation in project XYZ (link here).
+
+  - type: upload
+    id: mockups
+    attributes:
+      label: Mockups or Screenshots
+      description: Share any visual aids, UI wireframes, or diagrams that help explain your idea.
+    validations:
+      accept: ".zip,.gz,.png,.jpg,.jpeg,.webp"
