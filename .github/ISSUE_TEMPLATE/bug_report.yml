@@ -99,8 +99,6 @@ body:
         - label: Launcher
         - label: Launcher tools (bin subfolder)
         - label: Battle Server Manager
-      default: 2
-      multiple: true
     validations:
       required: true
 
@@ -115,8 +113,6 @@ body:
         - label: "Age of Empires III: Definitive Edition"
         - label: "Age of Empires IV: Anniversary Edition"
         - label: "Age of Mythology: Retold"
-      default: 1
-      multiple: true
     validations:
       required: true
 
@@ -192,7 +188,7 @@ body:
         Enable it in the launcher's `resources/config.toml` by setting `Log` to `true`. 
         The respective `Log` config in server must be set to false.
     validations:
-      accept: ".zip,.gz,.tar.gz,.log,.txt"
+      accept: ".zip,.gz,.log,.txt"
 
   - type: upload
     id: launcher-log
@@ -202,7 +198,7 @@ body:
         Required if you haven't uploaded the full log and the issue is related to the server.
         Enable it in `resources/config.toml` by setting `Log` to `true`
     validations:
-      accept: ".zip,.gz,.tar.gz,.log,.txt"
+      accept: ".zip,.gz,.log,.txt"
 
   - type: upload
     id: server-log
@@ -212,7 +208,7 @@ body:
         Required if you haven't uploaded the full log and the issue is related to the server.
         Enable it in `resources/config.toml` by setting `Log` to `true`
     validations:
-      accept: ".zip,.gz,.tar.gz,.log,.txt"
+      accept: ".zip,.gz,.log,.txt"
 
   - type: upload
     id: game-log
@@ -223,7 +219,7 @@ body:
         If there is more than one player, upload for everyone involved.
         See [here](https://support.ageofempires.com/hc/en-us/articles/360052281552-How-to-find-information-for-troubleshooting-with-Support) on how to get them.
     validations:
-      accept: ".zip,.gz,.tar.gz,.log,.txt"
+      accept: ".zip,.gz,.log,.txt"
 
   - type: textarea
     id: context
@@ -238,7 +234,7 @@ body:
       label: Screenshots
       description: Add any screenshots of the game or anything that's not in the logs.
     validations:
-      accept: ".zip,.gz,.tar.gz,.png,.jpg,.jpeg,.webp"
+      accept: ".zip,.gz,.png,.jpg,.jpeg,.webp"
 
   - type: upload
     id: crashdumps
@@ -246,4 +242,4 @@ body:
       label: Crash dumps
       description: Add any crash dump of the game.
     validations:
-      accept: ".zip,.gz,.tar.gz"
+      accept: ".zip,.gz"
