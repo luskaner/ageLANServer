@@ -119,14 +119,17 @@ func missingIpMappings(mappings *HostMappings, hostFile *os.File) (restLines []L
 		hosts := lineParsed.Hosts()
 		indexesToAvoid := mapset.NewThreadUnsafeSet[int]()
 		for i, lineHost := range hosts {
-			if ip, ok := mappings.Get(lineHost); ok && ip.Equal(lineIp) {
-				mappings.Delete(lineHost)
-				indexesToAvoid.Add(i)
+			if ip, ok := mappings.Get(lineHost); ok {
+				if ip.Equal(lineIp) {
+					mappings.Delete(lineHost)
+				} else {
+					indexesToAvoid.Add(i)
+				}
 			}
 		}
 		var keptHosts []Host
 		var removedHosts bool
-		for i := 0; i < len(hosts); i++ {
+		for i := range hosts {
 			if indexesToAvoid.ContainsOne(i) || commentHost(hosts[i]) {
 				removedHosts = true
 			} else {
