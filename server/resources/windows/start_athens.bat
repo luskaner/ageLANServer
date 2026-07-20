@@ -1,4 +1,4 @@
 @echo off
+
 cd /d "%~dp0"
-server -e athens
-pause
+./start.bat ./server -e athens

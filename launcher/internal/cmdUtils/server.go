@@ -53,33 +53,33 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 			bestHostsSlice = bestHosts.ToSlice()
 			sort.Strings(bestHostsSlice)
 		}
-		description := bestAddress.Ip.String()
+		var sb strings.Builder
+		sb.WriteString(bestAddress.Ip.String())
 		if len(alternativeIpSlice) > 0 {
-			description += ", "
-			description += strings.Join(alternativeIpSlice, ", ")
+			sb.WriteString(", ")
+			sb.WriteString(strings.Join(alternativeIpSlice, ", "))
 		}
 		if len(bestHostsSlice) > 0 || len(alternativeHostsSlice) > 0 {
-			description += " ("
-			for i, host := range bestHostsSlice {
-				if i > 0 {
-					description += ", "
-				}
-				description += host
+			sb.WriteString(" (")
+			if len(bestHostsSlice) > 0 {
+				sb.WriteString(strings.Join(bestHostsSlice, ", "))
 			}
 			if len(alternativeHostsSlice) > 0 {
 				if len(bestHostsSlice) > 0 {
-					description += ", "
+					sb.WriteString(", ")
 				}
-				description += strings.Join(alternativeHostsSlice, ", ")
+				sb.WriteString(strings.Join(alternativeHostsSlice, ", "))
 			}
-			description += ")"
+			sb.WriteString(")")
 		}
-		description += fmt.Sprintf(" - %d ms", bestAddress.Latency.Truncate(time.Millisecond).Milliseconds())
-		description += fmt.Sprintf(" (%s)", internalData.Version)
+		_, _ = fmt.Fprintf(&sb, " - %d ms (%s)",
+			bestAddress.Latency.Truncate(time.Millisecond).Milliseconds(),
+			internalData.Version,
+		)
 		processed = append(processed, &processedServer{
 			id:               serverId,
 			MesuredIpAddress: bestAddress,
-			description:      description,
+			description:      sb.String(),
 		})
 	}
 	slices.SortStableFunc(processed, func(a, b *processedServer) int {

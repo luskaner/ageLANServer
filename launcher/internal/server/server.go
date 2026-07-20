@@ -216,15 +216,15 @@ func QueryServers(
 		func() {
 			serverLock.Lock()
 			defer serverLock.Unlock()
-			var server *AnnounceMessage
+			var srv *AnnounceMessage
 			var ok bool
-			if server, ok = servers[parsedId]; !ok {
-				server = &AnnounceMessage{
+			if srv, ok = servers[parsedId]; !ok {
+				srv = &AnnounceMessage{
 					IpAddrs: mapset.NewThreadUnsafeSet[netip.Addr](),
 				}
-				servers[parsedId] = server
+				servers[parsedId] = srv
 			}
-			server.IpAddrs.Add(common.NetIPToNetIPAddr(addr.IP))
+			srv.IpAddrs.Add(common.NetIPToNetIPAddr(addr.IP))
 		}()
 	}
 
@@ -235,7 +235,7 @@ func QueryServers(
 			sendAndReceive(&packetBuffer, conn, servers)
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				<-ticker.C
 				sendAndReceive(&packetBuffer, conn, servers)
 			}

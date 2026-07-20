@@ -1,9 +1,11 @@
 package cmdUtils
 
 import (
+	"battle-server-manager/internal"
 	"os"
 	"path/filepath"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
@@ -61,4 +63,27 @@ func Remove(gameId string, configs []battleServer.Config, onlyInvalid bool) bool
 		}
 	}
 	return removedAny
+}
+
+func RemoveAll(onlyInvalid bool) (err error, exitCode int) {
+	var games mapset.Set[string]
+	games, err = ParsedGameIds(nil)
+	if err != nil {
+		commonLogger.Println(err.Error())
+		exitCode = internal.ErrGames
+		return
+	}
+	var configs []battleServer.Config
+	for g := range games.Iter() {
+		commonLogger.Printf("Game: %s\n", g)
+		configs, err = battleServer.Configs(g, false)
+		if err != nil {
+			commonLogger.Printf("\t%s\n", err)
+			continue
+		}
+		if !Remove(g, configs, onlyInvalid) {
+			commonLogger.Println("\tNo configuration needs it.")
+		}
+	}
+	return
 }
