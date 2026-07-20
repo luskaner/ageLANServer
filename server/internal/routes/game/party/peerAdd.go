@@ -30,7 +30,7 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		users := make([]models.User, length)
-		for j := 0; j < length; j++ {
+		for j := range length {
 			var u models.User
 			u, ok = gameUsers.GetUserById(profileIds[j])
 			if !ok {

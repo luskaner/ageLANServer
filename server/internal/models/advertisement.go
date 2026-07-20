@@ -566,10 +566,7 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, l
 	if length == 0 {
 		length = len(res)
 	}
-	end := length + offset
-	if end > len(res) {
-		end = len(res)
-	}
+	end := min(length+offset, len(res))
 	return res[offset:end]
 }
 
