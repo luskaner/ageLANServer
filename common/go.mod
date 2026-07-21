@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/deckarep/golang-set/v2 v2.9.0
-	github.com/ebitengine/purego v0.10.1
+	github.com/ebitengine/purego v0.10.2
 	github.com/google/uuid v1.6.0
 	github.com/hairyhenderson/go-which v0.2.3
 	github.com/knadh/koanf/providers/confmap v1.0.0
