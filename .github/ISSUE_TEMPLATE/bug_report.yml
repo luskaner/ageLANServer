@@ -16,7 +16,7 @@ body:
           - [Troubleshooting](https://github.com/luskaner/ageLANServer/wiki/Troubleshooting)
           - [Questions and Answers (QA)](https://github.com/luskaner/ageLANServer/wiki/Questions-and-Answers-(QA))
         * Checked existing issues and discussions.
-        * Consulted the [deep wiki](https://deepwiki.com/luskaner/ageLANServer) and asked the AI about your issue.
+        * Ask the [Gemini Notebook Chatbot](https://notebooklm.google.com/notebook/da6e3410-7253-40d5-8b99-4c67c456fbe3/preview) about your issue.
 
         **You are expected to follow up on any questions or tests required to reproduce or resolve the issue.**
 
