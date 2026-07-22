@@ -6,13 +6,17 @@ import (
 	"errors"
 	"io"
 	"net"
+	"strings"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/ipc"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"golang.org/x/net/idna"
 )
 
 var mappedIps = false
@@ -83,8 +87,45 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 	return
 }
 
-func checkCertificateValidity(cert *x509.Certificate) bool {
-	return cert != nil
+func checkCertificateValidity(cert *x509.Certificate, gameId string) bool {
+	if cert == nil {
+		return false
+	}
+	// Security checks
+	// Disallow any domain or IP in CN
+	if strings.Contains(cert.Subject.CommonName, "*") {
+		return false
+	}
+	if _, err := idna.Lookup.ToASCII(cert.Subject.CommonName); err == nil {
+		return false
+	}
+	if parsedIP := net.ParseIP(cert.Subject.CommonName); parsedIP != nil {
+		return false
+	}
+	if !cert.IsCA {
+		return false
+	}
+	var expectedKeyUsage x509.KeyUsage
+	expectedExtKeyUsages := mapset.NewSet[x509.ExtKeyUsage]()
+	if common.SelfSignedCertGame(gameId) {
+		if !cert.MaxPathLenZero {
+			return false
+		}
+		selfSignedCertDomains := mapset.NewSet[string](common.SelfSignedCertDomains...)
+		certDNSNames := mapset.NewSet[string](cert.DNSNames...)
+		if !selfSignedCertDomains.Equal(certDNSNames) {
+			return false
+		}
+		expectedKeyUsage |= x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+		expectedExtKeyUsages.Append(x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth)
+	}
+	if expectedKeyUsage != cert.KeyUsage {
+		return false
+	}
+	if !expectedExtKeyUsages.Equal(mapset.NewSet[x509.ExtKeyUsage](cert.ExtKeyUsage...)) {
+		return false
+	}
+	return true
 }
 
 func handleSetUp(logRoot string, decoder *gob.Decoder) int {
@@ -99,6 +140,10 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		commonLogger.Println("IPs already mapped")
 		return internal.ErrIpsAlreadyMapped
 	}
+	if !game.SupportedGames.ContainsOne(msg.GameId) {
+		commonLogger.Println("Game is not supported")
+		return internal.ErrGameNotSupported
+	}
 	var cert *x509.Certificate
 	if msg.Certificate != nil {
 		if addedCert {
@@ -108,7 +153,7 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		str := "Parsing certificate: "
 		var err error
 		cert, err = x509.ParseCertificate(msg.Certificate)
-		if err != nil || !checkCertificateValidity(cert) {
+		if err != nil || !checkCertificateValidity(cert, msg.GameId) {
 			if err != nil {
 				str += err.Error()
 			} else {

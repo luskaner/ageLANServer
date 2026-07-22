@@ -94,8 +94,6 @@ func getTemplate(typ string) *x509.Certificate {
 		template.MaxPathLenZero = true
 	} else if typ == "ca" {
 		template.Subject.CommonName += " CA"
-	}
-	if typ != "normal" {
 		template.KeyUsage = x509.KeyUsageCertSign
 	}
 	if typ != "ca" {
