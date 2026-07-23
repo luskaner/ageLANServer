@@ -29,17 +29,17 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 		if err = decoder.Decode(&action); err != nil {
 			if errors.Is(err, io.EOF) {
 				commonLogger.Println("Closing connection...")
-			} else {
-				commonLogger.Println("Could not decode action:", err)
-				str := "-> ErrDecode: "
-				if err = encoder.Encode(internal.ErrDecode); err != nil {
-					str += err.Error()
-				} else {
-					str += "OK"
-				}
-				commonLogger.Println(str)
+				return
 			}
-			return
+			commonLogger.Println("Could not decode action:", err)
+			str := "-> ErrDecode: "
+			if err = encoder.Encode(internal.ErrDecode); err != nil {
+				str += err.Error()
+			} else {
+				str += "OK"
+			}
+			commonLogger.Println(str)
+			continue
 		}
 
 		var exitCode = internal.ErrNonExistingAction

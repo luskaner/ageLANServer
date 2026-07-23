@@ -131,31 +131,29 @@ func StopAgentIfNeeded() bool {
 			return true
 		}
 	}
-	var stoppedAgent bool
 	commonLogger.Println("Trying to stop 'config-admin-agent'.")
 	if err := stopAgentIfNeeded(); err == nil {
-		if ConnectAgentIfNeededWithRetries(false) {
-			commonLogger.Println("Stopped 'config-admin-agent'")
-			stoppedAgent = true
-		} else {
-			commonLogger.Println("Failed to stop 'config-admin-agent'")
+		for range 30 {
+			if _, proc, err := commonProcess.Process(exeFileName); err == nil && proc == nil {
+				commonLogger.Println("Stopped 'config-admin-agent'")
+				return true
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
+		commonLogger.Println("Failed to stop 'config-admin-agent'")
 	} else {
 		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
 		commonLogger.Println(err)
 	}
-	if !stoppedAgent {
-		if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
-			if err = commonProcess.KillPidProc(pid, proc); err == nil {
-				commonLogger.Println("Successfully killed 'config-admin-agent'.")
-				stoppedAgent = true
-			} else {
-				commonLogger.Println("Failed to kill 'config-admin-agent'")
-				commonLogger.Println(err)
-			}
+	if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
+		if err = commonProcess.KillPidProc(pid, proc); err == nil {
+			commonLogger.Println("Successfully killed 'config-admin-agent'.")
+			return true
 		}
+		commonLogger.Println("Failed to kill 'config-admin-agent'")
+		commonLogger.Println(err)
 	}
-	return stoppedAgent
+	return false
 }
 
 func stopAgentIfNeeded() (err error) {
@@ -175,19 +173,11 @@ func stopAgentIfNeeded() (err error) {
 	return
 }
 
-func ConnectAgentIfNeededWithRetries(retryUntilSuccess bool) bool {
-	var prePostFn func()
-	if retryUntilSuccess {
-		prePostFn = func() {}
-	} else {
-		prePostFn = clearIPCState
-	}
+func ConnectAgentIfNeededWithRetries() bool {
 	for i := 0; i < 30; i++ {
-		prePostFn()
-		if (ConnectAgentIfNeeded() == nil) == retryUntilSuccess {
+		if ConnectAgentIfNeeded() == nil {
 			return true
 		}
-		prePostFn()
 		time.Sleep(100 * time.Millisecond)
 	}
 	return false

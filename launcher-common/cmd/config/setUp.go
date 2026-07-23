@@ -30,6 +30,7 @@ type SetupValues struct {
 	*SetupBaseValues
 	AddUserCertData []byte
 	AddCACertData   []byte
+	AgentEndOnError bool
 }
 
 func newSetupValues() SetupValues {
@@ -82,5 +83,7 @@ func SetUpFlagSet() (values *SetupValues, flags *pflag.FlagSet) {
 		flags.BytesBase64VarP(values.AddUserCertDataRef(), "userCert", "u", nil, "Add the certificate to the user's trusted root store")
 	}
 	flags.BytesBase64VarP(values.AddCACertDataRef(), "caStoreCert", "s", nil, "Add the certificate to the game's trusted root store. For all except AoE I: DE and AoE IV: AE.")
+	flags.BoolVarP(&values.AgentEndOnError, "agentEndOnError", "r", false, "Stop the 'config-admin-agent' if it is running and any admin action failed.")
+	_ = flags.MarkHidden("agentEndOnError")
 	return
 }

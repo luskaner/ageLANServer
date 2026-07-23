@@ -56,16 +56,17 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 		logger.Println(str + "...")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
-			cfgSetupOps := executor.NewConfigSetupOptions()
-			cfgSetupOps.Out = writer
-			cfgSetupOps.OptionsFn = func(options exec.Options) {
+			cfgSetupOpts := executor.NewConfigSetupOptions()
+			cfgSetupOpts.Out = writer
+			cfgSetupOpts.OptionsFn = func(options exec.Options) {
 				commonLogger.Println("run config setup for hosts", options.String())
 			}
-			cfgSetupOps.GameId = gameId
-			cfgSetupOps.MapIp = net.ParseIP(ip)
-			cfgSetupOps.MacOsExclusiveMappings = macOsExclusiveMappings
-			cfgSetupOps.HostFilePath = c.hostFilePath
-			if result := cfgSetupOps.RunSetUp(); !result.Success() {
+			cfgSetupOpts.GameId = gameId
+			cfgSetupOpts.MapIp = net.ParseIP(ip)
+			cfgSetupOpts.MacOsExclusiveMappings = macOsExclusiveMappings
+			cfgSetupOpts.HostFilePath = c.hostFilePath
+			cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
+			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				logger.Println("Failed to add hosts.")
 				if result.Err != nil {
 					logger.Println("Error message: " + result.Err.Error())

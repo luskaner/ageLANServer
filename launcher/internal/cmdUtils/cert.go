@@ -109,6 +109,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		cfgSetupOpts.AddUserCertData = addUserCertData
 		cfgSetupOpts.AddLocalCertData = addLocalCertData
 		cfgSetupOpts.CertFilePath = c.certFilePath
+		cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			if customCertFile {
 				logger.Println("Failed to save certificate to file")

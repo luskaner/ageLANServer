@@ -483,7 +483,6 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			atomicExitCode.Store(int32(internal.ErrFlushCache))
 			return
 		}
-		config.SetConfigAdminAgentStarted()
 	}
 	if _, proc, localErr := commonProcess.Process(executables.NativeFileName(false, executables.Server)); localErr == nil && proc != nil {
 		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
