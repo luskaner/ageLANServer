@@ -21,22 +21,17 @@ import (
 )
 
 type Config struct {
-	gameId                  string
-	serverExe               string
-	setupCommandRan         bool
-	hostFilePath            string
-	certFilePath            string
-	battleServerRegion      string
-	battleServerExe         string
-	configAdminAgentStarted bool
+	gameId             string
+	serverExe          string
+	setupCommandRan    bool
+	hostFilePath       string
+	certFilePath       string
+	battleServerRegion string
+	battleServerExe    string
 }
 
 func (c *Config) SetGameId(gameId string) {
 	c.gameId = gameId
-}
-
-func (c *Config) SetConfigAdminAgentStarted() {
-	c.configAdminAgentStarted = true
 }
 
 func (c *Config) RequiresConfigRevert() bool {
@@ -104,7 +99,7 @@ func (c *Config) Revert() {
 				logger.Println("Failed to clean up.")
 			}
 		})
-	} else if c.configAdminAgentStarted {
+	} else if launcherCommon.ConfigAdminAgentRunning(false) {
 		logger.Println("Stopping 'config-admin-agent'...")
 		if result := c.RunStopAgent(); result.Success() {
 			logger.Println("'Config-admin-agent' stopped.")

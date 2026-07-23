@@ -34,6 +34,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		cfgSetupOpts.GameId = gameId
 		cfgSetupOpts.GamePath = gamePath
 		cfgSetupOpts.AddCACertData = serverCertificate.Raw
+		cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			logger.Println("Failed to save CA certificate to game")
 			exitCode = internal.ErrConfigCACertAdd

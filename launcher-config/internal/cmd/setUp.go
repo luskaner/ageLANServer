@@ -292,7 +292,9 @@ func runSetUp(args []string) (err error, exitCode int) {
 			exitCode = internal.ErrAdminSetup
 			if agentStarted {
 				commonLogger.Println("Failed to communicate with 'config-admin-agent'. Communicating with it to shutdown...")
-				_ = admin.StopAgentIfNeeded()
+				if setupValues.AgentEndOnError {
+					_ = admin.StopAgentIfNeeded()
+				}
 				undoSetUp()
 			}
 		}

@@ -46,6 +46,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 			cfgSetupOpts.Metadata = metadata
 			cfgSetupOpts.Profiles = profiles
 			cfgSetupOpts.DataPath = path
+			cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
 				logger.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
