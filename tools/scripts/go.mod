@@ -10,9 +10,12 @@ require (
 )
 
 require (
+	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
+	github.com/ulikunitz/xz v0.5.16 // indirect
 	go.digitalxero.dev/go-msix v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
+	go.mozilla.org/pkcs7 v0.10.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
 )
 
@@ -29,7 +32,7 @@ require (
 	github.com/buger/jsonparser v1.2.0 // indirect
 	github.com/caarlos0/log v0.6.2 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20260703014108-f5a850f9c2b7 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260720091822-7cc6674724ac // indirect
 	github.com/charmbracelet/x/ansi v0.11.7 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
@@ -68,7 +71,7 @@ require (
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597 // indirect; i
+	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect; i
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
