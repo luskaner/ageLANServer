@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -77,6 +78,28 @@ func LoadKoanfLayers(
 	}
 	_ = k.Load(posFlag, nil)
 	return usedFile, nil
+}
+
+func LoadKoanfLayersOrExit(
+	k *koanf.Koanf,
+	defaults map[string]any,
+	fileCandidates []string,
+	parser koanf.Parser,
+	fs *pflag.FlagSet,
+	fsBindings map[string]string,
+	envPrefix string,
+	printlnFn func(...any),
+) string {
+	usedFile, err := LoadKoanfLayers(k, defaults, fileCandidates, parser, fs, fsBindings, envPrefix)
+	if err != nil {
+		if fileErr, ok := errors.AsType[*KoanfFileLoadError](err); ok {
+			printlnFn("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
+		} else {
+			printlnFn("Error loading config:", err.Error())
+		}
+		os.Exit(ErrConfigParse)
+	}
+	return usedFile
 }
 
 // koanfEnvProvider returns a provider that maps ENV keys to koanf keys using '.' delimiters.

@@ -83,7 +83,7 @@ func connectablePositions(position int) (positions []int) {
 func computePositions(previousNodes []int, numberOfNodes int) []int {
 	nodeToPositions := make(map[int]mapset.Set[int], rows)
 	positionToNodes := make(map[int]mapset.Set[int], rows)
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		positionToNodes[i] = mapset.NewThreadUnsafeSet[int]()
 	}
 	for _, node := range previousNodes {
@@ -148,7 +148,7 @@ func GenerateNodeRows(numberOfNodes []int) [][]int {
 	nodes := make([][]int, columns)
 	// The first positions can be completely random
 	positions := make([]int, rows)
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		positions[i] = i
 	}
 	shuffle(positions)
@@ -244,7 +244,7 @@ func GenerateMissions(nodeRows [][]int, poolsIndexes []int, missionsPools playfa
 		currentColPosToIndex := nodePosToIndex[col]
 		previousColumn := missionColumns[col-1]
 		previousColPosToIndex := nodePosToIndex[col-1]
-		for pos := 0; pos < rows-1; pos++ {
+		for pos := range rows - 1 {
 			var currentColumnPos *user.ChallengeMission
 			if index, exists := currentColPosToIndex[pos]; !exists {
 				continue

@@ -1,4 +1,4 @@
 @echo off
+
 cd /d "%~dp0"
-server -e age4
-pause
+./start.bat ./server -e age4
