@@ -23,6 +23,7 @@ func Generate() error {
 	serverArchive.AddDocFiles("docs", nil, nil, "LICENSE", "server/README.md", "server/BattleServers.md")
 	serverArchive.AddSrcDstFile("server/resources/responses", "resources/responses")
 	serverArchive.AddSrcDstFile("server/resources/config", "resources/config")
+	serverArchive.AddSrcDstFile("server/resources/etc", "resources/etc")
 	serverArchive.AddScriptFiles("", NewTemplate[FileData](fmt.Sprintf(gameScriptSource, `server`)), nil, nil, true)
 	serverArchive.AddScriptFiles("bin", NewTemplate[FileData](fmt.Sprintf(scriptSource, `server-genCert`, `genCert`)), SourceIgnoreFn{
 		"windows": func(path string) bool {
