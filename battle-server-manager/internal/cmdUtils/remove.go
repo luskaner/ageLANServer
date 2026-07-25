@@ -51,7 +51,7 @@ func Remove(gameId string, configs []battleServer.Config, onlyInvalid bool) bool
 	for _, config := range configs {
 		var doRemove bool
 		if onlyInvalid {
-			if !config.Validate() {
+			if !config.Validate(false) {
 				doRemove = true
 			}
 		} else {
@@ -76,7 +76,7 @@ func RemoveAll(onlyInvalid bool) (err error, exitCode int) {
 	var configs []battleServer.Config
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
-		configs, err = battleServer.Configs(g, false)
+		configs, err = battleServer.Configs(g, false, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue

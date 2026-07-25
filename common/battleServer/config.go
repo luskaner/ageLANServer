@@ -44,7 +44,7 @@ func Folder(gameId string) string {
 	return filepath.Join(os.TempDir(), common.Name, "battle-servers", gameId)
 }
 
-func Configs(gameId string, onlyValid bool) (configs []Config, err error) {
+func Configs(gameId string, onlyValid bool, ignorePid bool) (configs []Config, err error) {
 	folder := Folder(gameId)
 	var entries []os.DirEntry
 	entries, err = os.ReadDir(folder)
@@ -77,7 +77,7 @@ func Configs(gameId string, onlyValid bool) (configs []Config, err error) {
 			err = fmt.Errorf("error while parsing battle server config file \"%s\": %v", entry.Name(), err)
 			return
 		}
-		if !onlyValid || config.Validate() {
+		if !onlyValid || config.Validate(ignorePid) {
 			config.index = index
 			configs = append(configs, config)
 		}
@@ -85,13 +85,15 @@ func Configs(gameId string, onlyValid bool) (configs []Config, err error) {
 	return
 }
 
-func (c Config) Validate() bool {
-	if c.Region == "" || c.PID == 0 || c.IPv4 == "" || c.BsPort == 0 || c.WebSocketPort == 0 {
+func (c Config) Validate(ignorePid bool) bool {
+	if c.Region == "" || (c.PID == 0 && !ignorePid) || c.IPv4 == "" || c.BsPort == 0 || c.WebSocketPort == 0 {
 		return false
 	}
-	proc, err := process.FindProcess(int(c.PID))
-	if err != nil || proc == nil {
-		return false
+	if !ignorePid {
+		proc, err := process.FindProcess(int(c.PID))
+		if err != nil || proc == nil {
+			return false
+		}
 	}
 	ports := []int{c.BsPort, c.WebSocketPort}
 	if c.OutOfBandPort != 0 {

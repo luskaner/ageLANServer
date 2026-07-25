@@ -22,7 +22,7 @@ loop:
 		case <-timeout:
 			break loop
 		default:
-			if ok = config.Validate(); ok {
+			if ok = config.Validate(false); ok {
 				return
 			}
 		}
