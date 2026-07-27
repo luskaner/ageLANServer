@@ -105,7 +105,7 @@ func checkCertificateValidity(cert *x509.Certificate, gameId string) bool {
 	if !cert.IsCA {
 		return false
 	}
-	var expectedKeyUsage x509.KeyUsage
+	expectedKeyUsage := x509.KeyUsageCertSign
 	expectedExtKeyUsages := mapset.NewSet[x509.ExtKeyUsage]()
 	if common.SelfSignedCertGame(gameId) {
 		if !cert.MaxPathLenZero {

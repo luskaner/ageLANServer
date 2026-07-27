@@ -74,7 +74,7 @@ func generateSelfSignedCertificate(folder string) bool {
 
 func getTemplate(typ string) *x509.Certificate {
 	template := &x509.Certificate{
-		SerialNumber: big.NewInt(time.Now().Unix()),
+		SerialNumber: big.NewInt(time.Now().UnixNano()),
 		Subject: pkix.Name{
 			CommonName:   common.Name,
 			Organization: []string{common.CertSubjectOrganization},
@@ -94,6 +94,8 @@ func getTemplate(typ string) *x509.Certificate {
 		template.MaxPathLenZero = true
 	} else if typ == "ca" {
 		template.Subject.CommonName += " CA"
+	}
+	if typ != "normal" {
 		template.KeyUsage = x509.KeyUsageCertSign
 	}
 	if typ != "ca" {
