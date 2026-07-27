@@ -1,22 +1,35 @@
 module scripts
 
-go 1.26.0
+go 1.26.5
 
 require (
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/google/uuid v1.6.0
-	github.com/goreleaser/goreleaser/v2 v2.17.0
+	github.com/goreleaser/goreleaser/v2 v2.17.1
+	github.com/luskaner/ageLANServer/common v0.0.0-20260724220156-405b9a942eb1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/klauspost/compress v1.19.1 // indirect
+	github.com/fsnotify/fsnotify v1.10.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
+	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
+	github.com/knadh/koanf/providers/file v1.2.1 // indirect
+	github.com/knadh/koanf/providers/posflag v1.0.1 // indirect
+	github.com/knadh/koanf/v2 v2.3.5 // indirect
+	github.com/miekg/dns v1.1.72 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
-	github.com/ulikunitz/xz v0.5.16 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	go.digitalxero.dev/go-msix v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	go.mozilla.org/pkcs7 v0.10.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
+	mvdan.cc/sh/v3 v3.13.1 // indirect
 )
 
 require (
