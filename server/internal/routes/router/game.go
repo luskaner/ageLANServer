@@ -138,13 +138,13 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	leaderboardGroup.HandleFunc("POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
 	leaderboardGroup.HandleFunc("POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
 
+	// Older versions
 	if gameId == game.AoE4 {
 		automatchGroup := gameGroup.Subgroup("/automatch")
 		automatchGroup.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
-	} else {
-		automatch2Group := gameGroup.Subgroup("/automatch2")
-		automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
 	}
+	automatch2Group := gameGroup.Subgroup("/automatch2")
+	automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
 
 	AchievementGroup := gameGroup.Subgroup("/Achievement")
 	AchievementGroup.HandleFunc("GET", "/getAchievements", achievement.GetAchievements)
