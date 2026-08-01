@@ -23,19 +23,24 @@ func GetAdvertisementByPlatformSessionId(w http.ResponseWriter, r *http.Request)
 		i.JSON(&w, i.A{2, i.A{}})
 		return
 	}
-	advertisements := models.G(r).Advertisements()
-	adv := advertisements.UnsafeFirstAdvertisement(func(adv models.Advertisement) bool {
-		var platform string
-		var id uint64
+	game := models.G(r)
+	advertisements := game.Advertisements()
+	var advEncoded i.A
+	_ = advertisements.UnsafeFirstAdvertisement(func(adv models.Advertisement) bool {
+		var ok bool
 		advertisements.WithReadLock(adv.GetId(), func() {
-			platform, id = adv.UnsafeGetPlatformSessionId()
+			platform, id := adv.UnsafeGetPlatformSessionId()
+			if platform == req.Platform && req.SessionID == id {
+				advEncoded = adv.UnsafeEncode(game.Title(), game.BattleServers())
+				ok = true
+			}
 		},
 		)
-		return platform == req.Platform && req.SessionID == id
+		return ok
 	})
-	if adv == nil {
+	if advEncoded == nil {
 		i.JSON(&w, i.A{0, i.A{}})
 	} else {
-		i.JSON(&w, i.A{0, adv})
+		i.JSON(&w, i.A{0, advEncoded})
 	}
 }
