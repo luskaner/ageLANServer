@@ -15,7 +15,7 @@ type request struct {
 	MatchID int32 `schema:"matchID"`
 }
 
-func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
+func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, platform string) {
 	var req request
 	if err := i.Bind(r, &req); err != nil {
 		i.JSON(w, i.A{2})
@@ -48,7 +48,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 			return
 		}
 
-		adv.UnsafeUpdatePlatformSessionId(idValueUint)
+		adv.UnsafeUpdatePlatformSessionId(platform, idValueUint)
 		metadata = adv.GetXboxSessionId()
 		_, peersId = peers.Keys()
 		ok = true
@@ -78,5 +78,5 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 }
 
 func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
-	updatePlatformID(&w, r, "platformlobbyID")
+	updatePlatformID(&w, r, "platformlobbyID", "")
 }

@@ -50,12 +50,12 @@ type Advertisement interface {
 	UnsafeGetModName() string
 	UnsafeGetModVersion() string
 	UnsafeGetVersionFlags() uint32
-	UnsafeGetPlatformSessionId() uint64
+	UnsafeGetPlatformSessionId() (platform string, id uint64)
 	UnsafeGetObserversDelay() uint32
 	UnsafeGetObserversEnabled() bool
 	UnsafeSetHostId(hostId int32)
 	UnsafeUpdateState(state int8)
-	UnsafeUpdatePlatformSessionId(sessionId uint64)
+	UnsafeUpdatePlatformSessionId(platform string, sessionId uint64)
 	UnsafeUpdateTags(integer map[string]int32, text map[string]string)
 	UnsafeMatchesTags(integer map[string]int32, text map[string]string) bool
 	UnsafeEncode(gameId string, battleServers BattleServers) i.A
@@ -96,6 +96,7 @@ type MainAdvertisement struct {
 	maxPlayers        uint8
 	options           string
 	slotInfo          string
+	platform          string
 	platformSessionId uint64
 	state             int8
 	lan               bool
@@ -238,8 +239,8 @@ func (adv *MainAdvertisement) UnsafeGetVersionFlags() uint32 {
 }
 
 // UnsafeGetPlatformSessionId requires advertisement read lock
-func (adv *MainAdvertisement) UnsafeGetPlatformSessionId() uint64 {
-	return adv.platformSessionId
+func (adv *MainAdvertisement) UnsafeGetPlatformSessionId() (platform string, id uint64) {
+	return adv.platform, adv.platformSessionId
 }
 
 // UnsafeGetObserversDelay requires advertisement read lock
@@ -432,7 +433,8 @@ func (adv *MainAdvertisement) UnsafeSetHostId(hostId int32) {
 }
 
 // UnsafeUpdatePlatformSessionId requires advertisement write lock
-func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(sessionId uint64) {
+func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(platform string, sessionId uint64) {
+	adv.platform = platform
 	adv.platformSessionId = sessionId
 }
 
@@ -556,7 +558,9 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, l
 			}()
 		} else {
 			advs.WithReadLock(adv.GetId(), func() {
-				res = append(res, adv.UnsafeEncode(gameId, advs.battleServers))
+				if matches(adv) {
+					res = append(res, adv.UnsafeEncode(gameId, advs.battleServers))
+				}
 			})
 		}
 	}
