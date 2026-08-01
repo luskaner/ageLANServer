@@ -188,6 +188,10 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
 	}
+	// TODO: Check if AoE2/AoM use it too
+	if gameId == game.AoE4 {
+		advertisementGroup.HandleFunc("GET", "/getAdvertisementByPlatformSessionID", advertisement.GetAdvertisementByPlatformSessionId)
+	}
 
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)
 
