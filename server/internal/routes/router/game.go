@@ -77,12 +77,15 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 		challengeGroup.HandleFunc("POST", "/updateProgressBatched", challenge.UpdateProgressBatched)
 	}
 	ChallengeGroup := gameGroup.Subgroup("/Challenge")
-	// TODO: GET getChallengeProgressByProfileID ?
 	if gameId == game.AoE3 {
 		ChallengeGroup.HandleFunc("POST", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
 	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		ChallengeGroup.HandleFunc("GET", "/getChallengeProgress", challenge.GetChallengeProgress)
+	}
+	if gameId == game.AoE4 {
+		// FIXME: Implement as a separate route
+		ChallengeGroup.HandleFunc("GET", "/getChallengeProgressByProfileID", challenge.GetChallengeProgress)
 	}
 	ChallengeGroup.HandleFunc("GET", "/getChallenges", challenge.GetChallenges)
 
