@@ -1,4 +1,4 @@
 @echo off
 
 cd /d "%~dp0"
-./start.bat ./battle-server-manager remove-all
+call start.bat battle-server-manager remove-all

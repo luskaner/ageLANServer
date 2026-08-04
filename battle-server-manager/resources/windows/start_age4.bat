@@ -1,4 +1,4 @@
 @echo off
 
 cd /d "%~dp0"
-./start.bat ./battle-server-manager start -e age4
+call start.bat battle-server-manager start -e age4

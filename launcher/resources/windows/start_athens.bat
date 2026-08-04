@@ -1,4 +1,4 @@
 @echo off
 
 cd /d "%~dp0"
-./start.bat ./launcher -e athens
+call start.bat launcher -e athens
