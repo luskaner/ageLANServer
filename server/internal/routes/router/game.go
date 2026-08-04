@@ -148,7 +148,10 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	}
 	automatch2Group := gameGroup.Subgroup("/automatch2")
 	automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
-
+	if gameId == game.AoE4 {
+		automatch2Group.HandleFunc("POST", "/polling", Automatch2.Polling)
+		automatch2Group.HandleFunc("POST", "/stoppolling", Automatch2.Stoppolling)
+	}
 	AchievementGroup := gameGroup.Subgroup("/Achievement")
 	AchievementGroup.HandleFunc("GET", "/getAchievements", achievement.GetAchievements)
 	AchievementGroup.HandleFunc("GET", "/getAvailableAchievements", achievement.GetAvailableAchievements)
