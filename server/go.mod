@@ -8,10 +8,10 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
-	github.com/knadh/koanf/v2 v2.3.5
+	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
+	github.com/knadh/koanf/v2 v2.3.6
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
+	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
 	golang.org/x/net v0.57.0
 )
 

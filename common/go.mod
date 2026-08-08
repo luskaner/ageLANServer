@@ -8,11 +8,11 @@ require (
 	github.com/ebitengine/purego v0.10.2
 	github.com/google/uuid v1.6.0
 	github.com/hairyhenderson/go-which v0.2.3
-	github.com/knadh/koanf/providers/confmap v1.0.0
-	github.com/knadh/koanf/providers/env/v2 v2.0.0
+	github.com/knadh/koanf/providers/confmap v1.0.1
+	github.com/knadh/koanf/providers/env/v2 v2.0.1
 	github.com/knadh/koanf/providers/file v1.2.1
-	github.com/knadh/koanf/providers/posflag v1.0.1
-	github.com/knadh/koanf/v2 v2.3.5
+	github.com/knadh/koanf/providers/posflag v1.0.2
+	github.com/knadh/koanf/v2 v2.3.6
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.1
 	github.com/miekg/dns v1.1.72
 	github.com/pelletier/go-toml/v2 v2.4.3

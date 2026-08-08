@@ -5,8 +5,8 @@ go 1.26.0
 require (
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/google/uuid v1.6.0
-	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
-	github.com/knadh/koanf/v2 v2.3.5
+	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
+	github.com/knadh/koanf/v2 v2.3.6
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.57.0
