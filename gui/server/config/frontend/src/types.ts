@@ -1,0 +1,93 @@
+export interface GameHostsConfig {
+  Hosts: string[];
+}
+
+export interface GamesConfig {
+  Enabled: string[];
+  age1?: GameHostsConfig;
+  age2?: GameHostsConfig;
+  age3?: GameHostsConfig;
+  age4?: GameHostsConfig;
+  athens?: GameHostsConfig;
+  [key: string]: any;
+}
+
+export interface AnnouncementConfig {
+  Enabled: boolean;
+  Multicast: boolean;
+  Port: number;
+  MulticastGroup: string;
+}
+
+export interface AppConfig {
+  Log: boolean;
+  GeneratePlatformUserId: boolean;
+  Authentication: 'required' | 'cached' | 'adaptive' | 'disabled';
+  Games: GamesConfig;
+  Announcement: AnnouncementConfig;
+}
+
+export interface ValidationErrors {
+  [key: string]: string | undefined;
+}
+
+export const DEFAULT_TOML_CONTENT = `# Whether to log all the info the terminal plus more info to a file. Enable it for errors.
+Log = false
+# Whether to generate the Platform User Id. *ONLY* as a last resort if multiple users
+# are using Custom Launchers and they are sharing incorrectly the same Platform User Id.
+# Incompatible with Authentication not set to 'disabled'.
+GeneratePlatformUserId = false
+
+# Authentication method to use. Accepted values:
+# required: authenticate the user with the official servers as it was, effectively, the same.
+# cached: authenticate with the official server at least once every 30 days (tied to user platform user id).
+# adaptive: resolve to 'cached' if internet is detected or 'disabled' otherwise.
+# disabled: no authentication as it worked before.
+Authentication = 'disabled'
+
+[Games]
+# Games that the server will accept.
+# "age1" (AoE: DE), "age2" (AoE II: DE), "age3" (AoE III: DE), "age4" (AoE IV: AE) and "athens" (AoM: RT).
+Enabled = []
+
+# Games.<game>.Hosts is the hosts/IPs the server will bind to for that game. Only IPv4 is supported.
+# Must be *unique* within enabled games.
+# *Recommended to change to the LAN host* (use 0.0.0.0 and 127.0.0.1 for testing)
+
+[Games.age1]
+Hosts = ['0.0.0.0']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[Games.age3]
+Hosts = ['0.0.0.0']
+
+[Games.age4]
+Hosts = ['0.0.0.0']
+
+[Games.athens]
+Hosts = ['0.0.0.0']
+
+# CONFIGURING BATTLE SERVERS
+# See the complete information in BattleServers.md
+[Announcement]
+
+# Whether to respond discovery queries in LAN. When disabled, the launcher will not automatically detect it.
+Enabled = true
+# Whether to respond discovery queries in the Multicast address.
+Multicast = true
+# Port to announce to. If changed, the launchers will need to specify the port in Server.AnnouncePorts
+Port = 31978
+# Multicast group to respond to (IPv4 only).
+# If changed, the launchers will need to specify the address in Server.AnnounceMulticastGroups.
+MulticastGroup = '239.31.97.8'
+`;
+
+export const AVAILABLE_GAMES = [
+  { id: 'age1', name: 'Age of Empires: DE', code: 'AoE: DE' },
+  { id: 'age2', name: 'Age of Empires II: DE', code: 'AoE II: DE' },
+  { id: 'age3', name: 'Age of Empires III: DE', code: 'AoE III: DE' },
+  { id: 'age4', name: 'Age of Empires IV: AE', code: 'AoE IV: AE' },
+  { id: 'athens', name: 'Age of Mythology: Retold', code: 'AoM: RT' },
+];
