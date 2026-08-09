@@ -249,6 +249,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				mux = router.NewLoggingMiddleware(mux)
 			}
 		}
+		// 1 MB limit
+		mux = router.MaxBodySizeMiddleware(1<<20, mux)
 		for addr := range addrs.Iter() {
 			var certFile string
 			var keyFile string
