@@ -42,7 +42,9 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 			i.JSON(&w, i.A{2})
 			return
 		}
-		toProfileIds.Ids.Data = append(toProfileIds.Ids.Data, toProfileId.Id)
+		if toProfileId.Id != 0 {
+			toProfileIds.Ids.Data = append(toProfileIds.Ids.Data, toProfileId.Id)
+		}
 	} else if err := i.Bind(r, &toProfileIds); err != nil {
 		i.JSON(&w, i.A{2})
 		return
