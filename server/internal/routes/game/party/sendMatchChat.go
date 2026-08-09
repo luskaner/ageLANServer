@@ -15,6 +15,7 @@ type request struct {
 	MatchID       int32  `schema:"match_id"`
 	Broadcast     bool   `schema:"broadcast"`
 	Message       string `schema:"message"`
+	Metadata      string `schema:"metadata"`
 }
 
 type profileIds struct {
@@ -86,11 +87,11 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		req.Broadcast,
 		req.Message,
 		req.MessageTypeID,
+		req.Metadata,
 		currentUser,
 		receivers,
 	)
 
-	messageEncoded := message.Encode()
 	sessions := g.Sessions()
 	var receiverSession models.Session
 	for _, receiver := range receivers {
@@ -101,7 +102,7 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 		wss.SendOrStoreMessage(
 			receiverSession,
 			"MatchReceivedChatMessage",
-			messageEncoded,
+			message.Encode(receiverSession.GetClientLibVersion()),
 		)
 	}
 	i.JSON(&w, i.A{0})
