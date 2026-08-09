@@ -12,7 +12,8 @@ type Message interface {
 	GetSender() User
 	GetReceivers() []User
 	GetAdvertisementId() int32
-	Encode() i.A
+	GetMetadata() string
+	Encode(clientLibVersion uint16) i.A
 }
 
 type MainMessage struct {
@@ -20,9 +21,11 @@ type MainMessage struct {
 	time            int64
 	broadcast       bool
 	content         string
-	typ             uint8
-	sender          User
-	receivers       []User
+	// Only used for clientLibVersion >= 194, json encoded
+	metadata  string
+	typ       uint8
+	sender    User
+	receivers []User
 }
 
 func (message *MainMessage) GetTime() int64 {
@@ -53,12 +56,20 @@ func (message *MainMessage) GetAdvertisementId() int32 {
 	return message.advertisementId
 }
 
-func (message *MainMessage) Encode() i.A {
-	return i.A{
+func (message *MainMessage) GetMetadata() string {
+	return message.metadata
+}
+
+func (message *MainMessage) Encode(clientLibVersion uint16) i.A {
+	msg := i.A{
 		message.sender.GetId(),
 		message.content,
 		message.content,
 		message.typ,
 		message.advertisementId,
 	}
+	if clientLibVersion >= 194 {
+		msg = append(msg, message.metadata)
+	}
+	return msg
 }
