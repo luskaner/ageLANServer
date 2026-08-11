@@ -306,7 +306,7 @@ decompress and run them.
 ### Server
 
 The server is simple web server that listens to the game's API requests. The server reimplements
-the minimum required API surface to allow the game to work with lobbies. NO data is stored or sent via the internet.
+the minimum required API surface to allow the game to work with lobbies. Some requests are partially proxied to cdn.ageofempires.com and api.ageofempires.com and a request is used to get the public IP
 
 *Note: See the [server README](server/README.md) for more details.*
 
