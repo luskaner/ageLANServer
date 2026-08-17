@@ -75,8 +75,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
 	}
-	internal.Connectivity = common.DNSConnectivity()
-	models.CacheNetworkInterfaces()
+	if !cfg.Internet {
+		internal.Connectivity = false
+		logger.Println("Internet usage is disabled via config.")
+	} else {
+		internal.Connectivity = common.DNSConnectivity()
+		models.CacheNetworkInterfaces(cfg.ExternalIPAddress)
+	}
 	if !internal.Connectivity {
 		logger.Println("No internet connectivity, some features will fallback gracefully.")
 	}
@@ -326,6 +331,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Log":                         false,
 		"GeneratePlatformUserId":      false,
 		"Authentication":              "disabled",
+		"Internet":                    true,
+		"ExternalIPAddress":           "",
 		"Announcement.Enabled":        true,
 		"Announcement.Multicast":      true,
 		"Announcement.MulticastGroup": common.AnnounceMulticastGroup,
@@ -339,6 +346,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"log":                    "Log",
 		"generatePlatformUserId": "GeneratePlatformUserId",
 		"authentication":         "Authentication",
+		"internet":               "Internet",
+		"externalIPAddress":      "ExternalIPAddress",
 		"announce":               "Announcement.Enabled",
 		"announceMulticast":      "Announcement.Multicast",
 		"announceMulticastGroup": "Announcement.MulticastGroup",

@@ -6,6 +6,15 @@ Log = false
 # Incompatible with Authentication not set to 'disabled'.
 GeneratePlatformUserId = false
 
+# Manually specify the external/public IPv4 address of this server. If set, this value is used
+# instead of querying https://api.ipify.org/. Useful when Internet = false or when auto-detection
+# is unreliable/undesired. Leave empty to auto-detect (requires Internet = true).
+ExternalIPAddress = ''
+
+# Whether to allow the server to use the Internet at all (DNS connectivity check,
+# authentication, and public IP detection). Set to false for fully offline/air-gapped use.
+Internet = true
+
 # Authentication method to use. Accepted values:
 # required: authenticate the user with the official servers as it was, effectively, the same.
 # cached: authenticate with the official server at least once every 30 days (tied to user platform user id).

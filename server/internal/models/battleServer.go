@@ -34,8 +34,12 @@ func localIp(r *http.Request) (ip string) {
 var localSubnets []*net.IPNet
 var publicIp string
 
-func CacheNetworkInterfaces() {
-	if internal.Connectivity {
+func CacheNetworkInterfaces(externalIPAddress string) {
+	if externalIPAddress != "" {
+		if ip := net.ParseIP(externalIPAddress); ip != nil && ip.To4() != nil {
+			publicIp = externalIPAddress
+		}
+	} else if internal.Connectivity {
 		if resp, err := http.Get("https://api.ipify.org/"); err == nil {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
@@ -47,6 +51,8 @@ func CacheNetworkInterfaces() {
 				}
 			}
 		}
+	}
+	if internal.Connectivity || externalIPAddress != "" {
 		if publicIp != "" {
 			if ifs, err := common.RunningNetworkInterfaces(); err == nil {
 				for _, ipNets := range ifs {
