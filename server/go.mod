@@ -11,8 +11,8 @@ require (
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
 	github.com/knadh/koanf/v2 v2.3.6
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
-	golang.org/x/net v0.57.0
+	golang.org/x/exp v0.0.0-20260813180055-c1d0aacb2297
+	golang.org/x/net v0.58.0
 )
 
 require (

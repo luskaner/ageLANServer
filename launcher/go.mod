@@ -9,7 +9,7 @@ require (
 	github.com/knadh/koanf/v2 v2.3.6
 	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.58.0
 	golang.org/x/sys v0.47.0
 )
 
