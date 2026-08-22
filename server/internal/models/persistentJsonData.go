@@ -179,12 +179,15 @@ func NewPersistentStringMap(path string, upgrader UpgradableData[*PersistentStri
 			_ = file.fileLock.Unlock()
 			err = errors.New("data version is newer than current version")
 			return
-		} else if localErr, upgraded, data := upgrade(file, wrapper.Metadata.Version, upgrader); localErr == nil && upgraded {
-			initialRawData = data
-		} else if localErr != nil {
+		}
+		localErr, upgraded, data := upgrade(file, wrapper.Metadata.Version, upgrader)
+		if localErr != nil {
 			_ = file.fileLock.Unlock()
 			err = localErr
 			return
+		}
+		if upgraded {
+			initialRawData = data
 		} else {
 			initialRawData = wrapper.Data
 		}

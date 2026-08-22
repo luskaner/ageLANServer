@@ -66,28 +66,20 @@ func login[R any](w http.ResponseWriter, r *http.Request, reqToPlayfabID func(re
 		return nil
 	}
 	return &loginWithSteamResponse{
-		SessionTicket: *id,
-		PlayFabId:     *id,
-		NewlyCreated:  true,
-		settingsForUserResponse: settingsForUserResponse{
-			NeedsAttribution: false,
-			GatherDeviceInfo: true,
-			GatherFocusInfo:  true,
-		},
-		LastLoginTime: shared.FormatDate(time.Date(2025, 11, 12, 3, 34, 0, 0, time.UTC)),
-		entityTokenResponse: entityTokenResponse{
-			EntityToken:     *id,
-			TokenExpiration: shared.FormatDate(now.AddDate(0, 0, 1)),
-			entityResponse: entityResponse{
-				Id:         uuid.New().String(),
-				Type:       "title_player_account",
-				TypeString: "title_player_account",
-			},
-		},
-		treatmentAssignmentResponse: treatmentAssignmentResponse{
-			Variants:  []any{},
-			Variables: []any{},
-		},
+		SessionTicket:    *id,
+		PlayFabId:        *id,
+		NewlyCreated:     true,
+		NeedsAttribution: false,
+		GatherDeviceInfo: true,
+		GatherFocusInfo:  true,
+		LastLoginTime:    shared.FormatDate(time.Date(2025, 11, 12, 3, 34, 0, 0, time.UTC)),
+		EntityToken:      *id,
+		TokenExpiration:  shared.FormatDate(now.AddDate(0, 0, 1)),
+		Id:               uuid.New().String(),
+		Type:             "title_player_account",
+		TypeString:       "title_player_account",
+		Variants:         []any{},
+		Variables:        []any{},
 	}
 }
 

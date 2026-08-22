@@ -26,11 +26,9 @@ func GetPlayerCombinedInfo(w http.ResponseWriter, r *http.Request) {
 	shared.RespondOK(
 		&w,
 		getPlayerCombinedInfoRequest{
-			PlayFabId: sess.PlayfabId(),
-			infoResultPayload: infoResultPayload{
-				UserInventory:        []any{},
-				CharacterInventories: []any{},
-			},
+			PlayFabId:            sess.PlayfabId(),
+			UserInventory:        []any{},
+			CharacterInventories: []any{},
 		},
 	)
 }

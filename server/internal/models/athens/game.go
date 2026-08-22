@@ -36,9 +36,7 @@ func CreateGame() models.Game {
 		},
 	)
 	g := &Game{
-		BaseGame: commonPlayfab.BaseGame{
-			Game: mainGame,
-		},
+		Game: mainGame,
 	}
 	blessings := playfab.ReadBlessings()
 	g.CatalogItems, g.InventoryItems = playfab.Items(blessings)
