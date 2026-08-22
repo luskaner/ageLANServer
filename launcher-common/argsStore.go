@@ -11,8 +11,17 @@ import (
 
 const argsStoreSep = "|"
 
+// argsStoreByteToStringSlice splits stored content, dropping empty entries so
+// empty files or leading/trailing separators never produce phantom flags.
 func argsStoreByteToStringSlice(s []byte) []string {
-	return strings.Split(string(s), argsStoreSep)
+	parts := strings.Split(string(s), argsStoreSep)
+	flags := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			flags = append(flags, part)
+		}
+	}
+	return flags
 }
 
 type ArgsStore struct {
@@ -37,6 +46,11 @@ func (s *ArgsStore) Load() (err error, flags []string) {
 		if os.IsNotExist(err) {
 			err = nil
 		}
+		return
+	}
+	if len(content) == 0 {
+		// An empty file (e.g. created but never written) must not yield a
+		// phantom empty-string flag.
 		return
 	}
 	flags = argsStoreByteToStringSlice(content)
