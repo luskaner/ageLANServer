@@ -36,6 +36,7 @@ func ParseBroadcastMessage(data []byte, length int) (message *BroadcastMessage, 
 	restMsg = restMsg[2:]
 	if len(restMsg) != int(nameLength)+3*battleServerBroadcast.PortSize {
 		err = fmt.Errorf("invalid data size, expected %d, actual %d", int(nameLength)+3*battleServerBroadcast.PortSize, len(restMsg))
+		return
 	}
 	name := string(restMsg[:nameLength])
 	restMsg = restMsg[nameLength:]

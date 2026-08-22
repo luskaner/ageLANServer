@@ -53,7 +53,7 @@ func GameHosts(gameId string, withMacOsExclusive bool) (domains []string) {
 		}
 		fallthrough
 	case commonGame.AoE1, commonGame.AoE2, commonGame.AoE3:
-		domains = []string{relicDomain, SubDomain + worldsEdge + dotTld}
+		domains = append(domains, relicDomain, SubDomain+worldsEdge+dotTld)
 	case commonGame.AoM:
 		domains = []string{"athens-live" + apiWorldsEdge}
 	}

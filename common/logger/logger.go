@@ -71,7 +71,12 @@ func Prefix(name string) {
 
 func CloseFileLog() {
 	if file != nil {
-		if _, err := file.Write(Buf.buffer.Bytes()); err != nil {
+		Buf.mu.Lock()
+		buffer := Buf.buffer
+		Buf.buffer = bytes.Buffer{}
+		Buf.mu.Unlock()
+		if _, err := file.Write(buffer.Bytes()); err != nil {
+			_ = file.Close()
 			return
 		}
 		_ = file.Sync()
@@ -140,7 +145,7 @@ func (l *Root) Open(name string) (f *os.File, err error) {
 	}
 	return os.OpenFile(
 		filepath.Join(l.root, name+".txt"),
-		os.O_CREATE|os.O_WRONLY,
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
 		0666,
 	)
 }

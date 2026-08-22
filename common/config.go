@@ -45,6 +45,8 @@ func LoadKoanfLayers(
 
 	_ = k.Load(confmap.Provider(defaults, "."), nil)
 
+	_ = k.Load(koanfEnvProvider(Name+"_"+envPrefix), nil)
+
 	usedFile := ""
 	for _, candidate := range fileCandidates {
 		if candidate == "" {
@@ -57,8 +59,6 @@ func LoadKoanfLayers(
 			return "", &KoanfFileLoadError{Path: candidate, Err: err}
 		}
 	}
-
-	_ = k.Load(koanfEnvProvider(Name+"_"+envPrefix), nil)
 
 	var posFlag *posflag.Posflag
 	if fsBindings == nil {
@@ -110,6 +110,7 @@ func koanfEnvProvider(prefix string) *env.Env {
 		Prefix: finalPrefix,
 		TransformFunc: func(key, value string) (string, any) {
 			k := strings.TrimPrefix(key, finalPrefix)
+			k = strings.ToLower(k)
 			k = strings.ReplaceAll(k, "_", ".")
 			if strings.Contains(value, " ") {
 				return k, strings.Split(value, " ")

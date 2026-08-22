@@ -2,10 +2,13 @@ package fileLock
 
 import (
 	"encoding/binary"
+	"errors"
 	"os"
 
 	"github.com/luskaner/ageLANServer/common/process"
 )
+
+var ErrAlreadyRunning = errors.New("another instance is already running")
 
 func openFile() (err error, f *os.File) {
 	var exe string
@@ -16,7 +19,11 @@ func openFile() (err error, f *os.File) {
 	var pidPath string
 	var proc *os.Process
 	pidPath, proc, err = process.Process(exe)
-	if err == nil && proc != nil {
+	if err != nil {
+		return
+	}
+	if proc != nil {
+		err = ErrAlreadyRunning
 		return
 	}
 	f, err = os.OpenFile(pidPath, os.O_CREATE|os.O_WRONLY, 0644)
@@ -75,15 +82,13 @@ func (l *PidLock) Lock() error {
 }
 
 func (l *PidLock) Unlock() error {
+	if l.fileLock.BaseLock == nil || l.fileLock.BaseLock.File == nil {
+		return nil
+	}
 	name := l.fileLock.BaseLock.File.Name()
-	err := l.fileLock.Unlock()
-	if err != nil {
+	defer l.fileLock.clean()
+	if err := l.fileLock.Unlock(); err != nil {
 		return err
 	}
-	err = removeFile(name)
-	if err != nil {
-		return err
-	}
-	l.fileLock.clean()
-	return nil
+	return removeFile(name)
 }

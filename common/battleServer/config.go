@@ -60,9 +60,8 @@ func Configs(gameId string, onlyValid bool, ignorePid bool) (configs []Config, e
 		if entry.IsDir() {
 			continue
 		}
-		var index int
-		index, err = ParseFileName(entry.Name())
-		if err != nil {
+		index, parseErr := ParseFileName(entry.Name())
+		if parseErr != nil {
 			continue
 		}
 		var data []byte
