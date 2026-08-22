@@ -17,6 +17,7 @@ var MinimumSize = len(Header) + GuidLength + PortSize + 1 + 3*PortSize
 
 func RetrieveBsInterfaceAddresses() (mostPriority *net.IPNet, restInterfaces []*net.IPNet, err error) {
 	var interfaces []net.Interface
+	var localErr error
 	interfaces, err = net.Interfaces()
 
 	if err != nil {
@@ -25,8 +26,8 @@ func RetrieveBsInterfaceAddresses() (mostPriority *net.IPNet, restInterfaces []*
 
 	var addrs []net.Addr
 	for _, i := range interfaces {
-		addrs, err = i.Addrs()
-		if err != nil {
+		addrs, localErr = i.Addrs()
+		if localErr != nil {
 			continue
 		}
 
@@ -62,7 +63,7 @@ func calculateBroadcastIp(ip net.IP, mask net.IPMask) net.IP {
 }
 
 func ValidData(data []byte, length int) bool {
-	return length >= MinimumSize && bytes.HasPrefix(data, Header)
+	return length >= MinimumSize && length <= len(data) && bytes.HasPrefix(data, Header)
 }
 
 func CloneAnnouncements(mostPriority *net.IPNet, restInterfaces []*net.IPNet, port int) (err error) {
