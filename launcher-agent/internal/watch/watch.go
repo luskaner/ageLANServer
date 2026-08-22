@@ -107,14 +107,15 @@ func Watch(values *agent.Values, exitCode *int) {
 		commonLogger.Printf("Broadcasting BattleServer port to %d...\n", port)
 		rebroadcastBattleServer(exitCode, int(port))
 	}
-	var proc *os.Process
-	for _, p := range processes {
-		proc = p
-		break
+	var procPids []int
+	var processesList []*os.Process
+	for _, name := range sortedProcessNames(processes) {
+		p := processes[name]
+		procPids = append(procPids, p.Pid)
+		processesList = append(processesList, p)
 	}
-	//goland:noinspection ALL
-	commonLogger.Printf("Waiting for PID %d to end\n", proc.Pid)
-	if !commonProcess.WaitForProcess(proc, nil) {
+	commonLogger.Printf("Waiting for PIDs %v to end\n", procPids)
+	if !waitForProcessesToExit(processesList) {
 		commonLogger.Println("Failed to wait.")
 		*exitCode = internal.ErrFailedWaitForProcess
 		return
