@@ -27,13 +27,15 @@ func NewTemplate[D any](text string) *Template[D] {
 }
 
 func (t *Template[D]) Render(data D) string {
-	if tmpl, err := t.tmpl.Parse(t.text); err != nil {
+	tmpl, err := t.tmpl.Parse(t.text)
+	if err != nil {
 		return ""
-	} else {
-		var buf bytes.Buffer
-		if err = tmpl.Execute(&buf, data); err != nil {
-			buf.WriteString("")
-		}
-		return buf.String()
 	}
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, data); err != nil {
+		// A failed execution may have written partial output; returning it
+		// would silently corrupt the generated configuration.
+		return ""
+	}
+	return buf.String()
 }

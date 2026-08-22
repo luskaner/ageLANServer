@@ -87,6 +87,9 @@ func NewArchive(name string, targets *BinaryTargets, overrideOsName OverrideOsNa
 }
 
 func NewMergedArchive(name string, overrideOsName OverrideOsName, archives ...*Archive) *Archive {
+	if len(archives) == 0 {
+		return NewArchive(name, NewBinaryTargets(), overrideOsName)
+	}
 	mergedOsesArchs := archives[0].targets.Clone()
 	for _, a := range archives[1:] {
 		osesToDelete := make([]OperatingSystem, 0)
@@ -533,8 +536,6 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 						id := keyFromStrings(currentArchive.IDs)
 						if _, exists := binaryIdsArchives[id]; !exists {
 							binaryIdsArchives[id] = []config.Archive{}
-						} else {
-							fmt.Println("as")
 						}
 						binaryIdsArchives[id] = append(binaryIdsArchives[id], *currentArchive)
 					}
