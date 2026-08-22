@@ -22,42 +22,42 @@ func (jsonParser) Marshal(m map[string]interface{}) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-// Regression for the env layer being dead: keys must be lowercased so
-// AGELANSERVER_<PREFIX>_FOO_BAR matches the koanf key foo.bar.
-func TestEnvProviderLowercasesKeys(t *testing.T) {
-	t.Setenv("AGELANSERVER_UNITTEST_FOO_BAR", "baz")
-	t.Setenv("AGELANSERVER_UNITTEST_LIST", "a b c")
+// The env provider strips the uppercase prefix, converts '_' to '.' and
+// PRESERVES the case of the rest, so 'PREFIX_Ports_Bs' maps to 'Ports.Bs'.
+func TestEnvProviderPreservesKeyCase(t *testing.T) {
+	t.Setenv("AGELANSERVER_UNITTEST_Foo_Bar", "baz")
+	t.Setenv("AGELANSERVER_UNITTEST_List", "a b c")
 
 	k := koanf.New(".")
 	if err := k.Load(koanfEnvProvider(Name+"_unittest"), nil); err != nil {
 		t.Fatalf("load env: %v", err)
 	}
-	if got := k.String("foo.bar"); got != "baz" {
-		t.Fatalf("foo.bar = %q, want %q (env layer must match lowercase keys)", got, "baz")
+	if got := k.String("Foo.Bar"); got != "baz" {
+		t.Fatalf("Foo.Bar = %q, want %q", got, "baz")
 	}
-	if got := k.Strings("list"); len(got) != 3 || got[0] != "a" || got[2] != "c" {
-		t.Fatalf("list = %v, want [a b c] (space-separated values become slices)", got)
+	if got := k.Strings("List"); len(got) != 3 || got[0] != "a" || got[2] != "c" {
+		t.Fatalf("List = %v, want [a b c]", got)
 	}
 }
 
 // Regression for documented precedence defaults < env < file < flags.
 func TestLoadKoanfLayersPrecedence(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "config.json")
-	if err := os.WriteFile(file, []byte(`{"key":"from-file","onlyFile":"F"}`), 0644); err != nil {
+	if err := os.WriteFile(file, []byte(`{"Key":"from-file","onlyFile":"F"}`), 0644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("AGELANSERVER_UNITTEST_KEY", "from-env")
-	t.Setenv("AGELANSERVER_UNITTEST_ONLYENV", "E")
+	t.Setenv("AGELANSERVER_UNITTEST_Key", "from-env")
+	t.Setenv("AGELANSERVER_UNITTEST_OnlyEnv", "E")
 
 	newKoanf := func() *koanf.Koanf { return koanf.New(".") }
-	defaults := map[string]any{"key": "from-defaults", "onlyDefault": "D"}
+	defaults := map[string]any{"Key": "from-defaults", "onlyDefault": "D"}
 
 	// defaults < env
 	k := newKoanf()
 	if _, err := LoadKoanfLayers(k, defaults, nil, jsonParser{}, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest"); err != nil {
 		t.Fatal(err)
 	}
-	if got := k.String("key"); got != "from-env" {
+	if got := k.String("Key"); got != "from-env" {
 		t.Fatalf("env must beat defaults, got %q", got)
 	}
 	if got := k.String("onlyDefault"); got != "D" {
@@ -70,26 +70,28 @@ func TestLoadKoanfLayersPrecedence(t *testing.T) {
 	if _, err := LoadKoanfLayers(k, defaults, []string{file}, jsonParser{}, fsNone, nil, "unittest"); err != nil {
 		t.Fatal(err)
 	}
-	if got := k.String("key"); got != "from-file" {
+	if got := k.String("Key"); got != "from-file" {
 		t.Fatalf("file must beat env, got %q", got)
 	}
-	// Env keys are always lowercase after the transform.
-	if got := k.String("onlyenv"); got != "E" {
+	if got := k.String("OnlyEnv"); got != "E" {
 		t.Fatalf("env value lost when file present: %q", got)
 	}
 
 	// file < flags
 	k = newKoanf()
 	fs := pflag.NewFlagSet("flags", pflag.ContinueOnError)
-	fs.String("key", "", "")
-	if err := fs.Set("key", "from-flag"); err != nil {
+	fs.String("Key", "", "")
+	if err := fs.Set("Key", "from-flag"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := LoadKoanfLayers(k, defaults, []string{file}, jsonParser{}, fs, nil, "unittest"); err != nil {
 		t.Fatal(err)
 	}
-	if got := k.String("key"); got != "from-flag" {
+	if got := k.String("Key"); got != "from-flag" {
 		t.Fatalf("flags must beat file, got %q", got)
+	}
+	if got := k.String("onlyFile"); got != "F" {
+		t.Fatalf("file value lost: %q", got)
 	}
 }
 

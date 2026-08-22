@@ -103,14 +103,14 @@ func LoadKoanfLayersOrExit(
 }
 
 // koanfEnvProvider returns a provider that maps ENV keys to koanf keys using '.' delimiters.
-// It lowercases keys and replaces '_' with '.'. Values with spaces become string slices.
+// It strips the prefix, replaces '_' with '.' and preserves the rest of the key case, so
+// 'PREFIX_Ports_Bs' matches the 'Ports.Bs' configuration key. Values with spaces become string slices.
 func koanfEnvProvider(prefix string) *env.Env {
 	finalPrefix := strings.ReplaceAll(strings.ToUpper(prefix), "-", "_") + "_"
 	return env.Provider(".", env.Opt{
 		Prefix: finalPrefix,
 		TransformFunc: func(key, value string) (string, any) {
 			k := strings.TrimPrefix(key, finalPrefix)
-			k = strings.ToLower(k)
 			k = strings.ReplaceAll(k, "_", ".")
 			if strings.Contains(value, " ") {
 				return k, strings.Split(value, " ")

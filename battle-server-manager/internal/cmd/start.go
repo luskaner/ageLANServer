@@ -236,18 +236,16 @@ func runStart(args []string) (err error, exitCode int) {
 
 func initConfig(fs *pflag.FlagSet, values *bsManager.StartValues) *internal.Configuration {
 	k := koanf.New(".")
-	// Keys are lowercase so the AGELANSERVER_* environment variables (which
-	// the env provider lowercases) can override them.
 	defaults := map[string]any{
-		"region":               "auto",
-		"name":                 "auto",
-		"host":                 "auto",
-		"certspath":            "auto",
-		"executable.path":      "auto",
-		"executable.extraargs": []string{},
-		"ports.bs":             0,
-		"ports.websocket":      0,
-		"ports.outofband":      0,
+		"Region":               "auto",
+		"Name":                 "auto",
+		"Host":                 "auto",
+		"CertsPath":            "auto",
+		"Executable.Path":      "auto",
+		"Executable.ExtraArgs": []string{},
+		"Ports.Bs":             0,
+		"Ports.WebSocket":      0,
+		"Ports.OutOfBand":      0,
 	}
 
 	var fileCandidates []string

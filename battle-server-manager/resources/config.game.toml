@@ -2,18 +2,18 @@
 # Must be unique within regions or names (case insensitive).
 # If 'auto', it will use the same as the Name.
 # Argument: -region
-region = 'auto'
+Region = 'auto'
 # Name to show in the server list selector in supported games. Must be unique.
 # Must be unique within regions or names (case insensitive).
 # If 'auto', it will use the first unused 'Server', 'Server (1)', 'Server (2)', etc.
 # Argument: -name
-name = 'auto'
+Name = 'auto'
 # Host, IPv4 or 'auto'.
 # If using a host, it will use the first resolved non-loopback IP address. 'auto' will let the server use the same
 # IP address the user uses to connect to the server.
 # Recommended: leave to 'auto'.
 # Note: This only applies to the server.
-host = 'auto'
+Host = 'auto'
 # Path to the 'certificates' folder of the server.
 # AoE IV/AoM: Folder containing cert.pem and key.pem
 # Other games: Folder containing selfsigned_cert.pem and selfsigned_key.pem
@@ -22,14 +22,14 @@ host = 'auto'
 # 2. '../server/resources/certificates/'
 # 3. '../../server/resources/certificates/'
 # Note: You may use environment variables.
-certspath = 'auto'
-[executable]
+CertsPath = 'auto'
+[Executable]
 # Path to 'BattleServer.exe' executable including it.
 # If 'auto' it will try to find it using Steam and then Xbox (Windows-only).
 # AoM: RT: will search for AoE II: DE executable instead, as the one included does not work.
 # AoE IV: AE: will search for AoE II: DE executable instead, as it is missing it.
 # Note: You may use environment variables.
-path = 'auto'
+Path = 'auto'
 # Extra arguments to pass to the corresponding 'BattleServer.exe' executable.
 # You must not pass these arguments as they are already passed by default:
 # -webSocketPort (Ports.WebSocket)
@@ -43,18 +43,18 @@ path = 'auto'
 # -sslCert (SSL.CertFile)
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-extraargs = []
+ExtraArgs = []
 
 # Ports to listen to.
 # If 0, the first non privileged ports not listening to 0.0.0.0 will be used.
 # Recommended: set static ones if you need to configure these elsewhere.
-[ports]
+[Ports]
 # Initial port
 # Argument: -bsPort
-bs = 0
+Bs = 0
 # extra Websocket port.
 # Argument: -webSocketPort
-websocket = 0
+WebSocket = 0
 # Mainly Observer port (Ignored for AoE: DE).
 # Argument: -outOfBandPort
-outofband = 0
+OutOfBand = 0

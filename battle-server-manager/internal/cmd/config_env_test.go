@@ -14,52 +14,52 @@ import (
 )
 
 // Regression: the Docker image ships AGELANSERVER_BATTLE_SERVER_MANAGER_*
-// environment variables whose keys the env provider lowercases. Defaults and
-// config files must therefore use lowercase keys too, or the env layer can
-// never override them (ports 27012/27112/27212 silently ignored).
-func TestStartConfigEnvOverridesLowercaseKeys(t *testing.T) {
-	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_PORTS_BS", "27012")
-	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_CERTSPATH", "/app/server/resources/certificates")
+// environment variables written with the same case as the configuration keys
+// (e.g. ..._Ports_Bs -> Ports.Bs). The env provider preserves that case, so
+// these overrides must reach the capitalized koanf keys.
+func TestStartConfigEnvOverridesCapitalizedKeys(t *testing.T) {
+	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_Ports_Bs", "27012")
+	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_CertsPath", "/app/server/resources/certificates")
 
 	k := koanf.New(".")
 	defaults := map[string]any{
-		"region":               "auto",
-		"name":                 "auto",
-		"host":                 "auto",
-		"certspath":            "auto",
-		"executable.path":      "auto",
-		"executable.extraargs": []string{},
-		"ports.bs":             0,
-		"ports.websocket":      0,
-		"ports.outofband":      0,
+		"Region":               "auto",
+		"Name":                 "auto",
+		"Host":                 "auto",
+		"CertsPath":            "auto",
+		"Executable.Path":      "auto",
+		"Executable.ExtraArgs": []string{},
+		"Ports.Bs":             0,
+		"Ports.WebSocket":      0,
+		"Ports.OutOfBand":      0,
 	}
 	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
 	if _, err := common.LoadKoanfLayers(k, defaults, nil, toml.Parser(), fs, nil, executables.BattleServerManager); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := k.Int("ports.bs"); got != 27012 {
-		t.Fatalf("env must override ports.bs, got %d", got)
+	if got := k.Int("Ports.Bs"); got != 27012 {
+		t.Fatalf("env must override Ports.Bs, got %d", got)
 	}
-	if got := k.String("certspath"); got != "/app/server/resources/certificates" {
-		t.Fatalf("env must override certspath, got %q", got)
+	if got := k.String("CertsPath"); got != "/app/server/resources/certificates" {
+		t.Fatalf("env must override CertsPath, got %q", got)
 	}
 }
 
-func TestInitConfigReadsLowercaseToml(t *testing.T) {
+func TestInitConfigReadsCapitalizedToml(t *testing.T) {
 	dir := t.TempDir()
 	cfgFile := filepath.Join(dir, "config.age2.toml")
-	const contents = `region = 'eu'
-name = 'auto'
-host = '192.168.1.10'
-certspath = 'auto'
-[executable]
-path = 'auto'
-extraargs = []
-[ports]
-bs = 21001
-websocket = 21002
-outofband = 21003
+	const contents = `Region = 'eu'
+Name = 'auto'
+Host = '192.168.1.10'
+CertsPath = 'auto'
+[Executable]
+Path = 'auto'
+ExtraArgs = []
+[Ports]
+Bs = 21001
+WebSocket = 21002
+OutOfBand = 21003
 `
 	if err := os.WriteFile(cfgFile, []byte(contents), 0644); err != nil {
 		t.Fatal(err)
