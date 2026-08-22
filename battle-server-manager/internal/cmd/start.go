@@ -7,7 +7,6 @@ import (
 	"battle-server-manager/internal/cmdUtils/resolver"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,11 +110,7 @@ func runStart(args []string) (err error, exitCode int) {
 			exitCode = internal.ErrResolveHost
 			return
 		}
-		for _, currentIP := range ips {
-			if !net.ParseIP(currentIP).IsLoopback() {
-				ip = currentIP
-			}
-		}
+		ip = selectNonLoopbackIP(ips)
 		if ip == "" {
 			commonLogger.Println("ip not valid or could not resolve host to a suitable IP address")
 			exitCode = internal.ErrInvalidHost
