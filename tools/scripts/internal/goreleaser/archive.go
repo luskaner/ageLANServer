@@ -178,9 +178,10 @@ func (a *Archive) addFile(os OperatingSystem, fileMode os.FileMode, fileData Fil
 	} else {
 		sourceRendered = source.Render(fileData)
 	}
-	file := File{}
-	file.source = filepath.ToSlash(sourceRendered)
-	file.destination = sourceRendered
+	file := File{
+		source:      filepath.ToSlash(sourceRendered),
+		destination: sourceRendered,
+	}
 	for _, destFn := range destinationFn {
 		file.destination = destFn(file.destination).Render(fileData)
 	}

@@ -3,7 +3,7 @@ package buildGauntletLabyrinth
 import (
 	"fmt"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
 
 	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/playfab"
@@ -30,7 +30,7 @@ type Range struct {
 }
 
 func (r Range) RandomValue() int {
-	return rand.Intn(r.Max-r.Min+1) + r.Min
+	return rand.N(r.Max-r.Min+1) + r.Min
 }
 
 var nodesPerColumn = []Range{
@@ -278,7 +278,7 @@ func GenerateMissions(nodeRows [][]int, poolsIndexes []int, missionsPools playfa
 			if posPredecessorIndex == -1 {
 				continue
 			}
-			if rand.Intn(2) == 0 {
+			if rand.N(2) == 0 {
 				currentColumnPos.Predecessors = slices.Delete(currentColumnPos.Predecessors, nextPosPredecessorIndex, nextPosPredecessorIndex+1)
 			} else {
 				currentColumnNextPos.Predecessors = slices.Delete(currentColumnNextPos.Predecessors, posPredecessorIndex, posPredecessorIndex+1)

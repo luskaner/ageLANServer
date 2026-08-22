@@ -6,7 +6,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-const AnnounceIdLength = 16
+const AnnounceIdLength = 36
 
 type AnnounceMessage struct {
 	IpAddrs mapset.Set[netip.Addr]

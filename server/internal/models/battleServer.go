@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	"github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -128,7 +128,7 @@ func (battleServer *MainBattleServer) LAN() bool {
 		battleServer.lanMu.Lock()
 		battleServer.lan = &lan
 		defer battleServer.lanMu.Unlock()
-		if guid, err := uuid.Parse(battleServer.Base.Region); err == nil && guid.Version() == 4 {
+		if _, err := uuid.Parse(battleServer.Base.Region); err == nil {
 			lan = true
 		}
 	} else {

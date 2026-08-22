@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/uuid"
 )
 
 // Set in go build

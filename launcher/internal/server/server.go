@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
@@ -209,7 +210,7 @@ func QueryServers(
 			return
 		}
 		var parsedId uuid.UUID
-		parsedId, err = uuid.FromBytes((*packetBuffer)[len(common.AnnounceHeader):])
+		parsedId, err = uuid.Parse(string((*packetBuffer)[len(common.AnnounceHeader):]))
 		if err != nil {
 			return
 		}

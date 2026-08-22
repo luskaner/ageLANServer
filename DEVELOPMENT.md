@@ -1,7 +1,7 @@
 ### System requirements
 
 - OS requirements correspond to the server/launcher ones. Cross-compilation works on all systems out-the-box.
-- Go 1.26:
+- Go 1.27:
     * Officially from https://go.dev/dl/ if not running Windows or is 10 and higher (or equivalent).
     * Unofficially from either [thongtech/go-legacy-win7](https://github.com/thongtech/go-legacy-win7) or [XTLS/go-win7](https://github.com/XTLS/go-win7) if running Windows
       7-8.X (or equivalent). Regardless if you install the official version, you need to install this one too for
@@ -17,6 +17,24 @@ Copy `.env.example` to `.env` and set:
 * ```GPG_FINGERPRINT``` to the fingerprint of the key. Required only for `task release`.
 * ```GOROOT_LEGACY``` to the legacy go installation path. Required for `task build` and
   `task release`.
+
+### Tools
+
+Helper tools live in `tools/scripts/cmd` (one directory per tool) and are registered as `tool`
+directives in `tools/scripts/go.mod`. There is no manual build step: `go` compiles and caches them
+automatically.
+
+Run any of them from the repository root:
+
+```
+go tool <name> [args]
+```
+
+Available tools: `copyBattleServerManagerResources`, `copyLauncherResources`, `copyServerResources`,
+`createGameMockCA`, `createGameStructure`, `createServerResourcesFolder`, `generateGoreleaserConfig`.
+
+List them with `go list tool`. They are normally invoked through `task`
+(e.g. `task debug:prepare-server` or `task tools:run PROGRAM=createGameMockCA ARGS=age2`).
 
 ### Debug
 

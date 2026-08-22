@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/uuid"
 )
 
 type Renders[D any] interface {
@@ -22,7 +22,7 @@ type Template[D any] struct {
 }
 
 func NewTemplate[D any](text string) *Template[D] {
-	tmpl := template.New(uuid.NewString())
+	tmpl := template.New(uuid.New().String())
 	return &Template[D]{tmpl: tmpl, text: text}
 }
 

@@ -11,7 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/certStore"
 )
@@ -127,7 +128,7 @@ func LanServerIP(id uuid.UUID, gameTitle string, ipAddr net.IP, serverName strin
 	if err != nil {
 		return
 	}
-	if id != uuid.Nil && id != serverIdUuid {
+	if id != uuid.Nil() && id != serverIdUuid {
 		return
 	}
 	serverId = serverIdUuid
