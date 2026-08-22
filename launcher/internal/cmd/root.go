@@ -18,8 +18,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
@@ -236,7 +237,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	config.SetGameId(gameId)
 	serverValues := map[string]string{
 		"Game": gameId,
-		"Id":   uuid.NewString(),
+		"Id":   uuid.New().String(),
 	}
 	var serverArgsValues *cmdServer.Values
 	var serverFlags *pflag.FlagSet
@@ -400,9 +401,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				logger.Println("Invalid client path")
 				atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
 				return
-			} else {
-				gamePath = clientPath
 			}
+			gamePath = clientPath
 		}
 	} else if cert.HasCA(gameId) {
 		gamePath = executer.(game.Locatable).Path()
@@ -546,7 +546,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			multicastIPs,
 			ports,
 		)
-		if serverId != uuid.Nil {
+		if serverId != uuid.Nil() {
 			serverIP = selectedServerIp.String()
 			serverStart = "false"
 			serverArgsValues.Id = serverId.String()
@@ -576,7 +576,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				return
 			}
 			if id, measuredServerIPAddrs, data := server.FilterServerIPs(
-				uuid.Nil,
+				uuid.Nil(),
 				serverHost,
 				gameId,
 				common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(serverHost))),
@@ -741,15 +741,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 			mainfileCandidates = append(mainfileCandidates, filepath.Join(configPath, "config.toml"))
 		}
 	}
-	usedFile, err := common.LoadKoanfLayers(k, defaults, mainfileCandidates, toml.Parser(), fs, bindings, executables.Launcher)
-	if err != nil {
-		if fileErr, ok := errors.AsType[*common.KoanfFileLoadError](err); ok {
-			logger.Println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
-		} else {
-			logger.Println("Error loading config:", err.Error())
-		}
-		os.Exit(common.ErrConfigParse)
-	}
+	usedFile := common.LoadKoanfLayersOrExit(k, defaults, mainfileCandidates, toml.Parser(), fs, bindings, executables.Launcher, commonLogger.Println)
 	if cfgFile != "" && usedFile == "" {
 		logger.Println("No config file found, using defaults.")
 	}
@@ -765,6 +757,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 			gameFileCandidates = append(gameFileCandidates, filepath.Join(configPath, fmt.Sprintf("config.%s.toml", gameId)))
 		}
 	}
+	var err error
 	if gameCfgFile, err = common.LoadKoanfLayers(k, map[string]any{}, gameFileCandidates, toml.Parser(), fs, nil, executables.Launcher); err == nil {
 		logger.Println("Using game config file:", gameCfgFile)
 		filesToPrint = append(filesToPrint, gameCfgFile)

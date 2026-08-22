@@ -33,6 +33,8 @@ type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
 	Authentication         string
+	Internet               bool
+	ExternalIPAddress      string
 	Announcement           Announcement
 	Games                  Games
 }

@@ -77,12 +77,15 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 		challengeGroup.HandleFunc("POST", "/updateProgressBatched", challenge.UpdateProgressBatched)
 	}
 	ChallengeGroup := gameGroup.Subgroup("/Challenge")
-	// TODO: GET getChallengeProgressByProfileID ?
 	if gameId == game.AoE3 {
 		ChallengeGroup.HandleFunc("POST", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
 	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		ChallengeGroup.HandleFunc("GET", "/getChallengeProgress", challenge.GetChallengeProgress)
+	}
+	if gameId == game.AoE4 {
+		// FIXME: Implement as a separate route
+		ChallengeGroup.HandleFunc("GET", "/getChallengeProgressByProfileID", challenge.GetChallengeProgress)
 	}
 	ChallengeGroup.HandleFunc("GET", "/getChallenges", challenge.GetChallenges)
 
@@ -138,14 +141,17 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	leaderboardGroup.HandleFunc("POST", "/applyOfflineUpdates", leaderboard.ApplyOfflineUpdates)
 	leaderboardGroup.HandleFunc("POST", "/setAvatarStatValues", leaderboard.SetAvatarStatValues)
 
+	// Older versions
 	if gameId == game.AoE4 {
 		automatchGroup := gameGroup.Subgroup("/automatch")
 		automatchGroup.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
-	} else {
-		automatch2Group := gameGroup.Subgroup("/automatch2")
-		automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
 	}
-
+	automatch2Group := gameGroup.Subgroup("/automatch2")
+	automatch2Group.HandleFunc("GET", "/getAutomatchMap", Automatch2.GetAutomatchMap)
+	if gameId == game.AoE4 {
+		automatch2Group.HandleFunc("POST", "/polling", Automatch2.Polling)
+		automatch2Group.HandleFunc("POST", "/stoppolling", Automatch2.Stoppolling)
+	}
 	AchievementGroup := gameGroup.Subgroup("/Achievement")
 	AchievementGroup.HandleFunc("GET", "/getAchievements", achievement.GetAchievements)
 	AchievementGroup.HandleFunc("GET", "/getAvailableAchievements", achievement.GetAvailableAchievements)
@@ -187,6 +193,10 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	}
 	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
+	}
+	// TODO: Check if AoE2/AoM use it too
+	if gameId == game.AoE4 {
+		advertisementGroup.HandleFunc("GET", "/getAdvertisementByPlatformSessionID", advertisement.GetAdvertisementByPlatformSessionId)
 	}
 
 	advertisementGroup.HandleFunc("POST", "/updateState", advertisement.UpdateState)

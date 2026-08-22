@@ -15,6 +15,18 @@ import (
 	"github.com/spf13/pflag"
 )
 
+func run(flags *pflag.FlagSet, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: commonCmd.FlagSetToArgs(flags, true)}
+	if optionsFn != nil {
+		optionsFn(options)
+	}
+	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
+		options.Stdout = out
+		options.Stderr = out
+	}
+	return options.Exec()
+}
+
 func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
 	values, flags := admin.SetupFlagSet()
 	values.GameId = gameId
@@ -24,16 +36,7 @@ func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate
 	if certificate != nil {
 		values.AddLocalCertData = certificate.Raw
 	}
-	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: commonCmd.FlagSetToArgs(flags, true)}
-	if optionsFn != nil {
-		optionsFn(options)
-	}
-	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
-		options.Stdout = out
-		options.Stderr = out
-	}
-	result = options.Exec()
-	return
+	return run(flags, out, optionsFn)
 }
 
 func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
@@ -45,16 +48,7 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 	} else {
 		values.RemoveAll = true
 	}
-	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: commonCmd.FlagSetToArgs(flags, true)}
-	if optionsFn != nil {
-		optionsFn(options)
-	}
-	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
-		options.Stdout = out
-		options.Stderr = out
-	}
-	result = options.Exec()
-	return
+	return run(flags, out, optionsFn)
 }
 
 func runFlushCache(executableName string, wait bool, IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options), values *config.FlushCacheValues, flags *pflag.FlagSet) (file string, result *exec.Result) {

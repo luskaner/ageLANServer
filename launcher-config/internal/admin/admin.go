@@ -174,7 +174,7 @@ func stopAgentIfNeeded() (err error) {
 }
 
 func ConnectAgentIfNeededWithRetries() bool {
-	for i := 0; i < 30; i++ {
+	for range 30 {
 		if ConnectAgentIfNeeded() == nil {
 			return true
 		}
@@ -228,13 +228,12 @@ func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	return
 }
 
-func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
-	str := "-> Revert: "
-	if err = encoder.Encode(commonIpc.Revert); err != nil {
+func sendAgent(commandType byte, commandName string, commandFn func() any) (err error, exitCode int) {
+	str := fmt.Sprintf("-> %s: ", commandName)
+	if err = encoder.Encode(commandType); err != nil {
 		commonLogger.Println(str + "Could not encode")
 		return
 	}
-
 	commonLogger.Println(str + "OK")
 	str = "<- Exit Code: "
 	if err = decoder.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
@@ -246,7 +245,7 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 		return
 	}
 	commonLogger.Println(str + strconv.Itoa(exitCode))
-	data := commonIpc.RevertCommand{IPs: unmapIPs, Certificate: removeCert}
+	data := commandFn()
 	str = fmt.Sprintf("-> %v: ", data)
 	if err = encoder.Encode(data); err != nil {
 		commonLogger.Println(str + "Could not encode")
@@ -262,35 +261,22 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	return
 }
 
+func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
+	return sendAgent(
+		commonIpc.Revert,
+		"Revert",
+		func() any {
+			return commonIpc.RevertCommand{IPs: unmapIPs, Certificate: removeCert}
+		},
+	)
+}
+
 func runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, certificate []byte) (err error, exitCode int) {
-	str := "-> Setup: "
-	if err = encoder.Encode(commonIpc.Setup); err != nil {
-		commonLogger.Println(str + "Could not decode")
-		return
-	}
-	commonLogger.Println(str + "OK")
-	str = "<- Exit Code: "
-	if err = decoder.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
-		if err != nil {
-			commonLogger.Println(str + "Could not decode")
-		} else {
-			commonLogger.Println(str + strconv.Itoa(exitCode))
-		}
-		return
-	}
-	commonLogger.Println(str + strconv.Itoa(exitCode))
-	data := commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, Certificate: certificate}
-	str = fmt.Sprintf("-> %v: ", data)
-	if err = encoder.Encode(data); err != nil {
-		commonLogger.Println(str + "Could not encode")
-		return
-	}
-	commonLogger.Println(str + "OK")
-	str = "<- Exit Code: "
-	if err = decoder.Decode(&exitCode); err != nil {
-		commonLogger.Println(str + "Could not decode")
-		return
-	}
-	commonLogger.Println(str + strconv.Itoa(exitCode))
-	return
+	return sendAgent(
+		commonIpc.Setup,
+		"Setup",
+		func() any {
+			return commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, Certificate: certificate}
+		},
+	)
 }

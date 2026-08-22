@@ -29,7 +29,7 @@ func runRemove(args []string) (err error, exitCode int) {
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
 		commonLogger.Printf("\tRemoving '%s' region...\n", values.Region)
-		configs, err = battleServer.Configs(g, false)
+		configs, err = battleServer.Configs(g, false, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue

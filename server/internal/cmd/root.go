@@ -17,12 +17,12 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -75,8 +75,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
 	}
-	internal.Connectivity = common.DNSConnectivity()
-	models.CacheNetworkInterfaces()
+	if !cfg.Internet {
+		internal.Connectivity = false
+		logger.Println("Internet usage is disabled via config.")
+	} else {
+		internal.Connectivity = common.DNSConnectivity()
+		models.CacheNetworkInterfaces(cfg.ExternalIPAddress)
+	}
 	if !internal.Connectivity {
 		logger.Println("No internet connectivity, some features will fallback gracefully.")
 	}
@@ -111,7 +116,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	internal.InitializeRng(seed)
 	if values.Id == "" {
-		values.Id = uuid.NewString()
+		values.Id = uuid.New().String()
 	}
 	var closables []io.Closer
 	defer func() {
@@ -271,12 +276,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				}
 			}
 			s := &http.Server{
-				Addr:         addr.String() + ":443",
-				Handler:      mux,
-				ErrorLog:     customLogger,
-				IdleTimeout:  time.Second * 30,
-				ReadTimeout:  time.Second * 5,
-				WriteTimeout: time.Second * 30,
+				Addr:                addr.String() + ":443",
+				Handler:             mux,
+				ErrorLog:            customLogger,
+				IdleTimeout:         time.Second * 30,
+				ReadTimeout:         time.Second * 5,
+				WriteTimeout:        time.Second * 30,
+				MaxHeaderValueCount: 64,
 			}
 
 			logger.Println("\tListening on " + s.Addr)
@@ -328,6 +334,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Log":                         false,
 		"GeneratePlatformUserId":      false,
 		"Authentication":              "disabled",
+		"Internet":                    true,
+		"ExternalIPAddress":           "",
 		"Announcement.Enabled":        true,
 		"Announcement.Multicast":      true,
 		"Announcement.MulticastGroup": common.AnnounceMulticastGroup,
@@ -341,6 +349,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"log":                    "Log",
 		"generatePlatformUserId": "GeneratePlatformUserId",
 		"authentication":         "Authentication",
+		"internet":               "Internet",
+		"externalIPAddress":      "ExternalIPAddress",
 		"announce":               "Announcement.Enabled",
 		"announceMulticast":      "Announcement.Multicast",
 		"announceMulticastGroup": "Announcement.MulticastGroup",
@@ -356,15 +366,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		}
 	}
 
-	usedFile, err := common.LoadKoanfLayers(k, defaults, fileCandidates, toml.Parser(), fs, bindings, executables.Server)
-	if err != nil {
-		if fileErr, ok := errors.AsType[*common.KoanfFileLoadError](err); ok {
-			logger.Println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
-		} else {
-			logger.Println("Error loading config:", err.Error())
-		}
-		os.Exit(common.ErrConfigParse)
-	}
+	usedFile := common.LoadKoanfLayersOrExit(k, defaults, fileCandidates, toml.Parser(), fs, bindings, executables.Server, commonLogger.Println)
 	if values.CfgFile != "" && usedFile == "" {
 		logger.Println("No config file found, using defaults.")
 	}

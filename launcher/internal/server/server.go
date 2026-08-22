@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
@@ -209,22 +210,22 @@ func QueryServers(
 			return
 		}
 		var parsedId uuid.UUID
-		parsedId, err = uuid.FromBytes((*packetBuffer)[len(common.AnnounceHeader):])
+		parsedId, err = uuid.Parse(string((*packetBuffer)[len(common.AnnounceHeader):]))
 		if err != nil {
 			return
 		}
 		func() {
 			serverLock.Lock()
 			defer serverLock.Unlock()
-			var server *AnnounceMessage
+			var srv *AnnounceMessage
 			var ok bool
-			if server, ok = servers[parsedId]; !ok {
-				server = &AnnounceMessage{
+			if srv, ok = servers[parsedId]; !ok {
+				srv = &AnnounceMessage{
 					IpAddrs: mapset.NewThreadUnsafeSet[netip.Addr](),
 				}
-				servers[parsedId] = server
+				servers[parsedId] = srv
 			}
-			server.IpAddrs.Add(common.NetIPToNetIPAddr(addr.IP))
+			srv.IpAddrs.Add(common.NetIPToNetIPAddr(addr.IP))
 		}()
 	}
 
@@ -235,7 +236,7 @@ func QueryServers(
 			sendAndReceive(&packetBuffer, conn, servers)
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				<-ticker.C
 				sendAndReceive(&packetBuffer, conn, servers)
 			}

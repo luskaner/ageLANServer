@@ -4,7 +4,8 @@ import (
 	"crypto/x509"
 	"io"
 
-	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"

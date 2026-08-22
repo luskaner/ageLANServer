@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
@@ -79,7 +79,7 @@ func login[R any](w http.ResponseWriter, r *http.Request, reqToPlayfabID func(re
 			EntityToken:     *id,
 			TokenExpiration: shared.FormatDate(now.AddDate(0, 0, 1)),
 			entityResponse: entityResponse{
-				Id:         uuid.NewString(),
+				Id:         uuid.New().String(),
 				Type:       "title_player_account",
 				TypeString: "title_player_account",
 			},

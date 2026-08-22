@@ -47,7 +47,7 @@ func upgrade[T any](file *PersistentFile, version uint32, upgrader UpgradableDat
 	if err = readPersistentData(file, &currentData); err != nil {
 		return
 	}
-	for versionsUpgraded := uint32(0); versionsUpgraded < versionsToUpgrade; versionsUpgraded++ {
+	for versionsUpgraded := range versionsToUpgrade {
 		currentData = upgrader.UpgradeToNextVersion(version+versionsUpgraded, currentData)
 	}
 	data = currentData.(T)

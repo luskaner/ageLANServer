@@ -187,7 +187,7 @@ func generateFullPlatformUserIdXbox(platformUserId int64) string {
 	const chars = "0123456789ABCDEF"
 	id := make([]byte, 40)
 	for j := range id {
-		id[j] = chars[rng.IntN(len(chars))]
+		id[j] = chars[rng.N(len(chars))]
 	}
 	return string(id)
 }
