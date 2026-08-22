@@ -6,7 +6,7 @@ All commands must be run from the **repository root** (`ageLANServer/`).
 
 | Image                                                                | Description                                                                                                          |
 |----------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
-| [Server](Dockerfile/server/Dockerfile)                               | Main game server. Multi-stage: compiles with `golang:1.26-alpine3.24`, compresses with `upx`, runs on `alpine:3.24`. |
+| [Server](Dockerfile/server/Dockerfile)                               | Main game server. Multi-stage: compiles with `golang:1.27-alpine3.24`, compresses with `upx`, runs on `alpine:3.24`. |
 | [Gen-Cert](Dockerfile/genCert/Dockerfile)                            | One-shot certificate generator. Multi-stage: compiles, compresses with `upx`, runs on `scratch`.                     |
 | [Battle-Server-Manager](Dockerfile/battle-server-manager/Dockerfile) | Battle server manager. Multi-stage: compiles, compresses with `upx`, runs on `alpine:3.24` with `wine` (win64).      |
 

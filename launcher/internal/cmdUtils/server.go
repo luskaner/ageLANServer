@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
@@ -89,7 +90,7 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 }
 
 func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
-	id = uuid.Nil
+	id = uuid.Nil()
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
 	logger.Println("Looking for 'server's, you might need to allow the 'launcher' in the firewall...")
 	server.QueryServers(multicastGroups, targetPorts, servers)

@@ -1,6 +1,6 @@
 module github.com/luskaner/ageLANServer/launcher-config
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2

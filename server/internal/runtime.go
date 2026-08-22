@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/uuid"
 )
 
 var Id uuid.UUID

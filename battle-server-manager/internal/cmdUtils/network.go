@@ -60,7 +60,7 @@ func findUnusedPorts(count int) ([]int, error) {
 	var listeners []net.Listener
 	address := net.JoinHostPort(netip.IPv4Unspecified().String(), "0")
 	var err error
-	for i := 0; i < count; i++ {
+	for range count {
 		var listener net.Listener
 		err, listener = listenTCP(address)
 		if err != nil {

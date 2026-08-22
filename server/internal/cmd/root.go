@@ -17,12 +17,12 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -116,7 +116,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	internal.InitializeRng(seed)
 	if values.Id == "" {
-		values.Id = uuid.NewString()
+		values.Id = uuid.New().String()
 	}
 	var closables []io.Closer
 	defer func() {
@@ -276,12 +276,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				}
 			}
 			s := &http.Server{
-				Addr:         addr.String() + ":443",
-				Handler:      mux,
-				ErrorLog:     customLogger,
-				IdleTimeout:  time.Second * 30,
-				ReadTimeout:  time.Second * 5,
-				WriteTimeout: time.Second * 30,
+				Addr:                addr.String() + ":443",
+				Handler:             mux,
+				ErrorLog:            customLogger,
+				IdleTimeout:         time.Second * 30,
+				ReadTimeout:         time.Second * 5,
+				WriteTimeout:        time.Second * 30,
+				MaxHeaderValueCount: 64,
 			}
 
 			logger.Println("\tListening on " + s.Addr)

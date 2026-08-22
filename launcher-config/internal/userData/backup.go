@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
@@ -76,8 +77,8 @@ func (d Data) switchPaths(backupPath string, currentPath string) (ok bool) {
 
 	var revertMethods []func() bool
 	defer func() {
-		for i := len(revertMethods) - 1; i >= 0; i-- {
-			if !revertMethods[i]() {
+		for _, revertMethod := range slices.Backward(revertMethods) {
+			if !revertMethod() {
 				break
 			}
 		}

@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/google/uuid"
 	battleServerBroadcast "github.com/luskaner/ageLANServer/battle-server-broadcast"
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/uuid"
 )
 
 const DefaultName = "My Server"

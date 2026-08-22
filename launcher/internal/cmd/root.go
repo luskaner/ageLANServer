@@ -18,8 +18,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
@@ -236,7 +237,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	config.SetGameId(gameId)
 	serverValues := map[string]string{
 		"Game": gameId,
-		"Id":   uuid.NewString(),
+		"Id":   uuid.New().String(),
 	}
 	var serverArgsValues *cmdServer.Values
 	var serverFlags *pflag.FlagSet
@@ -545,7 +546,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			multicastIPs,
 			ports,
 		)
-		if serverId != uuid.Nil {
+		if serverId != uuid.Nil() {
 			serverIP = selectedServerIp.String()
 			serverStart = "false"
 			serverArgsValues.Id = serverId.String()
@@ -575,7 +576,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				return
 			}
 			if id, measuredServerIPAddrs, data := server.FilterServerIPs(
-				uuid.Nil,
+				uuid.Nil(),
 				serverHost,
 				gameId,
 				common.NetIPSliceToNetIPSet(common.StringSliceToNetIPSlice(common.HostOrIpToIps(serverHost))),

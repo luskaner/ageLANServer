@@ -62,7 +62,7 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 func ListenQueryConnections(connections []*net.UDPConn) {
 	var buf bytes.Buffer
 	buf.Write([]byte(common.AnnounceHeader))
-	idBuffer, _ := i.Id.MarshalBinary()
+	idBuffer, _ := i.Id.MarshalText()
 	buf.Write(idBuffer)
 	write := buf.Bytes()
 	for _, conn := range connections {
