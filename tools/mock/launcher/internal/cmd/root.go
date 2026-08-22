@@ -37,9 +37,16 @@ func rootCmd(args []string) error {
 	return nil
 }
 
+func setupFlags() {
+	if flag.Lookup("waitBeforeRunning") == nil {
+		flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
+		flag.BoolVar(&exitBeforeRunning, "exitBeforeRunning", false, "Exit without running the game")
+	}
+}
+
 func Execute() error {
 	log.Printf("Arguments: %s", os.Args)
-	flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
+	setupFlags()
 	flag.Parse()
 	return rootCmd(flag.Args())
 }

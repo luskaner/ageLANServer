@@ -34,9 +34,21 @@ var sslKey string
 // var muninLog string
 // var serverLog string
 
+// validateTLS enforces that the TLS pair is either fully provided or fully
+// absent; a one-sided pair used to silently downgrade serving to plaintext.
+func validateTLS(sslCert string, sslKey string) error {
+	if (sslCert == "") != (sslKey == "") {
+		return fmt.Errorf("both -sslCert and -sslKey must be provided to enable TLS")
+	}
+	return nil
+}
+
 func rootCmd() error {
 	if bsPort == 0 {
 		return fmt.Errorf("battle server port must be specified and non-zero")
+	}
+	if err := validateTLS(sslCert, sslKey); err != nil {
+		return err
 	}
 	var secure bool
 	if sslKey != "" {
