@@ -55,7 +55,8 @@ func generateSelfSignedCertificate(folder string) bool {
 		return false
 	}
 
-	keyFile, err = os.Create(filepath.Join(folder, common.SelfSignedKey))
+	// Private key material must not be readable by group/other users.
+	keyFile, err = os.OpenFile(filepath.Join(folder, common.SelfSignedKey), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 
 	if err != nil {
 		delCertFile = true
@@ -79,7 +80,9 @@ func getTemplate(typ string) *x509.Certificate {
 			CommonName:   common.Name,
 			Organization: []string{common.CertSubjectOrganization},
 		},
-		NotBefore:             time.Now(),
+		// Backdate so clients with slight clock skew do not reject the
+		// certificate as "not yet valid" right after generation.
+		NotBefore:             time.Now().Add(-time.Hour),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
 		BasicConstraintsValid: true,
 	}
@@ -157,7 +160,8 @@ func generateCertificatePairs(folder string, certName string, keyName string, pa
 
 	var outputKey io.Writer
 	if keyName != "" {
-		keyFile, err = os.Create(filepath.Join(folder, keyName))
+		// Private key material must not be readable by group/other users.
+		keyFile, err = os.OpenFile(filepath.Join(folder, keyName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			delCertFile = true
 			return
