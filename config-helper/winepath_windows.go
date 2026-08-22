@@ -40,13 +40,15 @@ func cStringToGo(ptr uintptr) string {
 // If the direct call fails, it trims path components from the right until Wine resolves a part,
 // then reconstructs the full Unix path. All error messages are in English.
 func WindowsToUnixPath(path string) (string, error) {
-	// Ensure the wine_get_unix_file_name procedure exists (indicates a Wine environment).
-	if err := procWineGetUnixFileName.Find(); err != nil {
-		return "", errors.New("wine_get_unix_file_name not available (not a Wine environment)")
-	}
+	// Validate the input before checking the environment so callers get
+	// consistent validation errors regardless of where this runs.
 	ntpath := strings.TrimSpace(path)
 	if ntpath == "" {
 		return "", errors.New("empty path")
+	}
+	// Ensure the wine_get_unix_file_name procedure exists (indicates a Wine environment).
+	if err := procWineGetUnixFileName.Find(); err != nil {
+		return "", errors.New("wine_get_unix_file_name not available (not a Wine environment)")
 	}
 	var tail []string
 	for {
