@@ -179,7 +179,7 @@ func ResolveUnspecifiedIps() (ips []string) {
 	var addrs []net.Addr
 	for _, i := range interfaces {
 
-		if i.Flags&net.FlagRunning == 0 {
+		if i.Flags&net.FlagUp == 0 {
 			continue
 		}
 

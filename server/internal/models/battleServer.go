@@ -188,24 +188,16 @@ func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) (ipV4 string)
 	if battleServer.IPv4 != "auto" {
 		return battleServer.IPv4
 	}
+	ipV4 = localIp(r)
 	remoteIPStr, _, _ := net.SplitHostPort(r.RemoteAddr)
 	remoteIP := net.ParseIP(remoteIPStr)
-	if remoteIP == nil || remoteIP.To4() == nil {
+	if remoteIP == nil || remoteIP.To4() == nil || !internal.Connectivity {
 		return
 	}
-	var useLocalIp bool
-	if internal.Connectivity {
-		for _, subnet := range localSubnets {
-			if subnet.Contains(remoteIP) {
-				useLocalIp = true
-				break
-			}
+	for _, subnet := range localSubnets {
+		if subnet.Contains(remoteIP) {
+			return
 		}
-	} else {
-		useLocalIp = true
-	}
-	if useLocalIp {
-		return localIp(r)
 	}
 	host := r.Host
 	if strings.Contains(host, ":") {

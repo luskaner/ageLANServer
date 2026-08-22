@@ -41,7 +41,7 @@ func RetrieveBsInterfaceAddresses() (mostPriority *net.IPNet, restInterfaces []*
 			if ipNet.IP.To4() == nil {
 				continue
 			}
-			if internal.FlagsCheck(i.Flags) && internal.FlagsExtraCheck(i.Flags) {
+			if internal.FlagsCheck(i.Flags) {
 				if mostPriority == nil {
 					mostPriority = ipNet
 				} else {

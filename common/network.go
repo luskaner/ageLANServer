@@ -15,7 +15,7 @@ func RunningNetworkInterfaces() (map[*net.Interface][]*net.IPNet, error) {
 	}
 	var addrs []net.Addr
 	for _, iface := range interfaces {
-		if iface.Flags&net.FlagRunning == 0 {
+		if iface.Flags&net.FlagUp == 0 {
 			continue
 		}
 		addrs, err = iface.Addrs()

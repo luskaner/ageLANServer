@@ -64,7 +64,7 @@ type Advertisement interface {
 	GetIp() string
 	UnsafeGetHostId() int32
 	GetPeers() *i.SafeOrderedMap[int32, Peer]
-	MakeMessage(broadcast bool, content string, typeId uint8, sender User, receivers []User) Message
+	MakeMessage(broadcast bool, content string, typeId uint8, metadata string, sender User, receivers []User) Message
 	StartObserving(userId int32)
 	StopObserving(userId int32)
 	EncodePeers() []i.A
@@ -328,7 +328,7 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 	return storedAdv
 }
 
-func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, sender User, receivers []User) Message {
+func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, metadata string, sender User, receivers []User) Message {
 	return &MainMessage{
 		advertisementId: adv.GetId(),
 		time:            time.Now().UTC().Unix(),
@@ -337,6 +337,7 @@ func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId
 		typ:             typeId,
 		sender:          sender,
 		receivers:       receivers,
+		metadata:        metadata,
 	}
 }
 
