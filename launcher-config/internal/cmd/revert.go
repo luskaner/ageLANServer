@@ -88,6 +88,14 @@ var restoredMetadata bool
 var restoredProfiles bool
 
 func runRevert(args []string) (err error, exitCode int) {
+	// Reset state so a previous invocation in the same process cannot leak
+	// into this one.
+	revertValues = nil
+	removedUserCerts = nil
+	removedCaCerts = nil
+	restoredMetadata = false
+	restoredProfiles = false
+
 	var flags *pflag.FlagSet
 	revertValues, flags = launcherCommonCmd.RevertFlagSet()
 	if err = flags.Parse(args); err != nil {
@@ -107,7 +115,9 @@ func runRevert(args []string) (err error, exitCode int) {
 		}
 	}()
 	if revertValues.LogRoot != "" {
-		internal.Initialize(revertValues.LogRoot)
+		if initErr := internal.Initialize(revertValues.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	isAdmin := executor.IsAdmin()
 	reverseFailed := true

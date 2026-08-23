@@ -97,6 +97,15 @@ var backedUpProfiles bool
 var addedGameCert bool
 
 func runSetUp(args []string) (err error, exitCode int) {
+	// Reset state so a previous (failed or partial) invocation in the same
+	// process cannot make undoSetUp revert things this run never did.
+	setupValues = nil
+	path = nil
+	addedUserCert = false
+	backedUpMetadata = false
+	backedUpProfiles = false
+	addedGameCert = false
+
 	var flags *pflag.FlagSet
 	setupValues, flags = launcherCommonCmd.SetUpFlagSet()
 	if err = flags.Parse(args); err != nil {
@@ -119,7 +128,9 @@ func runSetUp(args []string) (err error, exitCode int) {
 		}
 	}()
 	if setupValues.LogRoot != "" {
-		internal.Initialize(setupValues.LogRoot)
+		if initErr := internal.Initialize(setupValues.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	if setupValues.GameId == game.AoE1 {
 		setupValues.Metadata = false
