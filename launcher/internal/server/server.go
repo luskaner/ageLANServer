@@ -189,17 +189,36 @@ func QueryServers(
 		return
 	}
 
+	// Group targets by socket so each socket has exactly one goroutine.
+	// Concurrent ReadFromUDP calls on the same socket would race on
+	// SetReadDeadline and steal each other's responses.
+	type socketGroup struct {
+		conn    *net.UDPConn
+		targets []*net.UDPAddr
+	}
+	var socketGroups []*socketGroup
+	connIndex := make(map[*net.UDPConn]int)
+	for _, ct := range connTargets {
+		idx, ok := connIndex[ct.conn]
+		if !ok {
+			socketGroups = append(socketGroups, &socketGroup{conn: ct.conn})
+			idx = len(socketGroups) - 1
+			connIndex[ct.conn] = idx
+		}
+		socketGroups[idx].targets = append(socketGroups[idx].targets, ct.target)
+	}
+
 	data := []byte(common.AnnounceHeader)
 	var serverLock sync.Mutex
 
-	sendAndReceive := func(packetBuffer *[]byte, conn *connTarget, servers map[uuid.UUID]*AnnounceMessage) {
-		if _, err := conn.conn.WriteToUDP(data, conn.target); err != nil {
+	sendAndReceive := func(packetBuffer *[]byte, conn *net.UDPConn, target *net.UDPAddr, servers map[uuid.UUID]*AnnounceMessage) {
+		if _, err := conn.WriteToUDP(data, target); err != nil {
 			return
 		}
-		if err := conn.conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
 			return
 		}
-		n, addr, err := conn.conn.ReadFromUDP(*packetBuffer)
+		n, addr, err := conn.ReadFromUDP(*packetBuffer)
 		if err != nil {
 			return
 		}
@@ -230,15 +249,16 @@ func QueryServers(
 	}
 
 	var wg sync.WaitGroup
-	for _, conn := range connTargets {
+	for _, sg := range socketGroups {
 		wg.Go(func() {
 			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
-			sendAndReceive(&packetBuffer, conn, servers)
-			ticker := time.NewTicker(1 * time.Second)
-			defer ticker.Stop()
-			for range 2 {
-				<-ticker.C
-				sendAndReceive(&packetBuffer, conn, servers)
+			for round := range 3 {
+				if round > 0 {
+					time.Sleep(time.Second)
+				}
+				for _, target := range sg.targets {
+					sendAndReceive(&packetBuffer, sg.conn, target, servers)
+				}
 			}
 		})
 	}

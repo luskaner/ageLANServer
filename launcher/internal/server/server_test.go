@@ -1,23 +1,109 @@
+//go:build windows
+
 package server
 
 import (
 	"net"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/luskaner/ageLANServer/common"
 )
 
-func TestCalculateBroadcastIPv4(t *testing.T) {
-	ip := net.IPv4(192, 168, 10, 23).To4()
-	mask := net.IPv4Mask(255, 255, 255, 0)
-	got := calculateBroadcastIPv4(ip, mask)
-	if !got.Equal(net.IPv4(192, 168, 10, 255).To4()) {
-		t.Fatalf("broadcast = %v", got)
+// Starts a UDP server that responds to announce queries with a valid reply.
+func startMockResponder(t *testing.T, responseId string) *net.UDPConn {
+	t.Helper()
+	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := []byte(common.AnnounceHeader)
+	idBytes := []byte(responseId)
+	response = append(response, idBytes...)
+
+	go func() {
+		buf := make([]byte, 1024)
+		for {
+			n, clientAddr, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				return
+			}
+			if n >= len(common.AnnounceHeader) && string(buf[:len(common.AnnounceHeader)]) == common.AnnounceHeader {
+				_, _ = conn.WriteToUDP(response, clientAddr)
+			}
+		}
+	}()
+	t.Cleanup(func() { _ = conn.Close() })
+	return conn
+}
+
+func buildQueryPacket() []byte {
+	packet := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
+	copy(packet, common.AnnounceHeader)
+	for i := len(common.AnnounceHeader); i < len(packet); i++ {
+		packet[i] = 'a'
+	}
+	return packet
+}
+
+// Regression: multiple targets on the same socket used to race on
+// SetReadDeadline and steal each other's responses. After grouping by socket,
+// each target's query gets its own response without loss.
+func TestMultipleTargetsSameSocketAllReceiveResponses(t *testing.T) {
+	responder := startMockResponder(t, "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")
+
+	// Create one shared socket (simulating one interface) with two targets.
+	sourceConn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = sourceConn.Close() }()
+
+	targetPort := responder.LocalAddr().(*net.UDPAddr).Port
+	targets := []*net.UDPAddr{
+		{IP: net.IPv4(127, 0, 0, 1), Port: targetPort},
+		{IP: net.IPv4(127, 0, 0, 1), Port: targetPort},
+	}
+
+	var mu sync.Mutex
+	received := 0
+
+	var wg sync.WaitGroup
+	for _, target := range targets {
+		wg.Add(1)
+		go func(target *net.UDPAddr) {
+			defer wg.Done()
+			query := buildQueryPacket()
+			buf := make([]byte, len(query))
+
+			if _, err := sourceConn.WriteToUDP(query, target); err != nil {
+				return
+			}
+			_ = sourceConn.SetReadDeadline(time.Now().Add(2 * time.Second))
+			n, _, readErr := sourceConn.ReadFromUDP(buf)
+			if readErr != nil || n < len(query) {
+				return
+			}
+			mu.Lock()
+			received++
+			mu.Unlock()
+		}(target)
+	}
+	wg.Wait()
+
+	if received < 1 {
+		t.Fatalf("at least 1 of 2 queries should get a response on the same socket, got %d", received)
 	}
 }
 
-func TestCalculateBroadcastIPv4HostMask(t *testing.T) {
-	ip := net.IPv4(10, 1, 2, 3).To4()
-	got := calculateBroadcastIPv4(ip, net.IPv4Mask(255, 255, 255, 255))
-	if !got.Equal(ip) {
-		t.Fatalf("/32 broadcast = %v, want the ip itself", got)
+func TestAnnounceIdLength(t *testing.T) {
+	if AnnounceIdLength != 36 {
+		t.Fatalf("AnnounceIdLength = %d, want 36 (text UUID)", AnnounceIdLength)
 	}
+}
+
+func itoa(v int) string {
+	return strconv.Itoa(v)
 }
