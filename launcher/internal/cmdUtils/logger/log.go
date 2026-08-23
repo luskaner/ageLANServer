@@ -80,6 +80,7 @@ func OpenMainFileLog(gameId string) error {
 func WriteFileLog(gameId string, name string) {
 	if commonLogger.FileLogger != nil {
 		commonLogger.Prefix(name)
+		defer commonLogger.Prefix("main")
 		state.mu.RLock()
 		allHosts := common.AllHosts(gameId, state.MacOsExclusiveMappings)
 		cacert := state.Cacert
@@ -129,7 +130,11 @@ func WriteFileLog(gameId string, name string) {
 
 func PrintFile(name string, path string) {
 	if commonLogger.FileLogger != nil {
-		data, _ := os.ReadFile(path)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			commonLogger.Printf("Could not read %s: %v", path, err)
+			return
+		}
 		commonLogger.PrefixPrintln(name, string(data))
 	}
 }
@@ -301,14 +306,15 @@ func writeDataInfo(datas mapset.Set[userData.Data]) {
 	for data := range datas.Iter() {
 		counter[data.Type()]++
 	}
-	for typ, count := range counter {
-		commonLogger.Printf("%s: %d\n", dataTypeToString[typ], count)
+	// Iterate in a fixed order for deterministic output.
+	for _, typ := range []int{userData.TypeActive, userData.TypeServer, userData.TypeBackup} {
+		commonLogger.Printf("%s: %d\n", dataTypeToString[typ], counter[typ])
 	}
 }
 
 func matchPattern(pattern string, hosts []string) bool {
 	for _, host := range hosts {
-		if pattern == host {
+		if strings.EqualFold(pattern, host) {
 			return true
 		}
 		if len(pattern) > 1 && pattern[0] == '*' && pattern[1] == '.' {
@@ -316,7 +322,7 @@ func matchPattern(pattern string, hosts []string) bool {
 			if len(host) <= len(suffix) {
 				continue
 			}
-			if host[len(host)-len(suffix):] != suffix {
+			if !strings.EqualFold(host[len(host)-len(suffix):], suffix) {
 				continue
 			}
 			prefix := host[:len(host)-len(suffix)]
