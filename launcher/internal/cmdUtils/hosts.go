@@ -86,7 +86,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 				}
 			}
 		}); err != nil {
-			return common.ErrFileLog
+			logger.Println("Failed to write hosts setup log:", err)
 		}
 	}
 	return

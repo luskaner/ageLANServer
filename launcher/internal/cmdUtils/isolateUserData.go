@@ -59,7 +59,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 				}
 			}
 		}); err != nil {
-			return common.ErrFileLog
+			logger.Println("Failed to write isolate setup log:", err)
 		}
 	}
 	return
