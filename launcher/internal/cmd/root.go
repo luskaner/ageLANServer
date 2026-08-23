@@ -315,7 +315,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
 				return
 			}
-			logger.BasePath = isolationPath
+			logger.SetBasePath(isolationPath)
 			logger.WriteFileLog(gameId, "post isolation path")
 		} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
 			logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
@@ -388,7 +388,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
 			return
 		}
-		logger.BasePath = isolationPath
+		logger.SetBasePath(isolationPath)
 		logger.WriteFileLog(gameId, "post isolation path")
 	}
 	var customExecutor custom.Exec
@@ -412,12 +412,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		_, caCert := cert.NewCA(gameId, config.GamePathToGameCertPath(executer, gamePath))
 		gameCaCertPath = caCert.OriginalPath()
 		if commonLogger.FileLogger != nil {
-			logger.Cacert = &caCert
+			logger.SetCacert(&caCert)
 		}
 	}
 	macOsExclusiveMappings := config.NativeMacOsGame(executer, true)
 	if commonLogger.FileLogger != nil {
-		logger.MacOsExclusiveMappings = macOsExclusiveMappings
+		logger.SetMacOsExclusiveMappings(macOsExclusiveMappings)
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
