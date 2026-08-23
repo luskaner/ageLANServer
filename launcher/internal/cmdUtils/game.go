@@ -1,6 +1,7 @@
 package cmdUtils
 
 import (
+	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -50,6 +51,13 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 			logger.Println("Error message: " + err.Error())
 			return common.ErrFileLog
 		}
+		// Convert explicitly: assigning a nil *os.File directly to io.Writer
+		// produces a non-nil interface holding a nil pointer, which passes
+		// StartAgent's `out != nil` guard and breaks the child process.
+		var out io.Writer
+		if f != nil {
+			out = f
+		}
 		result := executor.StartAgent(
 			c.gameId,
 			steamProcess,
@@ -61,7 +69,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 			c.battleServerRegion,
 			basePath,
 			loggerPath,
-			f,
+			out,
 			func(options commonExecutor.Options) {
 				commonLogger.Println("start agent", options.String())
 			},
