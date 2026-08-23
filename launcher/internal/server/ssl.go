@@ -44,6 +44,9 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		commonLogger.Println("ReadCACertificateFromServer error:", err)
 		return nil
 	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		commonLogger.Println("ReadCACertificateFromServer status code:", resp.StatusCode)
 		return nil
@@ -53,9 +56,6 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		commonLogger.Println("ReadCACertificateFromServer read error:", err)
 		return nil
 	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
 	block, _ := pem.Decode(bodyBytes)
 	if block == nil || block.Type != "CERTIFICATE" {
 		commonLogger.Println("ReadCACertificateFromServer: no certificate found")
