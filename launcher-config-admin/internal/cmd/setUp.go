@@ -30,6 +30,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 	values, fs := admin.SetupFlagSet()
 	if err = fs.Parse(args); err != nil {
 		exitCode = common.ErrSyntax
+		return
 	}
 
 	// validate required flags
@@ -39,7 +40,9 @@ func runSetUp(args []string) (err error, exitCode int) {
 
 	internal.SetUp = new(true)
 	if values.LogRoot != "" {
-		internal.Initialize(values.LogRoot)
+		if initErr := internal.Initialize(values.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	trustedCertificate := false
 	if len(values.AddLocalCertData) > 0 {

@@ -32,7 +32,9 @@ func runRevert(args []string) (err error, exitCode int) {
 	}
 	internal.SetUp = new(false)
 	if values.LogRoot != "" {
-		internal.Initialize(values.LogRoot)
+		if initErr := internal.Initialize(values.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	if values.RemoveAll {
 		values.IPs = true

@@ -18,7 +18,9 @@ func runFlushCache(args []string) (err error, exitCode int) {
 		return
 	}
 	if values.LogRoot != "" {
-		internal.Initialize(values.LogRoot)
+		if initErr := internal.Initialize(values.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	if values.Certs {
 		if runtime.GOOS != "windows" {
