@@ -43,7 +43,9 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 				str += "OK"
 			}
 			commonLogger.Println(str)
-			continue
+			// The gob stream state is no longer trustworthy after a failed
+			// decode: continuing would loop on the same garbage forever.
+			return
 		}
 
 		var exitCode = internal.ErrNonExistingAction
