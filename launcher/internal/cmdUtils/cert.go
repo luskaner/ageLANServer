@@ -85,6 +85,12 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		c.certFilePath, _ = filepath.Abs(certFile.Name())
 		addLocalCertData = serverCertificate.Raw
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
+		// Remove the temp file if the setup below fails before consuming it.
+		defer func() {
+			if errorCode != 0 {
+				_ = os.Remove(c.certFilePath)
+			}
+		}()
 	} else {
 		certMsg = fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
 		if runtime.GOOS == "darwin" || canAdd == "user" {

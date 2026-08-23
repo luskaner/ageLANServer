@@ -74,6 +74,8 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 				commonLogger.Println("start agent", options.String())
 			},
 		)
+		// Close the parent's handle: the child inherited its own copy.
+		_ = f.Close()
 		if !result.Success() {
 			logger.Println("Failed to start 'agent'.")
 			exitCode = internal.ErrAgentStart
