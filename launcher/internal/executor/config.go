@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"errors"
 	"io"
 	"runtime"
 
@@ -83,7 +84,10 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 			if !result.Success() {
 				logger.Println("Failed to revert setup.")
 			}
-			result.Err = err
+			// Join both errors: the caller needs to know about the store
+			// failure AND that the compensating revert may have also failed
+			// (meaning the system is in an unrecoverable state).
+			result.Err = errors.Join(result.Err, err)
 		}
 	}
 	return
