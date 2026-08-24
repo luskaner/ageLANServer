@@ -103,6 +103,9 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 				errorHandler()
 				return
 			}
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(resp.Body)
 			if resp.StatusCode != http.StatusOK {
 				errorHandler()
 				return
@@ -112,7 +115,6 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 				errorHandler()
 				return
 			}
-			_ = resp.Body.Close()
 			localErr = json.Unmarshal(respBody, &respAny)
 			if localErr != nil || len(respAny) == 0 {
 				errorHandler()

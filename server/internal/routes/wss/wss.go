@@ -142,17 +142,14 @@ func (c *connectionWrapper) logClose(sender string, receiver string) {
 }
 
 func (c *connectionWrapper) Close() error {
-	defer func() {
-		c.connLock.Lock()
-		defer c.connLock.Unlock()
-		c.conn = nil
-		c.writeLock = nil
-	}()
+	c.connLock.Lock()
+	defer c.connLock.Unlock()
+	if c.conn == nil {
+		return nil
+	}
 	c.logClose(c.LocalAddr(), c.RemoteAddr())
-	var err error
-	c.withConn(func(conn *websocket.Conn) {
-		err = c.conn.Close()
-	})
+	err := c.conn.Close()
+	c.conn = nil
 	return err
 }
 
@@ -194,11 +191,24 @@ func closeConn(conn *connectionWrapper, closeCode int, text string) {
 func parseMessage(sessions models.Sessions, message i.H, currentSession models.Session) (uint32, models.Session) {
 	var sess models.Session
 	sess = nil
-	op := uint32(message["operation"].(float64))
+	op := uint32(0)
+	rawOp, opOk := message["operation"]
+	if !opOk {
+		return 0, nil
+	}
+	opFloat, opOk := rawOp.(float64)
+	if !opOk {
+		return 0, nil
+	}
+	op = uint32(opFloat)
 	if op == 0 {
 		sessionToken, ok := message["sessionToken"]
 		if ok {
-			sess, ok = sessions.GetById(sessionToken.(string))
+			tokenStr, tokOk := sessionToken.(string)
+			if !tokOk {
+				return 0, nil
+			}
+			sess, ok = sessions.GetById(tokenStr)
 			if ok {
 				return 0, sess
 			}
@@ -237,10 +247,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			connWrapper.LocalAddr(),
 		)))
 	}
-	connWrapper.conn.SetCloseHandler(func(code int, text string) error {
-		closeConn(connWrapper, code, text)
-		return nil
-	})
+	// NOTE: No custom close handler is set here. Gorilla invokes close
+	// handlers synchronously inside ReadJSON, which already holds the
+	// connLock.RLock — calling Close() from there would deadlock on
+	// connLock.Lock(). The deferred cleanup below handles disconnection.
 	err = connWrapper.SetReadDeadline(time.Now().Add(time.Minute))
 	if err != nil {
 		closeConn(connWrapper, websocket.CloseNormalClosure, "Missing initial message")
