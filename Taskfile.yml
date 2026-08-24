@@ -2,7 +2,7 @@
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 version: '3'
 
-dotenv: [ '.env', '{{.ENV}}/.env.', '{{.HOME}}/.env' ]
+dotenv: [ '.env', '{{.ENV}}/.env', '{{.HOME}}/.env' ]
 
 tasks:
   build-goreleaser-cfg:

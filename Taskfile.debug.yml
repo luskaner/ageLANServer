@@ -16,9 +16,9 @@ tasks:
       - task: :tools:run
         vars: { PROGRAM: 'copyServerResources' }
   prepare-server:
-    cmd:
-      task: ensure-certificate
-      vars: { ARGS: '-r' }
+    cmds:
+      - task: ensure-certificate
+        vars: { ARGS: '-r' }
   ensure-certificate:
     deps:
       - prepare-server-genCert
@@ -84,7 +84,7 @@ tasks:
       - build/server/bin/genCert{{exeExt}}
     method: checksum
     cmds:
-      - go build -o build/server/bin/genCert ./server-genCert
+      - go build -o build/server/bin/genCert{{exeExt}} ./server-genCert
   build-battle-server-manager:
     sources:
       - common/**/*
