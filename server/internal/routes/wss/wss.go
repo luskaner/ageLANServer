@@ -180,6 +180,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		logClose(localAddr, remoteAddr)
 		_ = socket.WriteClose(1000, nil)
 		_ = socket.NetConn().Close()
+		// Release the session's resources immediately instead of waiting
+		// for natural expiry.
+		sessions.Delete(sessionToken)
 	}()
 
 	var op uint32
