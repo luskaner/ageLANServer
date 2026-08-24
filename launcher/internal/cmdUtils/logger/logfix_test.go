@@ -41,6 +41,20 @@ func TestWriteDataInfoCoversAllTypes(t *testing.T) {
 	}
 }
 
+func TestMatchPatternWildcardSubdomainDot(t *testing.T) {
+	hosts := []string{"a.b.example.com"}
+	if matchPattern("*.example.com", hosts) {
+		t.Error("multi-level subdomain prefix (contains dot) should not match")
+	}
+}
+
+func TestMatchPatternWildcardEmptyPrefix(t *testing.T) {
+	hosts := []string{".example.com"}
+	if matchPattern("*.example.com", hosts) {
+		t.Error("empty prefix should not match")
+	}
+}
+
 func TestPrintFileNonexistentDoesNotPanic(t *testing.T) {
 	PrintFile("test", filepath.Join(t.TempDir(), "nonexistent.txt"))
 }

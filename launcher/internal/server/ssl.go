@@ -56,17 +56,7 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 		commonLogger.Println("ReadCACertificateFromServer read error:", err)
 		return nil
 	}
-	block, _ := pem.Decode(bodyBytes)
-	if block == nil || block.Type != "CERTIFICATE" {
-		commonLogger.Println("ReadCACertificateFromServer: no certificate found")
-		return nil
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		commonLogger.Println("ReadCACertificateFromServer parse error:", err)
-		return nil
-	}
-	return cert
+	return parseCertFromPEM(bodyBytes)
 }
 
 func GenerateCertificatePair(certificateFolder string, optionsFn func(options exec.Options)) (result *exec.Result) {
@@ -93,6 +83,24 @@ func CertificateSoonExpired(cert string) bool {
 		return true
 	}
 
+	return certSoonExpiredFromBytes(certPEM, time.Now())
+}
+
+func parseCertFromPEM(bodyBytes []byte) *x509.Certificate {
+	block, _ := pem.Decode(bodyBytes)
+	if block == nil || block.Type != "CERTIFICATE" {
+		commonLogger.Println("ReadCACertificateFromServer: no certificate found")
+		return nil
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer parse error:", err)
+		return nil
+	}
+	return cert
+}
+
+func certSoonExpiredFromBytes(certPEM []byte, now time.Time) bool {
 	block, _ := pem.Decode(certPEM)
 	if block == nil {
 		return true
@@ -103,5 +111,5 @@ func CertificateSoonExpired(cert string) bool {
 		return true
 	}
 
-	return time.Now().Add(24 * time.Hour).After(crt.NotAfter)
+	return now.Add(24 * time.Hour).After(crt.NotAfter)
 }

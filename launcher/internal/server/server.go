@@ -281,6 +281,14 @@ func sourceToTargetUDPAddrs(
 	if err != nil {
 		return nil
 	}
+	return buildTargetAddrs(interfaces, multicastGroups, targetPorts)
+}
+
+func buildTargetAddrs(
+	interfaces map[*net.Interface][]*net.IPNet,
+	multicastGroups mapset.Set[netip.Addr],
+	targetPorts mapset.Set[uint16],
+) (mapping map[*net.UDPAddr][]*net.UDPAddr) {
 	mapping = make(map[*net.UDPAddr][]*net.UDPAddr)
 	for iff, iffIps := range interfaces {
 		for _, n := range iffIps {
