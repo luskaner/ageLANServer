@@ -148,3 +148,162 @@ func TestRemoveKillsNothingAndDeletesFile(t *testing.T) {
 		t.Fatal("config file not removed")
 	}
 }
+
+func TestWriteConfigCreatesDirectory(t *testing.T) {
+	ln1, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln1.Close()
+	ln2, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln2.Close()
+
+	cfg := battleServer.Config{
+		Base: battleServer.Base{Region: "new-region", Name: "New Server", IPv4: "127.0.0.1", BsPort: ln1.Addr().(*net.TCPAddr).Port, WebSocketPort: ln2.Addr().(*net.TCPAddr).Port},
+		PID:  uint32(os.Getpid()),
+	}
+	gameId := "unit-newdir"
+	dir := battleServer.Folder(gameId)
+	_ = os.RemoveAll(dir)
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	if err := WriteConfig(gameId, cfg); err != nil {
+		t.Fatal(err)
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, battleServer.Name(0))); statErr != nil {
+		t.Fatalf("config file should exist: %v", statErr)
+	}
+}
+
+func TestWriteConfigIncrementsFileName(t *testing.T) {
+	ln1, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln1.Close()
+	ln2, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln2.Close()
+	ln3, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln3.Close()
+
+	gameId := "unit-increment"
+	dir := battleServer.Folder(gameId)
+	_ = os.RemoveAll(dir)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	cfg1 := battleServer.Config{
+		Base: battleServer.Base{Region: "r1", Name: "S1", IPv4: "127.0.0.1", BsPort: ln1.Addr().(*net.TCPAddr).Port, WebSocketPort: ln2.Addr().(*net.TCPAddr).Port},
+		PID:  uint32(os.Getpid()),
+	}
+	if err := WriteConfig(gameId, cfg1); err != nil {
+		t.Fatal(err)
+	}
+	cfg2 := battleServer.Config{
+		Base: battleServer.Base{Region: "r2", Name: "S2", IPv4: "127.0.0.1", BsPort: ln3.Addr().(*net.TCPAddr).Port, WebSocketPort: 0},
+		PID:  uint32(os.Getpid()),
+	}
+	if err := WriteConfig(gameId, cfg2); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := os.ReadDir(dir)
+	count := 0
+	for _, e := range entries {
+		if !e.IsDir() {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 config files, got %d", count)
+	}
+}
+
+func TestExistingServersMissingFolder(t *testing.T) {
+	err, names, regions := ExistingServers("nonexistent-game-id-xyz")
+	if err != nil {
+		t.Fatalf("missing folder should not error, got %v", err)
+	}
+	if names == nil || regions == nil {
+		t.Fatal("sets should not be nil")
+	}
+	if names.Cardinality() != 0 || regions.Cardinality() != 0 {
+		t.Fatal("expected empty sets for missing folder")
+	}
+}
+
+func TestRemoveEmptyConfigs(t *testing.T) {
+	gameId := "unit-empty-remove"
+	dir := battleServer.Folder(gameId)
+	_ = os.RemoveAll(dir)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	if Remove(gameId, nil, false) {
+		t.Error("Remove with nil configs should return false")
+	}
+	if Remove(gameId, []battleServer.Config{}, false) {
+		t.Error("Remove with empty configs should return false")
+	}
+}
+
+func TestRemoveOnlyInvalidSkipsValid(t *testing.T) {
+	ln1, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln1.Close()
+	ln2, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4zero})
+	if err != nil {
+		t.Skip("cannot bind ephemeral listener")
+	}
+	defer ln2.Close()
+
+	cfg := battleServer.Config{
+		Base: battleServer.Base{Region: "valid-region", Name: "Valid", IPv4: "127.0.0.1", BsPort: ln1.Addr().(*net.TCPAddr).Port, WebSocketPort: ln2.Addr().(*net.TCPAddr).Port},
+		PID:  uint32(os.Getpid()),
+	}
+
+	gameId := "unit-onlyinvalid"
+	dir := battleServer.Folder(gameId)
+	_ = os.RemoveAll(dir)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	if err := WriteConfig(gameId, cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	configs, _ := battleServer.Configs(gameId, false, false)
+	if len(configs) != 1 {
+		t.Fatal("expected 1 config")
+	}
+
+	// Config is valid (live PID + bound ports), so onlyInvalid=true should skip it
+	if Remove(gameId, configs, true) {
+		t.Error("Remove with onlyInvalid should not remove valid config")
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, battleServer.Name(0))); statErr != nil {
+		t.Error("valid config file should still exist")
+	}
+}
+
+func TestRemoveWithMissingFolder(t *testing.T) {
+	if Remove("nonexistent-game-id-abc", []battleServer.Config{{Base: battleServer.Base{Region: "r"}}}, false) {
+		t.Error("Remove with missing folder should return false")
+	}
+}
