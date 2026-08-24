@@ -244,6 +244,11 @@ func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, av
 			)
 		},
 	)
+	if mainUser == nil {
+		// Generation failed; remove the cached entry so the next attempt
+		// can retry instead of permanently serving a nil user.
+		users.store.Delete(identifier)
+	}
 	return mainUser
 }
 
