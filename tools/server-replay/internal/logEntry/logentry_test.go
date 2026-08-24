@@ -80,3 +80,150 @@ func TestSameBody(t *testing.T) {
 		t.Fatal("empty body must match the zero hash")
 	}
 }
+
+func TestMatchAllTrue(t *testing.T) {
+	if !matchAll(func(s string) bool { return s == "a" }, "a", "a") {
+		t.Fatal("matchAll should return true when all match")
+	}
+}
+
+func TestMatchAllFalse(t *testing.T) {
+	if matchAll(func(s string) bool { return s == "a" }, "a", "b") {
+		t.Fatal("matchAll should return false when one doesn't match")
+	}
+}
+
+func TestMatchAllTypeMismatch(t *testing.T) {
+	if matchAll(func(s string) bool { return true }, 123) {
+		t.Fatal("matchAll should return false on type mismatch")
+	}
+}
+
+func TestMatchAllEmpty(t *testing.T) {
+	if !matchAll(func(s string) bool { return false }) {
+		t.Fatal("matchAll with no args should return true")
+	}
+}
+
+func TestIpValid(t *testing.T) {
+	if !ip("192.168.1.1") {
+		t.Fatal("valid IPv4 rejected")
+	}
+	if !ip("2001:db8::1") {
+		t.Fatal("valid IPv6 rejected")
+	}
+}
+
+func TestIpInvalid(t *testing.T) {
+	if ip("not-an-ip") {
+		t.Fatal("invalid IP accepted")
+	}
+}
+
+func TestEpochValid(t *testing.T) {
+	now := time.Now()
+	if !epoch(float64(now.Unix())) {
+		t.Fatal("current time epoch rejected")
+	}
+}
+
+func TestEpochTooOld(t *testing.T) {
+	if epoch(float64(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Unix())) {
+		t.Fatal("epoch before 2025 should be rejected")
+	}
+}
+
+func TestEpochTooFarFuture(t *testing.T) {
+	future := time.Now().Add(48 * time.Hour)
+	if epoch(float64(future.Unix())) {
+		t.Fatal("epoch >24h in future should be rejected")
+	}
+}
+
+func TestDateIso8601Valid(t *testing.T) {
+	if !dateIso8601("2025-06-15T12:30:00.000Z") {
+		t.Fatal("valid ISO 8601 rejected")
+	}
+}
+
+func TestDateIso8601Invalid(t *testing.T) {
+	if dateIso8601("not-a-date") {
+		t.Fatal("invalid ISO 8601 accepted")
+	}
+}
+
+func TestDateRFC3339Valid(t *testing.T) {
+	if !dateRFC3339("2025-06-15T12:30:00Z") {
+		t.Fatal("valid RFC3339 rejected")
+	}
+}
+
+func TestDateRFC3339Invalid(t *testing.T) {
+	if dateRFC3339("garbage") {
+		t.Fatal("invalid RFC3339 accepted")
+	}
+}
+
+func TestDateRFC1123Valid(t *testing.T) {
+	if !dateRFC1123("Mon, 15 Jun 2025 12:30:00 GMT") {
+		t.Fatal("valid RFC1123 rejected")
+	}
+}
+
+func TestDateRFC1123Invalid(t *testing.T) {
+	if dateRFC1123("bad") {
+		t.Fatal("invalid RFC1123 accepted")
+	}
+}
+
+func TestDatePlayfabValid(t *testing.T) {
+	if !datePlayfab("2025-06-15T12:30:00.000Z") {
+		t.Fatal("valid playfab date rejected")
+	}
+}
+
+func TestDatePlayfabInvalid(t *testing.T) {
+	if datePlayfab("nope") {
+		t.Fatal("invalid playfab date accepted")
+	}
+}
+
+func TestCompareJSONIdentical(t *testing.T) {
+	a := map[string]any{"key": "value", "num": float64(42)}
+	if !CompareJSON(a, a) {
+		t.Fatal("identical JSON should compare equal")
+	}
+}
+
+func TestCompareJSONDifferentNonVolatile(t *testing.T) {
+	a := map[string]any{"key": "value1"}
+	b := map[string]any{"key": "value2"}
+	if CompareJSON(a, b) {
+		t.Fatal("different non-volatile values should not match")
+	}
+}
+
+func TestCompareJSONSameVolatileEpoch(t *testing.T) {
+	now := float64(time.Now().Unix())
+	a := map[string]any{"ts": now}
+	b := map[string]any{"ts": now + 100}
+	if !CompareJSON(a, b) {
+		t.Fatal("epoch values within range should be treated as volatile")
+	}
+}
+
+func TestCompareJSONSameVolatileIP(t *testing.T) {
+	a := map[string]any{"ip": "192.168.1.1"}
+	b := map[string]any{"ip": "10.0.0.1"}
+	if !CompareJSON(a, b) {
+		t.Fatal("different IPs should be treated as volatile")
+	}
+}
+
+func TestCompareJSONSameVolatileDate(t *testing.T) {
+	a := map[string]any{"date": "2025-06-15T12:30:00.000Z"}
+	b := map[string]any{"date": "2025-06-15T12:35:00.000Z"}
+	if !CompareJSON(a, b) {
+		t.Fatal("different ISO 8601 dates should be treated as volatile")
+	}
+}
