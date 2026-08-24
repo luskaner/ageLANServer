@@ -41,6 +41,11 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 		advIp := adv.GetIp()
 		var addedUserIds []int32
 		for j, u := range users {
+			// Skip pre-existing peers: they must NOT be included in
+			// addedUserIds so the rollback below never evicts them.
+			if _, alreadyPeer := adv.GetPeers().Load(u.GetId()); alreadyPeer {
+				continue
+			}
 			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatId(), -1, raceIds[j], teamIds[j]); peer != nil {
 				addedUserIds = append(addedUserIds, u.GetId())
 			} else {
