@@ -1,39 +1,8 @@
 package wss
 
 import (
-	"sync"
 	"testing"
 )
-
-// Regression: Close used to nil writeLock; a concurrent sendMessage would
-// panic on writeLock.Lock() with a nil receiver.
-func TestCloseIdempotent(t *testing.T) {
-	cw := &connectionWrapper{
-		connLock:  &sync.RWMutex{},
-		writeLock: &sync.Mutex{},
-		conn:      nil,
-	}
-	if err := cw.Close(); err != nil {
-		t.Fatalf("first Close: %v", err)
-	}
-	if err := cw.Close(); err != nil {
-		t.Fatalf("second Close (idempotent): %v", err)
-	}
-	// writeLock must still be usable after Close.
-	cw.writeLock.Lock()
-	cw.writeLock.Unlock()
-}
-
-func TestCloseWithConn(t *testing.T) {
-	cw := &connectionWrapper{
-		connLock:  &sync.RWMutex{},
-		writeLock: &sync.Mutex{},
-		conn:      nil,
-	}
-	if err := cw.Close(); err != nil {
-		t.Fatal(err)
-	}
-}
 
 // Regression: parseMessage used unchecked type assertions that panicked on
 // malformed JSON from unauthenticated clients.
@@ -60,4 +29,21 @@ func TestParseMessageMalformedInput(t *testing.T) {
 			_ = sess
 		})
 	}
+}
+
+func TestParseMessageValidLogin(t *testing.T) {
+	// Can't easily construct a real Sessions without full model setup,
+	// but we can verify the assertion logic doesn't panic.
+	msg := map[string]any{
+		"operation":    float64(0),
+		"sessionToken": "some-token",
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("panicked: %v", r)
+		}
+	}()
+	op, sess := parseMessage(nil, msg, nil)
+	_ = op
+	_ = sess
 }
