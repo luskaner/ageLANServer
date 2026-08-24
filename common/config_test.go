@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -123,5 +124,69 @@ func TestLoadKoanfLayersParseErrorWrapped(t *testing.T) {
 	}
 	if fileErr.Path != bad || fileErr.Err == nil {
 		t.Fatalf("wrapped error incomplete: %+v", fileErr)
+	}
+}
+
+func TestKoanfFileLoadErrorUnwrap(t *testing.T) {
+	inner := errors.New("inner error")
+	err := &KoanfFileLoadError{Path: "/x", Err: inner}
+	if err.Unwrap() != inner {
+		t.Errorf("Unwrap() = %v, want %v", err.Unwrap(), inner)
+	}
+}
+
+func TestLoadKoanfLayers_NilKoanf(t *testing.T) {
+	_, err := LoadKoanfLayers(nil, nil, nil, nil, nil, nil, "")
+	if err == nil {
+		t.Fatal("expected error for nil koanf")
+	}
+}
+
+func TestLoadKoanfLayersOrExitWith_FileError(t *testing.T) {
+	bad := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(bad, []byte("{invalid"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	k := koanf.New(".")
+	var exitCode int
+	var printed []any
+	exitFn := func(code int) { exitCode = code }
+	printlnFn := func(a ...any) { printed = append(printed, a...) }
+	LoadKoanfLayersOrExitWith(k, nil, []string{bad}, jsonParser{}, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest", printlnFn, exitFn)
+	if exitCode != ErrConfigParse {
+		t.Errorf("exit code = %d, want %d", exitCode, ErrConfigParse)
+	}
+	if len(printed) == 0 {
+		t.Error("printlnFn should have been called")
+	}
+}
+
+func TestLoadKoanfLayersOrExitWith_NonNilDefaultsOnly(t *testing.T) {
+	k := koanf.New(".")
+	var printed []any
+	exitFn := func(code int) {}
+	printlnFn := func(a ...any) { printed = append(printed, a...) }
+	used := LoadKoanfLayersOrExitWith(k, map[string]any{"K": "V"}, nil, nil, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest", printlnFn, exitFn)
+	if len(printed) != 0 {
+		t.Error("printlnFn should not have been called on success")
+	}
+	if used != "" {
+		t.Errorf("used = %q, want empty", used)
+	}
+}
+
+func TestLoadKoanfLayersOrExitWith_Success(t *testing.T) {
+	k := koanf.New(".")
+	var exitCalled bool
+	exitFn := func(code int) { exitCalled = true }
+	used := LoadKoanfLayersOrExitWith(k, map[string]any{"K": "V"}, nil, nil, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest", func(a ...any) {}, exitFn)
+	if exitCalled {
+		t.Error("exitFn should not be called on success")
+	}
+	if used != "" {
+		t.Errorf("used = %q, want empty", used)
+	}
+	if k.String("K") != "V" {
+		t.Errorf("default not loaded, K = %q", k.String("K"))
 	}
 }

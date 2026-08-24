@@ -166,3 +166,38 @@ func TestMustParsePanicsOnInvalid(t *testing.T) {
 	}()
 	MustParse("invalid")
 }
+
+func TestUnmarshalTextHexDecodeBranches(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"group1 bad hex", "xxxxxxxx-7dec-11d0-a765-00a0c91e6bf6"},
+		{"group2 bad hex", "f81d4fae-xxxx-11d0-a765-00a0c91e6bf6"},
+		{"group3 bad hex", "f81d4fae-7dec-xxxx-a765-00a0c91e6bf6"},
+		{"group4 bad hex", "f81d4fae-7dec-11d0-xxxx-00a0c91e6bf6"},
+		{"group5 bad hex", "f81d4fae-7dec-11d0-a765-xxxxxxxxxxxx"},
+		{"length 45 (urn+37)", "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6x"},
+		{"length 33 (no-dashes)", "f81d4fae7dec11d0a76500a0c91e6bf6x"},
+		{"length 38 (braced+extra)", "{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}xx"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var u UUID
+			if err := u.UnmarshalText([]byte(tt.input)); err == nil {
+				t.Errorf("UnmarshalText(%q) expected error, got nil", tt.input)
+			}
+		})
+	}
+}
+
+func TestAppendTextNilSlice(t *testing.T) {
+	u := Nil()
+	b, err := u.AppendText(nil)
+	if err != nil {
+		t.Fatalf("AppendText(nil): %v", err)
+	}
+	if string(b) != "00000000-0000-0000-0000-000000000000" {
+		t.Errorf("AppendText(nil) = %q", string(b))
+	}
+}

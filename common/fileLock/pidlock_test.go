@@ -85,3 +85,51 @@ func TestPidLockFullCycleAndIdempotentUnlock(t *testing.T) {
 		t.Fatalf("second Unlock must be safe and nil, got %v", err)
 	}
 }
+
+func TestNewBaseLock(t *testing.T) {
+	dir := t.TempDir()
+	f, err := os.Create(filepath.Join(dir, "lock.dat"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bl := NewBaseLock(f)
+	if bl == nil || bl.File != f {
+		t.Fatal("NewBaseLock must return BaseLock with the given file")
+	}
+	bl.close()
+	if bl.File != nil {
+		t.Error("close() should set File to nil")
+	}
+}
+
+func TestBaseLockCloseNilFile(t *testing.T) {
+	bl := &BaseLock{}
+	// Should not panic when File is already nil
+	bl.close()
+}
+
+func TestLockContended(t *testing.T) {
+	dir := t.TempDir()
+	f1, err := os.Create(filepath.Join(dir, "c.dat"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f1.Close()
+
+	l1 := Lock{}
+	if err := l1.Lock(f1); err != nil {
+		t.Fatalf("first Lock: %v", err)
+	}
+	l1.clean()
+
+	// Second lock on same file via a fresh Lock — may succeed on Windows
+	// (non-exclusive by default) but should not panic.
+	f2, err := os.OpenFile(f1.Name(), os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f2.Close()
+	l2 := Lock{}
+	_ = l2.Lock(f2)
+	l2.clean()
+}

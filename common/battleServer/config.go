@@ -85,11 +85,21 @@ func Configs(gameId string, onlyValid bool, ignorePid bool) (configs []Config, e
 }
 
 func (c Config) Validate(ignorePid bool) bool {
+	return c.ValidateWith(ignorePid, nil, nil)
+}
+
+type ProcessFinder func(pid int) (*os.Process, error)
+type PortDialer func(network, address string, timeout time.Duration) (net.Conn, error)
+
+func (c Config) ValidateWith(ignorePid bool, findProc ProcessFinder, dial PortDialer) bool {
 	if c.Region == "" || (c.PID == 0 && !ignorePid) || c.IPv4 == "" || c.BsPort == 0 || c.WebSocketPort == 0 {
 		return false
 	}
 	if !ignorePid {
-		proc, err := process.FindProcess(int(c.PID))
+		if findProc == nil {
+			findProc = process.FindProcess
+		}
+		proc, err := findProc(int(c.PID))
 		if err != nil || proc == nil {
 			return false
 		}
@@ -102,9 +112,12 @@ func (c Config) Validate(ignorePid bool) bool {
 	if IPv4 == "auto" {
 		IPv4 = netip.IPv4Unspecified().String()
 	}
+	if dial == nil {
+		dial = net.DialTimeout
+	}
 	for _, port := range ports {
 		target := net.JoinHostPort(IPv4, strconv.Itoa(port))
-		conn, portErr := net.DialTimeout("tcp4", target, 100*time.Millisecond)
+		conn, portErr := dial("tcp4", target, 100*time.Millisecond)
 		if portErr != nil {
 			return false
 		}

@@ -8,8 +8,11 @@ import (
 	"crypto/x509/pkix"
 	"math/big"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/luskaner/ageLANServer/common/paths"
 )
 
 func TestBytesToCertificateInvalidReturnsNil(t *testing.T) {
@@ -99,5 +102,120 @@ func TestKoanfFileLoadErrorFormatting(t *testing.T) {
 	err := &KoanfFileLoadError{Path: "/some/file.toml"}
 	if err.Error() != "/some/file.toml: <nil>" {
 		t.Fatalf("Error() = %q", err.Error())
+	}
+}
+
+func TestReadCertsPool(t *testing.T) {
+	der, _ := generateTestCertificate(t, "pool.test")
+	f, err := os.CreateTemp(t.TempDir(), "pool")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = WriteAsPem(der, f); err != nil {
+		t.Fatal(err)
+	}
+	_ = f.Close()
+
+	pool, err := ReadCertsPool(f.Name())
+	if err != nil {
+		t.Fatalf("ReadCertsPool: %v", err)
+	}
+	if pool == nil {
+		t.Fatal("pool should not be nil")
+	}
+}
+
+func TestReadCertsPool_InvalidFile(t *testing.T) {
+	_, err := ReadCertsPool("/nonexistent/path.pem")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}
+
+func TestCertificatePairs_AllPresent(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{Cert, Key, CACert, SelfSignedCert, SelfSignedKey} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ok, cert, key, ca, ssCert, ssKey := CertificatePairs(dir)
+	if !ok {
+		t.Fatal("CertificatePairs should return ok=true when all files present")
+	}
+	if cert != filepath.Join(dir, Cert) {
+		t.Errorf("cert = %q", cert)
+	}
+	if key != filepath.Join(dir, Key) {
+		t.Errorf("key = %q", key)
+	}
+	if ca != filepath.Join(dir, CACert) {
+		t.Errorf("caCert = %q", ca)
+	}
+	if ssCert != filepath.Join(dir, SelfSignedCert) {
+		t.Errorf("selfSignedCert = %q", ssCert)
+	}
+	if ssKey != filepath.Join(dir, SelfSignedKey) {
+		t.Errorf("selfSignedKey = %q", ssKey)
+	}
+}
+
+func TestCertificatePairs_EmptyDir(t *testing.T) {
+	ok, _, _, _, _, _ := CertificatePairs("")
+	if ok {
+		t.Error("CertificatePairs should return ok=false for empty dir")
+	}
+}
+
+func TestCertificatePairs_MissingCert(t *testing.T) {
+	dir := t.TempDir()
+	// Only create key, ca, ssCert, ssKey — skip cert.pem
+	for _, name := range []string{Key, CACert, SelfSignedCert, SelfSignedKey} {
+		os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644)
+	}
+	ok, _, _, _, _, _ := CertificatePairs(dir)
+	if ok {
+		t.Error("CertificatePairs should return ok=false when cert.pem is missing")
+	}
+}
+
+func TestCertificatePairs_MissingKey(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{Cert, CACert, SelfSignedCert, SelfSignedKey} {
+		os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644)
+	}
+	ok, _, _, _, _, _ := CertificatePairs(dir)
+	if ok {
+		t.Error("CertificatePairs should return ok=false when key.pem is missing")
+	}
+}
+
+func TestCertificatePairFolderPath_Empty(t *testing.T) {
+	if got := certificatePairFolderPath(""); got != "" {
+		t.Errorf("certificatePairFolderPath(\"\") = %q, want empty", got)
+	}
+}
+
+func TestCertificatePairFolder(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "server.exe")
+	folder := CertificatePairFolder(exe)
+	expected := filepath.Join(dir, paths.ResourcesDir, "certificates")
+	if folder != expected {
+		t.Errorf("CertificatePairFolder = %q, want %q", folder, expected)
+	}
+	// Verify directory was created
+	if _, err := os.Stat(expected); os.IsNotExist(err) {
+		t.Error("CertificatePairFolder should create the directory")
+	}
+}
+
+func TestCertificatePairFolder_AlreadyExists(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "server.exe")
+	CertificatePairFolder(exe) // create
+	folder := CertificatePairFolder(exe) // should not fail
+	if folder == "" {
+		t.Error("CertificatePairFolder should succeed when directory already exists")
 	}
 }

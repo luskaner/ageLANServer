@@ -90,6 +90,20 @@ func LoadKoanfLayersOrExit(
 	envPrefix string,
 	printlnFn func(...any),
 ) string {
+	return LoadKoanfLayersOrExitWith(k, defaults, fileCandidates, parser, fs, fsBindings, envPrefix, printlnFn, os.Exit)
+}
+
+func LoadKoanfLayersOrExitWith(
+	k *koanf.Koanf,
+	defaults map[string]any,
+	fileCandidates []string,
+	parser koanf.Parser,
+	fs *pflag.FlagSet,
+	fsBindings map[string]string,
+	envPrefix string,
+	printlnFn func(...any),
+	exitFn func(int),
+) string {
 	usedFile, err := LoadKoanfLayers(k, defaults, fileCandidates, parser, fs, fsBindings, envPrefix)
 	if err != nil {
 		if fileErr, ok := errors.AsType[*KoanfFileLoadError](err); ok {
@@ -97,7 +111,7 @@ func LoadKoanfLayersOrExit(
 		} else {
 			printlnFn("Error loading config:", err.Error())
 		}
-		os.Exit(ErrConfigParse)
+		exitFn(ErrConfigParse)
 	}
 	return usedFile
 }
