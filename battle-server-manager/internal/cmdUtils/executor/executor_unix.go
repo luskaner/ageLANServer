@@ -10,7 +10,7 @@ import (
 	wineExec "github.com/luskaner/ageLANServer/common/game/executor/wine"
 )
 
-func execWithOptions(gameId string, options *exec.Options) exec.Result {
+var execWithOptions = func(gameId string, options *exec.Options) exec.Result {
 	var foundExecutor wineExec.CustomExec
 	if executor, ok := wineExec.NewExec(); ok {
 		foundExecutor = executor

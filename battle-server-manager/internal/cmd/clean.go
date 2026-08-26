@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
+var removeAllFnClean = cmdUtils.RemoveAll
+
 func runClean(args []string) (err error, exitCode int) {
 	fs := pflag.NewFlagSet("clean", pflag.ContinueOnError)
 	cmd.GamesVarCommand(fs, &cmdUtils.GameIds)
@@ -17,5 +19,5 @@ func runClean(args []string) (err error, exitCode int) {
 		return
 	}
 	commonLogger.Println("Cleaning up...")
-	return cmdUtils.RemoveAll(true)
+	return removeAllFnClean(true)
 }

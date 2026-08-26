@@ -12,6 +12,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
+var (
+	parsedGameIdsFnRemove = cmdUtils.ParsedGameIds
+	battleServerConfigsFn = battleServer.Configs
+	removeFn              = cmdUtils.Remove
+)
+
 func runRemove(args []string) (err error, exitCode int) {
 	values, flags := bsManager.RemoveFlagSet()
 	if err = flags.Parse(args); err != nil {
@@ -19,7 +25,7 @@ func runRemove(args []string) (err error, exitCode int) {
 		return
 	}
 	var games mapset.Set[string]
-	games, err = cmdUtils.ParsedGameIds(&values.GameIds)
+	games, err = parsedGameIdsFnRemove(&values.GameIds)
 	if err != nil {
 		commonLogger.Println(err.Error())
 		exitCode = internal.ErrGames
@@ -29,7 +35,7 @@ func runRemove(args []string) (err error, exitCode int) {
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
 		commonLogger.Printf("\tRemoving '%s' region...\n", values.Region)
-		configs, err = battleServer.Configs(g, false, false)
+		configs, err = battleServerConfigsFn(g, false, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue
@@ -37,7 +43,7 @@ func runRemove(args []string) (err error, exitCode int) {
 		configs = slices.DeleteFunc(configs, func(c battleServer.Config) bool {
 			return c.Region != values.Region
 		})
-		if !cmdUtils.Remove(g, configs, false) {
+		if !removeFn(g, configs, false) {
 			commonLogger.Println("\tNo configuration needs it.")
 		}
 	}

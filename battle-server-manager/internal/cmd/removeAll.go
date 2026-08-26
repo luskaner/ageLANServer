@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
+var removeAllFn = cmdUtils.RemoveAll
+
 func runRemoveAll(args []string) (err error, exitCode int) {
 	fs := pflag.NewFlagSet("remove-all", pflag.ContinueOnError)
 	cmd.GamesVarCommand(fs, &cmdUtils.GameIds)
@@ -17,5 +19,5 @@ func runRemoveAll(args []string) (err error, exitCode int) {
 		return
 	}
 	commonLogger.Println("Removing all...")
-	return cmdUtils.RemoveAll(false)
+	return removeAllFn(false)
 }

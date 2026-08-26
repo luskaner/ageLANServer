@@ -11,11 +11,19 @@ import (
 	"github.com/luskaner/ageLANServer/common/process"
 )
 
+var (
+	parsedGameIdsFnRemoveAll   = ParsedGameIds
+	battleServerConfigsFn      = battleServer.Configs
+	removeFnRemoveAll          = Remove
+	findProcessFn              = process.FindProcess
+	killProcFn                 = process.KillProc
+)
+
 func Kill(config battleServer.Config) bool {
-	proc, err := process.FindProcess(int(config.PID))
+	proc, err := findProcessFn(int(config.PID))
 	if err == nil && proc != nil {
 		str := "\t\tProcess still running, killing it..."
-		if err = process.KillProc(proc); err == nil {
+		if err = killProcFn(proc); err == nil {
 			commonLogger.Println(str + " OK")
 			return true
 		}
@@ -33,16 +41,16 @@ func remove(gameId string, config battleServer.Config) bool {
 		return false
 	}
 	fullPath := filepath.Join(folder, config.Path())
-	if f, err := os.Stat(fullPath); err == nil && !f.IsDir() {
-		str := "\t\tRemoving config file..."
-		if err := os.Remove(fullPath); err == nil {
-			commonLogger.Println(str + " OK")
-		} else {
-			commonLogger.Println(str+" failed with error: ", err)
-		}
-	} else {
+	if f, err := os.Stat(fullPath); err != nil || f.IsDir() {
 		commonLogger.Println("Failed with error: ", err)
+		return false
 	}
+	str := "\t\tRemoving config file..."
+	if err := os.Remove(fullPath); err != nil {
+		commonLogger.Println(str+" failed with error: ", err)
+		return false
+	}
+	commonLogger.Println(str + " OK")
 	return true
 }
 
@@ -67,7 +75,7 @@ func Remove(gameId string, configs []battleServer.Config, onlyInvalid bool) bool
 
 func RemoveAll(onlyInvalid bool) (err error, exitCode int) {
 	var games mapset.Set[string]
-	games, err = ParsedGameIds(nil)
+	games, err = parsedGameIdsFnRemoveAll(nil)
 	if err != nil {
 		commonLogger.Println(err.Error())
 		exitCode = internal.ErrGames
@@ -76,12 +84,12 @@ func RemoveAll(onlyInvalid bool) (err error, exitCode int) {
 	var configs []battleServer.Config
 	for g := range games.Iter() {
 		commonLogger.Printf("Game: %s\n", g)
-		configs, err = battleServer.Configs(g, false, false)
+		configs, err = battleServerConfigsFn(g, false, false)
 		if err != nil {
 			commonLogger.Printf("\t%s\n", err)
 			continue
 		}
-		if !Remove(g, configs, onlyInvalid) {
+		if !removeFnRemoveAll(g, configs, onlyInvalid) {
 			commonLogger.Println("\tNo configuration needs it.")
 		}
 	}
