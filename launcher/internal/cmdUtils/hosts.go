@@ -58,7 +58,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
 			cfgSetupOpts := executor.NewConfigSetupOptions()
 			cfgSetupOpts.Out = writer
-			cfgSetupOpts.OptionsFn = func(options exec.Options) {
+			cfgSetupOpts.OptionsFn = func(options *exec.Options) {
 				commonLogger.Println("run config setup for hosts", options.String())
 			}
 			cfgSetupOpts.GameId = gameId
@@ -91,3 +91,4 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 	}
 	return
 }
+

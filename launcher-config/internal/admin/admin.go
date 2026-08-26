@@ -52,7 +52,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 		suffix = "_hosts"
 	}
 	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options exec.Options) {
+		result = executor.RunSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -80,7 +80,7 @@ func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (e
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_revert", func(writer io.Writer) {
-		result = executor.RunRevert(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options exec.Options) {
+		result = executor.RunRevert(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -108,7 +108,7 @@ func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode in
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_flushCache", func(writer io.Writer) {
-		_, result = executor.RunFlushCache(ips, certs, file.Folder(), writer, func(options exec.Options) {
+		_, result = executor.RunFlushCache(ips, certs, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -217,7 +217,7 @@ func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	if internal.Logger != nil {
 		logRoot = internal.Logger.Folder()
 	}
-	file, result = executor.RunFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options exec.Options) {
+	file, result = executor.RunFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
 		commonLogger.Println("start config-admin-agent:", options.String())
 	})
 	if result.Success() {

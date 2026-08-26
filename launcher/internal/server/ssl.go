@@ -59,7 +59,7 @@ func ReadCACertificateFromServer(host string) *x509.Certificate {
 	return parseCertFromPEM(bodyBytes)
 }
 
-func GenerateCertificatePair(certificateFolder string, optionsFn func(options exec.Options)) (result *exec.Result) {
+func GenerateCertificatePair(certificateFolder string, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	baseFolder := filepath.Join(certificateFolder, "..", "..")
 	exePath := filepath.Join(baseFolder, executables.NativeFileName(false, executables.ServerGenCert))
 	if _, err := os.Stat(exePath); err != nil {
@@ -68,7 +68,9 @@ func GenerateCertificatePair(certificateFolder string, optionsFn func(options ex
 	values, singleFs := genCert.SingleFlagSet("", nil)
 	values.Replace = true
 	options := exec.Options{File: exePath, Wait: true, Args: cmd.FlagSetToArgs(singleFs.Fs(), false), ExitCode: true}
-	optionsFn(options)
+	if optionsFn != nil {
+		optionsFn(&options)
+	}
 	result = options.Exec()
 	return
 }

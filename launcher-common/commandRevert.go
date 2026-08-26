@@ -16,7 +16,7 @@ var revertCommandExec = func(options exec.Options) *exec.Result {
 	return options.Exec()
 }
 
-func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err error) {
+func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err error) {
 	var args []string
 	var cmd []string
 	err, cmd = RevertCommandStore.Load()
@@ -34,7 +34,7 @@ func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err 
 		Args:           args,
 	}
 	if optionsFn != nil {
-		optionsFn(options)
+		optionsFn(&options)
 	}
 	if out != nil {
 		options.Stdout = out

@@ -70,7 +70,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 			basePath,
 			loggerPath,
 			out,
-			func(options commonExecutor.Options) {
+			func(options *commonExecutor.Options) {
 				commonLogger.Println("start agent", options.String())
 			},
 		)
@@ -144,3 +144,5 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}
 	return
 }
+
+

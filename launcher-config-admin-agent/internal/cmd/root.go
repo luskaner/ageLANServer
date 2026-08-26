@@ -77,7 +77,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 		}
 		var result *exec.Result
 		if buffErr := commonLogger.FileLogger.Buffer("config-admin_flushCache", func(writer io.Writer) {
-			_, result = launcherCommonExecutor.RunFlushCache(values.IPs, values.Certs, values.LogRoot, writer, func(options exec.Options) {
+			_, result = launcherCommonExecutor.RunFlushCache(values.IPs, values.Certs, values.LogRoot, writer, func(options *exec.Options) {
 				if writer != nil {
 					commonLogger.Println("run config admin flushCache", options.String())
 				}
@@ -98,3 +98,4 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	exitCode = ipc.StartServer(values.LogRoot)
 	return
 }
+

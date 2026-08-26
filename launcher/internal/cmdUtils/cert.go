@@ -109,7 +109,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
 		cfgSetupOpts := executor.NewConfigSetupOptions()
 		cfgSetupOpts.Out = writer
-		cfgSetupOpts.OptionsFn = func(options exec.Options) {
+		cfgSetupOpts.OptionsFn = func(options *exec.Options) {
 			commonLogger.Println("run config setup for CA store cert", options.String())
 		}
 		cfgSetupOpts.GameId = gameId
@@ -155,3 +155,4 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	return
 }
+

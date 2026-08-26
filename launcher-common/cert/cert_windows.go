@@ -10,6 +10,19 @@ import (
 
 const rootStoreName = "ROOT"
 
+// Injectable wrappers for Windows API – allows unit tests to mock the store
+// without touching the real certificate store.
+var (
+	certOpenStoreFn                = windows.CertOpenStore
+	certCloseStoreFn               = windows.CertCloseStore
+	certCreateCertificateContextFn = windows.CertCreateCertificateContext
+	certAddCertificateContextToStoreFn = windows.CertAddCertificateContextToStore
+	certFindCertificateInStoreFn   = windows.CertFindCertificateInStore
+	certDeleteCertificateFromStoreFn = windows.CertDeleteCertificateFromStore
+	certEnumCertificatesInStoreFn  = windows.CertEnumCertificatesInStore
+	certFreeCertificateContextFn   = windows.CertFreeCertificateContext
+)
+
 func openNamedStore(userStore bool, storeName string) (windows.Handle, error) {
 	rootStr := windows.StringToUTF16Ptr(storeName)
 	var flags uint32
@@ -18,7 +31,7 @@ func openNamedStore(userStore bool, storeName string) (windows.Handle, error) {
 	} else {
 		flags = windows.CERT_SYSTEM_STORE_LOCAL_MACHINE
 	}
-	return windows.CertOpenStore(windows.CERT_STORE_PROV_SYSTEM, 0, 0, flags, uintptr(unsafe.Pointer(rootStr)))
+	return certOpenStoreFn(windows.CERT_STORE_PROV_SYSTEM, 0, 0, flags, uintptr(unsafe.Pointer(rootStr)))
 }
 
 func TrustCertificates(userStore bool, certs []*x509.Certificate) error {
@@ -31,18 +44,18 @@ func trustCertificatesInStore(userStore bool, storeName string, certs []*x509.Ce
 		return err
 	}
 	defer func(store windows.Handle, flags uint32) {
-		_ = windows.CertCloseStore(store, flags)
+		_ = certCloseStoreFn(store, flags)
 	}(store, 0)
 
 	for _, cert := range certs {
 		certBytes := cert.Raw
 		var certContext *windows.CertContext
-		certContext, err = windows.CertCreateCertificateContext(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
+		certContext, err = certCreateCertificateContextFn(windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, &certBytes[0], uint32(len(certBytes)))
 		if err != nil {
 			return err
 		}
-		err = windows.CertAddCertificateContextToStore(store, certContext, windows.CERT_STORE_ADD_NEW, nil)
-		_ = windows.CertFreeCertificateContext(certContext)
+		err = certAddCertificateContextToStoreFn(store, certContext, windows.CERT_STORE_ADD_NEW, nil)
+		_ = certFreeCertificateContextFn(certContext)
 		if err != nil {
 			return err
 		}
@@ -59,12 +72,12 @@ func untrustCertificatesFromStore(userStore bool, storeName string) (certs []*x5
 		userStore,
 		storeName,
 		func(store windows.Handle, _ *windows.CertContext) (*windows.CertContext, error) {
-			return windows.CertFindCertificateInStore(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
+			return certFindCertificateInStoreFn(store, windows.X509_ASN_ENCODING|windows.PKCS_7_ASN_ENCODING, 0, windows.CERT_FIND_SUBJECT_STR, unsafe.Pointer(windows.StringToUTF16Ptr(common.CertSubjectOrganization)), nil)
 		},
 		func(certContext *windows.CertContext) error {
 			// CertDeleteCertificateFromStore always frees the context itself,
 			// even on failure. Freeing it again here would be a double free.
-			return windows.CertDeleteCertificateFromStore(certContext)
+			return certDeleteCertificateFromStoreFn(certContext)
 		},
 		true,
 	)
@@ -80,7 +93,7 @@ func iterateContext(userStore bool, storeName string, contextGetter func(store w
 		return
 	}
 	defer func(store windows.Handle, flags uint32) {
-		_ = windows.CertCloseStore(store, flags)
+		_ = certCloseStoreFn(store, flags)
 	}(store, 0)
 	certs = make([]*x509.Certificate, 0)
 	var certContext *windows.CertContext
@@ -112,7 +125,7 @@ func iterateContext(userStore bool, storeName string, contextGetter func(store w
 		}
 	}
 	if certContext != nil {
-		_ = windows.CertFreeCertificateContext(certContext)
+		_ = certFreeCertificateContextFn(certContext)
 	}
 	return
 }
@@ -125,7 +138,7 @@ func enumCertificatesInStore(userStore bool, storeName string) (certs []*x509.Ce
 	return iterateContext(
 		userStore,
 		storeName,
-		windows.CertEnumCertificatesInStore,
+		certEnumCertificatesInStoreFn,
 		func(*windows.CertContext) error {
 			return nil
 		},

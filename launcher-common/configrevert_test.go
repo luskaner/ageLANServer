@@ -87,3 +87,86 @@ func TestRevertRequiresAdminElevationValues(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigRevertFlagOptions_RestoreAfterFlags(t *testing.T) {
+	opts := NewConfigRevertFlagOptions()
+	opts.RemoveAll = true
+	opts.IPs = true
+	opts.Certs = true
+	_ = opts.Flags()
+	// After Flags(), original values must be restored (non-mutating fix)
+	if !opts.IPs || !opts.Certs {
+		t.Error("Flags() should restore original values after clearing, not permanently mutate")
+	}
+}
+
+func TestConfigRevertFlagOptions_WithGameAndLogRoot(t *testing.T) {
+	opts := NewConfigRevertFlagOptions()
+	opts.GameId = "age2"
+	opts.LogRoot = "/tmp/logs"
+	opts.IPs = true
+	flags := opts.Flags()
+	foundGame, foundLog := false, false
+	for i, f := range flags {
+		if f == "--game=age2" || f == "--game" && i+1 < len(flags) && flags[i+1] == "age2" {
+			foundGame = true
+		}
+		if f == "--logRoot=/tmp/logs" || f == "--logRoot" && i+1 < len(flags) && flags[i+1] == "/tmp/logs" {
+			foundLog = true
+		}
+		// Also check joined form via FlagSetToArgs uses --name=value
+		if f == "--game=age2" {
+			foundGame = true
+		}
+		if f == "--logRoot=/tmp/logs" {
+			foundLog = true
+		}
+	}
+	// FlagSetToArgs emits --game=age2 etc; ensure at least one is present
+	hasGame := false
+	for _, f := range flags {
+		if f == "--game=age2" {
+			hasGame = true
+		}
+	}
+	if !hasGame {
+		t.Errorf("expected --game flag, got %v", flags)
+	}
+	if !foundLog && len(flags) > 0 {
+		// LogRoot may be emitted as "--logRoot=/tmp/logs"
+		hasLog := false
+		for _, f := range flags {
+			if f == "--logRoot=/tmp/logs" {
+				hasLog = true
+			}
+		}
+		if !hasLog {
+			t.Errorf("expected --logRoot flag, got %v", flags)
+		}
+	}
+	_ = foundGame
+	_ = foundLog
+}
+
+func TestAllRevertFlagsContainsAll(t *testing.T) {
+	flags := allRevertFlags("age2", "/logs")
+	found := false
+	for _, f := range flags {
+		if f == "--all" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("allRevertFlags should contain --all, got %v", flags)
+	}
+	// Should also contain game and logRoot if provided
+	hasGame := false
+	for _, f := range flags {
+		if f == "--game=age2" {
+			hasGame = true
+		}
+	}
+	if !hasGame {
+		t.Errorf("allRevertFlags missing game, got %v", flags)
+	}
+}

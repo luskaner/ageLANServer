@@ -15,19 +15,22 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func run(flags *pflag.FlagSet, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+var isAdminFn = commonExecutor.IsAdmin
+var execFn = func(options exec.Options) *exec.Result { return options.Exec() }
+
+func run(flags *pflag.FlagSet, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	options := exec.Options{File: executables.NativeFileName(true, executables.LauncherConfigAdmin), AsAdmin: true, Wait: true, ExitCode: true, Args: commonCmd.FlagSetToArgs(flags, true)}
 	if optionsFn != nil {
-		optionsFn(options)
+		optionsFn(&options)
 	}
-	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
+	if out != nil && (runtime.GOOS != "windows" || isAdminFn() || !options.AsAdmin) {
 		options.Stdout = out
 		options.Stderr = out
 	}
-	return options.Exec()
+	return execFn(options)
 }
 
-func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	values, flags := admin.SetupFlagSet()
 	values.GameId = gameId
 	values.MapIp = IP
@@ -39,7 +42,7 @@ func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate
 	return run(flags, out, optionsFn)
 }
 
-func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	values, flags := admin.RevertFlagSet()
 	values.LogRoot = logRoot
 	if failfast {
@@ -51,7 +54,7 @@ func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io
 	return run(flags, out, optionsFn)
 }
 
-func runFlushCache(executableName string, wait bool, IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options), values *config.FlushCacheValues, flags *pflag.FlagSet) (file string, result *exec.Result) {
+func runFlushCache(executableName string, wait bool, IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options *exec.Options), values *config.FlushCacheValues, flags *pflag.FlagSet) (file string, result *exec.Result) {
 	values.IPs = IPs
 	values.Certs = certificate
 	values.LogRoot = logRoot
@@ -64,22 +67,22 @@ func runFlushCache(executableName string, wait bool, IPs bool, certificate bool,
 		options.Pid = true
 	}
 	if optionsFn != nil {
-		optionsFn(options)
+		optionsFn(&options)
 	}
-	if out != nil && (runtime.GOOS != "windows" || commonExecutor.IsAdmin() || !options.AsAdmin) {
+	if out != nil && (runtime.GOOS != "windows" || isAdminFn() || !options.AsAdmin) {
 		options.Stdout = out
 		options.Stderr = out
 	}
-	result = options.Exec()
+	result = execFn(options)
 	return
 }
 
-func RunFlushCacheAgent(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (file string, result *exec.Result) {
+func RunFlushCacheAgent(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (file string, result *exec.Result) {
 	values, singleFs := config.FlushCacheSingleFlagSet("", nil)
 	return runFlushCache(executables.LauncherConfigAdminAgent, false, IPs, certificate, logRoot, out, optionsFn, values, singleFs.Fs())
 }
 
-func RunFlushCache(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (file string, result *exec.Result) {
+func RunFlushCache(IPs bool, certificate bool, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (file string, result *exec.Result) {
 	values, flags := config.FlushCacheFlagSet()
 	return runFlushCache(executables.LauncherConfigAdmin, true, IPs, certificate, logRoot, out, optionsFn, values, flags)
 }

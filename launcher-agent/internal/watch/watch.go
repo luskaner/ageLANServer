@@ -47,7 +47,7 @@ func Watch(values *agent.Values, exitCode *int) {
 				var result *exec.Result
 				if logErr := internal.Logger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
 					result = launcherCommon.RemoveBattleServerRegion(
-						values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options exec.Options) {
+						values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options *exec.Options) {
 							if writer != nil {
 								commonLogger.Println("run battle-server-manager", options.String())
 							}
@@ -75,7 +75,7 @@ func Watch(values *agent.Values, exitCode *int) {
 	}
 	defer func() {
 		_ = internal.Logger.Buffer("revert_command_end", func(writer io.Writer) {
-			if err := launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
+			if err := launcherCommon.RunRevertCommand(writer, func(options *exec.Options) {
 				if writer != nil {
 					commonLogger.Println("run revert command", options.String())
 				}
@@ -86,7 +86,7 @@ func Watch(values *agent.Values, exitCode *int) {
 	}()
 	defer func() {
 		_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
-			if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, writer, func(options exec.Options) {
+			if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, writer, func(options *exec.Options) {
 				if writer != nil {
 					commonLogger.Println("run config revert", options.String())
 				}

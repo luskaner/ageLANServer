@@ -79,12 +79,14 @@ func typ(path string) (typ int, ext string) {
 }
 
 func suffix(typ int) string {
-	for currentSuffix, currentType := range suffixToType {
-		if currentType == typ {
-			return currentSuffix
-		}
+	switch typ {
+	case TypeServer:
+		return serverSuffix
+	case TypeBackup:
+		return backupSuffix
+	default:
+		return ""
 	}
-	return ""
 }
 
 func TransformPath(path string, srcType int, dstType int) (ok bool, transformedPath string) {

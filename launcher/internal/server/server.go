@@ -86,7 +86,7 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 			exitCode = internal.ErrServerCertDirectory
 			return
 		}
-		if result := GenerateCertificatePair(certificateFolder, func(options commonExecutor.Options) {
+		if result := GenerateCertificatePair(certificateFolder, func(options *commonExecutor.Options) {
 
 		}); !result.Success() {
 			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")

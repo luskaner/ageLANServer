@@ -54,7 +54,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 				commonLogger.Printf("Exit code: %d\n", exitCode)
 			}()
 			_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
-				if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, nil, func(options exec.Options) {
+				if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, nil, func(options *exec.Options) {
 					if writer != nil {
 						commonLogger.Println("run config revert", options.String())
 					}
@@ -63,7 +63,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 				}
 			})
 			_ = internal.Logger.Buffer("revert_command_end", func(writer io.Writer) {
-				if err = launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
+				if err = launcherCommon.RunRevertCommand(writer, func(options *exec.Options) {
 					if writer != nil {
 						commonLogger.Println("run revert command", options.String())
 					}
@@ -79,7 +79,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 				if values.BattleServerManagerExecutable != "-" && values.BattleServerRegion != "-" {
 					commonLogger.Println("Shutting down battle-server...")
 					_ = internal.Logger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
-						if result := launcherCommon.RemoveBattleServerRegion(values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options exec.Options) {
+						if result := launcherCommon.RemoveBattleServerRegion(values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options *exec.Options) {
 							if writer != nil {
 								commonLogger.Println("run battle-server-manager", options.String())
 							}
@@ -104,3 +104,4 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	_ = lock.Unlock()
 	return
 }
+

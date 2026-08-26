@@ -112,8 +112,9 @@ func TestNewConfigFlushCacheOptionsIPsOnly(t *testing.T) {
 }
 
 func TestRunRevertInvalidFlags(t *testing.T) {
-	result := RunRevert([]string{"--invalid-flag-value"}, false, nil, func(opts exec.Options) {})
+	result := RunRevert([]string{"--invalid-flag-value"}, false, nil, func(opts *exec.Options) {})
 	if result.Err == nil {
 		t.Error("expected error for invalid flags")
 	}
 }
+

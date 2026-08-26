@@ -11,7 +11,7 @@ import (
 )
 
 func StartAgent(game string, steamProcess bool, steamMacOsProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,
-	battleServerExe string, battleServerRegion string, basePath string, logRoot string, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+	battleServerExe string, battleServerRegion string, basePath string, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	if logRoot == "" || basePath == "" {
 		logRoot = ""
 		basePath = ""
@@ -30,7 +30,9 @@ func StartAgent(game string, steamProcess bool, steamMacOsProcess bool, xboxProc
 		Pid:  true,
 		Args: cmd.FlagSetToArgs(singleFs.Fs(), false),
 	}
-	optionsFn(options)
+	if optionsFn != nil {
+		optionsFn(&options)
+	}
 	if out != nil {
 		options.Stdout = out
 		options.Stderr = out
@@ -38,3 +40,5 @@ func StartAgent(game string, steamProcess bool, steamMacOsProcess bool, xboxProc
 	result = options.Exec()
 	return
 }
+
+

@@ -457,7 +457,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	logger.Println("Cleaning up (if needed)...")
 	config.KillAgent()
 	if err = commonLogger.FileLogger.Buffer("config_revert_initial", func(writer io.Writer) {
-		launcherCommon.ConfigRevert("", commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
+		launcherCommon.ConfigRevert("", commonLogger.FileLogger.Folder(), false, writer, func(options *exec.Options) {
 			commonLogger.Println("run config revert", options.String())
 		}, executor.RunRevert)
 	}); err != nil {
@@ -488,7 +488,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
 	}
 	if err = commonLogger.FileLogger.Buffer("revert_command_initial", func(writer io.Writer) {
-		if err = executor.RunRevertCommand(writer, func(options exec.Options) {
+		if err = executor.RunRevertCommand(writer, func(options *exec.Options) {
 			commonLogger.Println("run revert command", options.String())
 		}); err != nil {
 			logger.Println("Failed to run revert command.")
@@ -773,3 +773,4 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 	}
 	return &c
 }
+

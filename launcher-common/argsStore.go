@@ -75,15 +75,28 @@ func (s *ArgsStore) Store(flags []string) error {
 	flagsToSave := argsStoreByteToStringSlice(content)
 	existingFlags := mapset.NewSet[string](flagsToSave...)
 	for _, flag := range flags {
+		if flag == "" {
+			continue
+		}
 		if !existingFlags.ContainsOne(flag) {
 			flagsToSave = append(flagsToSave, flag)
+			existingFlags.Add(flag)
 		}
 	}
 	_, err = f.Seek(0, io.SeekStart)
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(strings.Join(flagsToSave, argsStoreSep))
+	joined := strings.Join(flagsToSave, argsStoreSep)
+	_, err = f.WriteString(joined)
+	if err != nil {
+		return err
+	}
+	// Truncate in case new content is shorter than previous file (e.g. leading
+	// separators or filtered empty flags produced a shorter join).
+	if err = f.Truncate(int64(len(joined))); err != nil {
+		return err
+	}
 	return err
 }
 

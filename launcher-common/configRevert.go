@@ -19,6 +19,11 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
+// Test hooks - allow tests to stub admin checks and execution
+var isAdminFn = executor.IsAdmin
+var configAdminAgentRunningFn = ConfigAdminAgentRunning
+var runRevertExec = func(options exec.Options) *exec.Result { return options.Exec() }
+
 type ConfigRevertFlagOptions struct {
 	*config.RevertValues
 	flags *pflag.FlagSet
@@ -34,12 +39,26 @@ func NewConfigRevertFlagOptions() *ConfigRevertFlagOptions {
 
 func (c *ConfigRevertFlagOptions) Flags() []string {
 	if c.RemoveAll {
+		// Save originals and restore after FlagSetToArgs so callers don't see
+		// surprise mutation if they reuse the options object. The FlagSet
+		// values are read by FlagSetToArgs, which checks each flag's current
+		// value vs default; clearing here ensures individual flags aren't
+		// emitted alongside --all.
+		origIPs, origCerts, origMeta, origProfiles, origUser, origCA := c.IPs, c.Certs, c.Metadata, c.Profiles, c.RemoveUserCert, c.RestoreCAStoreCert
 		c.IPs = false
 		c.RemoveUserCert = false
 		c.Certs = false
 		c.Metadata = false
 		c.Profiles = false
 		c.RestoreCAStoreCert = false
+		defer func() {
+			c.IPs = origIPs
+			c.Certs = origCerts
+			c.Metadata = origMeta
+			c.Profiles = origProfiles
+			c.RemoveUserCert = origUser
+			c.RestoreCAStoreCert = origCA
+		}()
 	}
 	return commonCmd.FlagSetToArgs(c.flags, false)
 }
@@ -57,8 +76,8 @@ func ConfigRevert(
 	logRoot string,
 	headless bool,
 	out io.Writer,
-	optionsFn func(options exec.Options),
-	runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result),
+	optionsFn func(options *exec.Options),
+	runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result),
 ) (success bool) {
 	if runRevertFn == nil {
 		runRevertFn = RunRevert
@@ -105,7 +124,7 @@ func ConfigRevert(
 			if revertResult := runRevertFn(currentRevertFlags, headless, out, optionsFn); revertResult.Success() {
 				success = true
 			} else {
-				if ConfigAdminAgentRunning(headless) {
+				if configAdminAgentRunningFn(headless) {
 					commonLogger.Println("\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 				} else {
 					commonLogger.Println("\tFailed to cleanup configuration, try to do it manually.")
@@ -131,7 +150,7 @@ func ConfigAdminAgentRunning(bin bool) bool {
 }
 
 func RequiresAdminElevation(bin bool) bool {
-	return !executor.IsAdmin() && !ConfigAdminAgentRunning(bin)
+	return !isAdminFn() && !configAdminAgentRunningFn(bin)
 }
 
 func RevertRequiresAdminElevation(args []string, bin bool) bool {
@@ -152,17 +171,17 @@ func RevertRequiresAdminElevationValues(values *config.RevertValues) bool {
 		(values.IPs && values.HostFilePath == "")
 }
 
-func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options exec.Options)) (result *exec.Result) {
+func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
 	options := exec.Options{File: executables.NativeFileName(bin, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
 	if optionsFn != nil {
-		optionsFn(options)
+		optionsFn(&options)
 	}
 	if out != nil {
 		options.Stdout = out
 		options.Stderr = out
 	}
-	result = options.Exec()
+	result = runRevertExec(options)
 	return
 }

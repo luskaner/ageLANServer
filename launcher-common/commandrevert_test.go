@@ -90,3 +90,69 @@ func TestRunRevertCommandNoopWithoutStore(t *testing.T) {
 		t.Fatal("must not execute anything without a stored command")
 	}
 }
+
+func TestRunRevertCommandOptionsFnMutates(t *testing.T) {
+	storeCommand(t, []string{"fake-exe"})
+	oldExec := revertCommandExec
+	var seenStdout bool
+	revertCommandExec = func(opts exec.Options) *exec.Result {
+		// optionsFn should have set AsAdmin or modified file; we test via custom field
+		// For this test we check that optionsFn was able to mutate Args
+		if len(opts.Args) == 1 && opts.Args[0] == "injected" {
+			seenStdout = true
+		}
+		return &exec.Result{}
+	}
+	defer func() { revertCommandExec = oldExec }()
+
+	err := RunRevertCommand(nil, func(o *exec.Options) {
+		o.Args = []string{"injected"}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !seenStdout {
+		t.Fatal("optionsFn pointer mutation was not applied to exec options")
+	}
+}
+
+func TestRunRevertCommandOutputRedirection(t *testing.T) {
+	storeCommand(t, []string{"fake-exe"})
+	oldExec := revertCommandExec
+	var captured *exec.Options
+	revertCommandExec = func(opts exec.Options) *exec.Result {
+		captured = &opts
+		return &exec.Result{}
+	}
+	defer func() { revertCommandExec = oldExec }()
+
+	var buf os.File
+	// Use non-nil out to trigger Stdout/Stderr assignment
+	if err := RunRevertCommand(&buf, nil); err != nil {
+		t.Fatal(err)
+	}
+	if captured.Stdout != &buf || captured.Stderr != &buf {
+		t.Fatal("out should be assigned to Stdout/Stderr")
+	}
+}
+
+func TestRunRevertCommandSingleArgNoArgs(t *testing.T) {
+	storeCommand(t, []string{"only-exe"})
+	var received exec.Options
+	oldExec := revertCommandExec
+	revertCommandExec = func(o exec.Options) *exec.Result {
+		received = o
+		return &exec.Result{}
+	}
+	defer func() { revertCommandExec = oldExec }()
+
+	if err := RunRevertCommand(nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if received.File != "only-exe" {
+		t.Fatalf("File = %q, want only-exe", received.File)
+	}
+	if len(received.Args) != 0 {
+		t.Fatalf("Args should be empty for single cmd, got %v", received.Args)
+	}
+}
