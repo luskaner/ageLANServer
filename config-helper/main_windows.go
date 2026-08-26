@@ -9,6 +9,15 @@ import (
 	"github.com/luskaner/ageLANServer/common/game/steam"
 )
 
+var (
+	steamConfigPathFn     = steam.ConfigPath
+	steamConfigPathAltFn  = steam.ConfigPathAlt
+	gameUserProfilePathFn = game.UserProfilePath
+	windowsToUnixPathFn   = WindowsToUnixPath
+	fmtPrintFn            = fmt.Print
+	fmtFprintlnFn         = func(a ...any) (n int, err error) { return fmt.Fprintln(os.Stderr, a...) }
+)
+
 func main() {
 	if err := run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -36,26 +45,26 @@ func run(args []string) error {
 		}
 		var result string
 		if extra[0] == "true" {
-			result = steam.ConfigPathAlt()
+			result = steamConfigPathAltFn()
 		} else {
-			result = steam.ConfigPath()
+			result = steamConfigPathFn()
 		}
 		return convertAndPrint(result)
 	case "userProfilePath":
 		if len(extra) < 1 {
 			return errors.New("userProfilePath requires a profile argument")
 		}
-		return convertAndPrint(game.UserProfilePath(extra[0]))
+		return convertAndPrint(gameUserProfilePathFn(extra[0]))
 	default:
 		return fmt.Errorf("unknown command %q", args[1])
 	}
 }
 
 func convertAndPrint(path string) error {
-	convertedResult, err := WindowsToUnixPath(path)
+	convertedResult, err := windowsToUnixPathFn(path)
 	if err != nil {
 		return err
 	}
-	fmt.Print(convertedResult)
+	fmtPrintFn(convertedResult)
 	return nil
 }
