@@ -3,7 +3,11 @@
 package game
 
 import (
+	"errors"
+	"os"
 	"testing"
+
+	"golang.org/x/sys/windows"
 )
 
 func TestSupportedGames(t *testing.T) {
@@ -40,5 +44,33 @@ func TestGameConstants(t *testing.T) {
 	}
 	if AoM != "athens" {
 		t.Errorf("AoM = %q, want %q", AoM, "athens")
+	}
+}
+
+func TestUserProfilePathAoE4(t *testing.T) {
+	path := UserProfilePath(AoE4)
+	// KnownFolderPath(FOLDERID_Documents) should work on a normal Windows session
+	if path == "" {
+		t.Log("KnownFolderPath returned empty; may fail in service contexts")
+	}
+}
+
+func TestUserProfilePathAoE4KnownFolderError(t *testing.T) {
+	orig := knownFolderPathFn
+	defer func() { knownFolderPathFn = orig }()
+	knownFolderPathFn = func(*windows.KNOWNFOLDERID, uint32) (string, error) {
+		return "", errors.New("known folder fail")
+	}
+	if got := UserProfilePath(AoE4); got != "" {
+		t.Errorf("expected empty on KnownFolder error, got %q", got)
+	}
+}
+
+func TestUserProfilePathOtherGames(t *testing.T) {
+	want := os.Getenv("USERPROFILE")
+	for _, g := range []string{AoE1, AoE2, AoE3, AoM} {
+		if got := UserProfilePath(g); got != want {
+			t.Errorf("UserProfilePath(%q) = %q, want USERPROFILE %q", g, got, want)
+		}
 	}
 }

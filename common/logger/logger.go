@@ -19,6 +19,14 @@ var file *os.File
 var FileLogger *Root
 var Buf bufferWrapper
 
+// ioCopyFn is injectable for tests.
+var ioCopyFn = io.Copy
+
+var (
+	filepathAbsFn = filepath.Abs
+	osMkdirAllFn  = os.MkdirAll
+)
+
 type Root struct {
 	root string
 }
@@ -128,11 +136,11 @@ func NewFile(root string, gameId string, finalRoot bool) (err error, l *Root) {
 	if !finalRoot {
 		folder = filepath.Join(logRootPrefix(root), gameId, date())
 	}
-	folder, err = filepath.Abs(folder)
+	folder, err = filepathAbsFn(folder)
 	if err != nil {
 		return err, nil
 	}
-	err = os.MkdirAll(folder, 0755)
+	err = osMkdirAllFn(folder, 0755)
 	if err != nil {
 		return err, nil
 	}
@@ -172,7 +180,7 @@ func (l *Root) Buffer(name string, fn func(writer io.Writer)) error {
 		defer func(f *os.File) {
 			_ = f.Close()
 		}(f)
-		_, err = io.Copy(f, &buff)
+		_, err = ioCopyFn(f, &buff)
 		if err != nil {
 			return err
 		}

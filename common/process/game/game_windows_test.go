@@ -47,6 +47,27 @@ func TestGame_XboxProcess(t *testing.T) {
 	}
 }
 
+func TestGame_SteamProcess(t *testing.T) {
+	tests := []struct {
+		process string
+		want    string
+	}{
+		{"AoE2DE_s.exe", game.AoE2},
+		{"AoEDE_s.exe", game.AoE1},
+		{"AoE3DE_s.exe", game.AoE3},
+		{"RelicCardinal.exe", game.AoE4},
+		{"AoMRT_s.exe", game.AoM},
+		{"unknown.exe", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.process, func(t *testing.T) {
+			if got := Game(tt.process, false); got != tt.want {
+				t.Errorf("Game(%q, false) = %q, want %q", tt.process, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestProcesses_Xbox(t *testing.T) {
 	procs := Processes(game.AoE2, false, false, true)
 	if len(procs) != 1 {

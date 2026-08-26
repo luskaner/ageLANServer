@@ -16,6 +16,8 @@ import (
 	"github.com/luskaner/ageLANServer/common/hosts/text"
 )
 
+var pathFn = Path
+
 func CreateTemp() (lock *fileLock.Lock, err error) {
 	var f *os.File
 	//goland:noinspection ALL
@@ -31,15 +33,15 @@ func CreateTemp() (lock *fileLock.Lock, err error) {
 	return
 }
 func OpenLockedBackup(flags int) (lock *fileLock.Lock, err error) {
-	return openLockedHostsFile(filepath.Join(filepath.Dir(Path()), "hosts.bak"), flags)
+	return openLockedHostsFile(filepath.Join(filepath.Dir(pathFn()), "hosts.bak"), flags)
 }
 
 func OpenLockedMain(flags int) (lock *fileLock.Lock, err error) {
-	return openLockedHostsFile(Path(), flags)
+	return openLockedHostsFile(pathFn(), flags)
 }
 
 func OpenMain() (f *os.File, err error) {
-	return openHostsFile(Path(), os.O_RDONLY)
+	return openHostsFile(pathFn(), os.O_RDONLY)
 }
 
 func decodeAndGetScanner(f *os.File) (err error, encType int, scanner *bufio.Scanner) {
@@ -253,7 +255,7 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 	var systemHosts bool
 	if hostFilePath == "" {
 		systemHosts = true
-		hostFilePath = Path()
+		hostFilePath = pathFn()
 	}
 	if lineEnding == "" {
 		lineEnding = LineEnding

@@ -201,3 +201,11 @@ func TestAppendTextNilSlice(t *testing.T) {
 		t.Errorf("AppendText(nil) = %q", string(b))
 	}
 }
+
+func TestUnmarshalText32CharHexInvalid(t *testing.T) {
+	// 32-char hex string with invalid characters should fail
+	var u UUID
+	if err := u.UnmarshalText([]byte("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")); err == nil {
+		t.Error("expected error for 32-char invalid hex")
+	}
+}

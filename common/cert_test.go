@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/pem"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -190,6 +191,39 @@ func TestCertificatePairs_MissingKey(t *testing.T) {
 	}
 }
 
+func TestCertificatePairs_MissingCACert(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{Cert, Key, SelfSignedCert, SelfSignedKey} {
+		os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644)
+	}
+	ok, _, _, _, _, _ := CertificatePairs(dir)
+	if ok {
+		t.Error("CertificatePairs should return ok=false when caCert.pem is missing")
+	}
+}
+
+func TestCertificatePairs_MissingSelfSignedCert(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{Cert, Key, CACert, SelfSignedKey} {
+		os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644)
+	}
+	ok, _, _, _, _, _ := CertificatePairs(dir)
+	if ok {
+		t.Error("CertificatePairs should return ok=false when selfSignedCert.pem is missing")
+	}
+}
+
+func TestCertificatePairs_MissingSelfSignedKey(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{Cert, Key, CACert, SelfSignedCert} {
+		os.WriteFile(filepath.Join(dir, name), []byte("data"), 0644)
+	}
+	ok, _, _, _, _, _ := CertificatePairs(dir)
+	if ok {
+		t.Error("CertificatePairs should return ok=false when selfSignedKey.pem is missing")
+	}
+}
+
 func TestCertificatePairFolderPath_Empty(t *testing.T) {
 	if got := certificatePairFolderPath(""); got != "" {
 		t.Errorf("certificatePairFolderPath(\"\") = %q, want empty", got)
@@ -217,5 +251,50 @@ func TestCertificatePairFolder_AlreadyExists(t *testing.T) {
 	folder := CertificatePairFolder(exe) // should not fail
 	if folder == "" {
 		t.Error("CertificatePairFolder should succeed when directory already exists")
+	}
+}
+
+func TestReadFromDataSkipsNonCertificateBlocks(t *testing.T) {
+	der, _ := generateTestCertificate(t, "real.test")
+	pemBlock := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	privateBlock := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: []byte("fakekey")})
+	data := append(privateBlock, pemBlock...)
+
+	keys, _, values, err := ReadFromData(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(keys) != 1 || len(values) != 1 {
+		t.Fatalf("expected 1 cert (private key skipped), got %d certs", len(keys))
+	}
+}
+
+func TestCertificatePairFolderPath_SingleComponent(t *testing.T) {
+	got := certificatePairFolderPath("server.exe")
+	expected := filepath.Join(".", paths.ResourcesDir, "certificates")
+	if got != expected {
+		t.Errorf("certificatePairFolderPath(\"server.exe\") = %q, want %q", got, expected)
+	}
+}
+
+func TestReadFromDataInvalidCertificateBytes(t *testing.T) {
+	// A PEM block typed CERTIFICATE whose bytes don't parse must surface the error.
+	data := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte("not-a-cert")})
+	_, _, _, err := ReadFromData(data)
+	if err == nil {
+		t.Fatal("expected ParseCertificate error for garbage bytes")
+	}
+}
+
+func TestCertificatePairFolderMkdirAllFails(t *testing.T) {
+	dir := t.TempDir()
+	// Make <dir>\resources a FILE so creating resources\certificates must fail
+	blocker := filepath.Join(dir, paths.ResourcesDir)
+	if err := os.WriteFile(blocker, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	got := CertificatePairFolder(filepath.Join(dir, "server.exe"))
+	if got != "" {
+		t.Errorf("expected empty when MkdirAll fails, got %q", got)
 	}
 }

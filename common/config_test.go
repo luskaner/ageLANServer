@@ -13,13 +13,13 @@ import (
 
 type jsonParser struct{}
 
-func (jsonParser) Unmarshal(b []byte) (map[string]interface{}, error) {
-	var m map[string]interface{}
+func (jsonParser) Unmarshal(b []byte) (map[string]any, error) {
+	var m map[string]any
 	err := json.Unmarshal(b, &m)
 	return m, err
 }
 
-func (jsonParser) Marshal(m map[string]interface{}) ([]byte, error) {
+func (jsonParser) Marshal(m map[string]any) ([]byte, error) {
 	return json.Marshal(m)
 }
 
@@ -175,6 +175,38 @@ func TestLoadKoanfLayersOrExitWith_NonNilDefaultsOnly(t *testing.T) {
 	}
 }
 
+func TestLoadKoanfLayersOrExitWith_NonFileError(t *testing.T) {
+	// Force a non-KoanfFileLoadError: nil parser with a file candidate produces
+	// a plain error (not wrapped in KoanfFileLoadError).
+	k := koanf.New(".")
+	var exitCode int
+	var printed []any
+	exitFn := func(code int) { exitCode = code }
+	printlnFn := func(a ...any) { printed = append(printed, a...) }
+	LoadKoanfLayersOrExitWith(k, nil, []string{"whatever.json"}, nil, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest", printlnFn, exitFn)
+	if exitCode != ErrConfigParse {
+		t.Errorf("exit code = %d, want %d", exitCode, ErrConfigParse)
+	}
+	if len(printed) == 0 {
+		t.Error("printlnFn should have been called for generic error branch")
+	}
+}
+
+func TestLoadKoanfLayersOrExit_UsesOsExitFn(t *testing.T) {
+	bad := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(bad, []byte("{invalid"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	orig := osExitFn
+	defer func() { osExitFn = orig }()
+	var exitCode int
+	osExitFn = func(code int) { exitCode = code }
+	_ = LoadKoanfLayersOrExit(koanf.New("."), nil, []string{bad}, jsonParser{}, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest", func(a ...any) {})
+	if exitCode != ErrConfigParse {
+		t.Errorf("exit code = %d, want %d", exitCode, ErrConfigParse)
+	}
+}
+
 func TestLoadKoanfLayersOrExitWith_Success(t *testing.T) {
 	k := koanf.New(".")
 	var exitCalled bool
@@ -188,5 +220,85 @@ func TestLoadKoanfLayersOrExitWith_Success(t *testing.T) {
 	}
 	if k.String("K") != "V" {
 		t.Errorf("default not loaded, K = %q", k.String("K"))
+	}
+}
+
+func TestLoadKoanfLayersWithFsBindings(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(file, []byte(`{"Key":"from-file"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	k := koanf.New(".")
+	fs := pflag.NewFlagSet("flags", pflag.ContinueOnError)
+	fs.String("my-flag", "", "")
+	if err := fs.Set("my-flag", "from-flag"); err != nil {
+		t.Fatal(err)
+	}
+
+	// fsBindings maps "my-flag" → "MappedKey"
+	bindings := map[string]string{"my-flag": "MappedKey"}
+
+	used, err := LoadKoanfLayers(k, nil, []string{file}, jsonParser{}, fs, bindings, "unittest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if used != file {
+		t.Errorf("used = %q, want %q", used, file)
+	}
+	// Flag should be mapped to "MappedKey"
+	if got := k.String("MappedKey"); got != "from-flag" {
+		t.Errorf("MappedKey = %q, want %q", got, "from-flag")
+	}
+}
+
+func TestLoadKoanfLayersWithFsBindingsNilBindings(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(file, []byte(`{"Key":"from-file"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	k := koanf.New(".")
+	fs := pflag.NewFlagSet("flags", pflag.ContinueOnError)
+	fs.String("Key", "", "")
+	if err := fs.Set("Key", "from-flag"); err != nil {
+		t.Fatal(err)
+	}
+
+	// nil fsBindings → uses posflag.Provider (not ProviderWithFlag)
+	used, err := LoadKoanfLayers(k, nil, []string{file}, jsonParser{}, fs, nil, "unittest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if used != file {
+		t.Errorf("used = %q, want %q", used, file)
+	}
+}
+
+func TestLoadKoanfLayersMultipleFileCandidates(t *testing.T) {
+	dir := t.TempDir()
+	file1 := filepath.Join(dir, "first.json")
+	file2 := filepath.Join(dir, "second.json")
+	// first.json does not exist → silently skipped; second.json is valid
+	os.WriteFile(file2, []byte(`{"Key":"from-second"}`), 0644)
+
+	k := koanf.New(".")
+	used, err := LoadKoanfLayers(k, nil, []string{file1, file2}, jsonParser{}, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest")
+	if err != nil {
+		t.Fatalf("should skip missing files and use next: %v", err)
+	}
+	if used != file2 {
+		t.Errorf("used = %q, want %q", used, file2)
+	}
+}
+
+func TestLoadKoanfLayersEmptyCandidate(t *testing.T) {
+	k := koanf.New(".")
+	used, err := LoadKoanfLayers(k, nil, []string{""}, jsonParser{}, pflag.NewFlagSet("t", pflag.ContinueOnError), nil, "unittest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if used != "" {
+		t.Errorf("used = %q, want empty for empty candidate", used)
 	}
 }

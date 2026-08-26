@@ -68,7 +68,7 @@ func LoadKoanfLayers(
 			fs,
 			".",
 			k,
-			func(f *pflag.Flag) (string, interface{}) {
+			func(f *pflag.Flag) (string, any) {
 				key := f.Name
 				if binding, ok := fsBindings[key]; ok {
 					key = binding
@@ -80,6 +80,9 @@ func LoadKoanfLayers(
 	return usedFile, nil
 }
 
+// osExitFn is injectable for tests.
+var osExitFn = os.Exit
+
 func LoadKoanfLayersOrExit(
 	k *koanf.Koanf,
 	defaults map[string]any,
@@ -90,7 +93,7 @@ func LoadKoanfLayersOrExit(
 	envPrefix string,
 	printlnFn func(...any),
 ) string {
-	return LoadKoanfLayersOrExitWith(k, defaults, fileCandidates, parser, fs, fsBindings, envPrefix, printlnFn, os.Exit)
+	return LoadKoanfLayersOrExitWith(k, defaults, fileCandidates, parser, fs, fsBindings, envPrefix, printlnFn, osExitFn)
 }
 
 func LoadKoanfLayersOrExitWith(

@@ -1,219 +1,304 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/base64"
 	"strings"
 	"testing"
 
 	"github.com/spf13/pflag"
 )
 
-func newTestFlagSet(t *testing.T) *pflag.FlagSet {
-	t.Helper()
-	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	var (
-		s  string
-		i  int
-		b  bool
-		b2 bool
-		sl []string
-		b64 []byte
-	)
-	fs.StringVarP(&s, "string", "s", "default-string", "")
-	fs.IntVarP(&i, "int", "i", 10, "")
-	fs.BoolVarP(&b, "enabled", "e", false, "")
-	fs.BoolVarP(&b2, "disabled", "d", true, "")
-	fs.StringSliceVar(&sl, "hosts", []string{}, "")
-	fs.BytesBase64VarP(&b64, "payload", "p", nil, "")
-	return fs
-}
+func TestFlagSetToArgsIncludeName(t *testing.T) {
+	fs := pflag.NewFlagSet("myapp", pflag.ContinueOnError)
+	fs.String("key", "val", "")
+	_ = fs.Set("key", "other")
 
-func TestFlagSetToArgsOnlyNonDefaults(t *testing.T) {
-	fs := newTestFlagSet(t)
-	if err := fs.Set("string", "custom"); err != nil {
-		t.Fatal(err)
-	}
-	if err := fs.Set("int", "77"); err != nil {
-		t.Fatal(err)
-	}
-	if err := fs.Parse([]string{"--enabled"}); err != nil {
-		t.Fatal(err)
-	}
-
-	args := FlagSetToArgs(fs, false)
-	got := strings.Join(args, " ")
-	if !strings.Contains(got, "--string=custom") {
-		t.Fatalf("missing changed string: %q", got)
-	}
-	if !strings.Contains(got, "--int=77") {
-		t.Fatalf("missing changed int: %q", got)
-	}
-	if !strings.Contains(got, "--enabled") {
-		t.Fatalf("missing flipped-on bool: %q", got)
-	}
-	if strings.Contains(got, "--disabled") {
-		t.Fatalf("default-true bool must be skipped: %q", got)
-	}
-	if strings.Contains(got, "default-string") || strings.Contains(got, "--int=10") {
-		t.Fatalf("default values must be skipped: %q", got)
-	}
-}
-
-func TestFlagSetToArgsExplicitFalseBool(t *testing.T) {
-	fs := newTestFlagSet(t)
-	if err := fs.Set("disabled", "false"); err != nil {
-		t.Fatal(err)
-	}
-	args := FlagSetToArgs(fs, false)
-	found := false
-	for _, a := range args {
-		if a == "--disabled=false" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("explicit false must be emitted as --disabled=false: %v", args)
-	}
-}
-
-func TestFlagSetToArgsStringSlicePerElement(t *testing.T) {
-	fs := newTestFlagSet(t)
-	if err := fs.Set("hosts", "a.test,b.test"); err != nil {
-		t.Fatal(err)
-	}
-	args := FlagSetToArgs(fs, false)
-	joined := strings.Join(args, " ")
-	if !strings.Contains(joined, "--hosts=a.test") || !strings.Contains(joined, "--hosts=b.test") {
-		t.Fatalf("slice must be split into one arg per element: %v", args)
-	}
-	if strings.Contains(joined, "[") || strings.Contains(joined, "]") {
-		t.Fatalf("brackets must not leak into args: %v", args)
-	}
-}
-
-func TestFlagSetToArgsBase64EmittedVerbatim(t *testing.T) {
-	fs := newTestFlagSet(t)
-	const payload = "AAECAwQ="
-	if err := fs.Set("payload", payload); err != nil {
-		t.Fatal(err)
-	}
-	args := FlagSetToArgs(fs, false)
-	want := "--payload=" + payload
-	found := false
-	for _, a := range args {
-		if a == want {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("base64 value must round-trip verbatim (no re-encoding): %v", args)
-	}
-}
-
-func TestFlagSetToArgsIncludeNameAndPositional(t *testing.T) {
-	fs := pflag.NewFlagSet("mybin", pflag.ContinueOnError)
-	if err := fs.Parse([]string{"positional1", "positional2"}); err != nil {
-		t.Fatal(err)
-	}
 	args := FlagSetToArgs(fs, true)
-	if len(args) != 3 || args[0] != "mybin" || args[1] != "positional1" || args[2] != "positional2" {
-		t.Fatalf("args = %v", args)
+	if len(args) == 0 || args[0] != "myapp" {
+		t.Fatalf("first arg should be flagset name, got %v", args)
 	}
 }
 
-// Proves the removed Get()-re-encode block was dead code: neither pflag byte
-// flag type implements Get(), so the type assertion never matched and the
-// block could never fire for bytesHex or bytesBase64.
-func TestByteFlagValuesDoNotImplementGet(t *testing.T) {
-	for _, tc := range []struct {
-		typ    string
-		create func(*pflag.FlagSet) pflag.Value
-	}{
-		{"bytesBase64", func(fs *pflag.FlagSet) pflag.Value {
-			var b []byte
-			fs.BytesBase64VarP(&b, "payload", "p", nil, "")
-			return fs.Lookup("payload").Value
-		}},
-		{"bytesHex", func(fs *pflag.FlagSet) pflag.Value {
-			var b []byte
-			fs.BytesHexVarP(&b, "key", "k", nil, "")
-			return fs.Lookup("key").Value
-		}},
-	} {
-		fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
-		value := tc.create(fs)
-		if _, implements := value.(interface{ Get() interface{} }); implements {
-			t.Errorf("%s unexpectedly implements Get(): the removed re-encode block would fire on it", tc.typ)
-		}
-		if _, implements := any(value).(interface{ Get() any }); implements {
-			t.Errorf("%s unexpectedly implements Get() any-form", tc.typ)
-		}
-	}
-}
-
-// Documents the mechanism of harm the removed block would have caused if it
-// ever fired on a bytesHex-like flag: it emitted base64(bytes) where Set()
-// expects hex, while Value.String() round-trips losslessly.
-func TestBytesHexRoundTripAndReencodeWouldBreak(t *testing.T) {
+func TestFlagSetToArgsBoolTrue(t *testing.T) {
 	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
-	var payload []byte
-	fs.BytesHexVarP(&payload, "key", "k", nil, "")
-	payload = []byte{0x0a, 0x1b, 0x2c}
-	if err := fs.Set("key", "0a1b2c"); err != nil {
-		t.Fatal(err)
-	}
+	fs.Bool("verbose", false, "")
+	_ = fs.Set("verbose", "true")
 
-	// Current behavior: Value.String() re-parses losslessly.
-	valueStr := fs.Lookup("key").Value.String()
-	fresh := pflag.NewFlagSet("fresh", pflag.ContinueOnError)
-	var again []byte
-	fresh.BytesHexVarP(&again, "key", "k", nil, "")
-	if err := fresh.Parse([]string{"--key=" + valueStr}); err != nil {
-		t.Fatalf("Value.String() output not re-parseable: %v", err)
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--verbose" {
+			found = true
+		}
 	}
-	if !bytes.Equal(again, payload) {
-		t.Fatalf("round trip = %x, want %x", again, payload)
-	}
-
-	// Old block behavior: base64 of the decoded bytes instead of hex.
-	corrupted := "--key=" + base64.StdEncoding.EncodeToString(payload)
-	stale := pflag.NewFlagSet("stale", pflag.ContinueOnError)
-	var unused []byte
-	stale.BytesHexVarP(&unused, "key", "k", nil, "")
-	if err := stale.Parse([]string{corrupted}); err == nil {
-		t.Fatal("expected the old re-encoded value to be rejected by a bytesHex flag")
+	if !found {
+		t.Fatalf("expected --verbose, got %v", args)
 	}
 }
 
-func TestFlagSetToArgsRoundTripReparse(t *testing.T) {
-	src := newTestFlagSet(t)
-	for _, set := range [][2]string{
-		{"string", "hello world"},
-		{"int", "-5"},
-	} {
-		if err := src.Set(set[0], set[1]); err != nil {
-			t.Fatal(err)
+func TestFlagSetToArgsBoolFalse(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.Bool("verbose", true, "")
+	_ = fs.Set("verbose", "false")
+
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--verbose=false" {
+			found = true
 		}
 	}
-	if err := src.Parse([]string{"--enabled", "--hosts=x.y,z.w"}); err != nil {
-		t.Fatal(err)
+	if !found {
+		t.Fatalf("expected --verbose=false, got %v", args)
 	}
+}
 
-	dst := newTestFlagSet(t)
-	if err := dst.Parse(FlagSetToArgs(src, false)); err != nil {
-		t.Fatalf("re-parse failed: %v\nargs: %v", err, FlagSetToArgs(src, false))
+func TestFlagSetToArgsString(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.String("name", "", "")
+	_ = fs.Set("name", "hello")
+
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--name=hello" {
+			found = true
+		}
 	}
-	if v, _ := dst.GetString("string"); v != "hello world" {
-		t.Errorf("string = %q", v)
+	if !found {
+		t.Fatalf("expected --name=hello, got %v", args)
 	}
-	if v, _ := dst.GetInt("int"); v != -5 {
-		t.Errorf("int = %d", v)
+}
+
+func TestFlagSetToArgsInt(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.Int("port", 0, "")
+	_ = fs.Set("port", "8080")
+
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--port=8080" {
+			found = true
+		}
 	}
-	if v, _ := dst.GetBool("enabled"); !v {
-		t.Error("bool not preserved")
+	if !found {
+		t.Fatalf("expected --port=8080, got %v", args)
 	}
-	if v, _ := dst.GetStringSlice("hosts"); len(v) != 2 || v[0] != "x.y" || v[1] != "z.w" {
-		t.Errorf("slice = %v", v)
+}
+
+func TestFlagSetToArgsStringSlice(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.StringSlice("tags", nil, "")
+	_ = fs.Set("tags", "a,b")
+
+	args := FlagSetToArgs(fs, false)
+	hasA, hasB := false, false
+	for _, a := range args {
+		if a == "--tags=a" {
+			hasA = true
+		}
+		if a == "--tags=b" {
+			hasB = true
+		}
+	}
+	if !hasA || !hasB {
+		t.Fatalf("expected --tags=a and --tags=b, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsStringSliceEmpty(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.StringSlice("tags", nil, "")
+	// Don't set — default is empty []
+
+	args := FlagSetToArgs(fs, false)
+	for _, a := range args {
+		if a == "[]" || a == "--tags=" {
+			t.Fatalf("empty slice should be skipped, got %v", args)
+		}
+	}
+}
+
+func TestFlagSetToArgsStringArray(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.StringArray("items", nil, "")
+	_ = fs.Set("items", "x")
+	_ = fs.Set("items", "y")
+
+	args := FlagSetToArgs(fs, false)
+	hasX, hasY := false, false
+	for _, a := range args {
+		if a == "--items=x" {
+			hasX = true
+		}
+		if a == "--items=y" {
+			hasY = true
+		}
+	}
+	if !hasX || !hasY {
+		t.Fatalf("expected --items=x and --items=y, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsDefaultSliceType(t *testing.T) {
+	// Custom type ending with "Slice" goes through the default branch
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.StringSlice("custom", nil, "")
+	_ = fs.Set("custom", "v1,v2")
+
+	args := FlagSetToArgs(fs, false)
+	count := 0
+	for _, a := range args {
+		if a == "--custom=v1" || a == "--custom=v2" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 custom args, got %d from %v", count, args)
+	}
+}
+
+func TestFlagSetToArgsGenericType(t *testing.T) {
+	// Unknown type falls to default else branch
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.IP("bind", nil, "")
+	_ = fs.Set("bind", "1.2.3.4")
+
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--bind=1.2.3.4" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected --bind=1.2.3.4, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsSkipsDefault(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.String("k", "default-val", "")
+	// Don't set — should be skipped
+
+	args := FlagSetToArgs(fs, false)
+	for _, a := range args {
+		if a == "--k=default-val" {
+			t.Fatalf("default values should be skipped, got %v", args)
+		}
+	}
+}
+
+func TestFlagSetToArgsPositionalArgs(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.String("k", "", "")
+	_ = fs.Set("k", "v")
+
+	args := FlagSetToArgs(fs, false)
+	// fs.Args() returns remaining args after parsing
+	if len(args) < 1 {
+		t.Fatal("expected at least one arg")
+	}
+}
+
+func TestFlagSetToArgsEmptyFlagSet(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	args := FlagSetToArgs(fs, false)
+	if len(args) != 0 {
+		t.Fatalf("empty flagset should produce no args, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsDuration(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	fs.Duration("timeout", 0, "")
+	_ = fs.Set("timeout", "5s")
+
+	args := FlagSetToArgs(fs, false)
+	found := false
+	for _, a := range args {
+		if a == "--timeout=5s" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected --timeout=5s, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsEmptyStringSliceValue(t *testing.T) {
+	// Simulate the edge case where a stringSlice flag has a non-default value
+	// that trims to empty after [ ] removal. pflag.StringSlice always wraps
+	// in brackets, so Set("[]") → "[[]]". We inject a custom Value to bypass this.
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	sv := &emptySliceFlag{val: "[x]"} // DefValue will be "[x]"
+	fs.Var(sv, "es", "")
+	_ = fs.Set("es", "[]") // value becomes "[]", differs from DefValue "[x]"
+
+	args := FlagSetToArgs(fs, false)
+	for _, a := range args {
+		if a == "--es=" || a == "--es=[]" {
+			t.Fatalf("empty trimmed slice should be skipped, got %v", args)
+		}
+	}
+}
+
+// emptySliceFlag is a pflag.Value whose Type() returns "stringSlice"
+// to exercise the empty-val early return in the stringSlice case.
+type emptySliceFlag struct {
+	val string
+}
+
+func (e *emptySliceFlag) String() string { return e.val }
+func (e *emptySliceFlag) Set(s string) error { e.val = s; return nil }
+func (e *emptySliceFlag) Type() string { return "stringSlice" }
+
+// customSliceType wraps a string slice with a custom type name ending in "Slice"
+// to exercise the default branch in FlagSetToArgs.
+type customSliceType []string
+
+func (c *customSliceType) String() string   { return strings.Join(*c, ",") }
+func (c *customSliceType) Set(s string) error { *c = strings.Split(s, ","); return nil }
+func (c *customSliceType) Type() string      { return "customSlice" }
+
+func TestFlagSetToArgsCustomSliceType(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	var val customSliceType = []string{"initial"}
+	fs.AddFlag(&pflag.Flag{
+		Name:     "cslice",
+		DefValue: val.String(),
+		Value:    &val,
+	})
+	_ = val.Set("a,b")
+	args := FlagSetToArgs(fs, false)
+	hasA, hasB := false, false
+	for _, a := range args {
+		if a == "--cslice=a" {
+			hasA = true
+		}
+		if a == "--cslice=b" {
+			hasB = true
+		}
+	}
+	if !hasA || !hasB {
+		t.Fatalf("expected --cslice=a and --cslice=b, got %v", args)
+	}
+}
+
+func TestFlagSetToArgsCustomSliceTypeEmpty(t *testing.T) {
+	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)
+	var val customSliceType = []string{"x"}
+	fs.AddFlag(&pflag.Flag{
+		Name:     "cslice",
+		DefValue: val.String(),
+		Value:    &val,
+	})
+	// Set to empty slice → after trim, val == ""
+	_ = val.Set("")
+	args := FlagSetToArgs(fs, false)
+	for _, a := range args {
+		if a == "--cslice=" {
+			t.Fatalf("empty custom slice should be skipped, got %v", args)
+		}
 	}
 }

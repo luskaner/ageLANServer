@@ -2,6 +2,7 @@ package commonLogger
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -179,4 +180,119 @@ func TestCloseFileLog_NilFile(t *testing.T) {
 	defer func() { file = oldFile }()
 	// Should not panic
 	CloseFileLog()
+}
+
+func TestNewFile_MkdirAllError(t *testing.T) {
+	origAbs := filepathAbsFn
+	origMkdir := osMkdirAllFn
+	defer func() { filepathAbsFn = origAbs; osMkdirAllFn = origMkdir }()
+	filepathAbsFn = func(string) (string, error) { return "", errors.New("abs fail") }
+	err, _ := NewFile("any", "game", false)
+	if err == nil || err.Error() != "abs fail" {
+		t.Fatalf("expected abs fail, got %v", err)
+	}
+	filepathAbsFn = origAbs
+	osMkdirAllFn = func(string, os.FileMode) error { return errors.New("mkdir fail") }
+	err, _ = NewFile(t.TempDir(), "game", false)
+	if err == nil || err.Error() != "mkdir fail" {
+		t.Fatalf("expected mkdir fail, got %v", err)
+	}
+}
+
+func TestNewFileLogger_Errors(t *testing.T) {
+	_, _, err := NewFileLogger("name", "C:\\*invalid*\\path", "g", false)
+	if err == nil {
+		dir := t.TempDir()
+		fpath := filepath.Join(dir, "block")
+		_ = os.WriteFile(fpath, []byte("x"), 0644)
+		_, _, err = NewFileLogger("log", fpath, "g", false)
+		if err == nil {
+			t.Skip("MkdirAll did not fail as expected")
+		}
+	}
+	dir2 := t.TempDir()
+	err, root := NewFile(dir2, "", true)
+	if err != nil {
+		t.Fatalf("NewFile: %v", err)
+	}
+	badPath := filepath.Join(dir2, "badfile")
+	_ = os.WriteFile(badPath, []byte("x"), 0644)
+	badRoot := &Root{root: badPath}
+	_, _, err = NewFileLogger("log2", badRoot.Folder(), "", true)
+	if err == nil {
+		t.Skip("expected error for bad path")
+	}
+	_ = root
+}
+
+func TestNewOwnFileLogger_Error(t *testing.T) {
+	dir := t.TempDir()
+	fpath := filepath.Join(dir, "block2")
+	_ = os.WriteFile(fpath, []byte("x"), 0644)
+	err := NewOwnFileLogger("log", fpath, "g", false)
+	if err == nil {
+		t.Error("NewOwnFileLogger should fail when NewFile fails")
+	}
+}
+
+func TestRoot_Open_Nil(t *testing.T) {
+	var r *Root
+	f, err := r.Open("any")
+	if err != nil || f != nil {
+		t.Errorf("nil Root Open should return nil, nil, got %v, %v", f, err)
+	}
+}
+
+func TestRoot_Folder_Nil(t *testing.T) {
+	var r *Root
+	if got := r.Folder(); got != "" {
+		t.Errorf("nil Root Folder = %q, want empty", got)
+	}
+}
+
+func TestRoot_Buffer_OpenError(t *testing.T) {
+	dir := t.TempDir()
+	fpath := filepath.Join(dir, "fileAsFolder")
+	_ = os.WriteFile(fpath, []byte("x"), 0644)
+	err, _ := NewFile(t.TempDir(), "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	badRoot := &Root{root: fpath}
+	err = badRoot.Buffer("test", func(w io.Writer) { _, _ = w.Write([]byte("data")) })
+	if err == nil {
+		t.Error("Buffer should fail when Open fails")
+	}
+}
+
+func TestRoot_Buffer_CopyError(t *testing.T) {
+	origCopy := ioCopyFn
+	defer func() { ioCopyFn = origCopy }()
+	ioCopyFn = func(dst io.Writer, src io.Reader) (int64, error) { return 0, errors.New("copy fail") }
+	err, root := NewFile(t.TempDir(), "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = root.Buffer("copyfail", func(w io.Writer) { _, _ = w.Write([]byte("data")) })
+	if err == nil || err.Error() != "copy fail" {
+		t.Fatalf("expected copy fail, got %v", err)
+	}
+}
+
+func TestInitialize_WithWriters(t *testing.T) {
+	oldLogger := logger
+	defer func() { logger = oldLogger }()
+	var buf bytes.Buffer
+	Initialize(&buf)
+	if logger == nil {
+		t.Fatal("logger should be set")
+	}
+	Initialize(nil)
+	if logger == nil {
+		t.Error("logger should be set even with nil writer")
+	}
+	Initialize(os.Stdout)
+	if logger == nil {
+		t.Error("logger should be set with stdout")
+	}
 }

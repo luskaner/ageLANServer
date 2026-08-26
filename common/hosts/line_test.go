@@ -183,3 +183,30 @@ func TestParseHostRejectsIPAsHost(t *testing.T) {
 		t.Fatalf("parseHost(example.com) = %v, %v", ok, parsed)
 	}
 }
+
+func TestParseLineOverLimitCharsMocked(t *testing.T) {
+	origChars, origHosts := maxCharsPerLine, maxHostsPerLine
+	defer func() { maxCharsPerLine, maxHostsPerLine = origChars, origHosts }()
+	maxCharsPerLine = 20
+	maxHostsPerLine = 100
+	long := "1.2.3.4 " + strings.Repeat("a", 30) + " example.com"
+	ok, overLimit, _ := ParseLine(long, false)
+	if !ok || !overLimit {
+		t.Fatalf("expected overLimit for long line, ok=%v overLimit=%v", ok, overLimit)
+	}
+}
+
+func TestParseLineOverLimitHostsMocked(t *testing.T) {
+	origChars, origHosts := maxCharsPerLine, maxHostsPerLine
+	defer func() { maxCharsPerLine, maxHostsPerLine = origChars, origHosts }()
+	maxCharsPerLine = 1000
+	maxHostsPerLine = 2
+	hosts := []string{"h1.test", "h2.test", "h3.test", "h4.test"}
+	ok, overLimit, l := ParseLine("1.2.3.4 "+strings.Join(hosts, " "), false)
+	if !ok || !overLimit {
+		t.Fatalf("expected overLimit for many hosts, ok=%v overLimit=%v", ok, overLimit)
+	}
+	if len(l.Hosts()) != 2 {
+		t.Fatalf("hosts kept = %d, want 2", len(l.Hosts()))
+	}
+}

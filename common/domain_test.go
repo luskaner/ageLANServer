@@ -1,7 +1,9 @@
 package common
 
 import (
+	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	commonGame "github.com/luskaner/ageLANServer/common/game"
@@ -86,5 +88,50 @@ func TestSelfSignedCertDomainsIncludedInCertDomains(t *testing.T) {
 		if !slices.Contains(CertDomains(), d) {
 			t.Errorf("CertDomains missing self-signed domain %q", d)
 		}
+	}
+}
+
+func TestGenerateDomainsDirect(t *testing.T) {
+	origFn := directHostToIPFn
+	defer func() { directHostToIPFn = origFn }()
+	calls := 0
+	directHostToIPFn = func(host string) (string, error) {
+		calls++
+		if calls <= 1 {
+			return "1.2.3.4", nil
+		}
+		return "", errors.New("mock dns error")
+	}
+	for _, tc := range []struct {
+		gameId     string
+		wantMin    int
+		wantPrefix string
+	}{
+		{commonGame.AoE2, 2, SubDomainAge2Prefix},
+		{commonGame.AoE4, 2, aoe4Marker},
+		{commonGame.AoM, 20, "andromeda"},
+		{"unknown", 0, ""},
+	} {
+		t.Run(tc.gameId, func(t *testing.T) {
+			delete(generatedDomainsCache, tc.gameId)
+			calls = 0
+			got := generateDomains(tc.gameId)
+			if tc.wantMin == 0 {
+				if len(got) != 0 {
+					t.Errorf("generateDomains(%q) = %v, want empty", tc.gameId, got)
+				}
+				return
+			}
+			if len(got) < tc.wantMin {
+				t.Errorf("generateDomains(%q) len=%d, want >=%d", tc.gameId, len(got), tc.wantMin)
+			}
+			if !strings.Contains(got[0], tc.wantPrefix) {
+				t.Errorf("first domain %q should contain prefix %q", got[0], tc.wantPrefix)
+			}
+			cached := generateDomains(tc.gameId)
+			if !slices.Equal(got, cached) {
+				t.Errorf("cached mismatch: got %v, cached %v", got, cached)
+			}
+		})
 	}
 }

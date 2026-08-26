@@ -35,6 +35,8 @@ var SelfSignedCertDomains = []string{relicDomain, "*" + worldsEdge + dotTld, "*.
 
 var generatedDomainsCache = make(map[string][]string)
 
+var directHostToIPFn = DirectHostToIP
+
 func CertDomains() []string {
 	domains := []string{"*" + playFabSuffix}
 	domains = append(domains, SelfSignedCertDomains...)
@@ -111,7 +113,7 @@ func generateDomains(gameId string) (domains []string) {
 		domains = append(domains, generateDomainName(release))
 	}
 	for release := releaseMin + 1; ; release++ {
-		if _, err := DirectHostToIP(generateDomainName(release)); err == nil {
+		if _, err := directHostToIPFn(generateDomainName(release)); err == nil {
 			domains = append(domains, generateDomainName(release))
 		} else {
 			break
