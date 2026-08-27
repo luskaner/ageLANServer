@@ -8,6 +8,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/process"
 )
 
+// Locker is the seam used by launcher to make PidLock testable without touching filesystem.
+type Locker interface {
+	Lock() error
+	Unlock() error
+}
+
 var ErrAlreadyRunning = errors.New("another instance is already running")
 
 var (
