@@ -27,15 +27,11 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/paths"
 	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/ip"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/routes/router"
 )
 
@@ -54,20 +50,20 @@ func Execute() (err error, exitCode int) {
 }
 
 func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
-	lock := &fileLock.PidLock{}
-	if err = lock.Lock(); err != nil {
+	lock := fileLockNewFn()
+	if err = fileLockLockFn(lock); err != nil {
 		logger.Println("Failed to lock pid file. Kill process 'server' if it is running in your task manager.")
 		logger.Println(err.Error())
-		commonLogger.CloseFileLog()
+		commonLoggerCloseFn()
 		exitCode = common.ErrPidLock
 		return
 	}
-	cfg, usedFile := initConfig(fs)
-	commonLogger.Initialize(nil)
+	cfg, usedFile := initConfigFn(fs)
+	commonLoggerInitFn(nil)
 	if values.LogRoot == "" {
 		values.LogRoot = commonLogger.LogRootDate("")
 	}
-	if err = logger.OpenMainFileLog(values.LogRoot, cfg.Log); err != nil {
+	if err = loggerOpenMainFileLogFn(values.LogRoot, cfg.Log); err != nil {
 		logger.Printf("Failed to open main log file: %v", err)
 		exitCode = common.ErrFileLog
 		return
@@ -79,8 +75,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		internal.Connectivity = false
 		logger.Println("Internet usage is disabled via config.")
 	} else {
-		internal.Connectivity = common.DNSConnectivity()
-		models.CacheNetworkInterfaces(cfg.ExternalIPAddress)
+		internal.Connectivity = dnsConnectivityFn()
+		cacheNetworkInterfacesFn(cfg.ExternalIPAddress)
 	}
 	if !internal.Connectivity {
 		logger.Println("No internet connectivity, some features will fallback gracefully.")
@@ -114,7 +110,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if !values.Deterministic {
 		seed = uint64(time.Now().UnixNano())
 	}
-	internal.InitializeRng(seed)
+	initializeRngFn(seed)
 	if values.Id == "" {
 		values.Id = uuid.New().String()
 	}
@@ -125,13 +121,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			logger.Println(string(debug.Stack()))
 			exitCode = common.ErrGeneral
 		}
-		commonLogger.CloseFileLog()
+		commonLoggerCloseFn()
 		for _, f := range closables {
 			_ = f.Close()
 		}
-		_ = lock.Unlock()
+		_ = fileLockUnlockFn(lock)
 	}()
-	if internal.Id, err = uuid.Parse(values.Id); err != nil {
+	if internal.Id, err = uuidParseFn(values.Id); err != nil {
 		logger.Println("Invalid server instance ID")
 		exitCode = internal.ErrInvalidId
 		return
@@ -153,13 +149,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			return
 		}
 	}
-	if executor.IsAdmin() {
+	if isAdminFn() {
 		logger.Println("Running as administrator, this is not recommended for security reasons.")
 		if runtime.GOOS == "linux" {
 			logger.Println(fmt.Sprintf("If the issue is that you cannot listen on the port, then run `sudo setcap CAP_NET_BIND_SERVICE=+eip '%s'`, before re-running the 'server'", os.Args[0]))
 		}
 	}
-	certificatePairFolder := common.CertificatePairFolder(os.Args[0])
+	certificatePairFolder := certificatePairFolderFn(os.Args[0])
 	if certificatePairFolder == "" {
 		logger.Println("Failed to determine certificate pair folder")
 		exitCode = internal.ErrCertDirectory
@@ -188,13 +184,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	for gameId := range gameSet.Iter() {
 		logger.Printf("Game %s:\n", gameId)
 		hosts := cfg.GetGameHosts(gameId)
-		addrs := ip.ResolveHosts(mapset.NewThreadUnsafeSet[string](hosts...))
+		addrs := resolveHostsFn(mapset.NewThreadUnsafeSet[string](hosts...))
 		if addrs.IsEmpty() {
 			logger.Println("\tFailed to resolve host (or it was an IPv6 address)")
 			exitCode = internal.ErrResolveHost
 			return
 		}
-		if err = initializer.InitializeGame(gameId, cfg.GetGameBattleServers(gameId)); err != nil {
+		if err = initializeGameFn(gameId, cfg.GetGameBattleServers(gameId)); err != nil {
 			logger.Printf("\tFailed to initialize game: %v\n", err)
 			exitCode = internal.ErrGame
 			return
@@ -268,22 +264,19 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			}
 			var listenConns []*net.UDPConn
 			if announceEnabled {
-				err, listenConns = ip.QueryConnections(addr, multicastGroups, announcePort)
+				err, listenConns = queryConnectionsFn(addr, multicastGroups, announcePort)
 				if err != nil {
 					logger.Println("\tFailed to listen to UDP connections for address", addr.String())
 					exitCode = internal.ErrAnnounce
 					return
 				}
 			}
-			s := &http.Server{
-				Addr:                addr.String() + ":443",
-				Handler:             mux,
-				ErrorLog:            customLogger,
-				IdleTimeout:         time.Second * 30,
-				ReadTimeout:         time.Second * 5,
-				WriteTimeout:        time.Second * 30,
-				MaxHeaderValueCount: 64,
-			}
+			s := newHTTPServerFn(addr.String()+":443", mux)
+			s.ErrorLog = customLogger
+			s.IdleTimeout = time.Second * 30
+			s.ReadTimeout = time.Second * 5
+			s.WriteTimeout = time.Second * 30
+			s.MaxHeaderValueCount = 64
 
 			logger.Println("\tListening on " + s.Addr)
 			go func() {
@@ -294,7 +287,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 							conn.LocalAddr(),
 						)
 					}
-					ip.ListenQueryConnections(listenConns)
+					listenQueryConnectionsFn(listenConns)
 				}
 				err = s.ListenAndServeTLS(certFile, keyFile)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
