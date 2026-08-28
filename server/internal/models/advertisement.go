@@ -440,10 +440,16 @@ func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(platform string, ses
 }
 
 func (adv *MainAdvertisement) StartObserving(userId int32) {
+	if adv.observers.userIds == nil {
+		adv.observers.userIds = i.NewSafeSet[int32]()
+	}
 	adv.observers.userIds.Store(userId)
 }
 
 func (adv *MainAdvertisement) StopObserving(userId int32) {
+	if adv.observers.userIds == nil {
+		adv.observers.userIds = i.NewSafeSet[int32]()
+	}
 	adv.observers.userIds.Delete(userId)
 }
 
@@ -527,8 +533,11 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, battleServers BattleSe
 	if adv.lan {
 		response = append(response, nil)
 	} else {
-		battleServer, _ := battleServers.Get(adv.relayRegion)
-		battleServer.AppendName(&response)
+		if battleServer, ok := battleServers.Get(adv.relayRegion); ok && battleServer != nil {
+			battleServer.AppendName(&response)
+		} else {
+			response = append(response, nil)
+		}
 	}
 	return response
 }

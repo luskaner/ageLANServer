@@ -60,7 +60,13 @@ func login[R any](w http.ResponseWriter, r *http.Request, reqToPlayfabID func(re
 		return nil
 	}
 	now := time.Now().UTC()
-	id := reqToPlayfabID(req, models.Gg[playfab.Game](r))
+	genericG := models.G(r)
+	playfabGame, ok := genericG.(playfab.Game)
+	if !ok {
+		shared.RespondBadRequest(&w)
+		return nil
+	}
+	id := reqToPlayfabID(req, playfabGame)
 	if id == nil {
 		shared.RespondBadRequest(&w)
 		return nil

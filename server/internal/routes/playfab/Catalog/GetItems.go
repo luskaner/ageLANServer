@@ -28,7 +28,13 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 		shared.RespondBadRequest(&w)
 		return
 	}
-	game := models.Gg[*athens.Game](r)
+	genericGame := models.G(r)
+	athensGame, ok := genericGame.(*athens.Game)
+	if !ok {
+		shared.RespondOK(&w, getItemsResponse{Items: []playfab.CatalogItem{}})
+		return
+	}
+	game := athensGame
 	catalogItemsMap := game.CatalogItems
 	var catalogItems []playfab.CatalogItem
 	for _, id := range req.Ids {
