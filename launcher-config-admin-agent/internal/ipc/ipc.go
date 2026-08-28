@@ -13,7 +13,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/ipc"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
 	"golang.org/x/net/idna"
@@ -154,7 +153,7 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		}
 		str := "Parsing certificate: "
 		var err error
-		cert, err = x509.ParseCertificate(msg.Certificate)
+		cert, err = parseCertFn(msg.Certificate)
 		if err != nil || !checkCertificateValidity(cert, msg.GameId) {
 			if err != nil {
 				str += err.Error()
@@ -174,8 +173,8 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		suffix = "_hosts"
 	}
 	var result *exec.Result
-	if buffErr := commonLogger.FileLogger.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, cert, logRoot, writer, func(options *exec.Options) {
+	if buffErr := bufferFn("config-admin_setup"+suffix, func(writer io.Writer) {
+		result = runSetUpFn(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, cert, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
 				commonLogger.Println("run config admin setup", options.String())
 			}
@@ -205,8 +204,8 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 		return common.ErrSuccess
 	}
 	var result *exec.Result
-	if buffErr := commonLogger.FileLogger.Buffer("config-admin_revert", func(writer io.Writer) {
-		result = executor.RunRevert(revertIps, revertCert, true, logRoot, writer, func(options *exec.Options) {
+	if buffErr := bufferFn("config-admin_revert", func(writer io.Writer) {
+		result = runRevertFn(revertIps, revertCert, true, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
 				commonLogger.Println("run config admin revert", options.String())
 			}
@@ -222,7 +221,7 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 }
 
 func StartServer(logRoot string) (exitCode int) {
-	l, err := SetupServer()
+	l, err := setupServerFn()
 	if err != nil {
 		commonLogger.Printf("Could not listen to IPC: %v\n", err)
 		exitCode = internal.ErrListen
@@ -230,7 +229,7 @@ func StartServer(logRoot string) (exitCode int) {
 	}
 	defer func(l net.Listener) {
 		_ = l.Close()
-		RevertServer()
+		revertServerFn()
 	}(l)
 
 	var conn net.Conn

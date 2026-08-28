@@ -6,11 +6,9 @@ import (
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
-	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 )
 
 func runFlushCache(args []string) (err error, exitCode int) {
@@ -28,11 +26,11 @@ func runFlushCache(args []string) (err error, exitCode int) {
 		}
 	}()
 	if flushCacheValues.LogRoot != "" {
-		internal.Initialize(flushCacheValues.LogRoot)
+		initializeFn(flushCacheValues.LogRoot)
 	}
 	if flushCacheValues.IPs || flushCacheValues.Certs {
-		if executor.IsAdmin() {
-			err, exitCode = admin.RunFlushCache(flushCacheValues.LogRoot, flushCacheValues.IPs, flushCacheValues.Certs)
+		if isAdminFn() {
+			err, exitCode = runFlushCacheAdminFn(flushCacheValues.LogRoot, flushCacheValues.IPs, flushCacheValues.Certs)
 			if err == nil && exitCode == common.ErrSuccess {
 				commonLogger.Println("Successfully ran 'config-admin'")
 			} else {
@@ -47,12 +45,12 @@ func runFlushCache(args []string) (err error, exitCode int) {
 				exitCode = internal.ErrAdminSetup
 			}
 		} else {
-			agentStarted := admin.ConnectAgentIfNeeded() == nil
+			agentStarted := connectAgentFn() == nil
 			if agentStarted {
 				exitCode = internal.ErrAgentAlreadyStarted
 				return
 			}
-			result := admin.StartAgent(flushCacheValues.IPs, flushCacheValues.Certs)
+			result := startAgentFn(flushCacheValues.IPs, flushCacheValues.Certs)
 			if !result.Success() {
 				commonLogger.Println("Failed to start 'config-admin-agent'")
 				if result != nil {
@@ -65,10 +63,10 @@ func runFlushCache(args []string) (err error, exitCode int) {
 				}
 				exitCode = internal.ErrStartAgent
 			} else {
-				agentStarted = admin.ConnectAgentIfNeededWithRetries()
+				agentStarted = connectAgentRetriesFn()
 				if !agentStarted {
 					commonLogger.Println("Failed to connect to 'config-admin-agent' after starting it. Kill it using the task manager.")
-					_ = admin.StopAgentIfNeeded()
+					_ = stopAgentIfNeededFn()
 					exitCode = internal.ErrStartAgentVerify
 				}
 			}

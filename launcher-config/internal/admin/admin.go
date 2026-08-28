@@ -23,6 +23,29 @@ var ipc net.Conn = nil
 var encoder *gob.Encoder = nil
 var decoder *gob.Decoder = nil
 
+// Injectable function vars for testing — defaults mirror production behaviour.
+var (
+	bytesToCertificateFn   = common.BytesToCertificate
+	newFileFn              = commonLogger.NewFile
+	runSetUpFn             = executor.RunSetUp
+	runRevertFn            = executor.RunRevert
+	runFlushCacheFn        = executor.RunFlushCache
+	runFlushCacheAgentFn   = executor.RunFlushCacheAgent
+	processFn              = commonProcess.Process
+	killPidProcFn          = commonProcess.KillPidProc
+	dialIPCFn              = DialIPC
+	postAgentStartFn       = postAgentStart
+	nativeFileNameFn       = executables.NativeFileName
+	sleepFn                = time.Sleep
+	connectAgentIfNeededFn = ConnectAgentIfNeeded
+	getLoggerFolderFn      = func() string {
+		if internal.Logger != nil {
+			return internal.Logger.Folder()
+		}
+		return ""
+	}
+)
+
 func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
 	if ipc != nil {
@@ -31,7 +54,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 
 	var certificate *x509.Certificate
 	if addCertData != nil {
-		certificate = common.BytesToCertificate(addCertData)
+		certificate = bytesToCertificateFn(addCertData)
 		if certificate == nil {
 			exitCode = internal.ErrUserCertAddParse
 			return
@@ -40,7 +63,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
+		if err, file = newFileFn(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
@@ -52,7 +75,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 		suffix = "_hosts"
 	}
 	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
+		result = runSetUpFn(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -74,13 +97,13 @@ func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (e
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
+		if err, file = newFileFn(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_revert", func(writer io.Writer) {
-		result = executor.RunRevert(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options *exec.Options) {
+		result = runRevertFn(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -102,13 +125,13 @@ func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode in
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = commonLogger.NewFile(logRoot, "", true); err != nil {
+		if err, file = newFileFn(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_flushCache", func(writer io.Writer) {
-		_, result = executor.RunFlushCache(ips, certs, file.Folder(), writer, func(options *exec.Options) {
+		_, result = runFlushCacheFn(ips, certs, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -124,29 +147,29 @@ func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode in
 }
 
 func StopAgentIfNeeded() bool {
-	agentConnected := ConnectAgentIfNeeded() == nil
-	exeFileName := executables.NativeFileName(true, executables.LauncherConfigAdminAgent)
+	agentConnected := connectAgentIfNeededFn() == nil
+	exeFileName := nativeFileNameFn(true, executables.LauncherConfigAdminAgent)
 	if !agentConnected {
-		if _, proc, err := commonProcess.Process(exeFileName); err == nil && proc == nil {
+		if _, proc, err := processFn(exeFileName); err == nil && proc == nil {
 			return true
 		}
 	}
 	commonLogger.Println("Trying to stop 'config-admin-agent'.")
 	if err := stopAgentIfNeeded(); err == nil {
 		for range 30 {
-			if _, proc, err := commonProcess.Process(exeFileName); err == nil && proc == nil {
+			if _, proc, err := processFn(exeFileName); err == nil && proc == nil {
 				commonLogger.Println("Stopped 'config-admin-agent'")
 				return true
 			}
-			time.Sleep(100 * time.Millisecond)
+			sleepFn(100 * time.Millisecond)
 		}
 		commonLogger.Println("Failed to stop 'config-admin-agent'")
 	} else {
 		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
 		commonLogger.Println(err)
 	}
-	if pid, proc, err := commonProcess.Process(exeFileName); err == nil && proc != nil {
-		if err = commonProcess.KillPidProc(pid, proc); err == nil {
+	if pid, proc, err := processFn(exeFileName); err == nil && proc != nil {
+		if err = killPidProcFn(pid, proc); err == nil {
 			commonLogger.Println("Successfully killed 'config-admin-agent'.")
 			return true
 		}
@@ -175,10 +198,10 @@ func stopAgentIfNeeded() (err error) {
 
 func ConnectAgentIfNeededWithRetries() bool {
 	for range 30 {
-		if ConnectAgentIfNeeded() == nil {
+		if connectAgentIfNeededFn() == nil {
 			return true
 		}
-		time.Sleep(100 * time.Millisecond)
+		sleepFn(100 * time.Millisecond)
 	}
 	return false
 }
@@ -199,7 +222,7 @@ func ConnectAgentIfNeeded() (err error) {
 		return
 	}
 	var conn net.Conn
-	conn, err = DialIPC()
+	conn, err = dialIPCFn()
 	if err != nil {
 		return
 	}
@@ -213,15 +236,12 @@ func ConnectAgentIfNeeded() (err error) {
 func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	commonLogger.Println("Starting agent")
 	var file string
-	var logRoot string
-	if internal.Logger != nil {
-		logRoot = internal.Logger.Folder()
-	}
-	file, result = executor.RunFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
+	logRoot := getLoggerFolderFn()
+	file, result = runFlushCacheAgentFn(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
 		commonLogger.Println("start config-admin-agent:", options.String())
 	})
 	if result.Success() {
-		if !postAgentStart(result.Pid, file) {
+		if !postAgentStartFn(result.Pid, file) {
 			result.Err = fmt.Errorf("agent process failed to start")
 		}
 	}
