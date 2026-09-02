@@ -25,7 +25,8 @@ func TestConfigRevert_NoStoreIsSuccess(t *testing.T) {
 		called = true
 		return &exec.Result{}
 	}
-	ok := ConfigRevert("age2", "", false, nil, nil, mock)
+	r := NewReverter(deps{})
+	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if !ok {
 		t.Error("ConfigRevert with empty store should return success true")
 	}
@@ -43,20 +44,15 @@ func TestConfigRevert_SuccessDeletesStore(t *testing.T) {
 	if err := RevertConfigStore.Store(flags); err != nil {
 		t.Fatal(err)
 	}
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return true }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
 
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
-		// verify flags forwarded
 		if len(f) == 0 {
 			t.Error("flags should not be empty")
 		}
 		return &exec.Result{}
 	}
-	ok := ConfigRevert("age2", "", false, nil, nil, mock)
+	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if !ok {
 		t.Error("expected success true when mock succeeds")
 	}
@@ -78,16 +74,12 @@ func TestConfigRevert_FailureKeepsStore(t *testing.T) {
 	if err := RevertConfigStore.Store(flags); err != nil {
 		t.Fatal(err)
 	}
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return true }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
 
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
 		return &exec.Result{Err: os.ErrPermission, ExitCode: 1}
 	}
-	ok := ConfigRevert("age2", "", false, nil, nil, mock)
+	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	ok := r.ConfigRevert("age2", "", false, nil, nil, mock)
 	if ok {
 		t.Error("expected success false when revert fails")
 	}
@@ -102,26 +94,20 @@ func TestConfigRevert_FailureKeepsStore(t *testing.T) {
 
 func TestConfigRevert_ParseErrorFallbackAllGames(t *testing.T) {
 	tempRevertStore(t)
-	// Store invalid flags that will fail parsing
 	if err := RevertConfigStore.Store([]string{"--invalid-flag-xyz"}); err != nil {
 		t.Fatal(err)
 	}
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return true }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
 
 	var calls [][]string
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
 		calls = append(calls, f)
 		return &exec.Result{}
 	}
-	ok := ConfigRevert("", "/tmp/logs", false, nil, nil, mock)
+	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	ok := r.ConfigRevert("", "/tmp/logs", false, nil, nil, mock)
 	if !ok {
 		t.Error("expected success")
 	}
-	// When gameId == "" and parse fails, should fallback to all games (5)
 	if len(calls) != 5 {
 		t.Fatalf("expected 5 calls for all games fallback, got %d: %v", len(calls), calls)
 	}
@@ -146,18 +132,14 @@ func TestConfigRevert_HeadlessRequiresAdminSkips(t *testing.T) {
 	if err := RevertConfigStore.Store(flags); err != nil {
 		t.Fatal(err)
 	}
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return false }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
 
 	called := false
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
 		called = true
 		return &exec.Result{}
 	}
-	ok := ConfigRevert("age2", "", true, nil, nil, mock)
+	r := NewReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
+	ok := r.ConfigRevert("age2", "", true, nil, nil, mock)
 	if ok {
 		t.Error("headless with admin required should return false (skipped)")
 	}
@@ -182,18 +164,12 @@ func TestConfigRevert_OptionsFnForwarded(t *testing.T) {
 	if err := RevertConfigStore.Store(flags); err != nil {
 		t.Fatal(err)
 	}
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return true }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
 
 	seen := false
 	mock := func(f []string, bin bool, out io.Writer, fn func(*exec.Options)) *exec.Result {
 		if fn != nil {
 			o := exec.Options{File: "dummy"}
 			fn(&o)
-			// check that caller's optionsFn was forwarded
 			if o.File == "mutated" {
 				seen = true
 			}
@@ -201,7 +177,8 @@ func TestConfigRevert_OptionsFnForwarded(t *testing.T) {
 		return &exec.Result{}
 	}
 	optionsFn := func(o *exec.Options) { o.File = "mutated" }
-	ok := ConfigRevert("age2", "", false, nil, optionsFn, mock)
+	r := NewReverter(deps{isAdmin: func() bool { return true }, agentRunning: func(bool) bool { return false }})
+	ok := r.ConfigRevert("age2", "", false, nil, optionsFn, mock)
 	if !ok {
 		t.Error("expected success")
 	}
@@ -211,13 +188,8 @@ func TestConfigRevert_OptionsFnForwarded(t *testing.T) {
 }
 
 func TestRevertRequiresAdminElevation_ParseError(t *testing.T) {
-	origIsAdmin := isAdminFn
-	origAgent := configAdminAgentRunningFn
-	isAdminFn = func() bool { return false }
-	configAdminAgentRunningFn = func(bool) bool { return false }
-	defer func() { isAdminFn = origIsAdmin; configAdminAgentRunningFn = origAgent }()
-
-	if !RevertRequiresAdminElevation([]string{"--invalid-flag-xyz"}, false) {
+	r := NewReverter(deps{isAdmin: func() bool { return false }, agentRunning: func(bool) bool { return false }})
+	if !r.RevertRequiresAdminElevation([]string{"--invalid-flag-xyz"}, false) {
 		t.Error("expected true on parse error")
 	}
 }
@@ -234,30 +206,23 @@ func TestRequiresAdminElevation_Combos(t *testing.T) {
 		{true, true, false},
 	}
 	for _, tc := range tests {
-		origIsAdmin := isAdminFn
-		origAgent := configAdminAgentRunningFn
-		isAdminFn = func() bool { return tc.isAdmin }
-		configAdminAgentRunningFn = func(bool) bool { return tc.agent }
-		got := RequiresAdminElevation(false)
+		r := NewReverter(deps{isAdmin: func() bool { return tc.isAdmin }, agentRunning: func(bin bool) bool { return tc.agent }})
+		got := r.RequiresAdminElevation(false)
 		if got != tc.want {
 			t.Errorf("isAdmin=%v agent=%v got %v want %v", tc.isAdmin, tc.agent, got, tc.want)
 		}
-		isAdminFn = origIsAdmin
-		configAdminAgentRunningFn = origAgent
 	}
 }
 
 func TestRunRevert_BuildsCorrectArgs(t *testing.T) {
-	orig := runRevertExec
 	var captured exec.Options
-	runRevertExec = func(o exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
 		captured = o
 		return &exec.Result{}
-	}
-	defer func() { runRevertExec = orig }()
+	}})
 
 	flags := []string{"--ip", "--hostFilePath=/tmp/h"}
-	result := RunRevert(flags, false, nil, nil)
+	result := r.RunRevert(flags, false, nil, nil)
 	if result == nil {
 		t.Fatal("result nil")
 	}
@@ -279,15 +244,13 @@ func TestRunRevert_BuildsCorrectArgs(t *testing.T) {
 }
 
 func TestRunRevert_OptionsFnMutates(t *testing.T) {
-	orig := runRevertExec
-	runRevertExec = func(o exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
 		if o.File != "mutated" {
 			t.Errorf("optionsFn mutation not applied, File=%q", o.File)
 		}
 		return &exec.Result{}
-	}
-	defer func() { runRevertExec = orig }()
-	RunRevert([]string{"--ip"}, false, nil, func(o *exec.Options) {
+	}})
+	r.RunRevert([]string{"--ip"}, false, nil, func(o *exec.Options) {
 		o.File = "mutated"
 	})
 }
@@ -299,7 +262,6 @@ func TestConfigAdminAgentRunning_NoProcess(t *testing.T) {
 }
 
 func TestRevertRequiresAdminElevation_Values(t *testing.T) {
-	// Additional edge: both false should not require admin even if paths empty
 	v := &config.RevertValues{
 		RevertBaseValues: &config.RevertBaseValues{RevertMinimalValues: &config.RevertMinimalValues{IPs: false, Certs: false}},
 		CommonBaseValues: &config.CommonBaseValues{},
@@ -307,7 +269,6 @@ func TestRevertRequiresAdminElevation_Values(t *testing.T) {
 	if RevertRequiresAdminElevationValues(v) {
 		t.Error("no IPs/Certs should not require admin")
 	}
-	// IPs true but with path should not require
 	v2 := &config.RevertValues{
 		RevertBaseValues: &config.RevertBaseValues{RevertMinimalValues: &config.RevertMinimalValues{IPs: true}},
 		CommonBaseValues: &config.CommonBaseValues{HostFilePath: "/x"},

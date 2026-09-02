@@ -11,7 +11,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/spf13/pflag"
@@ -19,10 +19,40 @@ import (
 
 var RevertConfigStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_config_revert.txt"))
 
-// Test hooks - allow tests to stub admin checks and execution
-var isAdminFn = executor.IsAdmin
-var configAdminAgentRunningFn = ConfigAdminAgentRunning
-var runRevertExec = func(options exec.Options) *exec.Result { return options.Exec() }
+// deps groups the process-effect points used by the revert operations so tests
+// can inject fakes via NewReverter instead of mutating package globals (which
+// would break t.Parallel and risk data races).
+type deps struct {
+	isAdmin      func() bool
+	agentRunning func(bin bool) bool
+	exec         func(options exec.Options) *exec.Result
+}
+
+func defaultDeps() deps {
+	return deps{
+		isAdmin:      executor.IsAdmin,
+		agentRunning: ConfigAdminAgentRunning,
+		exec:         func(o exec.Options) *exec.Result { return o.Exec() },
+	}
+}
+
+// Reverter is the injectable entry point for the revert operations. Tests build
+// their own via NewReverter; the package-level functions delegate to Default.
+type Reverter struct {
+	deps deps
+}
+
+// NewReverter returns a Reverter using the supplied deps. Use the zero value to
+// fall back to the production defaults (see DefaultDeps).
+func NewReverter(d deps) *Reverter {
+	return &Reverter{deps: d}
+}
+
+// DefaultDeps returns the production dependencies for a Reverter.
+func DefaultDeps() deps { return defaultDeps() }
+
+// Default is the process-wide Reverter used by the package-level wrappers.
+var Default = NewReverter(defaultDeps())
 
 type ConfigRevertFlagOptions struct {
 	*config.RevertValues
@@ -71,7 +101,7 @@ func allRevertFlags(gameId string, logRoot string) []string {
 	return options.Flags()
 }
 
-func ConfigRevert(
+func (r *Reverter) ConfigRevert(
 	gameId string,
 	logRoot string,
 	headless bool,
@@ -80,7 +110,7 @@ func ConfigRevert(
 	runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result),
 ) (success bool) {
 	if runRevertFn == nil {
-		runRevertFn = RunRevert
+		runRevertFn = r.RunRevert
 	}
 	err, revertFlags := RevertConfigStore.Load()
 	var games []string
@@ -110,7 +140,7 @@ func ConfigRevert(
 			}
 		}
 		// This does not depend on the game type so compute it once
-		requiresRevertAdminElevation := RevertRequiresAdminElevation(multipleRevertFlags[0], headless)
+		requiresRevertAdminElevation := r.RevertRequiresAdminElevation(multipleRevertFlags[0], headless)
 		if headless && requiresRevertAdminElevation {
 			commonLogger.Println("Revert requires admin elevation while headless, this should not happen, skipping...")
 			return
@@ -124,7 +154,7 @@ func ConfigRevert(
 			if revertResult := runRevertFn(currentRevertFlags, headless, out, optionsFn); revertResult.Success() {
 				success = true
 			} else {
-				if configAdminAgentRunningFn(headless) {
+				if r.deps.agentRunning(headless) {
 					commonLogger.Println("\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
 				} else {
 					commonLogger.Println("\tFailed to cleanup configuration, try to do it manually.")
@@ -149,12 +179,12 @@ func ConfigAdminAgentRunning(bin bool) bool {
 	return false
 }
 
-func RequiresAdminElevation(bin bool) bool {
-	return !isAdminFn() && !configAdminAgentRunningFn(bin)
+func (r *Reverter) RequiresAdminElevation(bin bool) bool {
+	return !r.deps.isAdmin() && !r.deps.agentRunning(bin)
 }
 
-func RevertRequiresAdminElevation(args []string, bin bool) bool {
-	if !RequiresAdminElevation(bin) {
+func (r *Reverter) RevertRequiresAdminElevation(args []string, bin bool) bool {
+	if !r.RequiresAdminElevation(bin) {
 		return false
 	}
 	values, flags := config.RevertFlagSet()
@@ -171,7 +201,7 @@ func RevertRequiresAdminElevationValues(values *config.RevertValues) bool {
 		(values.IPs && values.HostFilePath == "")
 }
 
-func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
+func (r *Reverter) RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	args := []string{ConfigRevertCmd}
 	args = append(args, flags...)
 	options := exec.Options{File: executables.NativeFileName(bin, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
@@ -182,6 +212,24 @@ func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options *
 		options.Stdout = out
 		options.Stderr = out
 	}
-	result = runRevertExec(options)
+	result = r.deps.exec(options)
 	return
+}
+
+// Package-level wrappers for backward compatibility. They delegate to Default.
+
+func ConfigRevert(gameId string, logRoot string, headless bool, out io.Writer, optionsFn func(options *exec.Options), runRevertFn func(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result)) bool {
+	return Default.ConfigRevert(gameId, logRoot, headless, out, optionsFn, runRevertFn)
+}
+
+func RequiresAdminElevation(bin bool) bool {
+	return Default.RequiresAdminElevation(bin)
+}
+
+func RevertRequiresAdminElevation(args []string, bin bool) bool {
+	return Default.RevertRequiresAdminElevation(args, bin)
+}
+
+func RunRevert(flags []string, bin bool, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
+	return Default.RunRevert(flags, bin, out, optionsFn)
 }

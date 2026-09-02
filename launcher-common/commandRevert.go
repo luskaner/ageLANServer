@@ -11,12 +11,7 @@ import (
 
 var RevertCommandStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_command_revert.txt"))
 
-// revertCommandExec is an indirection point so tests can fake execution.
-var revertCommandExec = func(options exec.Options) *exec.Result {
-	return options.Exec()
-}
-
-func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err error) {
+func (r *Reverter) RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err error) {
 	var args []string
 	var cmd []string
 	err, cmd = RevertCommandStore.Load()
@@ -40,7 +35,7 @@ func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err
 		options.Stdout = out
 		options.Stderr = out
 	}
-	result := revertCommandExec(options)
+	result := r.deps.exec(options)
 	err = result.Err
 	// Keep the stored command when execution failed so it can be retried,
 	// mirroring ConfigRevert's store handling.
@@ -48,4 +43,8 @@ func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err
 		_ = RevertCommandStore.Delete()
 	}
 	return
+}
+
+func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err error) {
+	return Default.RunRevertCommand(out, optionsFn)
 }

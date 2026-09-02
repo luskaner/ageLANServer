@@ -25,14 +25,12 @@ func TestRunRevertCommandKeepsStoreOnFailure(t *testing.T) {
 	storeCommand(t, []string{"fake-exe", "--do-stuff"})
 
 	var received exec.Options
-	oldExec := revertCommandExec
-	revertCommandExec = func(options exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(options exec.Options) *exec.Result {
 		received = options
 		return &exec.Result{Err: os.ErrPermission, ExitCode: 1}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
-	err := RunRevertCommand(nil, nil)
+	err := r.RunRevertCommand(nil, nil)
 	if err == nil {
 		t.Fatal("expected the failure error to propagate")
 	}
@@ -52,13 +50,11 @@ func TestRunRevertCommandKeepsStoreOnFailure(t *testing.T) {
 func TestRunRevertCommandClearsStoreOnSuccess(t *testing.T) {
 	storeCommand(t, []string{"fake-exe", "--ok"})
 
-	oldExec := revertCommandExec
-	revertCommandExec = func(exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(exec.Options) *exec.Result {
 		return &exec.Result{}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
-	if err := RunRevertCommand(nil, nil); err != nil {
+	if err := r.RunRevertCommand(nil, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -76,14 +72,12 @@ func TestRunRevertCommandNoopWithoutStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	execRan := false
-	oldExec := revertCommandExec
-	revertCommandExec = func(exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(exec.Options) *exec.Result {
 		execRan = true
 		return &exec.Result{}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
-	if err := RunRevertCommand(nil, nil); err != nil {
+	if err := r.RunRevertCommand(nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if execRan {
@@ -93,42 +87,35 @@ func TestRunRevertCommandNoopWithoutStore(t *testing.T) {
 
 func TestRunRevertCommandOptionsFnMutates(t *testing.T) {
 	storeCommand(t, []string{"fake-exe"})
-	oldExec := revertCommandExec
-	var seenStdout bool
-	revertCommandExec = func(opts exec.Options) *exec.Result {
-		// optionsFn should have set AsAdmin or modified file; we test via custom field
-		// For this test we check that optionsFn was able to mutate Args
+	var seenInjected bool
+	r := NewReverter(deps{exec: func(opts exec.Options) *exec.Result {
 		if len(opts.Args) == 1 && opts.Args[0] == "injected" {
-			seenStdout = true
+			seenInjected = true
 		}
 		return &exec.Result{}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
-	err := RunRevertCommand(nil, func(o *exec.Options) {
+	err := r.RunRevertCommand(nil, func(o *exec.Options) {
 		o.Args = []string{"injected"}
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !seenStdout {
+	if !seenInjected {
 		t.Fatal("optionsFn pointer mutation was not applied to exec options")
 	}
 }
 
 func TestRunRevertCommandOutputRedirection(t *testing.T) {
 	storeCommand(t, []string{"fake-exe"})
-	oldExec := revertCommandExec
 	var captured *exec.Options
-	revertCommandExec = func(opts exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(opts exec.Options) *exec.Result {
 		captured = &opts
 		return &exec.Result{}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
 	var buf os.File
-	// Use non-nil out to trigger Stdout/Stderr assignment
-	if err := RunRevertCommand(&buf, nil); err != nil {
+	if err := r.RunRevertCommand(&buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	if captured.Stdout != &buf || captured.Stderr != &buf {
@@ -139,14 +126,12 @@ func TestRunRevertCommandOutputRedirection(t *testing.T) {
 func TestRunRevertCommandSingleArgNoArgs(t *testing.T) {
 	storeCommand(t, []string{"only-exe"})
 	var received exec.Options
-	oldExec := revertCommandExec
-	revertCommandExec = func(o exec.Options) *exec.Result {
+	r := NewReverter(deps{exec: func(o exec.Options) *exec.Result {
 		received = o
 		return &exec.Result{}
-	}
-	defer func() { revertCommandExec = oldExec }()
+	}})
 
-	if err := RunRevertCommand(nil, nil); err != nil {
+	if err := r.RunRevertCommand(nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if received.File != "only-exe" {
