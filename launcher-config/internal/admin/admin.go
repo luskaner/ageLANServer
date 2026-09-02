@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
@@ -19,42 +20,79 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 )
 
-var ipc net.Conn = nil
-var encoder *gob.Encoder = nil
-var decoder *gob.Decoder = nil
+// deps groups the external effect points used by the admin client so tests can
+// inject fakes via NewAdmin instead of mutating package globals.
+type deps struct {
+	bytesToCertificate func([]byte) *x509.Certificate
+	newFile            func(root string, gameId string, finalRoot bool) (error, *commonLogger.Root)
+	runSetUp           func(gameId string, ip net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result
+	runRevert          func(ips bool, certs bool, failfast bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result
+	runFlushCache      func(ips bool, certs bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) (string, *exec.Result)
+	runFlushCacheAgent func(ips bool, certs bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) (string, *exec.Result)
+	process            func(name string) (string, *os.Process, error)
+	killPidProc        func(pid string, proc *os.Process) error
+	dialIPC            func() (net.Conn, error)
+	postAgentStart     func(pid uint32, file string) bool
+	nativeFileName     func(bin bool, name string) string
+	sleep              func(time.Duration)
+	getLoggerFolder    func() string
+}
 
-// Injectable function vars for testing — defaults mirror production behaviour.
-var (
-	bytesToCertificateFn   = common.BytesToCertificate
-	newFileFn              = commonLogger.NewFile
-	runSetUpFn             = executor.RunSetUp
-	runRevertFn            = executor.RunRevert
-	runFlushCacheFn        = executor.RunFlushCache
-	runFlushCacheAgentFn   = executor.RunFlushCacheAgent
-	processFn              = commonProcess.Process
-	killPidProcFn          = commonProcess.KillPidProc
-	dialIPCFn              = DialIPC
-	postAgentStartFn       = postAgentStart
-	nativeFileNameFn       = executables.NativeFileName
-	sleepFn                = time.Sleep
-	connectAgentIfNeededFn = ConnectAgentIfNeeded
-	getLoggerFolderFn      = func() string {
-		if internal.Logger != nil {
-			return internal.Logger.Folder()
-		}
-		return ""
+func defaultDeps() deps {
+	return deps{
+		bytesToCertificate: common.BytesToCertificate,
+		newFile:            commonLogger.NewFile,
+		runSetUp:           executor.RunSetUp,
+		runRevert:          executor.RunRevert,
+		runFlushCache:      executor.RunFlushCache,
+		runFlushCacheAgent: executor.RunFlushCacheAgent,
+		process:            commonProcess.Process,
+		killPidProc:        commonProcess.KillPidProc,
+		dialIPC:            DialIPC,
+		postAgentStart:     postAgentStart,
+		nativeFileName:     executables.NativeFileName,
+		sleep:              time.Sleep,
+		getLoggerFolder: func() string {
+			if internal.Logger != nil {
+				return internal.Logger.Folder()
+			}
+			return ""
+		},
 	}
-)
+}
 
-func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
+// Admin is the launcher-config-admin client. It holds both its injectable
+// dependencies and its IPC connection state, so tests can construct isolated
+// instances without mutating package globals.
+type Admin struct {
+	deps deps
+	ipc  net.Conn
+	enc  *gob.Encoder
+	dec  *gob.Decoder
+}
+
+// NewAdmin returns an Admin using the given deps. Prefer DefaultDeps() plus
+// field overrides in tests.
+func NewAdmin(d deps) *Admin {
+	return &Admin{deps: d}
+}
+
+// DefaultDeps returns the production dependencies for an Admin.
+func DefaultDeps() deps { return defaultDeps() }
+
+// Default is the process-wide Admin used by the package-level convenience
+// functions, mirroring the http.DefaultClient idiom.
+var Default = NewAdmin(defaultDeps())
+
+func (a *Admin) RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
-	if ipc != nil {
-		return runSetUpAgent(gameId, ipToMap, macOsExclusiveMappings, addCertData)
+	if a.ipc != nil {
+		return a.runSetUpAgent(gameId, ipToMap, macOsExclusiveMappings, addCertData)
 	}
 
 	var certificate *x509.Certificate
 	if addCertData != nil {
-		certificate = bytesToCertificateFn(addCertData)
+		certificate = a.deps.bytesToCertificate(addCertData)
 		if certificate == nil {
 			exitCode = internal.ErrUserCertAddParse
 			return
@@ -63,7 +101,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = newFileFn(logRoot, "", true); err != nil {
+		if err, file = a.deps.newFile(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
@@ -75,7 +113,7 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 		suffix = "_hosts"
 	}
 	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = runSetUpFn(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
+		result = a.deps.runSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -90,20 +128,20 @@ func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappi
 	return
 }
 
-func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {
-	if ipc != nil {
-		return runRevertAgent(unmapIPs, removeCert)
+func (a *Admin) RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {
+	if a.ipc != nil {
+		return a.runRevertAgent(unmapIPs, removeCert)
 	}
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = newFileFn(logRoot, "", true); err != nil {
+		if err, file = a.deps.newFile(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_revert", func(writer io.Writer) {
-		result = runRevertFn(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options *exec.Options) {
+		result = a.deps.runRevert(unmapIPs, removeCert, failfast, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -118,20 +156,20 @@ func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (e
 	return
 }
 
-func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode int) {
-	if ipc != nil {
+func (a *Admin) RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode int) {
+	if a.ipc != nil {
 		return fmt.Errorf("cannot flush cache if agent is already started"), internal.ErrAgentAlreadyStarted
 	}
 	var result *exec.Result
 	var file *commonLogger.Root
 	if logRoot != "" {
-		if err, file = newFileFn(logRoot, "", true); err != nil {
+		if err, file = a.deps.newFile(logRoot, "", true); err != nil {
 			exitCode = common.ErrFileLog
 			return
 		}
 	}
 	if bufferErr := file.Buffer("config-admin_flushCache", func(writer io.Writer) {
-		_, result = runFlushCacheFn(ips, certs, file.Folder(), writer, func(options *exec.Options) {
+		_, result = a.deps.runFlushCache(ips, certs, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -146,30 +184,30 @@ func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode in
 	return
 }
 
-func StopAgentIfNeeded() bool {
-	agentConnected := connectAgentIfNeededFn() == nil
-	exeFileName := nativeFileNameFn(true, executables.LauncherConfigAdminAgent)
+func (a *Admin) StopAgentIfNeeded() bool {
+	agentConnected := a.ConnectAgentIfNeeded() == nil
+	exeFileName := a.deps.nativeFileName(true, executables.LauncherConfigAdminAgent)
 	if !agentConnected {
-		if _, proc, err := processFn(exeFileName); err == nil && proc == nil {
+		if _, proc, err := a.deps.process(exeFileName); err == nil && proc == nil {
 			return true
 		}
 	}
 	commonLogger.Println("Trying to stop 'config-admin-agent'.")
-	if err := stopAgentIfNeeded(); err == nil {
+	if err := a.stopAgentIfNeeded(); err == nil {
 		for range 30 {
-			if _, proc, err := processFn(exeFileName); err == nil && proc == nil {
+			if _, proc, err := a.deps.process(exeFileName); err == nil && proc == nil {
 				commonLogger.Println("Stopped 'config-admin-agent'")
 				return true
 			}
-			sleepFn(100 * time.Millisecond)
+			a.deps.sleep(100 * time.Millisecond)
 		}
 		commonLogger.Println("Failed to stop 'config-admin-agent'")
 	} else {
 		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
 		commonLogger.Println(err)
 	}
-	if pid, proc, err := processFn(exeFileName); err == nil && proc != nil {
-		if err = killPidProcFn(pid, proc); err == nil {
+	if pid, proc, err := a.deps.process(exeFileName); err == nil && proc != nil {
+		if err = a.deps.killPidProc(pid, proc); err == nil {
 			commonLogger.Println("Successfully killed 'config-admin-agent'.")
 			return true
 		}
@@ -179,84 +217,84 @@ func StopAgentIfNeeded() bool {
 	return false
 }
 
-func stopAgentIfNeeded() (err error) {
+func (a *Admin) stopAgentIfNeeded() (err error) {
 	commonLogger.Println("Stopping agent")
-	if ipc != nil {
+	if a.ipc != nil {
 		str := "-> Exit: "
-		err = encoder.Encode(commonIpc.Exit)
+		err = a.enc.Encode(commonIpc.Exit)
 		if err != nil {
 			commonLogger.Println(str + "Could not encode")
 			return
 		}
 		commonLogger.Println(str + "OK")
-		clearIPCState()
+		a.clearIPCState()
 	} else {
 		commonLogger.Println("Already stopped")
 	}
 	return
 }
 
-func ConnectAgentIfNeededWithRetries() bool {
+func (a *Admin) ConnectAgentIfNeededWithRetries() bool {
 	for range 30 {
-		if connectAgentIfNeededFn() == nil {
+		if a.ConnectAgentIfNeeded() == nil {
 			return true
 		}
-		sleepFn(100 * time.Millisecond)
+		a.deps.sleep(100 * time.Millisecond)
 	}
 	return false
 }
 
-func clearIPCState() {
-	if ipc != nil {
-		_ = ipc.Close()
+func (a *Admin) clearIPCState() {
+	if a.ipc != nil {
+		_ = a.ipc.Close()
 	}
-	encoder = nil
-	decoder = nil
-	ipc = nil
+	a.enc = nil
+	a.dec = nil
+	a.ipc = nil
 }
 
-func ConnectAgentIfNeeded() (err error) {
+func (a *Admin) ConnectAgentIfNeeded() (err error) {
 	commonLogger.Println("Connecting to agent")
-	if ipc != nil {
+	if a.ipc != nil {
 		commonLogger.Println("Already connected")
 		return
 	}
 	var conn net.Conn
-	conn, err = dialIPCFn()
+	conn, err = a.deps.dialIPC()
 	if err != nil {
 		return
 	}
 	commonLogger.Println("Connected")
-	ipc = conn
-	encoder = gob.NewEncoder(ipc)
-	decoder = gob.NewDecoder(ipc)
+	a.ipc = conn
+	a.enc = gob.NewEncoder(a.ipc)
+	a.dec = gob.NewDecoder(a.ipc)
 	return
 }
 
-func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
+func (a *Admin) StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	commonLogger.Println("Starting agent")
 	var file string
-	logRoot := getLoggerFolderFn()
-	file, result = runFlushCacheAgentFn(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
+	logRoot := a.deps.getLoggerFolder()
+	file, result = a.deps.runFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
 		commonLogger.Println("start config-admin-agent:", options.String())
 	})
 	if result.Success() {
-		if !postAgentStartFn(result.Pid, file) {
+		if !a.deps.postAgentStart(result.Pid, file) {
 			result.Err = fmt.Errorf("agent process failed to start")
 		}
 	}
 	return
 }
 
-func sendAgent(commandType byte, commandName string, commandFn func() any) (err error, exitCode int) {
+func (a *Admin) sendAgent(commandType byte, commandName string, commandFn func() any) (err error, exitCode int) {
 	str := fmt.Sprintf("-> %s: ", commandName)
-	if err = encoder.Encode(commandType); err != nil {
+	if err = a.enc.Encode(commandType); err != nil {
 		commonLogger.Println(str + "Could not encode")
 		return
 	}
 	commonLogger.Println(str + "OK")
 	str = "<- Exit Code: "
-	if err = decoder.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
+	if err = a.dec.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
 		if err != nil {
 			commonLogger.Println(str + "Could not decode")
 		} else {
@@ -267,13 +305,13 @@ func sendAgent(commandType byte, commandName string, commandFn func() any) (err 
 	commonLogger.Println(str + strconv.Itoa(exitCode))
 	data := commandFn()
 	str = fmt.Sprintf("-> %v: ", data)
-	if err = encoder.Encode(data); err != nil {
+	if err = a.enc.Encode(data); err != nil {
 		commonLogger.Println(str + "Could not encode")
 		return
 	}
 	commonLogger.Println(str + "OK")
 	str = "<- Exit Code: "
-	if err = decoder.Decode(&exitCode); err != nil {
+	if err = a.dec.Decode(&exitCode); err != nil {
 		commonLogger.Println(str + "Could not decode")
 		return
 	}
@@ -281,8 +319,8 @@ func sendAgent(commandType byte, commandName string, commandFn func() any) (err 
 	return
 }
 
-func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
-	return sendAgent(
+func (a *Admin) runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
+	return a.sendAgent(
 		commonIpc.Revert,
 		"Revert",
 		func() any {
@@ -291,12 +329,42 @@ func runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitCode int) {
 	)
 }
 
-func runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, certificate []byte) (err error, exitCode int) {
-	return sendAgent(
+func (a *Admin) runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, certificate []byte) (err error, exitCode int) {
+	return a.sendAgent(
 		commonIpc.Setup,
 		"Setup",
 		func() any {
 			return commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, Certificate: certificate}
 		},
 	)
+}
+
+// Package-level wrappers for backward compatibility. They delegate to Default.
+
+func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
+	return Default.RunSetUp(gameId, logRoot, ipToMap, macOsExclusiveMappings, addCertData)
+}
+
+func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {
+	return Default.RunRevert(logRoot, unmapIPs, removeCert, failfast)
+}
+
+func RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode int) {
+	return Default.RunFlushCache(logRoot, ips, certs)
+}
+
+func StopAgentIfNeeded() bool {
+	return Default.StopAgentIfNeeded()
+}
+
+func ConnectAgentIfNeededWithRetries() bool {
+	return Default.ConnectAgentIfNeededWithRetries()
+}
+
+func ConnectAgentIfNeeded() (err error) {
+	return Default.ConnectAgentIfNeeded()
+}
+
+func StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
+	return Default.StartAgent(flushIPs, flushCerts)
 }
