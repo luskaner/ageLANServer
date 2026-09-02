@@ -2,12 +2,14 @@ package ip
 
 import (
 	"bytes"
+	"errors"
 	"net"
 	"net/netip"
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"golang.org/x/net/ipv4"
 )
@@ -39,18 +41,16 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 	if conn, err = net.ListenUDP("udp4", addr); err == nil {
 		var pckConn *ipv4.PacketConn
 		if !multicastGroups.IsEmpty() {
-			//goland:noinspection GoResourceLeak
 			pckConn = ipv4.NewPacketConn(conn)
-		}
-		for multicastGroup := range multicastGroups.Iter() {
-			multicastAddr := &net.UDPAddr{
-				IP:   multicastGroup.AsSlice(),
-				Port: port,
-			}
-			for _, multicastIf := range multicastIfs {
-				if //goland:noinspection ALL
-				err = pckConn.JoinGroup(multicastIf, multicastAddr); err != nil {
-					continue
+			for multicastGroup := range multicastGroups.Iter() {
+				multicastAddr := &net.UDPAddr{
+					IP:   multicastGroup.AsSlice(),
+					Port: port,
+				}
+				for _, multicastIf := range multicastIfs {
+					if joinErr := pckConn.JoinGroup(multicastIf, multicastAddr); joinErr != nil {
+						commonLogger.Printf("Failed to join multicast group %v on interface %s: %v\n", multicastGroup, multicastIf.Name, joinErr)
+					}
 				}
 			}
 		}
@@ -62,7 +62,7 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 func ListenQueryConnections(connections []*net.UDPConn) {
 	var buf bytes.Buffer
 	buf.Write([]byte(common.AnnounceHeader))
-	idBuffer, _ := i.Id.MarshalBinary()
+	idBuffer, _ := i.Id.MarshalText()
 	buf.Write(idBuffer)
 	write := buf.Bytes()
 	for _, conn := range connections {
@@ -74,9 +74,12 @@ func ListenQueryConnections(connections []*net.UDPConn) {
 			for {
 				n, clientAddr, err := conn.ReadFromUDP(packetBuffer)
 				if err != nil {
+					if errors.Is(err, net.ErrClosed) {
+						return
+					}
 					continue
 				}
-				if n < len(common.AnnounceHeader) || string(packetBuffer) != common.AnnounceHeader {
+				if n < len(common.AnnounceHeader) || string(packetBuffer[:n]) != common.AnnounceHeader {
 					continue
 				}
 				_, _ = conn.WriteToUDP(write, clientAddr)

@@ -103,6 +103,9 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 				errorHandler()
 				return
 			}
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(resp.Body)
 			if resp.StatusCode != http.StatusOK {
 				errorHandler()
 				return
@@ -112,7 +115,6 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 				errorHandler()
 				return
 			}
-			_ = resp.Body.Close()
 			localErr = json.Unmarshal(respBody, &respAny)
 			if localErr != nil || len(respAny) == 0 {
 				errorHandler()
@@ -161,7 +163,12 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 		if !ok {
 			return
 		}
-		upstreamSessionId := authResp[1].(string)
+
+		upstreamSessionId, extractOk := safeString(authResp, 1)
+		if !extractOk {
+			errorHandler()
+			return
+		}
 		defer func() {
 			data := url.Values{}
 			data.Add("callNum", strconv.Itoa(callNum))
@@ -214,7 +221,7 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 		q.Add("callNum", strconv.Itoa(callNum))
 		q.Add("connect_id", upstreamSessionId)
 		q.Add("sessionID", upstreamSessionId)
-		q.Add("profileIDs", fmt.Sprintf("[%d]", int32(authResp[5].(i.A)[0].(i.A)[1].(float64))))
+		q.Add("profileIDs", fmt.Sprintf("[%d]", int32(safeNestedFloat(authResp, 5))))
 		req.URL.RawQuery = q.Encode()
 
 		resp, ok := doRequest(client, req)
@@ -222,15 +229,62 @@ func AuthMiddleware(next http.HandlerFunc, gameId string, cached bool) http.Hand
 			return
 		}
 		callNum++
-		itemsRaw := resp[1].(i.A)[0].(i.A)[1].(i.A)
+		itemsRaw, itemsOk := safeNestedArray(resp, 1)
+		if !itemsOk {
+			errorHandler()
+			return
+		}
 		_ = u.GetItems().WithReadWrite(func(items *map[int32]*models.MainItem) error {
 			clear(*items)
 			for _, itemRaw := range itemsRaw {
-				item := models.NewMainItemFromRaw(itemRaw.(i.A))
+				itemData, itemOk := itemRaw.(i.A)
+				if !itemOk {
+					continue
+				}
+				item := models.NewMainItemFromRaw(itemData)
 				(*items)[item.GetId()] = item
 			}
 			return nil
 		})
 		next.ServeHTTP(w, r)
 	})
+}
+
+// safeString extracts a string from an i.A at the given index.
+func safeString(data i.A, index int) (string, bool) {
+	if index < 0 || index >= len(data) {
+		return "", false
+	}
+	s, ok := data[index].(string)
+	return s, ok
+}
+
+// safeNestedFloat extracts a float64 from the nested structure:
+// data[index] → i.A → [0] → i.A → [1] → float64.
+func safeNestedFloat(data i.A, index int) float64 {
+	if index < 0 || index >= len(data) {
+		return 0
+	}
+	arr1, ok := data[index].(i.A)
+	if !ok || len(arr1) < 1 {
+		return 0
+	}
+	arr2, ok := arr1[0].(i.A)
+	if !ok || len(arr2) < 2 {
+		return 0
+	}
+	val, ok := arr2[1].(float64)
+	if !ok {
+		return 0
+	}
+	return val
+}
+
+// safeNestedArray extracts an i.A from data at the given index.
+func safeNestedArray(data i.A, index int) (i.A, bool) {
+	if index < 0 || index >= len(data) {
+		return nil, false
+	}
+	arr, ok := data[index].(i.A)
+	return arr, ok
 }

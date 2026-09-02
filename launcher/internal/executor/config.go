@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"errors"
 	"io"
 	"runtime"
 
@@ -21,7 +22,7 @@ type ConfigSetupOptions struct {
 	*config.SetupValues
 	flags     *pflag.FlagSet
 	Out       io.Writer
-	OptionsFn func(options exec.Options)
+	OptionsFn func(options *exec.Options)
 }
 
 func NewConfigSetupOptions() *ConfigSetupOptions {
@@ -63,7 +64,9 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 		reloadSystemCertificates = true
 	}
 	options := exec.Options{File: executables.NativeFileName(false, executables.LauncherConfig), Wait: true, Args: args, ExitCode: true}
-	c.OptionsFn(options)
+	if c.OptionsFn != nil {
+		c.OptionsFn(&options)
+	}
 	if c.Out != nil {
 		options.Stdout = c.Out
 		options.Stderr = c.Out
@@ -83,13 +86,16 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 			if !result.Success() {
 				logger.Println("Failed to revert setup.")
 			}
-			result.Err = err
+			// Join both errors: the caller needs to know about the store
+			// failure AND that the compensating revert may have also failed
+			// (meaning the system is in an unrecoverable state).
+			result.Err = errors.Join(result.Err, err)
 		}
 	}
 	return
 }
 
-func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options exec.Options)) (result *exec.Result) {
+func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options *exec.Options)) (result *exec.Result) {
 	values, flagSet := config.RevertFlagSet()
 	if err := flagSet.Parse(flags); err != nil {
 		return &exec.Result{Err: err}

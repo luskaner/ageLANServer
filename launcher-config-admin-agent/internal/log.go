@@ -7,8 +7,13 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
+var (
+	newOwnFileLoggerFn = commonLogger.NewOwnFileLogger
+	osExitFn           = os.Exit
+)
+
 func InitializeOrExit(logRoot string) {
-	if err := commonLogger.NewOwnFileLogger("config-admin-agent", logRoot, "", true); err != nil {
-		os.Exit(common.ErrFileLog)
+	if err := newOwnFileLoggerFn("config-admin-agent", logRoot, "", true); err != nil {
+		osExitFn(common.ErrFileLog)
 	}
 }

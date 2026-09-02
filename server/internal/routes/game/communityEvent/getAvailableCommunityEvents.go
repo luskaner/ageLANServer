@@ -14,7 +14,11 @@ func GetAvailableCommunityEvents(w http.ResponseWriter, r *http.Request) {
 	g := models.G(r)
 	title := g.Title()
 	if title == game.AoM {
-		response = g.(*athens.Game).CommunityEventsEncoded()
+		if ag, ok := g.(*athens.Game); ok {
+			response = ag.CommunityEventsEncoded()
+		} else {
+			response = i.A{0, i.A{}, i.A{}}
+		}
 	} else {
 		response = i.A{0, i.A{}, i.A{}}
 		if title == game.AoE2 || title == game.AoE4 {

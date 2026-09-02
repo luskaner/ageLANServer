@@ -9,7 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/google/uuid"
+	"github.com/luskaner/ageLANServer/common/uuid"
+
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
@@ -84,6 +85,12 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		c.certFilePath, _ = filepath.Abs(certFile.Name())
 		addLocalCertData = serverCertificate.Raw
 		certMsg = fmt.Sprintf("Saving 'server' certificate to '%s' file", certFile.Name())
+		// Remove the temp file if the setup below fails before consuming it.
+		defer func() {
+			if errorCode != 0 {
+				_ = os.Remove(c.certFilePath)
+			}
+		}()
 	} else {
 		certMsg = fmt.Sprintf("Adding 'server' certificate to %s store", canAdd)
 		if runtime.GOOS == "darwin" || canAdd == "user" {
@@ -102,7 +109,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	if err = commonLogger.FileLogger.Buffer("config_setup_CA_store", func(writer io.Writer) {
 		cfgSetupOpts := executor.NewConfigSetupOptions()
 		cfgSetupOpts.Out = writer
-		cfgSetupOpts.OptionsFn = func(options exec.Options) {
+		cfgSetupOpts.OptionsFn = func(options *exec.Options) {
 			commonLogger.Println("run config setup for CA store cert", options.String())
 		}
 		cfgSetupOpts.GameId = gameId
@@ -148,3 +155,4 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	return
 }
+

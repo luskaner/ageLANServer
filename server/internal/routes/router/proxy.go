@@ -33,6 +33,7 @@ func NewProxy(host string, initFn func(gameId string, next http.Handler) http.Ha
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			pr.Out.URL.Scheme = remote.Scheme
 			pr.Out.URL.Host = remote.Host
+			pr.Out.Host = host
 		},
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{

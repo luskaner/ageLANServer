@@ -42,7 +42,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		}
 		adv.UnsafeUpdate(&q)
 		if gameTitle == game.AoE1 || gameTitle == game.AoE3 {
-			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
+			adv.UnsafeUpdatePlatformSessionId("", q.PsnSessionId)
 		}
 
 		if gameTitle == game.AoE2 || gameTitle == game.AoM || gameTitle == game.AoE4 {

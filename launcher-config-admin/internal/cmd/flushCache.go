@@ -1,14 +1,10 @@
 package cmd
 
 import (
-	"runtime"
-
 	"github.com/luskaner/ageLANServer/common"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cert"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 )
 
 func runFlushCache(args []string) (err error, exitCode int) {
@@ -18,12 +14,14 @@ func runFlushCache(args []string) (err error, exitCode int) {
 		return
 	}
 	if values.LogRoot != "" {
-		internal.Initialize(values.LogRoot)
+		if initErr := initializeFn(values.LogRoot); initErr != nil {
+			commonLogger.Println("Failed to initialize file logging:", initErr)
+		}
 	}
 	if values.Certs {
-		if runtime.GOOS != "windows" {
+		if runtimeGOOS != "windows" {
 			commonLogger.Println("Flushing Certs cache...")
-			if result := cert.FlushCerts(); !result.Success() {
+			if result := flushCertsFn(); !result.Success() {
 				commonLogger.Println("Failed to flush Certs cache")
 				if result.ExitCode != common.ErrSuccess {
 					commonLogger.Printf("Exit code: %v\n", result.ExitCode)
@@ -36,7 +34,7 @@ func runFlushCache(args []string) (err error, exitCode int) {
 		}
 	}
 	if values.IPs {
-		if result := hosts.FlushDns(); !result.Success() {
+		if result := flushDnsFn(); !result.Success() {
 			commonLogger.Println("Failed to flush DNS cache")
 			if result.ExitCode != common.ErrSuccess {
 				commonLogger.Printf("Exit code: %v\n", result.ExitCode)

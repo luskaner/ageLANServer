@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Compile
-FROM golang:1.26-alpine3.24 AS compiler
+FROM golang:1.27-alpine3.24 AS compiler
 WORKDIR /app
 COPY tools/server-docker/Dockerfile/server/go.work.template go.work
 COPY common common

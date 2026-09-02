@@ -14,6 +14,8 @@ var waitBeforeRunning time.Duration
 var exitBeforeRunning bool
 var executableGame string
 
+var execFn = func(options exec.Options) *exec.Result { return options.Exec() }
+
 func rootCmd(args []string) error {
 	log.Printf("Arguments: %v", os.Args)
 	if exitBeforeRunning {
@@ -29,7 +31,7 @@ func rootCmd(args []string) error {
 		Pid:        true,
 		Args:       args,
 	}
-	if result := options.Exec(); !result.Success() {
+	if result := execFn(options); !result.Success() {
 		return fmt.Errorf("failed to start the game: %s", result.Err)
 	} else {
 		log.Printf("Started the game with PID %d\n", result.Pid)
@@ -37,9 +39,16 @@ func rootCmd(args []string) error {
 	return nil
 }
 
+func setupFlags() {
+	if flag.Lookup("waitBeforeRunning") == nil {
+		flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
+		flag.BoolVar(&exitBeforeRunning, "exitBeforeRunning", false, "Exit without running the game")
+	}
+}
+
 func Execute() error {
 	log.Printf("Arguments: %s", os.Args)
-	flag.DurationVar(&waitBeforeRunning, "waitBeforeRunning", 10*time.Second, "Wait time before running the game")
+	setupFlags()
 	flag.Parse()
 	return rootCmd(flag.Args())
 }

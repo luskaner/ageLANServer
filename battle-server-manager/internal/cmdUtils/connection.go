@@ -8,9 +8,11 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 )
 
+var waitInitTimeout = 10 * time.Second
+
 func WaitForBattleServerInit(config battleServer.Config) (ok bool) {
 	// Wait for initialization
-	t := 10 * time.Second
+	t := waitInitTimeout
 	if runtime.GOOS != "windows" {
 		t *= 3
 	}
@@ -22,9 +24,10 @@ loop:
 		case <-timeout:
 			break loop
 		default:
-			if ok = config.Validate(); ok {
+			if ok = config.Validate(false); ok {
 				return
 			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 	return

@@ -1,4 +1,3 @@
-.tools
 .task
 .env
 .idea/
@@ -14,3 +13,7 @@ build/**/*
 .goreleaser.yaml
 tools/**/go.sum
 go.work.sum
+coverage
+cover_routes
+coverage_all
+userData/
