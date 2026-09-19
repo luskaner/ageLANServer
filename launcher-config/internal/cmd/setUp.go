@@ -239,10 +239,15 @@ func runSetUp(args []string) (err error, exitCode int) {
 			ipToMap = setupValues.MapIp
 		}
 	} else if len(setupValues.MapIp) > 0 {
-		if ok, _ := hosts.AddHosts(setupValues.MapIp, setupValues.GameId, setupValues.HostFilePath, hosts.WindowsLineEnding, setupValues.MacOsExclusiveMappings, nil); ok {
+		if ok, addHostsErr := hosts.AddHosts(setupValues.MapIp, setupValues.GameId, setupValues.HostFilePath, hosts.WindowsLineEnding, setupValues.MacOsExclusiveMappings, nil); ok {
 			commonLogger.Println("Successfully added host mappings")
 		} else {
-			commonLogger.Println("Failed to add host mappings")
+			commonLogger.Printf("Failed to add host mappings with IP %q to custom hosts file %q\n", setupValues.MapIp.String(), setupValues.HostFilePath)
+			if addHostsErr != nil {
+				commonLogger.Println("Error message:", addHostsErr)
+			} else {
+				commonLogger.Println("Error message: unknown (AddHosts returned ok=false with nil error)")
+			}
 			exitCode = internal.ErrHostsAdd
 			undoSetUp()
 			return
@@ -281,13 +286,19 @@ func runSetUp(args []string) (err error, exitCode int) {
 				commonLogger.Println("Successfully ran 'config-admin'")
 			}
 		} else {
+			commonLogger.Printf("Failed admin setup with IP %q (via agent=%v)\n", ipToMap.String(), agentStarted)
 			if err != nil {
 				commonLogger.Println("Received error:")
 				commonLogger.Println(err)
+			} else {
+				commonLogger.Println("Received error: none (exit code only)")
 			}
 			if exitCode != common.ErrSuccess {
 				commonLogger.Println("Received exit code:")
 				commonLogger.Println(exitCode)
+			}
+			if !agentStarted {
+				commonLogger.Println("Check the 'config-admin_setup_hosts' log file for the underlying 'config-admin' output.")
 			}
 			exitCode = internal.ErrAdminSetup
 			if agentStarted {

@@ -42,16 +42,18 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 		if customHostFile {
 			hostFileLock, err := hosts.CreateTemp()
 			if err != nil {
+				logger.Printf("Failed to create temp hosts file with IP %q: %s\n", ip, err.Error())
 				return internal.ErrConfigIpMapAdd
 			}
 			tmpName := hostFileLock.File.Name()
 			c.hostFilePath, _ = filepath.Abs(tmpName)
 			str += fmt.Sprintf("Saving hosts to '%s' file", tmpName)
 			if err = hostFileLock.Unlock(); err != nil {
+				logger.Printf("Failed to unlock temp hosts file %q: %s\n", tmpName, err.Error())
 				return internal.ErrConfigIpMapAdd
 			}
 		} else {
-			str += "Adding hosts to hosts file"
+			str += fmt.Sprintf("Adding hosts to hosts file with IP %q", ip)
 		}
 		logger.Println(str + "...")
 		var err error
@@ -67,12 +69,19 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 			cfgSetupOpts.HostFilePath = c.hostFilePath
 			cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
-				logger.Println("Failed to add hosts.")
+				logger.Printf("Failed to add hosts with IP %q.\n", ip)
 				if result.Err != nil {
 					logger.Println("Error message: " + result.Err.Error())
+				} else {
+					logger.Println("Error message: none (check the 'config_setup_hosts' and 'config-admin_setup_hosts' log files for details).")
 				}
 				if result.ExitCode != common.ErrSuccess {
 					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				} else {
+					logger.Println("Exit code: none (process reported failure without exit code).")
+				}
+				if logFolder := commonLogger.FileLogger.Folder(); logFolder != "" {
+					logger.Printf("Check log folder %q for 'config_setup_hosts*' and 'config-admin_setup_hosts*' files.\n", logFolder)
 				}
 				exitCode = internal.ErrConfigIpMapAdd
 			} else if customHostFile {
