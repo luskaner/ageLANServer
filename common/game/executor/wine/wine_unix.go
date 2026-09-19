@@ -3,6 +3,8 @@
 package wine
 
 import (
+	"os/exec"
+
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game/wine"
 )
@@ -15,6 +17,9 @@ type Exec struct{}
 
 func NewExec() (exec *Exec, ok bool) {
 	if wine.Prefix() != "" {
+		exec = &Exec{}
+		ok = true
+	} else if _, err := exec.LookPath("wine"); err == nil {
 		exec = &Exec{}
 		ok = true
 	}
