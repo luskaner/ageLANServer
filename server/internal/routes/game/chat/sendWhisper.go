@@ -3,7 +3,6 @@ package chat
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
@@ -17,35 +16,34 @@ type recipientID struct {
 	ID int32 `schema:"recipientID"`
 }
 
-func whisperResult(w *http.ResponseWriter, gameId string, code int) {
+func whisperResult(w *http.ResponseWriter, legacy bool, code int) {
 	response := i.A{code}
-	if gameId == game.AoE4 || gameId == game.AoM {
+	if !legacy {
 		// FIXME: Is it the 0 repeated for each recipient?
 		response = append(response, i.A{0})
 	}
 	i.JSON(w, response)
 }
 
-func SendWhisper(w http.ResponseWriter, r *http.Request) {
+func SendWhisper(w http.ResponseWriter, r *http.Request, legacy bool) {
 	g := models.G(r)
-	gameTitle := g.Title()
 	var req textRequest
 	err := i.Bind(r, &req)
 	if err != nil {
-		whisperResult(&w, gameTitle, 2)
+		whisperResult(&w, legacy, 2)
 		return
 	}
 
 	var targetUserIds recipientIDs
-	if gameTitle == game.AoE4 || gameTitle == game.AoM {
+	if !legacy {
 		if err := i.Bind(r, &targetUserIds); err != nil {
-			whisperResult(&w, gameTitle, 2)
+			whisperResult(&w, legacy, 2)
 			return
 		}
 	} else {
 		var recpId recipientID
 		if err = i.Bind(r, &recpId); err != nil {
-			whisperResult(&w, gameTitle, 2)
+			whisperResult(&w, legacy, 2)
 			return
 		}
 		targetUserIds.IDs.Data = append(targetUserIds.IDs.Data, recpId.ID)
@@ -57,19 +55,19 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 	for j, profileId := range targetUserIds.IDs.Data {
 		receivers[j], ok = users.GetUserById(profileId)
 		if !ok {
-			whisperResult(&w, gameTitle, 2)
+			whisperResult(&w, legacy, 2)
 			return
 		}
 	}
 	currentSession := models.SessionOrPanic(r)
 	currentUser, ok := users.GetUserById(currentSession.GetUserId())
 	if !ok {
-		whisperResult(&w, gameTitle, 2)
+		whisperResult(&w, legacy, 2)
 		return
 	}
 
 	message := i.A{""}
-	if gameTitle == game.AoE4 || gameTitle == game.AoM {
+	if !legacy {
 		message = append(
 			message,
 			i.A{
@@ -97,5 +95,5 @@ func SendWhisper(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	whisperResult(&w, gameTitle, 0)
+	whisperResult(&w, legacy, 0)
 }

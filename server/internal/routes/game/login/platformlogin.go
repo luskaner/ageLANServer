@@ -57,7 +57,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	}
 	profileId := u.GetProfileId()
 	extraProfileInfoList := i.A{}
-	if title == game.AoE2 {
+	if title == game.AoE2 || i.SinceTheBalticPowers(title, req.ClientLibVersion) {
 		extraProfileInfoList = append(extraProfileInfoList, u.EncodeExtraProfileInfo(req.ClientLibVersion))
 	}
 	battleServers := g.BattleServers()
@@ -114,7 +114,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	if title != game.AoE1 {
 		allProfileInfo = append(allProfileInfo, i.A{})
 	}
-	if req.ClientLibVersion >= 193 {
+	if req.ClientLibVersion >= i.V193 {
 		allProfileInfo = append(allProfileInfo, -1)
 	}
 	response = append(response,

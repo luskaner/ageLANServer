@@ -34,6 +34,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		return
 	}
 	idValueUint := uint64(idValue)
+	sess := models.SessionOrPanic(r)
 	advertisements.WithWriteLock(req.MatchID, func() {
 		var adv models.Advertisement
 		adv, ok = advertisements.GetAdvertisement(req.MatchID)
@@ -41,7 +42,6 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 			return
 		}
 
-		sess := models.SessionOrPanic(r)
 		currentUserId = sess.GetUserId()
 		peers := adv.GetPeers()
 		if _, ok = peers.Load(currentUserId); !ok {
@@ -59,7 +59,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 	}
 	sessions := g.Sessions()
 	message := i.A{req.MatchID, metadata, idValueUint}
-	if gameTitle := g.Title(); gameTitle == game.AoE2 || gameTitle == game.AoE4 || gameTitle == game.AoM {
+	if gameTitle := g.Title(); i.SinceTheBalticPowers(gameTitle, sess.GetClientLibVersion()) || gameTitle == game.AoE2 || gameTitle == game.AoE4 || gameTitle == game.AoM {
 		message = append(message, 0, "", "")
 	}
 	for peerId := range peersId {

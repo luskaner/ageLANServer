@@ -28,8 +28,9 @@ func GetAdvertisements(w http.ResponseWriter, r *http.Request) {
 	}
 	game := models.G(r)
 	title := game.Title()
+	sess := models.SessionOrPanic(r)
 	advertisements := game.Advertisements()
-	advs := advertisements.LockedFindAdvertisementsEncoded(title, 0, 0, false, func(adv models.Advertisement) bool {
+	advs := advertisements.LockedFindAdvertisementsEncoded(title, sess.GetClientLibVersion(), 0, 0, false, func(adv models.Advertisement) bool {
 		return slices.Contains(req.MatchIDs.Data, adv.GetId())
 	})
 	if advs == nil {

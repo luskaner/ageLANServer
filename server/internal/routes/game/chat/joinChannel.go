@@ -43,6 +43,10 @@ func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	sessions := game.Sessions()
 	staticResponse := i.A{chatChannelIdStr, i.A{0, user.EncodeProfileInfo(sess.GetClientLibVersion())}}
 	for userId := range users.GetUserIds() {
+		// Should help avoid wrong counters in some cases
+		if userId == user.GetId() {
+			continue
+		}
 		var existingUserSession models.Session
 		existingUserSession, ok = sessions.GetByUserId(userId)
 		if ok {

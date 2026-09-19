@@ -26,6 +26,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 	gameTitle := game.Title()
 	advertisements := game.Advertisements()
 	battleServers := game.BattleServers()
+	sess := models.SessionOrPanic(r)
 	var ok bool
 	var peersLen int
 	var peers iter.Seq2[int32, models.Peer]
@@ -41,7 +42,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 		adv.UnsafeUpdateState(q.State)
 		if adv.UnsafeGetState() == 1 {
 			peersLen, peers = adv.GetPeers().Iter()
-			advEncoded = adv.UnsafeEncode(gameTitle, battleServers)
+			advEncoded = adv.UnsafeEncode(gameTitle, sess.GetClientLibVersion(), battleServers)
 			advStartTime = adv.UnsafeGetStartTime()
 		}
 		ok = true

@@ -3,6 +3,7 @@ package advertisement
 import (
 	"net/http"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -25,16 +26,16 @@ type wanQuery struct {
 	Offset int `schema:"start"`
 }
 
-func findAdvResp(errorCode int, advs i.A) i.A {
+func findAdvResp(errorCode int, advs i.A, usersProfileInfo i.A) i.A {
 	resp := getAdvResp(errorCode, advs)
-	resp = append(resp, i.A{})
+	resp = append(resp, usersProfileInfo)
 	return resp
 }
 
-func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(models.Advertisement) bool) {
+func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offset int, ongoing bool, lanRegions map[string]struct{}, extraCheck func(models.Advertisement) bool, includeUserProfiles bool) {
 	var q searchQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, findAdvResp(2, i.A{}))
+		i.JSON(&w, findAdvResp(2, i.A{}, i.A{}))
 		return
 	}
 	g := models.G(r)
@@ -54,7 +55,11 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			}
 		}
 	}
-	advs := g.Advertisements().LockedFindAdvertisementsEncoded(title, length, offset, true, func(adv models.Advertisement) bool {
+	var userIds mapset.Set[int32]
+	if includeUserProfiles {
+		userIds = mapset.NewThreadUnsafeSet[int32]()
+	}
+	advs := g.Advertisements().LockedFindAdvertisementsEncoded(title, sess.GetClientLibVersion(), length, offset, true, func(adv models.Advertisement) bool {
 		peers := adv.GetPeers()
 		_, isPeer := peers.Load(currentUserId)
 		var matchesBattleServer bool
@@ -63,7 +68,7 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 		} else {
 			_, matchesBattleServer = battleServers.Get(adv.GetRelayRegion())
 		}
-		return !isPeer &&
+		if !isPeer &&
 			(tagsCheck == nil || tagsCheck(adv)) &&
 			(adv.UnsafeGetJoinable() != ongoing || adv.UnsafeGetVisible() != ongoing) &&
 			adv.UnsafeGetAppBinaryChecksum() == q.AppBinaryChecksum &&
@@ -75,16 +80,36 @@ func findAdvertisements(w http.ResponseWriter, r *http.Request, length int, offs
 			adv.UnsafeGetModVersion() == q.ModVersion &&
 			adv.UnsafeGetVersionFlags() == q.VersionFlags &&
 			matchesBattleServer &&
-			(extraCheck == nil || extraCheck(adv))
+			(extraCheck == nil || extraCheck(adv)) {
+			if includeUserProfiles {
+				_, peersIter := peers.Iter()
+				for userId := range peersIter {
+					userIds.Add(userId)
+				}
+			}
+			return true
+		}
+		return false
 	})
-	i.JSON(&w, findAdvResp(0, advs))
+	var usersProfileInfoEncoded i.A
+	if includeUserProfiles {
+		users := g.Users()
+		usersProfileInfoEncoded = make(i.A, userIds.Cardinality())
+		j := 0
+		for userId := range userIds.Iter() {
+			user, _ := users.GetUserById(userId)
+			usersProfileInfoEncoded[j] = user.EncodeProfileInfo(sess.GetClientLibVersion())
+			j++
+		}
+	}
+	i.JSON(&w, findAdvResp(0, advs, usersProfileInfoEncoded))
 }
 
 func FindAdvertisements(w http.ResponseWriter, r *http.Request) {
 	var q wanQuery
 	if err := i.Bind(r, &q); err != nil {
-		i.JSON(&w, findAdvResp(2, i.A{}))
+		i.JSON(&w, findAdvResp(2, i.A{}, i.A{}))
 		return
 	}
-	findAdvertisements(w, r, q.Length, q.Offset, false, nil, nil)
+	findAdvertisements(w, r, q.Length, q.Offset, false, nil, nil, false)
 }

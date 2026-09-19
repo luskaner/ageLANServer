@@ -81,7 +81,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE3 {
 		ChallengeGroup.HandleFunc("POST", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		ChallengeGroup.HandleFunc("GET", "/getChallengeProgress", challenge.GetChallengeProgress)
 	}
 	ChallengeGroup.HandleFunc("GET", "/getChallenges", challenge.GetChallenges)
@@ -119,7 +119,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE3 {
 		LeaderboardGroup.HandleFunc("POST", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		LeaderboardGroup.HandleFunc("GET", "/getRecentMatchHistory", leaderboard.GetRecentMatchHistory)
 	}
 	LeaderboardGroup.HandleFunc("GET", "/getLeaderBoard", leaderboard.GetLeaderBoard)
@@ -156,10 +156,11 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	achievementGroup.HandleFunc("POST", "/syncStats", achievement.SyncStats)
 
 	advertisementGroup := gameGroup.Subgroup("/advertisement")
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("POST", "/updatePlatformSessionID", advertisement.UpdatePlatformSessionID)
 	}
 	advertisementGroup.HandleFunc("POST", "/join", advertisement.Join)
+	// TODO: Review
 	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("POST", "/updateTags", advertisement.UpdateTags)
 	}
@@ -169,7 +170,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE1 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
 	}
-	if gameId == game.AoE2 {
+	if gameId == game.AoE2 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("GET", "/getLanAdvertisements", advertisement.GetLanAdvertisements)
 	}
 	if gameId == game.AoE1 || gameId == game.AoE3 {
@@ -178,14 +179,14 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findObservableAdvertisements", advertisement.FindObservableAdvertisements)
 	}
 	advertisementGroup.HandleFunc("GET", "/getAdvertisements", advertisement.GetAdvertisements)
 	if gameId == game.AoE1 || gameId == game.AoE3 {
 		advertisementGroup.HandleFunc("POST", "/findAdvertisements", advertisement.FindAdvertisements)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		advertisementGroup.HandleFunc("GET", "/findAdvertisements", advertisement.FindAdvertisements)
 	}
 
@@ -200,7 +201,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE1 || gameId == game.AoE3 {
 		chatGroup.HandleFunc("POST", "/getChatChannels", chat.GetChatChannels)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		chatGroup.HandleFunc("GET", "/getChatChannels", chat.GetChatChannels)
 	}
 	chatGroup.HandleFunc("GET", "/getOfflineMessages", chat.GetOfflineMessages)
@@ -214,10 +215,14 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 		chatGroup.HandleFunc("POST", "/sendText", chat.SendText)
 	}
 	if gameId == game.AoE3 {
-		chatGroup.HandleFunc("POST", "/sendWhisper", chat.SendWhisper)
+		chatGroup.HandleFunc("POST", "/sendWhisper", func(writer http.ResponseWriter, request *http.Request) {
+			chat.SendWhisper(writer, request, true)
+		})
 	}
-	if gameId == game.AoE4 || gameId == game.AoM {
-		chatGroup.HandleFunc("POST", "/sendWhispers", chat.SendWhisper)
+	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
+		chatGroup.HandleFunc("POST", "/sendWhispers", func(writer http.ResponseWriter, request *http.Request) {
+			chat.SendWhisper(writer, request, false)
+		})
 	}
 	if gameId == game.AoM {
 		chatGroup.HandleFunc("POST", "/deleteOfflineMessage", chat.DeleteOfflineMessage)
@@ -227,7 +232,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE1 || gameId == game.AoE3 {
 		relationshipGroup.HandleFunc("POST", "/getRelationships", relationship.GetRelationships)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 || gameId == game.AoM {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
 		relationshipGroup.HandleFunc("GET", "/getRelationships", relationship.GetRelationships)
 	}
 	relationshipGroup.HandleFunc("GET", "/getPresenceData", relationship.GetPresenceData)
@@ -248,6 +253,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	partyGroup.HandleFunc("POST", "/reportMatch", party.ReportMatch)
 	partyGroup.HandleFunc("POST", "/finalizeReplayUpload", party.FinalizeReplayUpload)
 	partyGroup.HandleFunc("POST", "/updateHost", party.UpdateHost)
+	// TODO: Review
 	if gameId == game.AoE4 || gameId == game.AoM {
 		partyGroup.HandleFunc("POST", "/createOrReportSinglePlayer", party.CreateOrReportSinglePlayer)
 	}
@@ -266,7 +272,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE3 {
 		cloudGroup.HandleFunc("POST", "/getFileURL", cloud.GetFileURL)
 	}
-	if gameId == game.AoE2 || gameId == game.AoE4 {
+	if gameId == game.AoE2 || gameId == game.AoE3 || gameId == game.AoE4 {
 		cloudGroup.HandleFunc("GET", "/getFileURL", cloud.GetFileURL)
 	}
 

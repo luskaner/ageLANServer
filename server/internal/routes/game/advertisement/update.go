@@ -28,6 +28,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 	advertisements := g.Advertisements()
 	battleServers := g.BattleServers()
+	sess := models.SessionOrPanic(r)
 	var response i.A
 	var ok bool
 	advertisements.WithWriteLock(q.Id, func() {
@@ -37,16 +38,16 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if gameTitle == game.AoE1 || gameTitle == game.AoE3 {
+		if gameTitle == game.AoE1 || i.BeforeTheBalticPowers(gameTitle, sess.GetClientLibVersion()) {
 			q.Joinable = true
 		}
 		adv.UnsafeUpdate(&q)
-		if gameTitle == game.AoE1 || gameTitle == game.AoE3 {
+		if gameTitle == game.AoE1 || i.BeforeTheBalticPowers(gameTitle, sess.GetClientLibVersion()) {
 			adv.UnsafeUpdatePlatformSessionId(q.PsnSessionId)
 		}
 
-		if gameTitle == game.AoE2 || gameTitle == game.AoM || gameTitle == game.AoE4 {
-			response = adv.UnsafeEncode(gameTitle, battleServers)
+		if gameTitle == game.AoE2 || i.SinceTheBalticPowers(gameTitle, sess.GetClientLibVersion()) || gameTitle == game.AoM || gameTitle == game.AoE4 {
+			response = adv.UnsafeEncode(gameTitle, sess.GetClientLibVersion(), battleServers)
 		}
 		ok = true
 	})

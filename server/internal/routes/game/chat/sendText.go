@@ -2,6 +2,7 @@ package chat
 
 import (
 	"net/http"
+	"slices"
 	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -38,15 +39,23 @@ func SendText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.JSON(&w, i.A{0})
+	gameTitle := game.Title()
 	sessions := game.Sessions()
-	staticResponse := i.A{strconv.Itoa(int(req.ChatroomID)), strconv.Itoa(int(user.GetId())), "", req.Message}
+	legacyStaticResponse := i.A{strconv.Itoa(int(req.ChatroomID)), strconv.Itoa(int(user.GetId())), "", req.Message}
+	modernStaticResponse := append(slices.Clone(legacyStaticResponse), "", req.Message)
 	for existingUser := range chatChannel.GetUsers() {
 		var existingUserSession models.Session
 		existingUserSession, ok = sessions.GetByUserId(existingUser.GetId())
+		var msg i.A
+		if i.SinceTheBalticPowers(gameTitle, existingUserSession.GetClientLibVersion()) {
+			msg = modernStaticResponse
+		} else {
+			msg = legacyStaticResponse
+		}
 		wss.SendOrStoreMessage(
 			existingUserSession,
 			"ChannelChatMessage",
-			staticResponse,
+			msg,
 		)
 	}
 }
