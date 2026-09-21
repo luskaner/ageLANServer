@@ -27,6 +27,8 @@ func resetState(t *testing.T) {
 	oldValues := values
 	oldConnectivity := internal.CanUseInternet
 	oldLogger := commonLogger.FileLogger
+	oldDNS := dnsConnectivityFn
+	oldCache := cacheNetworkInterfacesFn
 	t.Cleanup(func() {
 		fileLockNewFn = oldNewPid
 		fileLockLockFn = oldLock
@@ -39,6 +41,8 @@ func resetState(t *testing.T) {
 		values = oldValues
 		internal.CanUseInternet = oldConnectivity
 		commonLogger.FileLogger = oldLogger
+		dnsConnectivityFn = oldDNS
+		cacheNetworkInterfacesFn = oldCache
 	})
 	commonLogger.FileLogger = nil
 	values = &server.Values{
@@ -178,5 +182,56 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 	_, code := runRoot(nil)
 	if code != internal.ErrMulticastGroup {
 		t.Fatalf("code=%d want ErrMulticastGroup %d", code, internal.ErrMulticastGroup)
+	}
+}
+
+func TestRunRootRequiredAuthNoInternet(t *testing.T) {
+	resetState(t)
+	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
+		return &internal.Configuration{
+			Log: false, CanUseInternet: false, Authentication: "required",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Announcement: internal.Announcement{Enabled: false},
+		}, ""
+	}
+	_, code := runRoot(nil)
+	if code != internal.ErrInvalidAuthentication {
+		t.Fatalf("code=%d want ErrInvalidAuthentication", code)
+	}
+}
+
+func TestRunRootRequiredAuthProbeFails(t *testing.T) {
+	resetState(t)
+	dnsConnectivityFn = func() bool { return false }
+	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
+		return &internal.Configuration{
+			Log: false, CanUseInternet: true, Authentication: "required",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Announcement: internal.Announcement{Enabled: false},
+		}, ""
+	}
+	_, code := runRoot(nil)
+	if code != internal.ErrInvalidAuthentication {
+		t.Fatalf("code=%d want ErrInvalidAuthentication", code)
+	}
+}
+
+func TestRunRootNoInternetPropagatesFlag(t *testing.T) {
+	resetState(t)
+	certificatePairFolderFn = func(string) string { return t.TempDir() }
+	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
+		return &internal.Configuration{
+			Log: false, CanUseInternet: false, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Announcement: internal.Announcement{Enabled: true, Multicast: true, MulticastGroup: "999.999.999.999", Port: 8080},
+		}, ""
+	}
+	values.Id = "00000000-0000-0000-0000-000000000000"
+	_, code := runRoot(nil)
+	if code != internal.ErrMulticastGroup {
+		t.Fatalf("code=%d want ErrMulticastGroup %d", code, internal.ErrMulticastGroup)
+	}
+	if internal.CanUseInternet {
+		t.Fatal("CanUseInternet should be false when cfg disables it")
 	}
 }

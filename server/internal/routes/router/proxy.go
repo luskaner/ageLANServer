@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/server/internal"
 )
 
 type Proxy struct {
@@ -21,6 +22,9 @@ type Proxy struct {
 
 func NewProxy(host string, initFn func(gameId string, next http.Handler) http.Handler) (proxy Proxy) {
 	proxy = Proxy{host: host, initializeRoutes: initFn}
+	if !internal.CanUseInternet {
+		return
+	}
 	ip, err := common.DirectHostToIP(host)
 	if err != nil {
 		return
