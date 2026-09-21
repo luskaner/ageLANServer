@@ -5,5 +5,6 @@ import (
 )
 
 func UpdatePlatformSessionID(w http.ResponseWriter, r *http.Request) {
-	updatePlatformID(&w, r, "platformSessionID", r.FormValue("onlinePlatform"))
+	// TODO: Use "onlinePlatform" - STEAM... ?
+	updatePlatformID(&w, r, "platformSessionID")
 }

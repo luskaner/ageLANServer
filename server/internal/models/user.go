@@ -385,7 +385,7 @@ func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
 		0,
 		0,
 	}
-	if clientLibVersion >= 190 {
+	if clientLibVersion >= i.V190 {
 		info = append(info, 0, 0)
 	}
 	return info
@@ -399,7 +399,7 @@ func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
 		u.GetAvatarMetadata(),
 		u.GetAlias(),
 	}
-	if clientLibVersion >= 190 {
+	if clientLibVersion >= i.V190 {
 		profileInfo = append(profileInfo, u.GetAlias())
 	}
 	profileInfo = append(

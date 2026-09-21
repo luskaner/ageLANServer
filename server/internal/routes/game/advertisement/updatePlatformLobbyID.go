@@ -15,7 +15,7 @@ type request struct {
 	MatchID int32 `schema:"matchID"`
 }
 
-func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, platform string) {
+func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 	var req request
 	if err := i.Bind(r, &req); err != nil {
 		i.JSON(w, i.A{2})
@@ -34,6 +34,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, pla
 		return
 	}
 	idValueUint := uint64(idValue)
+	sess := models.SessionOrPanic(r)
 	advertisements.WithWriteLock(req.MatchID, func() {
 		var adv models.Advertisement
 		adv, ok = advertisements.GetAdvertisement(req.MatchID)
@@ -41,14 +42,13 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, pla
 			return
 		}
 
-		sess := models.SessionOrPanic(r)
 		currentUserId = sess.GetUserId()
 		peers := adv.GetPeers()
 		if _, ok = peers.Load(currentUserId); !ok {
 			return
 		}
 
-		adv.UnsafeUpdatePlatformSessionId(platform, idValueUint)
+		adv.UnsafeUpdatePlatformSessionId(idValueUint)
 		metadata = adv.GetXboxSessionId()
 		_, peersId = peers.Keys()
 		ok = true
@@ -59,7 +59,7 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, pla
 	}
 	sessions := g.Sessions()
 	message := i.A{req.MatchID, metadata, idValueUint}
-	if gameTitle := g.Title(); gameTitle == game.AoE2 || gameTitle == game.AoE4 || gameTitle == game.AoM {
+	if gameTitle := g.Title(); i.SinceTheBalticPowers(gameTitle, sess.GetClientLibVersion()) || gameTitle == game.AoE2 || gameTitle == game.AoE4 || gameTitle == game.AoM {
 		message = append(message, 0, "", "")
 	}
 	for peerId := range peersId {
@@ -78,5 +78,5 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string, pla
 }
 
 func UpdatePlatformLobbyID(w http.ResponseWriter, r *http.Request) {
-	updatePlatformID(&w, r, "platformlobbyID", "")
+	updatePlatformID(&w, r, "platformlobbyID")
 }

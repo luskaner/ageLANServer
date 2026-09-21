@@ -21,7 +21,7 @@ type MainMessage struct {
 	time            int64
 	broadcast       bool
 	content         string
-	// Only used for clientLibVersion >= 194, json encoded
+	// Only used for clientLibVersion >= V194, json encoded
 	metadata  string
 	typ       uint8
 	sender    User
@@ -68,7 +68,7 @@ func (message *MainMessage) Encode(clientLibVersion uint16) i.A {
 		message.typ,
 		message.advertisementId,
 	}
-	if clientLibVersion >= 194 {
+	if clientLibVersion >= i.V194 {
 		msg = append(msg, message.metadata)
 	}
 	return msg

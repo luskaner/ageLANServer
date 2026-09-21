@@ -11,6 +11,6 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	go.mongodb.org/mongo-driver v1.17.9 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.10 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )

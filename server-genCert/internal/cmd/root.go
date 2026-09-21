@@ -34,7 +34,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	}
 	if !values.Replace {
 		certificateFolder := certificatePairFolderFn(serverExe)
-		if exists, _, _, _, _, _ := certificatePairsFn(certificateFolder); exists {
+		if exists, _, _, _, _, _ := certificatePairsFn(certificateFolder); exists && !values.IgnoreIfExisting {
 			fmt.Println("Already have certificate pairs and replace is false, set replace to true or delete it manually.")
 			if values.IgnoreIfExisting {
 				return

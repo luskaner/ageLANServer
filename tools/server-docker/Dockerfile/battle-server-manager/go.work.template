@@ -1,6 +1,10 @@
 go 1.27.0
 
+<<<<<<< HEAD
 toolchain go1.27.0
+=======
+toolchain go1.26.8
+>>>>>>> main
 
 use (
 	common

@@ -25,13 +25,14 @@ func GetAdvertisementByPlatformSessionId(w http.ResponseWriter, r *http.Request)
 	}
 	game := models.G(r)
 	advertisements := game.Advertisements()
+	sess := models.SessionOrPanic(r)
 	var advEncoded i.A
 	_ = advertisements.UnsafeFirstAdvertisement(func(adv models.Advertisement) bool {
 		var ok bool
 		advertisements.WithReadLock(adv.GetId(), func() {
-			platform, id := adv.UnsafeGetPlatformSessionId()
-			if platform == req.Platform && req.SessionID == id {
-				advEncoded = adv.UnsafeEncode(game.Title(), game.BattleServers())
+			id := adv.UnsafeGetPlatformSessionId()
+			if req.SessionID == id {
+				advEncoded = adv.UnsafeEncode(game.Title(), sess.GetClientLibVersion(), game.BattleServers())
 				ok = true
 			}
 		},

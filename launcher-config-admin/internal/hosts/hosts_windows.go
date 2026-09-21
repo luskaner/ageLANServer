@@ -27,7 +27,14 @@ func FlushDns() (result *exec.Result) {
 			commonLogger.Printf("run ipconfig: %s\n", options.String())
 		}
 		result = options.Exec()
+		if result != nil && !result.Success() {
+			commonLogger.Printf("Flushing DNS cache finished with exit code %d.\n", result.ExitCode)
+			if result.Err != nil {
+				commonLogger.Printf("Flush DNS error: %v\n", result.Err)
+			}
+		}
 	}); err != nil {
+		commonLogger.Printf("Failed to buffer flush DNS log: %v\n", err)
 		result = &exec.Result{
 			ExitCode: common.ErrFileLog,
 			Err:      err,

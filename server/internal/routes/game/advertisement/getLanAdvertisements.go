@@ -28,5 +28,5 @@ func GetLanAdvertisements(w http.ResponseWriter, r *http.Request) {
 	for _, guid := range lanServerGuids {
 		lanServerGuidsMap[guid] = struct{}{}
 	}
-	findAdvertisements(w, r, 0, 0, false, lanServerGuidsMap, nil)
+	findAdvertisements(w, r, 0, 0, false, lanServerGuidsMap, nil, false)
 }

@@ -93,15 +93,15 @@ func generateDomains(gameId string) (domains []string) {
 	switch gameId {
 	case commonGame.AoE2:
 		prefix = SubDomainAge2Prefix
-		releaseMin = 2
+		releaseMin = 7
 		subDomainReleasePart = stdSubDomainReleasePart
 	case commonGame.AoE4:
 		prefix = aoe4Marker
-		releaseMin = 2
+		releaseMin = 10
 		subDomainReleasePart = "-activerelease"
 	case commonGame.AoM:
 		prefix = "andromeda"
-		releaseMin = 20
+		releaseMin = 22
 		subDomainReleasePart = stdSubDomainReleasePart
 	default:
 		return

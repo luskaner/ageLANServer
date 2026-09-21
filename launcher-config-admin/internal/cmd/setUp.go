@@ -5,12 +5,15 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
+	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
 	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
 )
 
 func untrustCertificate() bool {
@@ -21,6 +24,24 @@ func untrustCertificate() bool {
 	}
 	commonLogger.Println("Failed to remove local certificate")
 	return false
+}
+
+func logHostsDiagnostics() {
+	hostsPath := launcherCommonHosts.Path()
+	commonLogger.Printf("Hosts file path: %q\n", hostsPath)
+	if info, statErr := os.Stat(hostsPath); statErr != nil {
+		commonLogger.Printf("Hosts file stat failed: %v\n", statErr)
+	} else {
+		commonLogger.Printf("Hosts file info: size=%d mode=%v isDir=%v\n", info.Size(), info.Mode(), info.IsDir())
+	}
+	backupPath := filepath.Join(filepath.Dir(hostsPath), "hosts.bak")
+	commonLogger.Printf("Hosts backup path: %q\n", backupPath)
+	if info, statErr := os.Stat(backupPath); statErr != nil {
+		commonLogger.Printf("Hosts backup stat: %v\n", statErr)
+	} else {
+		commonLogger.Printf("Hosts backup info: size=%d mode=%v isDir=%v\n", info.Size(), info.Mode(), info.IsDir())
+		commonLogger.Println("If the backup already exists from a previous failed run, delete it after verifying its contents and retry.")
+	}
 }
 
 func runSetUp(args []string) (err error, exitCode int) {
@@ -70,17 +91,23 @@ func runSetUp(args []string) (err error, exitCode int) {
 		}
 	}
 	if len(values.MapIp) > 0 {
-		commonLogger.Println("Adding IP mappings")
-		if ok, _ := addHostsFn(values.MapIp, values.GameId, "", "", values.MacOsExclusiveMappings, flushDnsFn); ok {
+		commonLogger.Printf("Adding IP mappings for game %q with IP %q...\n", values.GameId, values.MapIp.String())
+		if ok, addHostsErr := addHostsFn(values.MapIp, values.GameId, "", "", values.MacOsExclusiveMappings, hosts.FlushDns); ok {
 			commonLogger.Println("Successfully added IP mappings")
 		} else {
 			exitCode = internal.ErrIpMapAdd
+			commonLogger.Println("Failed to add IP mappings")
+			if addHostsErr != nil {
+				commonLogger.Println("Error message:", addHostsErr)
+			} else {
+				commonLogger.Println("Error message: unknown (AddHosts returned ok=false with nil error)")
+			}
+			logHostsDiagnostics()
 			if trustedCertificate {
 				if !untrustCertificate() {
 					exitCode = internal.ErrIpMapAddRevert
 				}
 			}
-			commonLogger.Println("Failed to add IP mappings")
 		}
 	}
 	return

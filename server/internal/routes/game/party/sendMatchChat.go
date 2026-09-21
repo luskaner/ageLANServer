@@ -36,7 +36,8 @@ func SendMatchChat(w http.ResponseWriter, r *http.Request) {
 
 	var toProfileIds profileIds
 	g := models.G(r)
-	if g.Title() == game.AoE3 {
+	session := models.SessionOrPanic(r)
+	if i.BeforeTheBalticPowers(g.Title(), session.GetClientLibVersion()) {
 		var toProfileId profileId
 		if err := i.Bind(r, &toProfileId); err != nil {
 			i.JSON(&w, i.A{2})

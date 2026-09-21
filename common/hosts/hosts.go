@@ -3,6 +3,7 @@ package hosts
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -179,7 +180,10 @@ func openLockedHostsFile(hostFilePath string, flag int) (lock *fileLock.Lock, er
 		if err = lock.Lock(f); err != nil {
 			_ = f.Close()
 			f = nil
+			err = fmt.Errorf("failed to lock hosts file %q: %w", hostFilePath, err)
 		}
+	} else {
+		err = fmt.Errorf("failed to open hosts file %q: %w", hostFilePath, err)
 	}
 	return
 }
@@ -212,33 +216,33 @@ func UpdateHosts(hostsLock *fileLock.Lock, updater func(file *os.File) error, fl
 	var err error
 	tmpLock, err = CreateTemp()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temp file for hosts update: %w", err)
 	}
 
 	_, err = io.Copy(tmpLock.File, hostsLock.File)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy hosts file to temp file: %w", err)
 	}
 
 	if err = updater(tmpLock.File); err == nil {
 		_, err = tmpLock.File.Seek(0, io.SeekStart)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to seek temp hosts file: %w", err)
 		}
 		err = hostsLock.File.Truncate(0)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to truncate hosts file %q: %w", hostsLock.File.Name(), err)
 		}
 
 		_, err = hostsLock.File.Seek(0, io.SeekStart)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to seek hosts file %q: %w", hostsLock.File.Name(), err)
 		}
 
 		_, err = io.Copy(hostsLock.File, tmpLock.File)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to copy temp file back to hosts file %q: %w", hostsLock.File.Name(), err)
 		}
 		removeTmpFile()
 		closeHostsFile()
@@ -269,6 +273,7 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 			hostsFileLock, err = openLockedHostsFile(hostFilePath, os.O_RDWR|os.O_CREATE)
 		}
 		if err != nil {
+			err = fmt.Errorf("failed to open/lock hosts file %q (ip %q): %w", hostFilePath, ip.String(), err)
 			return
 		}
 	}
@@ -276,6 +281,7 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 	restLines, err = missingIpMappings(&mappings, hostsFileLock.File)
 	if err != nil {
 		_ = hostsFileLock.Unlock()
+		err = fmt.Errorf("failed to parse hosts file %q (ip %q): %w", hostFilePath, ip.String(), err)
 		return
 	}
 	if len(mappings) == 0 {
@@ -286,6 +292,7 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 	_, err = hostsFileLock.File.Seek(0, io.SeekStart)
 	if err != nil {
 		_ = hostsFileLock.Unlock()
+		err = fmt.Errorf("failed to seek hosts file %q: %w", hostFilePath, err)
 		return
 	}
 	err = UpdateHosts(hostsFileLock, func(f *os.File) error {
@@ -293,7 +300,10 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 			var bakLock *fileLock.Lock
 			bakLock, err = OpenLockedBackup(os.O_RDWR | os.O_CREATE | os.O_EXCL)
 			if err != nil {
-				return err
+				if errors.Is(err, os.ErrExist) {
+					return fmt.Errorf("failed to create hosts backup %q: file already exists (delete it after verifying its contents if the previous run failed): %w", filepath.Join(filepath.Dir(Path()), "hosts.bak"), err)
+				}
+				return fmt.Errorf("failed to create hosts backup %q: %w", filepath.Join(filepath.Dir(Path()), "hosts.bak"), err)
 			}
 			clearBakFunc := func() {
 				filePath := bakLock.File.Name()
@@ -303,33 +313,37 @@ func AddHosts(ip net.IP, gameId string, hostFilePath string, lineEnding string, 
 			_, err = f.Seek(0, io.SeekStart)
 			if err != nil {
 				clearBakFunc()
-				return err
+				return fmt.Errorf("failed to seek temp hosts file before backup: %w", err)
 			}
 			if _, err = io.Copy(bakLock.File, f); err != nil {
 				clearBakFunc()
-				return err
+				return fmt.Errorf("failed to copy hosts contents to backup: %w", err)
 			}
 			_, err = f.Seek(0, io.SeekStart)
 			if err != nil {
 				clearBakFunc()
-				return err
+				return fmt.Errorf("failed to seek temp hosts file after backup: %w", err)
 			}
 			_ = bakLock.Unlock()
 		}
 		for _, line := range restLines {
 			if _, err = f.WriteString(line.String()); err != nil {
-				return err
+				return fmt.Errorf("failed to write preserved hosts line: %w", err)
 			}
 			if _, err = f.WriteString(lineEnding); err != nil {
-				return err
+				return fmt.Errorf("failed to write hosts line ending: %w", err)
 			}
 		}
 		_, err = f.WriteString(mappings.String(lineEnding))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to write new hosts mappings (ip %q): %w", ip.String(), err)
 		}
 		return nil
 	}, flushFn)
-	ok = err == nil
+	if err != nil {
+		err = fmt.Errorf("failed to update hosts file %q (ip %q): %w", hostFilePath, ip.String(), err)
+	} else {
+		ok = true
+	}
 	return
 }
