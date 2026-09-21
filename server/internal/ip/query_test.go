@@ -71,16 +71,47 @@ func TestQueryConnectionsErrorFromResolver(t *testing.T) {
 	}
 }
 
+// localTestIPv4 returns an IPv4 address assigned to a local interface so
+// net.ListenUDP can bind to it (binding to a non-local IP fails), preferring a
+// non-loopback address and falling back to loopback.
+func localTestIPv4(t *testing.T) net.IP {
+	t.Helper()
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fallback := net.IPv4(127, 0, 0, 1)
+	for _, a := range addrs {
+		ipNet, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		if ip4 := ipNet.IP.To4(); ip4 != nil {
+			if ip4.IsLoopback() {
+				fallback = ip4
+				continue
+			}
+			return ip4
+		}
+	}
+	return fallback
+}
+
 func TestQueryConnectionsWithMulticast(t *testing.T) {
+	localIP := localTestIPv4(t)
 	iface := &net.Interface{Index: 1, Name: "eth0", Flags: net.FlagUp | net.FlagMulticast}
-	ipNet := &net.IPNet{IP: net.ParseIP("192.168.1.10"), Mask: net.CIDRMask(24, 32)}
+	ipNet := &net.IPNet{IP: localIP, Mask: net.CIDRMask(24, 32)}
 	restore := common.SetResolver(&mockResolverIP{
 		interfaces: map[*net.Interface][]*net.IPNet{
 			iface: {ipNet},
 		},
 	})
 	defer restore()
-	addr := netip.MustParseAddr("192.168.1.10")
+	addr, ok := netip.AddrFromSlice(localIP)
+	if !ok {
+		t.Fatal("failed to parse local IP")
+	}
+	addr = addr.Unmap()
 	groups := mapset.NewThreadUnsafeSet[netip.Addr](netip.MustParseAddr("239.0.0.1"))
 	err, conns := QueryConnections(addr, groups, 0)
 	if err != nil {
@@ -93,15 +124,20 @@ func TestQueryConnectionsWithMulticast(t *testing.T) {
 
 func TestQueryConnectionsNoMulticastFlagSkipped(t *testing.T) {
 	// Interface without multicast flag should be skipped
+	localIP := localTestIPv4(t)
 	iface := &net.Interface{Index: 1, Name: "eth0", Flags: net.FlagUp} // no multicast
-	ipNet := &net.IPNet{IP: net.ParseIP("192.168.1.10"), Mask: net.CIDRMask(24, 32)}
+	ipNet := &net.IPNet{IP: localIP, Mask: net.CIDRMask(24, 32)}
 	restore := common.SetResolver(&mockResolverIP{
 		interfaces: map[*net.Interface][]*net.IPNet{
 			iface: {ipNet},
 		},
 	})
 	defer restore()
-	addr := netip.MustParseAddr("192.168.1.10")
+	addr, ok := netip.AddrFromSlice(localIP)
+	if !ok {
+		t.Fatal("failed to parse local IP")
+	}
+	addr = addr.Unmap()
 	groups := mapset.NewThreadUnsafeSet[netip.Addr](netip.MustParseAddr("239.0.0.1"))
 	err, conns := QueryConnections(addr, groups, 0)
 	if err != nil {
