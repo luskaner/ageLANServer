@@ -95,7 +95,7 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	loginGroup := gameGroup.Subgroup("/login")
 	loginHandler := login.Platformlogin
 	if internal.Authentication != "disabled" {
-		if internal.Connectivity {
+		if internal.CanUseInternet {
 			loginHandler = AuthMiddleware(loginHandler, gameId, internal.Authentication == "cached").ServeHTTP
 		} else {
 			loginHandler = AuthMiddlewareOffline(loginHandler).ServeHTTP

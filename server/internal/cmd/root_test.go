@@ -25,7 +25,7 @@ func resetState(t *testing.T) {
 	oldIsAdmin := isAdminFn
 	oldInitCfg := initConfigFn
 	oldValues := values
-	oldConnectivity := internal.Connectivity
+	oldConnectivity := internal.CanUseInternet
 	oldLogger := commonLogger.FileLogger
 	t.Cleanup(func() {
 		fileLockNewFn = oldNewPid
@@ -37,7 +37,7 @@ func resetState(t *testing.T) {
 		isAdminFn = oldIsAdmin
 		initConfigFn = oldInitCfg
 		values = oldValues
-		internal.Connectivity = oldConnectivity
+		internal.CanUseInternet = oldConnectivity
 		commonLogger.FileLogger = oldLogger
 	})
 	commonLogger.FileLogger = nil
@@ -54,11 +54,11 @@ func resetState(t *testing.T) {
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
 			Log:            false,
-			Internet:       true,
+			CanUseInternet: true,
 			Authentication: "disabled",
 			Games: internal.Games{
 				Enabled: []string{"age1"},
-				Age1: internal.Game{Hosts: []string{"127.0.0.1"}},
+				Age1:    internal.Game{Hosts: []string{"127.0.0.1"}},
 			},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
@@ -78,8 +78,8 @@ func TestRunRootInvalidAuth(t *testing.T) {
 	resetState(t)
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: false, Internet: true, Authentication: "invalid",
-			Games: internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Log: false, CanUseInternet: true, Authentication: "invalid",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
@@ -94,8 +94,8 @@ func TestRunRootOpenLogFailure(t *testing.T) {
 	loggerOpenMainFileLogFn = func(string, bool) error { return errors.New("log fail") }
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: true, Internet: true, Authentication: "disabled",
-			Games: internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Log: true, CanUseInternet: true, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
@@ -110,8 +110,8 @@ func TestRunRootNoGames(t *testing.T) {
 	resetState(t)
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: false, Internet: true, Authentication: "disabled",
-			Games: internal.Games{Enabled: []string{}},
+			Log: false, CanUseInternet: true, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{}},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
@@ -126,8 +126,8 @@ func TestRunRootInvalidGame(t *testing.T) {
 	resetState(t)
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: false, Internet: true, Authentication: "disabled",
-			Games: internal.Games{Enabled: []string{"invalidGame"}},
+			Log: false, CanUseInternet: true, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{"invalidGame"}},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
@@ -142,8 +142,8 @@ func TestRunRootInvalidID(t *testing.T) {
 	resetState(t)
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: false, Internet: true, Authentication: "disabled",
-			Games: internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Log: false, CanUseInternet: true, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
@@ -169,8 +169,8 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 	certificatePairFolderFn = func(string) string { return t.TempDir() }
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
-			Log: false, Internet: true, Authentication: "disabled",
-			Games: internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
+			Log: false, CanUseInternet: true, Authentication: "disabled",
+			Games:        internal.Games{Enabled: []string{"age1"}, Age1: internal.Game{Hosts: []string{"127.0.0.1"}}},
 			Announcement: internal.Announcement{Enabled: true, Multicast: true, MulticastGroup: "999.999.999.999", Port: 8080},
 		}, ""
 	}

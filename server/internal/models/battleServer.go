@@ -39,7 +39,7 @@ func CacheNetworkInterfaces(externalIPAddress string) {
 		if ip := net.ParseIP(externalIPAddress); ip != nil && ip.To4() != nil {
 			publicIp = externalIPAddress
 		}
-	} else if internal.Connectivity {
+	} else if internal.CanUseInternet {
 		if resp, err := http.Get("https://api.ipify.org/"); err == nil {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
@@ -52,7 +52,7 @@ func CacheNetworkInterfaces(externalIPAddress string) {
 			}
 		}
 	}
-	if internal.Connectivity || externalIPAddress != "" {
+	if internal.CanUseInternet || externalIPAddress != "" {
 		if publicIp != "" {
 			if ifs, err := common.RunningNetworkInterfaces(); err == nil {
 				for _, ipNets := range ifs {
@@ -191,7 +191,7 @@ func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) (ipV4 string)
 	ipV4 = localIp(r)
 	remoteIPStr, _, _ := net.SplitHostPort(r.RemoteAddr)
 	remoteIP := net.ParseIP(remoteIPStr)
-	if remoteIP == nil || remoteIP.To4() == nil || !internal.Connectivity {
+	if remoteIP == nil || remoteIP.To4() == nil || !internal.CanUseInternet {
 		return
 	}
 	for _, subnet := range localSubnets {

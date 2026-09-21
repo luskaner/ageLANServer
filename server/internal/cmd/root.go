@@ -71,27 +71,27 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
 	}
-	if !cfg.Internet {
-		internal.Connectivity = false
+	if !cfg.CanUseInternet {
+		internal.CanUseInternet = false
 		logger.Println("Internet usage is disabled via config.")
 	} else {
-		internal.Connectivity = dnsConnectivityFn()
+		internal.CanUseInternet = dnsConnectivityFn()
 		cacheNetworkInterfacesFn(cfg.ExternalIPAddress)
 	}
-	if !internal.Connectivity {
+	if !internal.CanUseInternet {
 		logger.Println("No internet connectivity, some features will fallback gracefully.")
 	}
 	if !authenticationValues.ContainsOne(cfg.Authentication) {
 		logger.Printf("Invalid authentication value: %s", cfg.Authentication)
 		exitCode = internal.ErrInvalidAuthentication
 		return
-	} else if cfg.Authentication == "required" && !internal.Connectivity {
+	} else if cfg.Authentication == "required" && !internal.CanUseInternet {
 		logger.Println("Authentication is set to 'required' but there is no internet connectivity, which is required for authentication. Change the authentication method or fix the connectivity.")
 		exitCode = internal.ErrInvalidAuthentication
 		return
 	}
 	if cfg.Authentication == "adaptive" {
-		if internal.Connectivity {
+		if internal.CanUseInternet {
 			cfg.Authentication = "cached"
 		} else {
 			cfg.Authentication = "disabled"
@@ -327,7 +327,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Log":                         false,
 		"GeneratePlatformUserId":      false,
 		"Authentication":              "disabled",
-		"Internet":                    true,
+		"CanUseInternet":              true,
 		"ExternalIPAddress":           "",
 		"Announcement.Enabled":        true,
 		"Announcement.Multicast":      true,
@@ -342,7 +342,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"log":                    "Log",
 		"generatePlatformUserId": "GeneratePlatformUserId",
 		"authentication":         "Authentication",
-		"internet":               "Internet",
+		"internet":               "CanUseInternet",
 		"externalIPAddress":      "ExternalIPAddress",
 		"announce":               "Announcement.Enabled",
 		"announceMulticast":      "Announcement.Multicast",
