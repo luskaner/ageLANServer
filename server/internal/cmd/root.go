@@ -71,12 +71,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if usedFile != "" {
 		logger.PrintFile("config", usedFile)
 	}
-	if !cfg.CanUseInternet {
+	if !cfg.Internet.Enabled {
 		internal.CanUseInternet = false
 		logger.Println("Internet usage is disabled via config.")
 	} else {
 		internal.CanUseInternet = dnsConnectivityFn()
-		cacheNetworkInterfacesFn(cfg.ExternalIPAddress)
+		cacheNetworkInterfacesFn(cfg.Internet.IP)
 	}
 	if !internal.CanUseInternet {
 		logger.Println("No internet connectivity, some features will fallback gracefully.")
@@ -324,13 +324,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 	k := koanf.New(".")
 	defaults := map[string]any{
-		"Log":                         false,
-		"GeneratePlatformUserId":      false,
-		"Authentication":              "disabled",
-		"CanUseInternet":              true,
-		"ExternalIPAddress":           "",
-		"Announcement.Enabled":        true,
-		"Announcement.Multicast":      true,
+		"Log":                    false,
+		"GeneratePlatformUserId": false,
+		"Authentication":         "disabled",
+		"Internet.Enabled":       true,
+		"Internet.IP":            "auto",
+		"Announcement.Enabled":   true,
+		"Announcement.Multicast": true,
 		"Announcement.MulticastGroup": common.AnnounceMulticastGroup,
 		"Announcement.Port":           common.AnnouncePort,
 		"Games.Enabled":               []string{},
@@ -342,8 +342,8 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"log":                    "Log",
 		"generatePlatformUserId": "GeneratePlatformUserId",
 		"authentication":         "Authentication",
-		"internet":               "CanUseInternet",
-		"externalIPAddress":      "ExternalIPAddress",
+		"internet":               "Internet.Enabled",
+		"externalIPAddress":      "Internet.IP",
 		"announce":               "Announcement.Enabled",
 		"announceMulticast":      "Announcement.Multicast",
 		"announceMulticastGroup": "Announcement.MulticastGroup",

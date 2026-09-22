@@ -29,12 +29,16 @@ type Games struct {
 	Athens  Game
 }
 
+type Internet struct {
+	Enabled bool
+	IP      string
+}
+
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
 	Authentication         string
-	CanUseInternet         bool
-	ExternalIPAddress      string
+	Internet               Internet
 	Announcement           Announcement
 	Games                  Games
 }

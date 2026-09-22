@@ -41,6 +41,19 @@ func TestCacheNetworkInterfacesNoInternet(t *testing.T) {
 	}
 }
 
+func TestCacheNetworkInterfacesAutoOffline(t *testing.T) {
+	resetNetworkState(t)
+	internal.CanUseInternet = false
+
+	CacheNetworkInterfaces("auto")
+	if publicIp != "" {
+		t.Fatalf("publicIp = %q, want empty with 'auto' and no internet", publicIp)
+	}
+	if len(localSubnets) != 0 {
+		t.Fatalf("localSubnets = %d entries, want none with 'auto' and no internet", len(localSubnets))
+	}
+}
+
 func TestCacheNetworkInterfacesExternalIP(t *testing.T) {
 	resetNetworkState(t)
 	internal.CanUseInternet = false

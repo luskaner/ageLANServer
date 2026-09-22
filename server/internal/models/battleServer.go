@@ -35,7 +35,7 @@ var localSubnets []*net.IPNet
 var publicIp string
 
 func CacheNetworkInterfaces(externalIPAddress string) {
-	if externalIPAddress != "" {
+	if externalIPAddress != "auto" {
 		if ip := net.ParseIP(externalIPAddress); ip != nil && ip.To4() != nil {
 			publicIp = externalIPAddress
 		}
@@ -52,7 +52,7 @@ func CacheNetworkInterfaces(externalIPAddress string) {
 			}
 		}
 	}
-	if internal.CanUseInternet || externalIPAddress != "" {
+	if internal.CanUseInternet || (externalIPAddress != "" && externalIPAddress != "auto") {
 		if publicIp != "" {
 			if ifs, err := common.RunningNetworkInterfaces(); err == nil {
 				for _, ipNets := range ifs {
