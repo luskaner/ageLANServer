@@ -6,4 +6,5 @@ tasks:
   run:
     cmds:
       - go tool {{.PROGRAM}} {{.ARGS | default ""}}
+includes:
   mock: ./Taskfile.tools.mock.yml

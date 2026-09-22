@@ -47,9 +47,9 @@ Depending on the module you want to debug, you will need to run the correspondin
 - server: ```task debug:prepare-server```
     - genCert: ```task debug:prepare-server-genCert```
 - launcher: ```task debug:prepare-launcher```
-    - config: ```task debug:build-config-admin-agent```
-    - config-admin-agent: ```task debug:build-config-admin```
-    - agent: ```task debug:build-config-all```
+    - config: ```task debug:build-config```
+    - config-admin-agent: ```task debug:build-config-admin-agent```
+    - agent: ```task debug:build-launcher-agent```
 - battle-server-manager: ```task debug:prepare-battle-server-manager```
 
 ### Build

@@ -12,13 +12,13 @@ tasks:
     method: checksum
     cmds:
       - task: :tools:run
-        vars: { PROGRAM: 'createServerResourcesFolder' }
-      - task: :tools:run
         vars: { PROGRAM: 'copyServerResources' }
   prepare-server:
+    deps:
+      - prepare-server-genCert
+      - build-genCert
     cmds:
-      - task: ensure-certificate
-        vars: { ARGS: '-r' }
+      - build/server/bin/genCert{{exeExt}} -r
   ensure-certificate:
     deps:
       - prepare-server-genCert
@@ -28,6 +28,7 @@ tasks:
       - server-genCert/**/*
     generates:
       - build/server/bin/genCert{{exeExt}}
+      - build/server/resources/certificates/**/*
     method: checksum
     vars:
       ARGS: '{{.ARGS | default ""}}'
@@ -35,8 +36,6 @@ tasks:
       - build/server/bin/genCert{{exeExt}} -i {{.ARGS}}
   prepare-launcher:
     deps:
-      - build-config-all
-      - ensure-certificate
       - prepare-battle-server-manager
       - build-server
       - build-launcher-agent
@@ -138,6 +137,6 @@ tasks:
     cmds:
       - go build -o build/launcher/bin/config-admin-agent{{exeExt}} ./launcher-config-admin-agent
   build-config-all:
-    deps: [ build-config, build-config-admin, build-config-admin-agent ]
+    deps: [ build-config, build-config-admin-agent ]
 includes:
   os: ./Taskfile.debug.{{if eq OS "windows"}}other{{else}}unix{{end}}.yml
