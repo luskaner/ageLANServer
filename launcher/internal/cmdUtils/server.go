@@ -114,21 +114,21 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 // in which case the caller should fall back to starting its own server.
 func selectServerIndex(procCount int, singleAutoSelect bool, reader io.Reader) int {
 	for {
-		commonLogger.Printf("Found %d 'server'(s):\n", procCount)
+		logger.Printf("Found %d 'server'(s):\n", procCount)
 		if singleAutoSelect && procCount == 1 {
 			commonLogger.Println("Auto-selecting the only found 'server'.")
 			return 0
 		}
-		commonLogger.Printf("Enter the number of the 'server' (1-%d): ", procCount)
+		logger.Printf("Enter the number of the 'server' (1-%d): ", procCount)
 		var option int
 		if _, err := fmt.Fscan(reader, &option); err != nil {
 			// Stdin exhausted or broken: we can never get a valid answer,
 			// so retrying would spin forever printing the list.
-			commonLogger.Println("Could not read selection from input.")
+			logger.Println("Could not read selection from input.")
 			return -1
 		}
 		if option < 1 || option > procCount {
-			commonLogger.Println("Invalid option. Please enter a number from the list.")
+			logger.Println("Invalid option. Please enter a number from the list.")
 			continue
 		}
 		return option - 1
