@@ -16,9 +16,9 @@ import (
 )
 
 var wssSubtypes = map[string]reflect.Type{
-	"Connection":    reflect.TypeOf(wss.Connection{}),
-	"Disconnection": reflect.TypeOf(wss.Disconnection{}),
-	"Data":          reflect.TypeOf(wss.Data{}),
+	"Connection":    reflect.TypeFor[wss.Connection](),
+	"Disconnection": reflect.TypeFor[wss.Disconnection](),
+	"Data":          reflect.TypeFor[wss.Data](),
 }
 
 const maxTokenSize = 256 * 1024

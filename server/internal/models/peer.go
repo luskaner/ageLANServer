@@ -27,7 +27,7 @@ type MainPeer struct {
 	advertisementIp string
 	userId          int32
 	userStatId      int32
-	mutable         *atomic.Value
+	mutable         atomic.Pointer[MainPeerMutable]
 	invites         *i.SafeSet[User]
 }
 
@@ -38,7 +38,6 @@ func NewPeer(advertisementId int32, advertisementIp string, userId int32, userSt
 		advertisementIp: advertisementIp,
 		userId:          userId,
 		userStatId:      userStatId,
-		mutable:         &atomic.Value{},
 		invites:         i.NewSafeSet[User](),
 	}
 	peer.UpdateMutable(race, team)
@@ -54,7 +53,7 @@ func (peer *MainPeer) GetParty() int32 {
 }
 
 func (peer *MainPeer) GetMutable() *MainPeerMutable {
-	return peer.mutable.Load().(*MainPeerMutable)
+	return peer.mutable.Load()
 }
 
 func (peer *MainPeer) Encode() i.A {

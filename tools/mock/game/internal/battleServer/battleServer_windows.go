@@ -70,7 +70,10 @@ func listenForBattleServerBroadcast(gameId string) (*battleServer.BroadcastMessa
 				break
 			}
 		} else {
-			return nil, nil, parseErr
+			// Stray or malformed datagrams on the broadcast port must be
+			// skipped, not fatal: other traffic may share the port.
+			log.Printf("Skipping invalid broadcast message: %v", parseErr)
+			continue
 		}
 	}
 

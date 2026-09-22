@@ -39,7 +39,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 		if err = commonLogger.FileLogger.Buffer("config_setup_isolate", func(writer io.Writer) {
 			cfgSetupOpts := executor.NewConfigSetupOptions()
 			cfgSetupOpts.Out = writer
-			cfgSetupOpts.OptionsFn = func(options exec.Options) {
+			cfgSetupOpts.OptionsFn = func(options *exec.Options) {
 				commonLogger.Println("run config setup for data isolation", options.String())
 			}
 			cfgSetupOpts.GameId = c.gameId
@@ -59,8 +59,9 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 				}
 			}
 		}); err != nil {
-			return common.ErrFileLog
+			logger.Println("Failed to write isolate setup log:", err)
 		}
 	}
 	return
 }
+

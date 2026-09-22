@@ -70,6 +70,9 @@ func (l Line) Uncommented() (nl string) {
 	if !l.OnlyComments() {
 		return l.String()
 	}
+	if len(l.comments) == 0 {
+		return ""
+	}
 	sb := strings.Builder{}
 	sb.WriteString(l.comments[0])
 	if len(l.comments) > 1 {

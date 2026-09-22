@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -438,10 +438,16 @@ func (adv *MainAdvertisement) UnsafeUpdatePlatformSessionId(sessionId uint64) {
 }
 
 func (adv *MainAdvertisement) StartObserving(userId int32) {
+	if adv.observers.userIds == nil {
+		adv.observers.userIds = i.NewSafeSet[int32]()
+	}
 	adv.observers.userIds.Store(userId)
 }
 
 func (adv *MainAdvertisement) StopObserving(userId int32) {
+	if adv.observers.userIds == nil {
+		adv.observers.userIds = i.NewSafeSet[int32]()
+	}
 	adv.observers.userIds.Delete(userId)
 }
 
@@ -525,8 +531,11 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, clientLibVersion uint1
 	if adv.lan {
 		response = append(response, nil)
 	} else {
-		battleServer, _ := battleServers.Get(adv.relayRegion)
-		battleServer.AppendName(&response)
+		if battleServer, ok := battleServers.Get(adv.relayRegion); ok && battleServer != nil {
+			battleServer.AppendName(&response)
+		} else {
+			response = append(response, nil)
+		}
 	}
 	return response
 }
@@ -557,7 +566,9 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, c
 			}()
 		} else {
 			advs.WithReadLock(adv.GetId(), func() {
-				res = append(res, adv.UnsafeEncode(gameId, clientLibVersion, advs.battleServers))
+				if matches(adv) {
+					res = append(res, adv.UnsafeEncode(gameId, clientLibVersion, advs.battleServers))
+				}
 			})
 		}
 	}
@@ -567,10 +578,7 @@ func (advs *MainAdvertisements) LockedFindAdvertisementsEncoded(gameId string, c
 	if length == 0 {
 		length = len(res)
 	}
-	end := length + offset
-	if end > len(res) {
-		end = len(res)
-	}
+	end := min(length+offset, len(res))
 	return res[offset:end]
 }
 

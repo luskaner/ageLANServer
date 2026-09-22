@@ -10,8 +10,18 @@ import (
 var Version string
 var rootFlagSet *cmd.RootFlagSet
 
+type pidLocker interface {
+	Lock() error
+	Unlock() error
+}
+
+var (
+	newPidLock     = func() pidLocker { return &fileLock.PidLock{} }
+	newRootFlagSet = cmd.NewRootFlagSet
+)
+
 func Execute() (err error, exitCode int) {
-	lock := &fileLock.PidLock{}
+	lock := newPidLock()
 	if err = lock.Lock(); err != nil {
 		commonLogger.Println("Failed to lock pid file. Kill process 'battle-server-manager' if it is running in your task manager.")
 		commonLogger.Println(err.Error())
@@ -21,7 +31,7 @@ func Execute() (err error, exitCode int) {
 	defer func() {
 		_ = lock.Unlock()
 	}()
-	rootFlagSet = cmd.NewRootFlagSet()
+	rootFlagSet = newRootFlagSet()
 	rootFlagSet.RegisterCommand("clean", runClean)
 	rootFlagSet.RegisterCommand("remove", runRemove)
 	rootFlagSet.RegisterCommand("remove-all", runRemoveAll)

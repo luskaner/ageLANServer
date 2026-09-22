@@ -5,6 +5,6 @@ import (
 )
 
 func GetChallengeProgressData() i.A {
-	// Empty means all completed?
+	// FIXME: Actually return all challenges and save them
 	return i.A{}
 }

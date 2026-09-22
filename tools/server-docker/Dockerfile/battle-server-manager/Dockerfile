@@ -17,7 +17,7 @@ ENV WINEPREFIX=/wine \
     WINEARCH=win64 \
     DISPLAY=""
 # Compile
-FROM golang:1.26-alpine3.24 AS compiler
+FROM golang:1.27-alpine3.24 AS compiler
 WORKDIR /app
 COPY tools/server-docker/Dockerfile/battle-server-manager/go.work.template go.work
 COPY common common

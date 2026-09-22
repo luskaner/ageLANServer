@@ -11,6 +11,7 @@ services:
     build:
       context: ../../../..
       dockerfile: tools/server-docker/Dockerfile/battle-server-manager/Dockerfile
+    restart: unless-stopped
     depends_on:
       gen-cert:
         condition: service_completed_successfully
