@@ -54,11 +54,12 @@ func (e *Executor) run(flags *pflag.FlagSet, out io.Writer, optionsFn func(optio
 	return e.runner.Exec(options)
 }
 
-func (e *Executor) RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
+func (e *Executor) RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, canUseInternet bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
 	values, flags := admin.SetupFlagSet()
 	values.GameId = gameId
 	values.MapIp = IP
 	values.MacOsExclusiveMappings = macOsExclusiveMappings
+	values.CanUseInternet = canUseInternet
 	values.LogRoot = logRoot
 	if certificate != nil {
 		values.AddLocalCertData = certificate.Raw
@@ -115,8 +116,8 @@ func (e *Executor) RunFlushCache(IPs bool, certificate bool, logRoot string, out
 // functions, mirroring the http.DefaultClient idiom.
 var Default = NewExecutor(nil)
 
-func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
-	return Default.RunSetUp(gameId, IP, macOsExclusiveMappings, certificate, logRoot, out, optionsFn)
+func RunSetUp(gameId string, IP net.IP, macOsExclusiveMappings bool, canUseInternet bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {
+	return Default.RunSetUp(gameId, IP, macOsExclusiveMappings, canUseInternet, certificate, logRoot, out, optionsFn)
 }
 
 func RunRevert(IPs bool, certificate bool, failfast bool, logRoot string, out io.Writer, optionsFn func(options *exec.Options)) (result *exec.Result) {

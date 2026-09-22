@@ -112,6 +112,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 	if setupValues.GameId == "" {
 		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
+	common.SetUseInternet(setupValues.CanUseInternet)
 
 	// signal handler
 	sigs := make(chan os.Signal, 1)
@@ -285,7 +286,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 			}
 			commonLogger.Println(str + "...")
 		}
-		err, exitCode = runSetUpAdminFn(setupValues.GameId, setupValues.LogRoot, ipToMap, setupValues.MacOsExclusiveMappings, addLocalCertData)
+		err, exitCode = runSetUpAdminFn(setupValues.GameId, setupValues.LogRoot, ipToMap, setupValues.MacOsExclusiveMappings, addLocalCertData, setupValues.CanUseInternet)
 		if err == nil && exitCode == common.ErrSuccess {
 			if agentStarted {
 				commonLogger.Println("Successfully communicated with 'config-admin-agent'")

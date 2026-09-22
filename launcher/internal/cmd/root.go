@@ -75,6 +75,7 @@ var (
 	openMainLogFn  = logger.OpenMainFileLog
 	printFileFn    = logger.PrintFile
 	writeFileLogFn = logger.WriteFileLog
+	dnsConnectivityFn = common.DNSConnectivity
 )
 
 var (
@@ -133,6 +134,7 @@ func Execute() (err error, exitCode int) {
 	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
+	fs.Bool("canUseInternet", true, "Whether or not the 'launcher' may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
 	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS != "linux" {
@@ -217,6 +219,16 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		exitCode = common.ErrFileLog
 		return
 	}
+	if !cfg.Config.CanUseInternet {
+		internal.CanUseInternet = false
+		logger.Println("Internet usage is disabled via config.")
+	} else {
+		internal.CanUseInternet = dnsConnectivityFn()
+	}
+	if !internal.CanUseInternet {
+		logger.Println("No internet connectivity, some features will fallback gracefully.")
+	}
+	common.SetUseInternet(internal.CanUseInternet)
 	for _, fileToPrint := range filesToPrint {
 		printFileFn("config", fileToPrint)
 	}
@@ -735,6 +747,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Config.Certificate.CanTrustInPc":           "local",
 		"Config.Certificate.CanTrustInGame":         true,
 		"Config.CanBroadcastBattleServer":           "auto",
+		"Config.CanUseInternet":                      true,
 		"Config.Log":                                false,
 		"Client.Isolation.Metadata":                 "required",
 		"Client.Isolation.Profiles":                 "required",
@@ -763,6 +776,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"canAddHost":                    "Config.CanAddHost",
 		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
 		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",
+		"canUseInternet":                "Config.CanUseInternet",
 		"log":                           "Config.Log",
 		"isolateMetadata":               "Client.Isolation.Metadata",
 		"isolateProfiles":               "Client.Isolation.Profiles",

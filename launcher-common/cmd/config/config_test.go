@@ -11,7 +11,7 @@ func TestSetUpFlagSetRegistersFlags(t *testing.T) {
 	if values == nil || flags == nil {
 		t.Fatal("SetUpFlagSet returned nil")
 	}
-	for _, name := range []string{"ip", "localCert", "macExclusiveDomain", "caStoreCert", "agentEndOnError", "gamePath", "dataPath", "hostFilePath", "certFilePath", "metadata", "profiles", "logRoot", "game"} {
+	for _, name := range []string{"ip", "localCert", "macExclusiveDomain", "caStoreCert", "agentEndOnError", "gamePath", "dataPath", "hostFilePath", "certFilePath", "metadata", "profiles", "logRoot", "game", "canUseInternet"} {
 		if f := flags.Lookup(name); f == nil {
 			t.Errorf("flag %q not registered", name)
 		}
@@ -44,6 +44,24 @@ func TestInitSetUp(t *testing.T) {
 	}
 	if values.MapIp.String() != "1.2.3.4" {
 		t.Errorf("MapIp = %v, want 1.2.3.4", values.MapIp)
+	}
+	if !values.CanUseInternet {
+		t.Error("CanUseInternet should default to true")
+	}
+}
+
+func TestInitSetUpCanUseInternetFalse(t *testing.T) {
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	values := InitSetUp(flags)
+	if values == nil {
+		t.Fatal("InitSetUp returned nil")
+	}
+	err := flags.Parse([]string{"--canUseInternet=false"})
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if values.CanUseInternet {
+		t.Error("CanUseInternet should be false when flag is false")
 	}
 }
 

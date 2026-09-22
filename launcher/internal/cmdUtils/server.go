@@ -136,6 +136,9 @@ func selectServerIndex(procCount int, singleAutoSelect bool, reader io.Reader) i
 }
 
 func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (exitCode int, ip string) {
+	if !internal.CanUseInternet {
+		values.CanUseInternet = false
+	}
 	logger.Println("Starting 'server', authorize it in firewall if needed...")
 	var stopStr string
 	if stop {

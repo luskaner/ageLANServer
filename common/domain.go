@@ -37,6 +37,18 @@ var generatedDomainsCache = make(map[string][]string)
 
 var directHostToIPFn = DirectHostToIP
 
+var useInternet = true
+
+// SetUseInternet controls whether common may perform outbound internet access.
+// Currently it gates the public DNS enumeration of official release domains in
+// generateDomains. Disabling it returns only the statically known release
+// domains. It invalidates the generated domains cache as it may have been
+// populated with the previous setting.
+func SetUseInternet(enabled bool) {
+	useInternet = enabled
+	generatedDomainsCache = make(map[string][]string)
+}
+
 func CertDomains() []string {
 	domains := []string{"*" + playFabSuffix}
 	domains = append(domains, SelfSignedCertDomains...)
@@ -112,11 +124,13 @@ func generateDomains(gameId string) (domains []string) {
 	for release := 1; release <= releaseMin; release++ {
 		domains = append(domains, generateDomainName(release))
 	}
-	for release := releaseMin + 1; ; release++ {
-		if _, err := directHostToIPFn(generateDomainName(release)); err == nil {
-			domains = append(domains, generateDomainName(release))
-		} else {
-			break
+	if useInternet {
+		for release := releaseMin + 1; ; release++ {
+			if _, err := directHostToIPFn(generateDomainName(release)); err == nil {
+				domains = append(domains, generateDomainName(release))
+			} else {
+				break
+			}
 		}
 	}
 	generatedDomainsCache[gameId] = domains

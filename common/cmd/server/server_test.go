@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/spf13/pflag"
 )
 
@@ -18,6 +19,7 @@ func TestSingleFlagSetRegistrations(t *testing.T) {
 		"config", "announce", "announcePort", "announceMulticast",
 		"announceMulticastGroup", "log", "flatLog", "deterministic",
 		"games", "logRoot", "generatePlatformUserId", "id", "help", "version",
+		"internet",
 	} {
 		if singleFs.Fs().Lookup(name) == nil {
 			t.Errorf("flag %q not registered", name)
@@ -28,6 +30,34 @@ func TestSingleFlagSetRegistrations(t *testing.T) {
 	}
 	if values.Announce != "true" || values.AnnounceMulticast != "true" {
 		t.Errorf("announce defaults = %q/%q, want true/true", values.Announce, values.AnnounceMulticast)
+	}
+	if !values.CanUseInternet {
+		t.Error("CanUseInternet should default to true")
+	}
+}
+
+func TestSingleFlagSetInternetOffEmitsFlag(t *testing.T) {
+	values, singleFs := SingleFlagSet("v-test", nil, noopRun)
+	values.CanUseInternet = false
+	args := cmd.FlagSetToArgs(singleFs.Fs(), false)
+	found := false
+	for _, a := range args {
+		if a == "--internet=false" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected --internet=false in args, got %v", args)
+	}
+}
+
+func TestSingleFlagSetInternetDefaultOmitted(t *testing.T) {
+	_, singleFs := SingleFlagSet("v-test", nil, noopRun)
+	args := cmd.FlagSetToArgs(singleFs.Fs(), false)
+	for _, a := range args {
+		if a == "--internet=false" || a == "--internet" {
+			t.Fatalf("internet-enabled default should not be emitted, got %v", args)
+		}
 	}
 }
 

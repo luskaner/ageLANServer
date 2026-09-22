@@ -14,6 +14,7 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/spf13/pflag"
 )
@@ -53,6 +54,7 @@ func (c *ConfigSetupOptions) ConfigRevertFlagOptions() *launcherCommon.ConfigRev
 func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 	reloadSystemCertificates := false
 	reloadHostMappings := false
+	c.CanUseInternet = internal.CanUseInternet
 	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
 		c.LogRoot = logRoot
 	}

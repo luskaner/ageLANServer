@@ -642,6 +642,7 @@ type runRootOverrides struct {
 	uuidNilFnVal             func() uuid.UUID
 	executablesNativeFileNameFnVal func(bool, string) string
 	configRunSetupCommandFnVal func([]string) *commonExecutor.Result
+	dnsConnectivityFnVal       func() bool
 }
 
 func applyOverrides(t *testing.T, o runRootOverrides) func() {
@@ -685,6 +686,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	origUuidNil := uuidNilFn
 	origExecutablesNativeFileName := executablesNativeFileNameFn
 	origConfigRunSetupCommand := configRunSetupCommandFn
+	origDNSConnectivity := dnsConnectivityFn
 
 	gameId = o.gameId
 	cfgFile = ""
@@ -871,6 +873,11 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	} else {
 		configRunSetupCommandFn = func(s []string) *commonExecutor.Result { return &commonExecutor.Result{} }
 	}
+	if o.dnsConnectivityFnVal != nil {
+		dnsConnectivityFn = o.dnsConnectivityFnVal
+	} else {
+		dnsConnectivityFn = func() bool { return false }
+	}
 
 	return func() {
 		gameId, cfgFile, gameCfgFile = origGameId, origCfgFile, origGameCfgFile
@@ -912,6 +919,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 		uuidNilFn = origUuidNil
 		executablesNativeFileNameFn = origExecutablesNativeFileName
 		configRunSetupCommandFn = origConfigRunSetupCommand
+		dnsConnectivityFn = origDNSConnectivity
 	}
 }
 
@@ -1246,6 +1254,90 @@ func TestRunRootServerNotFoundNoServerHost(t *testing.T) {
 	_, exitCode := runRoot(fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success when starting server after no discovery, got %d", exitCode)
+	}
+}
+
+func TestRunRootCanUseInternetDisabledByConfig(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Config.CanUseInternet = false
+			return c
+		},
+		dnsConnectivityFnVal: func() bool { return true },
+	})
+	defer restore()
+	origInternet := internal.CanUseInternet
+	defer func() {
+		internal.CanUseInternet = origInternet
+		common.SetUseInternet(origInternet)
+	}()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	_, exitCode := runRoot(fs)
+	if exitCode != common.ErrSuccess {
+		t.Fatalf("expected success, got %d", exitCode)
+	}
+	if internal.CanUseInternet {
+		t.Error("internal.CanUseInternet should be false when config disables internet")
+	}
+}
+
+func TestRunRootCanUseInternetProbeWhenConnectivity(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Config.CanUseInternet = true
+			return c
+		},
+		dnsConnectivityFnVal: func() bool { return true },
+	})
+	defer restore()
+	origInternet := internal.CanUseInternet
+	defer func() {
+		internal.CanUseInternet = origInternet
+		common.SetUseInternet(origInternet)
+	}()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	_, exitCode := runRoot(fs)
+	if exitCode != common.ErrSuccess {
+		t.Fatalf("expected success, got %d", exitCode)
+	}
+	if !internal.CanUseInternet {
+		t.Error("internal.CanUseInternet should be true when connectivity probe succeeds")
+	}
+}
+
+func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Config.CanUseInternet = true
+			return c
+		},
+		dnsConnectivityFnVal: func() bool { return false },
+	})
+	defer restore()
+	origInternet := internal.CanUseInternet
+	defer func() {
+		internal.CanUseInternet = origInternet
+		common.SetUseInternet(origInternet)
+	}()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	_, exitCode := runRoot(fs)
+	if exitCode != common.ErrSuccess {
+		t.Fatalf("expected success, got %d", exitCode)
+	}
+	if internal.CanUseInternet {
+		t.Error("internal.CanUseInternet should be false when connectivity probe fails")
 	}
 }
 

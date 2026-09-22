@@ -694,16 +694,23 @@ func TestRunSetUpAdminSuccessViaAgent(t *testing.T) {
 	statFn = func(string) (os.FileInfo, error) { return mockFileInfo{isDir: true}, nil }
 	initializeFn = func(string) error { return nil }
 	connectAgentFn = func() error { return nil } // agent connected
-	runSetUpAdminFn = func(string, string, net.IP, bool, []byte) (error, int) { return nil, common.ErrSuccess }
+	gotCanUseInternet := true
+	runSetUpAdminFn = func(_ string, _ string, _ net.IP, _ bool, _ []byte, canUseInternet bool) (error, int) {
+		gotCanUseInternet = canUseInternet
+		return nil, common.ErrSuccess
+	}
 	stopAgentIfNeededFn = func() bool { return true }
 	removeFileFn = func(string) error { return nil }
 	removeUserCertsFn = func() ([]*x509.Certificate, error) { return nil, nil }
 	metadataRestoreFn = func(*commonUserData.Path) bool { return true }
 	restoreProfilesFn = func(*commonUserData.Path, bool) bool { return true }
 	newCACertFn = func(string, string) caCertifier { return &mockCACert{} }
-	_, exitCode := runSetUp([]string{"--game", "age2", "--ip", "127.0.0.2"})
+	_, exitCode := runSetUp([]string{"--game", "age2", "--ip", "127.0.0.2", "--canUseInternet=false"})
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("exitCode = %d, want 0", exitCode)
+	}
+	if gotCanUseInternet {
+		t.Error("canUseInternet should be forwarded as false to runSetUpAdminFn")
 	}
 }
 
@@ -714,7 +721,7 @@ func TestRunSetUpAdminFailureViaAgent(t *testing.T) {
 	statFn = func(string) (os.FileInfo, error) { return mockFileInfo{isDir: true}, nil }
 	initializeFn = func(string) error { return nil }
 	connectAgentFn = func() error { return nil } // agent connected
-	runSetUpAdminFn = func(string, string, net.IP, bool, []byte) (error, int) { return errors.New("admin fail"), 1 }
+	runSetUpAdminFn = func(string, string, net.IP, bool, []byte, bool) (error, int) { return errors.New("admin fail"), 1 }
 	removeFileFn = func(string) error { return nil }
 	removeUserCertsFn = func() ([]*x509.Certificate, error) { return nil, nil }
 	metadataRestoreFn = func(*commonUserData.Path) bool { return true }

@@ -30,7 +30,7 @@ func newTestAdmin(t *testing.T) *Admin {
 func TestRunSetUpCertParseFailure(t *testing.T) {
 	a := newTestAdmin(t)
 	a.deps.bytesToCertificate = func([]byte) *x509.Certificate { return nil }
-	_, exitCode := a.RunSetUp("age2", "", net.ParseIP("127.0.0.1"), false, []byte("bad"))
+	_, exitCode := a.RunSetUp("age2", "", net.ParseIP("127.0.0.1"), false, []byte("bad"), false)
 	if exitCode != internal.ErrUserCertAddParse {
 		t.Fatalf("exitCode = %d, want %d", exitCode, internal.ErrUserCertAddParse)
 	}
@@ -41,7 +41,7 @@ func TestRunSetUpNewFileFailure(t *testing.T) {
 	a.deps.newFile = func(string, string, bool) (error, *commonLogger.Root) {
 		return errors.New("new file fail"), nil
 	}
-	_, exitCode := a.RunSetUp("age2", "/tmp/log", nil, false, nil)
+	_, exitCode := a.RunSetUp("age2", "/tmp/log", nil, false, nil, true)
 	if exitCode != common.ErrFileLog {
 		t.Fatalf("exitCode = %d, want ErrFileLog %d", exitCode, common.ErrFileLog)
 	}
@@ -49,10 +49,10 @@ func TestRunSetUpNewFileFailure(t *testing.T) {
 
 func TestRunSetUpSuccessNoLog(t *testing.T) {
 	a := newTestAdmin(t)
-	a.deps.runSetUp = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	a.deps.runSetUp = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: common.ErrSuccess}
 	}
-	_, exitCode := a.RunSetUp("age2", "", net.ParseIP("127.0.0.1"), false, nil)
+	_, exitCode := a.RunSetUp("age2", "", net.ParseIP("127.0.0.1"), false, nil, true)
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("exitCode = %d, want 0", exitCode)
 	}
@@ -64,10 +64,10 @@ func TestRunSetUpSuccessWithLog(t *testing.T) {
 	a.deps.newFile = func(root, gameId string, finalRoot bool) (error, *commonLogger.Root) {
 		return commonLogger.NewFile(tmp, "", true)
 	}
-	a.deps.runSetUp = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	a.deps.runSetUp = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: common.ErrSuccess}
 	}
-	_, exitCode := a.RunSetUp("age2", tmp, net.ParseIP("127.0.0.1"), false, nil)
+	_, exitCode := a.RunSetUp("age2", tmp, net.ParseIP("127.0.0.1"), false, nil, true)
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("exitCode = %d, want 0", exitCode)
 	}

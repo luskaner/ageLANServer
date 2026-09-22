@@ -172,7 +172,7 @@ func TestHandleSetUpBufferFailure(t *testing.T) {
 func TestHandleSetUpSuccessWithCert(t *testing.T) {
 	resetIPCState(t)
 	parseCertFn = func([]byte) (*x509.Certificate, error) { return makeValidCert(game.AoE2), nil }
-	runSetUpFn = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	runSetUpFn = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: common.ErrSuccess}
 	}
 	var buf bytes.Buffer
@@ -190,7 +190,7 @@ func TestHandleSetUpSuccessWithCert(t *testing.T) {
 
 func TestHandleSetUpSuccessWithIP(t *testing.T) {
 	resetIPCState(t)
-	runSetUpFn = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	runSetUpFn = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: common.ErrSuccess}
 	}
 	var buf bytes.Buffer
@@ -208,7 +208,7 @@ func TestHandleSetUpSuccessWithIP(t *testing.T) {
 
 func TestHandleSetUpResultFailure(t *testing.T) {
 	resetIPCState(t)
-	runSetUpFn = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	runSetUpFn = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: 1, Err: errors.New("fail")}
 	}
 	var buf bytes.Buffer
@@ -221,6 +221,27 @@ func TestHandleSetUpResultFailure(t *testing.T) {
 	}
 	if mappedIps {
 		t.Fatal("mappedIps should stay false on failure")
+	}
+}
+
+func TestHandleSetUpForwardsCanUseInternet(t *testing.T) {
+	resetIPCState(t)
+	parseCertFn = func([]byte) (*x509.Certificate, error) { return nil, nil }
+	gotCanUseInternet := false
+	runSetUpFn = func(_ string, _ net.IP, _ bool, canUseInternet bool, _ *x509.Certificate, _ string, _ io.Writer, _ func(*exec.Options)) *exec.Result {
+		gotCanUseInternet = canUseInternet
+		return &exec.Result{ExitCode: common.ErrSuccess}
+	}
+	var buf bytes.Buffer
+	cmd := ipc.SetupCommand{GameId: game.AoE2, CanUseInternet: true}
+	gob.NewEncoder(&buf).Encode(cmd)
+	dec := gob.NewDecoder(&buf)
+	code := handleSetUp("", dec)
+	if code != common.ErrSuccess {
+		t.Fatalf("code=%d want success", code)
+	}
+	if !gotCanUseInternet {
+		t.Fatal("canUseInternet should be forwarded to runSetUpFn")
 	}
 }
 
@@ -335,7 +356,7 @@ func TestHandleRevertFailureKeepsState(t *testing.T) {
 
 func TestHandleClientSetupSuccess(t *testing.T) {
 	resetIPCState(t)
-	runSetUpFn = func(string, net.IP, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
+	runSetUpFn = func(string, net.IP, bool, bool, *x509.Certificate, string, io.Writer, func(*exec.Options)) *exec.Result {
 		return &exec.Result{ExitCode: common.ErrSuccess}
 	}
 	parseCertFn = func([]byte) (*x509.Certificate, error) { return makeValidCert(game.AoE2), nil }

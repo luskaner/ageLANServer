@@ -55,6 +55,7 @@ func runSetUp(args []string) (err error, exitCode int) {
 	if values.GameId == "" {
 		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
+	common.SetUseInternet(values.CanUseInternet)
 
 	internal.SetUp = new(true)
 	if values.LogRoot != "" {

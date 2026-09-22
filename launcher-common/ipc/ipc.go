@@ -19,6 +19,7 @@ type (
 	SetupCommand struct {
 		IP                     net.IP
 		MacOsExclusiveMappings bool
+		CanUseInternet         bool
 		Certificate            []byte
 		GameId                 string
 	}

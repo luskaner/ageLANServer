@@ -25,7 +25,7 @@ import (
 type deps struct {
 	bytesToCertificate func([]byte) *x509.Certificate
 	newFile            func(root string, gameId string, finalRoot bool) (error, *commonLogger.Root)
-	runSetUp           func(gameId string, ip net.IP, macOsExclusiveMappings bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result
+	runSetUp           func(gameId string, ip net.IP, macOsExclusiveMappings bool, canUseInternet bool, certificate *x509.Certificate, logRoot string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result
 	runRevert          func(ips bool, certs bool, failfast bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result
 	runFlushCache      func(ips bool, certs bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) (string, *exec.Result)
 	runFlushCacheAgent func(ips bool, certs bool, logRoot string, out io.Writer, optionsFn func(*exec.Options)) (string, *exec.Result)
@@ -81,10 +81,10 @@ func newAdmin(d deps) *Admin {
 // functions, mirroring the http.DefaultClient idiom.
 var Default = newAdmin(defaultDeps())
 
-func (a *Admin) RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
+func (a *Admin) RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte, canUseInternet bool) (err error, exitCode int) {
 	exitCode = common.ErrGeneral
 	if a.ipc != nil {
-		return a.runSetUpAgent(gameId, ipToMap, macOsExclusiveMappings, addCertData)
+		return a.runSetUpAgent(gameId, ipToMap, macOsExclusiveMappings, canUseInternet, addCertData)
 	}
 
 	var certificate *x509.Certificate
@@ -110,7 +110,7 @@ func (a *Admin) RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExc
 		suffix = "_hosts"
 	}
 	if bufferErr := file.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = a.deps.runSetUp(gameId, ipToMap, macOsExclusiveMappings, certificate, file.Folder(), writer, func(options *exec.Options) {
+		result = a.deps.runSetUp(gameId, ipToMap, macOsExclusiveMappings, canUseInternet, certificate, file.Folder(), writer, func(options *exec.Options) {
 			if writer != nil {
 				options.Stdout = writer
 				options.Stderr = writer
@@ -326,20 +326,20 @@ func (a *Admin) runRevertAgent(unmapIPs bool, removeCert bool) (err error, exitC
 	)
 }
 
-func (a *Admin) runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, certificate []byte) (err error, exitCode int) {
+func (a *Admin) runSetUpAgent(gameId string, mapIp net.IP, macOsExclusiveMappings bool, canUseInternet bool, certificate []byte) (err error, exitCode int) {
 	return a.sendAgent(
 		commonIpc.Setup,
 		"Setup",
 		func() any {
-			return commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, Certificate: certificate}
+			return commonIpc.SetupCommand{GameId: gameId, IP: mapIp, MacOsExclusiveMappings: macOsExclusiveMappings, CanUseInternet: canUseInternet, Certificate: certificate}
 		},
 	)
 }
 
 // Package-level wrappers for backward compatibility. They delegate to Default.
 
-func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte) (err error, exitCode int) {
-	return Default.RunSetUp(gameId, logRoot, ipToMap, macOsExclusiveMappings, addCertData)
+func RunSetUp(gameId string, logRoot string, ipToMap net.IP, macOsExclusiveMappings bool, addCertData []byte, canUseInternet bool) (err error, exitCode int) {
+	return Default.RunSetUp(gameId, logRoot, ipToMap, macOsExclusiveMappings, addCertData, canUseInternet)
 }
 
 func RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfast bool) (err error, exitCode int) {

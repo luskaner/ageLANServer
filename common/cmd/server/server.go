@@ -11,6 +11,7 @@ import (
 
 type Values struct {
 	*cmd.LogRootValues
+	CanUseInternet         bool
 	GameIds                []string
 	Id                     string
 	CfgFile                string
@@ -31,6 +32,7 @@ func SingleFlagSet(version string, configPaths []string, runFn func(*pflag.FlagS
 	}
 	flags := singleFs.Fs()
 	flags.StringVar(&values.CfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	flags.BoolVar(&values.CanUseInternet, "internet", true, "Whether to allow the 'server' to use the internet to look up official domains and for authentication/public IP resolution. If false, only the statically known domains will be used.")
 	flags.StringVarP(&values.Announce, "announce", "a", "true", "Respond to discove 'server' in LAN. Disabling this will not allow launchers to discover it and will require specifying the host")
 	flags.IntVarP(&values.AnnouncePort, "announcePort", "p", common.AnnouncePort, "Port to respond to discovery requests. If changed, the 'launcher's will need to specify the port in Server.AnnouncePorts")
 	flags.StringVarP(&values.AnnounceMulticast, "announceMulticast", "m", "true", "Whether to respond to discovery queries using Multicast.")

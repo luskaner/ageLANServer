@@ -34,18 +34,25 @@ func TestRunSetUp_ForwardsFlags(t *testing.T) {
 
 	cert := &x509.Certificate{Raw: []byte("raw"), Subject: pkix.Name{CommonName: "test"}}
 	ip := net.ParseIP("1.2.3.4")
-	result := ex.RunSetUp("age2", ip, true, cert, "/logs", nil, nil)
+	result := ex.RunSetUp("age2", ip, true, false, cert, "/logs", nil, nil)
 	if result == nil {
 		t.Fatal("nil result")
 	}
 	foundGame := false
+	foundNoInternet := false
 	for _, a := range captured.Args {
 		if a == "--game=age2" {
 			foundGame = true
 		}
+		if a == "--canUseInternet=false" {
+			foundNoInternet = true
+		}
 	}
 	if !foundGame {
 		t.Errorf("expected --game=age2 in args, got %v", captured.Args)
+	}
+	if !foundNoInternet {
+		t.Errorf("expected --canUseInternet=false in args, got %v", captured.Args)
 	}
 	if !captured.AsAdmin {
 		t.Error("AsAdmin should be true")
@@ -59,9 +66,25 @@ func TestRunSetUp_NilCert(t *testing.T) {
 	t.Parallel()
 	ex := NewExecutor(fakeRunner{})
 	ip := net.ParseIP("10.0.0.1")
-	res := ex.RunSetUp("age2", ip, false, nil, "", nil, nil)
+	res := ex.RunSetUp("age2", ip, false, true, nil, "", nil, nil)
 	if res == nil {
 		t.Fatal("nil")
+	}
+}
+
+func TestRunSetUp_DefaultInternetOmitsFlag(t *testing.T) {
+	t.Parallel()
+	var captured exec.Options
+	ex := NewExecutor(fakeRunner{exec: func(o exec.Options) *exec.Result {
+		captured = o
+		return &exec.Result{}
+	}})
+	ip := net.ParseIP("1.2.3.4")
+	ex.RunSetUp("age2", ip, false, true, nil, "", nil, nil)
+	for _, a := range captured.Args {
+		if a == "--canUseInternet=false" || a == "--canUseInternet" {
+			t.Fatalf("internet enabled should not include a canUseInternet flag, got %v", captured.Args)
+		}
 	}
 }
 
@@ -134,7 +157,7 @@ func TestRun_OptionsFnMutation(t *testing.T) {
 		}
 		return &exec.Result{}
 	}})
-	ex.RunSetUp("age2", nil, false, nil, "", nil, func(o *exec.Options) { o.File = "mutated" })
+	ex.RunSetUp("age2", nil, false, false, nil, "", nil, func(o *exec.Options) { o.File = "mutated" })
 }
 
 func TestRun_OutRedirectionNonWindows(t *testing.T) {
