@@ -110,8 +110,11 @@ func TestGetPidPathsSpellingIndependent(t *testing.T) {
 	osTempDirFn = func() string { return "/nonexistent" }
 	osStatFn = func(string) (os.FileInfo, error) { return nil, os.ErrNotExist }
 
-	const binDir = `C:\games\ageLANServer\bin`
-	const parentDir = `C:\games\ageLANServer`
+	// Build the layout with filepath so the test asserts the same thing on
+	// Windows and Unix. A hardcoded "C:\..." literal is a single path component
+	// on Unix, which silently turns this into a test of separator handling.
+	root := t.TempDir()
+	binDir := filepath.Join(root, "bin")
 	want := filepath.Join(binDir, common.Name+"-config-admin-agent.exe.pid")
 
 	// The two callers run from different directories, which is the whole reason
@@ -135,7 +138,7 @@ func TestGetPidPathsSpellingIndependent(t *testing.T) {
 	}
 
 	// The launcher chdir'd into bin's parent and passes bin\<name>.
-	cwd = parentDir
+	cwd = root
 	fromParent := getPidPaths(filepath.Join("bin", "config-admin-agent.exe"))
 	if len(fromParent) != 1 {
 		t.Fatalf("expected only the exe-dir candidate, got %v", fromParent)
