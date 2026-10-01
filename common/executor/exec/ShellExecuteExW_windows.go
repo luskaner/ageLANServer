@@ -2,6 +2,7 @@ package exec
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"unsafe"
 
@@ -73,22 +74,36 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	exe, _ := windows.UTF16PtrFromString(executable)
 	args, _ := windows.UTF16PtrFromString(strings.Join(fixArgs(arg...), " "))
 
-	info := &SHELLEXECUTEINFO{
-		cbSize:       uint32(unsafe.Sizeof(SHELLEXECUTEINFO{})),
-		fMask:        0x00000040, // SEE_MASK_NOCLOSEPROCESS
-		hwnd:         0,
-		lpVerb:       verbPtr,
-		lpFile:       exe,
-		lpParameters: args,
-		nShow:        show,
-	}
+	// SHELLEXECUTEINFO is an in/out parameter: ShellExecuteExW writes hProcess,
+	// hInstApp and friends back into it. It used to be a stack allocation whose
+	// address was handed to the API as a uintptr, so if the goroutine's stack
+	// grew while the call was in flight the OS wrote into the old, discarded
+	// stack and this copy kept hProcess == 0. The symptom was
+	// GetProcessId(0) failing with ERROR_INVALID_HANDLE, or a bogus exit code
+	// on the Wait path, which is the runas path used to start the elevated
+	// 'config-admin-agent'. Pinning forces the struct onto the heap (where the
+	// collector does not move it) and keeps it, and the UTF-16 buffers its
+	// fields reference, alive for the duration of the call.
+	var info SHELLEXECUTEINFO
+	var pinner runtime.Pinner
+	pinner.Pin(&info)
+	info.cbSize = uint32(unsafe.Sizeof(SHELLEXECUTEINFO{}))
+	info.fMask = 0x00000040 // SEE_MASK_NOCLOSEPROCESS
+	info.lpVerb = verbPtr
+	info.lpFile = exe
+	info.lpParameters = args
+	info.nShow = show
 
 	if executableWorkingPath {
 		info.lpDirectory, _ = windows.UTF16PtrFromString(filepath.Dir(executable))
 	}
 
-	var ret uintptr
-	ret, _, err = shellExecuteExCallFn(uintptr(unsafe.Pointer(info)), 0, 0)
+	ret, _, err := shellExecuteExCallFn(uintptr(unsafe.Pointer(&info)), 0, 0)
+	// Copy out what the API wrote before letting the pin go: once Unpin runs the
+	// struct is free to be collected, and hProcess is still read below.
+	hProcess := info.hProcess
+	pinner.Unpin()
+	runtime.KeepAlive(&info)
 	if ret == 0 {
 		return
 	}
@@ -96,18 +111,18 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	err = nil
 
 	if !start {
-		_, err = waitForSingleObjectFn(info.hProcess, windows.INFINITE)
+		_, err = waitForSingleObjectFn(hProcess, windows.INFINITE)
 		if err != nil {
 			return
 		}
 		var tmpExitCode uint32
-		err = getExitCodeProcessFn(info.hProcess, &tmpExitCode)
+		err = getExitCodeProcessFn(hProcess, &tmpExitCode)
 		if err != nil {
 			return
 		}
 		exitCode = int(tmpExitCode)
 	} else if getPid {
-		pid, err = getProcessIdFn(info.hProcess)
+		pid, err = getProcessIdFn(hProcess)
 	}
 
 	return
