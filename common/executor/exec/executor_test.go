@@ -414,7 +414,7 @@ func TestExecShellPathNoPidNoExitCode(t *testing.T) {
 func TestExecAdminPath(t *testing.T) {
 	origCall := shellExecuteExCallFn
 	origPid := getProcessIdFn
-	SetShellExecuteExCallFn(func(...uintptr) (uintptr, uintptr, error) { return 1, 0, nil })
+	SetShellExecuteExCallFn(func(_ *SHELLEXECUTEINFO) (uintptr, uintptr, error) { return 1, 0, nil })
 	SetGetProcessIdFn(func(h windows.Handle) (uint32, error) { return 1234, nil })
 	defer func() { SetShellExecuteExCallFn(origCall); SetGetProcessIdFn(origPid) }()
 	o := Options{
@@ -521,7 +521,7 @@ func TestStandardExecExitError(t *testing.T) {
 func TestShellExecuteExFailure(t *testing.T) {
 	// Mock ShellExecuteEx to return 0 (failure) with error
 	original := shellExecuteExCallFn
-	SetShellExecuteExCallFn(func(...uintptr) (uintptr, uintptr, error) {
+	SetShellExecuteExCallFn(func(_ *SHELLEXECUTEINFO) (uintptr, uintptr, error) {
 		return 0, 0, errors.New("shell execute failed")
 	})
 	defer SetShellExecuteExCallFn(original)

@@ -62,7 +62,7 @@ func TestNewExec(t *testing.T) {
 }
 
 func TestDo(t *testing.T) {
-	restore := commonExecutor.SetShellExecuteExCallFn(func(...uintptr) (uintptr, uintptr, error) { return 1, 0, nil })
+	restore := commonExecutor.SetShellExecuteExCallFn(func(_ *commonExecutor.SHELLEXECUTEINFO) (uintptr, uintptr, error) { return 1, 0, nil })
 	defer restore()
 	commonExecutor.SetGetProcessIdFn(func(_ windows.Handle) (uint32, error) { return 4321, nil })
 	g := &steam.Game{}

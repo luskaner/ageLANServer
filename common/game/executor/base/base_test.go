@@ -7,7 +7,7 @@ import (
 )
 
 func TestStartUri(t *testing.T) {
-	restore := commonExecutor.SetShellExecuteExCallFn(func(...uintptr) (uintptr, uintptr, error) { return 1, 0, nil })
+	restore := commonExecutor.SetShellExecuteExCallFn(func(_ *commonExecutor.SHELLEXECUTEINFO) (uintptr, uintptr, error) { return 1, 0, nil })
 	defer restore()
 	var modified bool
 	optionsFn := func(options commonExecutor.Options) {

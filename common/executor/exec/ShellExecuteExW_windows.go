@@ -20,8 +20,22 @@ var (
 	waitForSingleObjectFn = windows.WaitForSingleObject
 	getExitCodeProcessFn  = windows.GetExitCodeProcess
 	getProcessIdFn        = windows.GetProcessId
-	shellExecuteExCallFn  = procShellExecuteEx.Call
+	closeHandleFn         = windows.CloseHandle
 )
+
+// shellExecuteExCall is the seam for ShellExecuteExW. It takes the struct by
+// pointer rather than as a variadic uintptr so a test double can reach hProcess
+// without converting a uintptr back into an unsafe.Pointer, which vet rejects
+// and which is only sound while the pointed-to object is pinned.
+type shellExecuteExCall func(info *SHELLEXECUTEINFO) (uintptr, uintptr, error)
+
+// callShellExecuteEx is the real ShellExecuteExW. The caller keeps info pinned
+// for the duration, so the conversion here cannot outlive the object.
+func callShellExecuteEx(info *SHELLEXECUTEINFO) (uintptr, uintptr, error) {
+	return procShellExecuteEx.Call(uintptr(unsafe.Pointer(info)), 0, 0)
+}
+
+var shellExecuteExCallFn shellExecuteExCall = callShellExecuteEx
 
 // SetWaitForSingleObjectFn sets a custom WaitForSingleObject for testing.
 func SetWaitForSingleObjectFn(fn func(h windows.Handle, dwMilliseconds uint32) (uint32, error)) {
@@ -38,15 +52,26 @@ func SetGetProcessIdFn(fn func(h windows.Handle) (uint32, error)) {
 	getProcessIdFn = fn
 }
 
-// SetShellExecuteExCallFn sets a custom ShellExecuteEx Call for testing.
-func SetShellExecuteExCallFn(fn func(a ...uintptr) (uintptr, uintptr, error)) (restore func()) {
+// SetShellExecuteExCallFn sets a custom ShellExecuteEx call for testing.
+func SetShellExecuteExCallFn(fn func(info *SHELLEXECUTEINFO) (uintptr, uintptr, error)) (restore func()) {
 	orig := shellExecuteExCallFn
 	if fn == nil {
-		shellExecuteExCallFn = procShellExecuteEx.Call
+		shellExecuteExCallFn = callShellExecuteEx
 	} else {
 		shellExecuteExCallFn = fn
 	}
 	return func() { shellExecuteExCallFn = orig }
+}
+
+// SetCloseHandleFn sets a custom CloseHandle for testing.
+func SetCloseHandleFn(fn func(windows.Handle) error) (restore func()) {
+	orig := closeHandleFn
+	if fn == nil {
+		closeHandleFn = windows.CloseHandle
+	} else {
+		closeHandleFn = fn
+	}
+	return func() { closeHandleFn = orig }
 }
 
 type SHELLEXECUTEINFO struct {
@@ -98,12 +123,22 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 		info.lpDirectory, _ = windows.UTF16PtrFromString(filepath.Dir(executable))
 	}
 
-	ret, _, err := shellExecuteExCallFn(uintptr(unsafe.Pointer(&info)), 0, 0)
+	ret, _, err := shellExecuteExCallFn(&info)
 	// Copy out what the API wrote before letting the pin go: once Unpin runs the
 	// struct is free to be collected, and hProcess is still read below.
 	hProcess := info.hProcess
 	pinner.Unpin()
 	runtime.KeepAlive(&info)
+	// SEE_MASK_NOCLOSEPROCESS makes the API hand us ownership of a process
+	// handle, and nothing in this function hands it back: the Wait path uses it
+	// for the exit code and the Pid path only needs the number. It was leaked on
+	// every spawn, so a session that elevates config-admin-agent a few times
+	// accumulated handles for the lifetime of the process.
+	defer func(h windows.Handle) {
+		if h != 0 {
+			_ = closeHandleFn(h)
+		}
+	}(hProcess)
 	if ret == 0 {
 		return
 	}
