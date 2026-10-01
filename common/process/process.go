@@ -24,7 +24,23 @@ var processFn = Process
 var findProcessWithStartTimeFn = FindProcessWithStartTime
 var procSignalFn = func(p *os.Process, sig os.Signal) error { return p.Signal(sig) }
 var procKillFn = func(p *os.Process) error { return p.Kill() }
+var filepathAbsFn = filepath.Abs
 
+// getPidPaths returns the candidate pid file locations for an executable.
+//
+// The temp candidate is keyed on the base name, so it does not care how the
+// caller spells the path. The exe-dir candidate used to be filepath.Dir of
+// whatever the caller happened to pass, which does care, and the callers
+// disagree: every binary chdirs to its own directory on startup
+// (common.ChdirToExe), so a process already sitting in bin/ passes the bare
+// "config-admin-agent.exe" while the launcher, one level up, passes
+// "bin\config-admin-agent.exe". Those resolved to bin\ and bin\bin\ for the same
+// file, so whenever the temp location was unavailable two callers could look at
+// two different pid files and each conclude the other process was not running.
+//
+// Resolving to an absolute path first anchors the candidate to the target's
+// real directory whatever the current working directory is, which is what
+// PidLock writes to.
 func getPidPaths(exePath string) (paths []string) {
 	name := common.Name + "-" + filepath.Base(exePath) + ".pid"
 	tmp := osTempDirFn()
@@ -33,7 +49,11 @@ func getPidPaths(exePath string) (paths []string) {
 			paths = append(paths, filepath.Join(tmp, name))
 		}
 	}
-	paths = append(paths, filepath.Join(filepath.Dir(exePath), name))
+	dir := filepath.Dir(exePath)
+	if abs, e := filepathAbsFn(exePath); e == nil {
+		dir = filepath.Dir(abs)
+	}
+	paths = append(paths, filepath.Join(dir, name))
 	return
 }
 
