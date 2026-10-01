@@ -2,4 +2,4 @@
 
 package watch
 
-func rebroadcastBattleServer(_ *int, _ int) {}
+func rebroadcastBattleServer(_ *ExitCode, _ int) {}

@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"errors"
 	"io"
 	"os"
 	gos_exec "os/exec"
@@ -95,7 +96,7 @@ type watchOverrides struct {
 	removeBattleServerRegionFnVal func(string, string, string, io.Writer, func(*exec.Options)) *exec.Result
 	loggerBufferFnVal             func(string, func(io.Writer)) error
 	gameLogsCopyFnVal             func(string, string, string)
-	rebroadcastFnVal              func(*int, int)
+	rebroadcastFnVal              func(*ExitCode, int)
 }
 
 func applyWatchOverrides(o watchOverrides) func() {
@@ -180,11 +181,11 @@ func TestWatchGameTimeoutStart(t *testing.T) {
 
 	values := testValues()
 	values.ServerExecutable = ""
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
-	if exitCode != internal.ErrGameTimeoutStart {
-		t.Errorf("expected %d for game timeout, got %d", internal.ErrGameTimeoutStart, exitCode)
+	Watch(values, exitCode, &once)
+	if exitCode.Get() != internal.ErrGameTimeoutStart {
+		t.Errorf("expected %d for game timeout, got %d", internal.ErrGameTimeoutStart, exitCode.Get())
 	}
 }
 
@@ -200,16 +201,16 @@ func TestWatchGameFound(t *testing.T) {
 		runRevertCommandFnVal:       noopRevertCommand,
 		loggerBufferFnVal:           noopLoggerBuffer,
 		gameLogsCopyFnVal:           func(gameId, basePath, logRoot string) {},
-		rebroadcastFnVal:            func(exitCode *int, port int) {},
+		rebroadcastFnVal:            func(exitCode *ExitCode, port int) {},
 	})()
 
 	values := testValues()
 	values.ServerExecutable = ""
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
-	if exitCode != common.ErrSuccess {
-		t.Errorf("expected success, got %d", exitCode)
+	Watch(values, exitCode, &once)
+	if exitCode.Get() != common.ErrSuccess {
+		t.Errorf("expected success, got %d", exitCode.Get())
 	}
 }
 
@@ -233,14 +234,14 @@ func TestWatchWithServerKill(t *testing.T) {
 
 	values := testValues()
 	values.ServerExecutable = "server.exe"
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
+	Watch(values, exitCode, &once)
 	if !killCalled {
 		t.Error("expected serverKill to be called")
 	}
-	if exitCode != common.ErrSuccess {
-		t.Errorf("expected success, got %d", exitCode)
+	if exitCode.Get() != common.ErrSuccess {
+		t.Errorf("expected success, got %d", exitCode.Get())
 	}
 }
 
@@ -262,11 +263,11 @@ func TestWatchServerKillFailure(t *testing.T) {
 
 	values := testValues()
 	values.ServerExecutable = "server.exe"
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
-	if exitCode != internal.ErrFailedStopServer {
-		t.Errorf("expected %d for kill failure, got %d", internal.ErrFailedStopServer, exitCode)
+	Watch(values, exitCode, &once)
+	if exitCode.Get() != internal.ErrFailedStopServer {
+		t.Errorf("expected %d for kill failure, got %d", internal.ErrFailedStopServer, exitCode.Get())
 	}
 }
 
@@ -291,9 +292,9 @@ func TestWatchWithLogCopy(t *testing.T) {
 	values.ServerExecutable = ""
 	values.LogRoot = "/tmp/logs"
 	values.BaseDataPath = "/tmp/data"
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
+	Watch(values, exitCode, &once)
 	if !logCopied {
 		t.Error("expected game logs to be copied")
 	}
@@ -319,9 +320,9 @@ func TestWatchCleanupOncePreventsDoubleCleanup(t *testing.T) {
 
 	values := testValues()
 	values.ServerExecutable = "server.exe"
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
+	Watch(values, exitCode, &once)
 	if killCount != 1 {
 		t.Errorf("expected serverKill to be called exactly once, got %d", killCount)
 	}
@@ -343,11 +344,115 @@ func TestWatchWaitFailure(t *testing.T) {
 
 	values := testValues()
 	values.ServerExecutable = ""
-	exitCode := 0
+	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, &exitCode, &once)
-	if exitCode != internal.ErrFailedWaitForProcess {
-		t.Errorf("expected %d for wait failure, got %d", internal.ErrFailedWaitForProcess, exitCode)
+	Watch(values, exitCode, &once)
+	if exitCode.Get() != internal.ErrFailedWaitForProcess {
+		t.Errorf("expected %d for wait failure, got %d", internal.ErrFailedWaitForProcess, exitCode.Get())
+	}
+}
+
+// Regression: Watch (which waits for the game) and the signal handler in
+// cmd.runRoot both wrote the exit code through a bare *int, and the cleanup ran
+// on whichever goroutine won sync.Once. That is a data race, and it stayed
+// invisible on Windows because the agent is started detached with
+// CREATE_NO_WINDOW, so it has no console, Ctrl+C never reaches it and SIGTERM
+// does not exist: the second writer is only live where the signal can fire.
+// Run with -race to be meaningful.
+func TestExitCodeIsRaceFree(t *testing.T) {
+	exitCode := NewExitCode()
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		for range 500 {
+			exitCode.SetIfSuccess(internal.ErrFailedStopServer)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for range 500 {
+			_ = exitCode.Get()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		exitCode.Set(common.ErrSignal)
+	}()
+	go func() {
+		defer wg.Done()
+		for range 500 {
+			if exitCode.Get() == common.ErrSuccess {
+				exitCode.Set(internal.ErrGameTimeoutStart)
+			}
+		}
+	}()
+	wg.Wait()
+}
+
+// The first failure must survive: a later step reporting a different error
+// cannot mask an earlier one, which is what the old
+// `if *exitCode == ErrSuccess { *exitCode = X }` guards were for.
+func TestExitCodeFirstFailureWins(t *testing.T) {
+	exitCode := NewExitCode()
+	if exitCode.Get() != common.ErrSuccess {
+		t.Fatalf("a fresh ExitCode should start at ErrSuccess, got %d", exitCode.Get())
+	}
+	exitCode.SetIfSuccess(internal.ErrFailedStopServer)
+	exitCode.SetIfSuccess(internal.ErrBattleServerTimeOutStart)
+	if exitCode.Get() != internal.ErrFailedStopServer {
+		t.Errorf("expected the first failure %d to win, got %d", internal.ErrFailedStopServer, exitCode.Get())
+	}
+	// Set is unconditional, so an interrupting signal still takes effect.
+	exitCode.Set(common.ErrSignal)
+	if exitCode.Get() != common.ErrSignal {
+		t.Errorf("expected %d, got %d", common.ErrSignal, exitCode.Get())
+	}
+}
+
+// Regression: the signal handler interrupts Watch while it is blocked waiting
+// for the game, then runs the cleanup itself. Both paths touch the exit code.
+func TestWatchAndCleanupShareExitCodeSafely(t *testing.T) {
+	fakeProcess := &os.Process{Pid: 99999}
+	waiting := make(chan struct{})
+	resume := make(chan struct{})
+	defer applyWatchOverrides(watchOverrides{
+		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+			return map[string]*os.Process{"game.exe": fakeProcess}
+		},
+		waitForProcessesToExitFnVal: func(processes []*os.Process) bool {
+			close(waiting)
+			<-resume
+			return false
+		},
+		serverKillDoFnVal:     func(name string) error { return errors.New("kill failed") },
+		configRevertFnVal:     noopConfigRevert,
+		runRevertCommandFnVal: noopRevertCommand,
+		loggerBufferFnVal:     noopLoggerBuffer,
+		gameLogsCopyFnVal:     func(gameId, basePath, logRoot string) {},
+	})()
+
+	values := testValues()
+	values.ServerExecutable = "server.exe"
+	exitCode := NewExitCode()
+	var once sync.Once
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Watch(values, exitCode, &once)
+	}()
+
+	<-waiting
+	// The signal handler: record the interrupt, then clean up itself.
+	exitCode.Set(common.ErrSignal)
+	once.Do(func() { Cleanup(values, exitCode) })
+	close(resume)
+
+	<-done
+	// The interrupt wins, and the cleanup's later failure does not overwrite it.
+	if exitCode.Get() != common.ErrSignal {
+		t.Errorf("expected %d to survive the cleanup, got %d", common.ErrSignal, exitCode.Get())
 	}
 }
 

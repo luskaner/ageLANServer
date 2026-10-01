@@ -46,27 +46,31 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 		initializeFn(values.LogRoot)
 	}
 	var cleanupOnce sync.Once
+	// Shared by the signal handler below and Watch, which run concurrently, so
+	// the exit code goes through a synchronised holder rather than a bare *int.
+	code := watch.NewExitCode()
 	sigs := make(chan os.Signal, 1)
 	signalNotifyFn(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, ok := <-sigs
 		if ok {
 			commonLogger.Println("Received terminate signal, shutting down...")
-			exitCode = common.ErrSignal
+			code.Set(common.ErrSignal)
 			cleanupOnce.Do(func() {
-				watch.Cleanup(values, &exitCode)
+				watch.Cleanup(values, code)
 			})
 			if err = lock.Unlock(); err != nil {
 				commonLogger.Printf("Failed to unlock: %v\n", err)
 			}
-			commonLogger.Printf("Exit code: %d\n", exitCode)
+			commonLogger.Printf("Exit code: %d\n", code.Get())
 		}
 	}()
 	watchFn(
 		values,
-		&exitCode,
+		code,
 		&cleanupOnce,
 	)
+	exitCode = code.Get()
 	_ = lock.Unlock()
 	return
 }
