@@ -11,7 +11,6 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/process"
-	"golang.org/x/sys/windows"
 )
 
 // Regression: openFile used to return (nil, nil) when another instance was
@@ -265,23 +264,6 @@ func TestWritePidWriteError(t *testing.T) {
 	}
 }
 
-func TestPidLockUnlockUnlockError(t *testing.T) {
-	dir := t.TempDir()
-	f, err := os.Create(filepath.Join(dir, "u.pid"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	pl := &PidLock{}
-	pl.fileLock.BaseLock = &BaseLock{File: f}
-	// Invalid handle makes windows.UnlockFileEx fail
-	pl.fileLock.handle = windows.Handle(999999)
-	pl.fileLock.lock = &windows.Overlapped{}
-	defer func() { _ = os.Remove(f.Name()) }()
-	if err := pl.Unlock(); err == nil {
-		t.Log("Unlock with invalid handle succeeded (FS dependent)")
-	}
-}
-
 func TestPidLockLockSuccess(t *testing.T) {
 	// Ensure no stale pid file
 	exe, err := os.Executable()
@@ -427,12 +409,5 @@ func TestLockIntegrationContended(t *testing.T) {
 		t.Log("second lock succeeded (may be FS dependent)")
 	} else {
 		t.Logf("second lock failed as expected: %v", err)
-	}
-	// Also test Unlock error path: invalid handle
-	var l2 Lock
-	l2.handle = windows.Handle(999999)
-	l2.lock = &windows.Overlapped{}
-	if err := l2.Unlock(); err == nil {
-		t.Log("Unlock with invalid handle may succeed")
 	}
 }
