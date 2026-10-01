@@ -67,9 +67,24 @@ func Process(exe string) (pidPath string, proc *os.Process, err error) {
 			continue
 		}
 		if len(data) != PidFileSize {
-			// Invalid format (old or corrupted), remove orphan file
-			// Error ignored: file may have been removed by concurrent process (race condition)
-			_ = osRemoveFn(pidPath)
+			// A file whose length is not PidFileSize is not evidence of an
+			// orphan, and deleting it here raced whoever legitimately owns it.
+			// A process that has just created its pid file and not yet written
+			// the payload is indistinguishable from a corrupted one, and the
+			// file cannot be created and filled atomically with a plain open.
+			//
+			// On Windows the delete failed while the owner held it open and the
+			// error was swallowed, so nothing happened. On Unix it succeeded and
+			// unlinked the file out from under the PidLock that was about to be
+			// taken on it: the owner kept writing to the orphaned inode while
+			// the path was gone, and the next instance created a second pid
+			// file and took the lock on that one. Both processes then held "the"
+			// pid lock, so ErrAlreadyRunning never fired.
+			//
+			// Leaving the file is safe. A payload nobody can parse cannot make a
+			// live process look like it is running, and the next PidLock
+			// rewrites it in place.
+			err = nil
 			continue
 		}
 		pid := int(binary.LittleEndian.Uint64(data[0:8]))

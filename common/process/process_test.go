@@ -288,9 +288,33 @@ func TestProcessCorruptedPidFile(t *testing.T) {
 	if proc != nil {
 		t.Error("proc should be nil for corrupted file")
 	}
-	// File should have been removed as orphan
-	if _, err := os.Stat(pidPath); !os.IsNotExist(err) {
-		t.Error("corrupted pid file should be removed")
+	// Regression: the file used to be deleted here. A wrong length is not
+	// evidence of an orphan, it is also what a process that has created its
+	// pid file but not yet written the payload looks like, and deleting it
+	// unlinked the file on Unix out from under the lock its owner was about to
+	// take, letting a second instance create its own and both hold the lock.
+	if _, statErr := os.Stat(pidPath); statErr != nil {
+		t.Errorf("corrupted pid file must be left in place for its owner to rewrite: %v", statErr)
+	}
+}
+
+// A pid file that parses but does not belong to any live process is real
+// evidence of an orphan and must still be cleaned up.
+func TestProcessOrphanPidFileRemoved(t *testing.T) {
+	dir := t.TempDir()
+	fakeExe := filepath.Join(dir, "game.exe")
+	pidPath := getPidPaths(fakeExe)[0]
+	data := make([]byte, PidFileSize)
+	binary.LittleEndian.PutUint64(data[0:8], uint64(4_000_000_000)) // dead PID
+	binary.LittleEndian.PutUint64(data[8:16], 0)
+	if err := os.WriteFile(pidPath, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if _, proc, err := Process(fakeExe); err != nil || proc != nil {
+		t.Fatalf("got proc %v err %v; want a clean not-running state", proc, err)
+	}
+	if _, statErr := os.Stat(pidPath); !os.IsNotExist(statErr) {
+		t.Error("a pid file matching no live process should still be removed")
 	}
 }
 
