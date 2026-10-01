@@ -128,6 +128,8 @@ var (
 	uuidParseFn                     = uuid.Parse
 	uuidMustParseFn                 = uuid.MustParse
 	uuidNilFn                       = uuid.Nil
+	signalNotifyFn                  = signal.Notify
+	osExitFn                        = os.Exit
 )
 
 func Execute() (err error, exitCode int) {
@@ -501,12 +503,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		logger.SetMacOsExclusiveMappings(macOsExclusiveMappings)
 	}
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signalNotifyFn(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, sigOk := <-sigs
 		if sigOk {
 			teardown(true)
-			os.Exit(int(atomicExitCode.Load()))
+			osExitFn(int(atomicExitCode.Load()))
 		}
 	}()
 	agentWaitDuration := time.Minute

@@ -9,6 +9,8 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
+	"github.com/luskaner/ageLANServer/common/executables"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	"github.com/luskaner/ageLANServer/common/game/executor/base"
@@ -602,47 +605,49 @@ func TestRunRootConfigRevertBufferError(t *testing.T) {
 }
 
 type runRootOverrides struct {
-	gameId                    string
-	cfg                       func() *internal.Configuration
-	isAdmin                   bool
-	gameSupported             bool
-	makeExec                  base.Executor
-	isolationPath             string
-	processFn                 func(string) (string, *os.Process, error)
-	gameRunning               bool
-	openLog                   error
-	bufferFn                  func(string, func(io.Writer)) error
-	killAgent                 func()
-	newPidLock                func() fileLock.Locker
-	parseCommandArgsFn        func([]string, map[string]string) ([]string, error)
-	resolveIsolateValueFnVal  func(string, bool) bool
-	configSetGameIdFnVal      func(string)
-	configIsolationPathFnVal  func(base.Executor) string
-	commonParsePathFnVal     func([]string, map[string]string) (os.FileInfo, string, error)
-	commonEnhancedViperFnVal func(string) []string
-	configNativeMacOsGameFnVal func(base.Executor, bool) bool
-	configBattleServerRequiredFnVal func(base.Executor) bool
-	newConfigFlushCacheOptionsFnVal func(bool, string, bool, bool) *executor.ConfigFlushCacheOptions
-	discoverServersFnVal     func(string, bool, mapset.Set[netip.Addr], mapset.Set[uint16]) (uuid.UUID, net.IP)
-	netipParseAddrFnVal      func(string) (netip.Addr, error)
-	serverFilterServerIPsFnVal func(uuid.UUID, string, string, mapset.Set[netip.Addr]) (uuid.UUID, []server.MesuredIpAddress, *commonServer.AnnounceMessageDataSupportedLatest)
-	serverGetExecutablePathFnVal func(string) string
-	serverGenerateCertsFnVal func(string, bool) int
+	gameId                            string
+	cfg                               func() *internal.Configuration
+	isAdmin                           bool
+	gameSupported                     bool
+	makeExec                          base.Executor
+	isolationPath                     string
+	processFn                         func(string) (string, *os.Process, error)
+	gameRunning                       bool
+	openLog                           error
+	bufferFn                          func(string, func(io.Writer)) error
+	killAgent                         func()
+	newPidLock                        func() fileLock.Locker
+	parseCommandArgsFn                func([]string, map[string]string) ([]string, error)
+	resolveIsolateValueFnVal          func(string, bool) bool
+	configSetGameIdFnVal              func(string)
+	configIsolationPathFnVal          func(base.Executor) string
+	commonParsePathFnVal              func([]string, map[string]string) (os.FileInfo, string, error)
+	commonEnhancedViperFnVal          func(string) []string
+	configNativeMacOsGameFnVal        func(base.Executor, bool) bool
+	configBattleServerRequiredFnVal   func(base.Executor) bool
+	newConfigFlushCacheOptionsFnVal   func(bool, string, bool, bool) *executor.ConfigFlushCacheOptions
+	discoverServersFnVal              func(string, bool, mapset.Set[netip.Addr], mapset.Set[uint16]) (uuid.UUID, net.IP)
+	netipParseAddrFnVal               func(string) (netip.Addr, error)
+	serverFilterServerIPsFnVal        func(uuid.UUID, string, string, mapset.Set[netip.Addr]) (uuid.UUID, []server.MesuredIpAddress, *commonServer.AnnounceMessageDataSupportedLatest)
+	serverGetExecutablePathFnVal      func(string) string
+	serverGenerateCertsFnVal          func(string, bool) int
 	configRunBattleServerManagerFnVal func(string, *pflag.FlagSet, *bsManager.StartValues, bool) int
-	bsManagerStartFlagSetFnVal func([]string) (*bsManager.StartValues, *pflag.FlagSet)
-	configStartServerFnVal   func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string)
-	serverReadCACertFnVal    func(string) *x509.Certificate
-	configMapHostsFnVal      func(string, string, bool, bool, bool) int
-	configAddCertFnVal       func(string, uuid.UUID, *x509.Certificate, string, bool, bool) int
-	configIsolateUserDataFnVal func(bool, bool, string) int
-	configAddCACertToGameFnVal func(string, uuid.UUID, *x509.Certificate, string, string, bool, bool) int
-	configLaunchAgentAndGameFnVal func(base.Executor, custom.Exec, []string, string, string, string) int
-	uuidParseFnVal           func(string) (uuid.UUID, error)
-	uuidMustParseFnVal       func(string) uuid.UUID
-	uuidNilFnVal             func() uuid.UUID
-	executablesNativeFileNameFnVal func(bool, string) string
-	configRunSetupCommandFnVal func([]string) *commonExecutor.Result
-	dnsConnectivityFnVal       func() bool
+	bsManagerStartFlagSetFnVal        func([]string) (*bsManager.StartValues, *pflag.FlagSet)
+	configStartServerFnVal            func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string)
+	serverReadCACertFnVal             func(string) *x509.Certificate
+	configMapHostsFnVal               func(string, string, bool, bool, bool) int
+	configAddCertFnVal                func(string, uuid.UUID, *x509.Certificate, string, bool, bool) int
+	configIsolateUserDataFnVal        func(bool, bool, string) int
+	configAddCACertToGameFnVal        func(string, uuid.UUID, *x509.Certificate, string, string, bool, bool) int
+	configLaunchAgentAndGameFnVal     func(base.Executor, custom.Exec, []string, string, string, string) int
+	uuidParseFnVal                    func(string) (uuid.UUID, error)
+	uuidMustParseFnVal                func(string) uuid.UUID
+	uuidNilFnVal                      func() uuid.UUID
+	executablesNativeFileNameFnVal    func(bool, string) string
+	configRunSetupCommandFnVal        func([]string) *commonExecutor.Result
+	dnsConnectivityFnVal              func() bool
+	configRunStopAgentFnVal           func() *commonExecutor.Result
+	waitForProcessFnVal               func(*os.Process, *time.Duration) bool
 }
 
 func applyOverrides(t *testing.T, o runRootOverrides) func() {
@@ -687,6 +692,8 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	origExecutablesNativeFileName := executablesNativeFileNameFn
 	origConfigRunSetupCommand := configRunSetupCommandFn
 	origDNSConnectivity := dnsConnectivityFn
+	origRunStopAgent := configRunStopAgentFn
+	origWaitForProcess := commonProcessWaitForProcessFn
 
 	gameId = o.gameId
 	cfgFile = ""
@@ -779,7 +786,9 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	if o.discoverServersFnVal != nil {
 		discoverServersFn = o.discoverServersFnVal
 	} else {
-		discoverServersFn = func(string, bool, mapset.Set[netip.Addr], mapset.Set[uint16]) (uuid.UUID, net.IP) { return uuid.Nil(), nil }
+		discoverServersFn = func(string, bool, mapset.Set[netip.Addr], mapset.Set[uint16]) (uuid.UUID, net.IP) {
+			return uuid.Nil(), nil
+		}
 	}
 	if o.netipParseAddrFnVal != nil {
 		netipParseAddrFn = o.netipParseAddrFnVal
@@ -816,7 +825,9 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	if o.configStartServerFnVal != nil {
 		configStartServerFn = o.configStartServerFnVal
 	} else {
-		configStartServerFn = func(s string, fs *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) { return common.ErrSuccess, "127.0.0.1" }
+		configStartServerFn = func(s string, fs *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) {
+			return common.ErrSuccess, "127.0.0.1"
+		}
 	}
 	if o.serverReadCACertFnVal != nil {
 		serverReadCACertFn = o.serverReadCACertFnVal
@@ -831,7 +842,9 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	if o.configAddCertFnVal != nil {
 		configAddCertFn = o.configAddCertFnVal
 	} else {
-		configAddCertFn = func(s1 string, u uuid.UUID, c *x509.Certificate, s2 string, b1, b2 bool) int { return common.ErrSuccess }
+		configAddCertFn = func(s1 string, u uuid.UUID, c *x509.Certificate, s2 string, b1, b2 bool) int {
+			return common.ErrSuccess
+		}
 	}
 	if o.configIsolateUserDataFnVal != nil {
 		configIsolateUserDataFn = o.configIsolateUserDataFnVal
@@ -841,7 +854,9 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	if o.configAddCACertToGameFnVal != nil {
 		configAddCACertToGameFn = o.configAddCACertToGameFnVal
 	} else {
-		configAddCACertToGameFn = func(s1 string, u uuid.UUID, c *x509.Certificate, s2, s3 string, b1, b2 bool) int { return common.ErrSuccess }
+		configAddCACertToGameFn = func(s1 string, u uuid.UUID, c *x509.Certificate, s2, s3 string, b1, b2 bool) int {
+			return common.ErrSuccess
+		}
 	}
 	if o.configLaunchAgentAndGameFnVal != nil {
 		configLaunchAgentAndGameFn = o.configLaunchAgentAndGameFnVal
@@ -877,6 +892,16 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 		dnsConnectivityFn = o.dnsConnectivityFnVal
 	} else {
 		dnsConnectivityFn = func() bool { return false }
+	}
+	if o.configRunStopAgentFnVal != nil {
+		configRunStopAgentFn = o.configRunStopAgentFnVal
+	} else {
+		configRunStopAgentFn = func() *commonExecutor.Result { return &commonExecutor.Result{} }
+	}
+	if o.waitForProcessFnVal != nil {
+		commonProcessWaitForProcessFn = o.waitForProcessFnVal
+	} else {
+		commonProcessWaitForProcessFn = func(*os.Process, *time.Duration) bool { return true }
 	}
 
 	return func() {
@@ -920,6 +945,8 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 		executablesNativeFileNameFn = origExecutablesNativeFileName
 		configRunSetupCommandFn = origConfigRunSetupCommand
 		dnsConnectivityFn = origDNSConnectivity
+		configRunStopAgentFn = origRunStopAgent
+		commonProcessWaitForProcessFn = origWaitForProcess
 	}
 }
 
@@ -936,8 +963,8 @@ func defaultParseCommandArgs(args []string, values map[string]string) ([]string,
 
 func TestRunRootFlushCacheError(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		newConfigFlushCacheOptionsFnVal: func(canAddHost bool, canTrust string, customHostFile, customCertFile bool) *executor.ConfigFlushCacheOptions {
 			if canAddHost || canTrust != "false" {
@@ -956,8 +983,8 @@ func TestRunRootFlushCacheError(t *testing.T) {
 
 func TestRunRootMulticastInvalid(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -976,8 +1003,8 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 func TestRunRootServerFoundByDiscovery(t *testing.T) {
 	discoveredUUID := uuid.New()
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		discoverServersFnVal: func(gameTitle string, single bool, mc mapset.Set[netip.Addr], ports mapset.Set[uint16]) (uuid.UUID, net.IP) {
 			return discoveredUUID, net.ParseIP("192.168.1.100")
@@ -999,8 +1026,8 @@ func TestRunRootServerFoundByDiscovery(t *testing.T) {
 
 func TestRunRootServerHostEmpty(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1019,8 +1046,8 @@ func TestRunRootServerHostEmpty(t *testing.T) {
 
 func TestRunRootServerHostIPv6(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1039,8 +1066,8 @@ func TestRunRootServerHostIPv6(t *testing.T) {
 
 func TestRunRootServerHostResolutionFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1062,9 +1089,9 @@ func TestRunRootServerHostResolutionFailure(t *testing.T) {
 
 func TestRunRootServerExecutableNotFound(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
-		gameSupported: true,
+		gameId:                       "age2",
+		isAdmin:                      false,
+		gameSupported:                true,
 		serverGetExecutablePathFnVal: func(s string) string { return "" },
 	})
 	defer restore()
@@ -1077,9 +1104,9 @@ func TestRunRootServerExecutableNotFound(t *testing.T) {
 
 func TestRunRootReadCertFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
-		gameSupported: true,
+		gameId:                "age2",
+		isAdmin:               false,
+		gameSupported:         true,
 		serverReadCACertFnVal: func(host string) *x509.Certificate { return nil },
 	})
 	defer restore()
@@ -1092,8 +1119,8 @@ func TestRunRootReadCertFailure(t *testing.T) {
 
 func TestRunRootMapHostsFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		configMapHostsFnVal: func(s1, s2 string, b1, b2, b3 bool) int {
 			return common.ErrGeneral
@@ -1109,8 +1136,8 @@ func TestRunRootMapHostsFailure(t *testing.T) {
 
 func TestRunRootAddCertFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		configAddCertFnVal: func(s1 string, u uuid.UUID, c *x509.Certificate, s2 string, b1, b2 bool) int {
 			return common.ErrGeneral
@@ -1126,8 +1153,8 @@ func TestRunRootAddCertFailure(t *testing.T) {
 
 func TestRunRootIsolateUserDataFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		configIsolateUserDataFnVal: func(b1, b2 bool, s string) int {
 			return common.ErrGeneral
@@ -1143,8 +1170,8 @@ func TestRunRootIsolateUserDataFailure(t *testing.T) {
 
 func TestRunRootStartServerFailure(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		configStartServerFnVal: func(s string, fs *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) {
 			return common.ErrGeneral, ""
@@ -1161,8 +1188,8 @@ func TestRunRootStartServerFailure(t *testing.T) {
 func TestRunRootBattleServerManagerParseFailure(t *testing.T) {
 	callCount := 0
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1187,8 +1214,8 @@ func TestRunRootBattleServerManagerParseFailure(t *testing.T) {
 
 func TestRunRootLaunchAgentSuccess(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age1",
-		isAdmin:      false,
+		gameId:        "age1",
+		isAdmin:       false,
 		gameSupported: true,
 		configLaunchAgentAndGameFnVal: func(e base.Executor, ce custom.Exec, as []string, s1, s2, s3 string) int {
 			return common.ErrSuccess
@@ -1205,8 +1232,8 @@ func TestRunRootLaunchAgentSuccess(t *testing.T) {
 func TestRunRootServerFoundWithFilter(t *testing.T) {
 	discoveredUUID := uuid.New()
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1235,8 +1262,8 @@ func TestRunRootServerFoundWithFilter(t *testing.T) {
 
 func TestRunRootServerNotFoundNoServerHost(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		discoverServersFnVal: func(gameTitle string, single bool, mc mapset.Set[netip.Addr], ports mapset.Set[uint16]) (uuid.UUID, net.IP) {
 			return uuid.Nil(), nil
@@ -1343,8 +1370,8 @@ func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
 
 func TestRunRootCanTrustCertificateAuto(t *testing.T) {
 	restore := applyOverrides(t, runRootOverrides{
-		gameId:       "age2",
-		isAdmin:      false,
+		gameId:        "age2",
+		isAdmin:       false,
 		gameSupported: true,
 		cfg: func() *internal.Configuration {
 			c := validLauncherConfig()
@@ -1359,3 +1386,215 @@ func TestRunRootCanTrustCertificateAuto(t *testing.T) {
 		t.Errorf("expected success for canTrustCertificate auto, got %d", exitCode)
 	}
 }
+
+// Regression: the launcher used to wait 10s for a leftover 'config-admin-agent'
+// to exit on its own, which never happens because nothing asks it to. It then
+// reused the stale agent, which still held the previous session's mapped-ips and
+// certificate state, so the next setUp failed with "already mapped". It must ask
+// the agent to stop instead.
+func TestRunRootStopsLeftoverConfigAdminAgent(t *testing.T) {
+	stopAgentCalls := 0
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg:           validLauncherConfig,
+		// Only the config-admin-agent looks alive; agent.exe must not.
+		processFn: func(name string) (string, *os.Process, error) {
+			if strings.Contains(name, executables.LauncherConfigAdminAgent) {
+				return "", &os.Process{Pid: 4242}, nil
+			}
+			return "", nil, nil
+		},
+		configRunStopAgentFnVal: func() *commonExecutor.Result {
+			stopAgentCalls++
+			return &commonExecutor.Result{ExitCode: common.ErrSuccess}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("stopping a leftover agent must not fail the launch, got %d", exitCode)
+	}
+	if stopAgentCalls != 1 {
+		t.Errorf("stopAgent called %d times, want exactly 1", stopAgentCalls)
+	}
+}
+
+// The old code waited on the leftover process, which is the behaviour this
+// replaced. It must not wait at all for config-admin-agent, or every launch
+// after a leak stalls before doing anything.
+func TestRunRootDoesNotWaitForLeftoverConfigAdminAgent(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg:           validLauncherConfig,
+		processFn: func(name string) (string, *os.Process, error) {
+			if strings.Contains(name, executables.LauncherConfigAdminAgent) {
+				return "", &os.Process{Pid: 4242}, nil
+			}
+			return "", nil, nil
+		},
+		configRunStopAgentFnVal: func() *commonExecutor.Result {
+			return &commonExecutor.Result{ExitCode: common.ErrSuccess}
+		},
+		waitForProcessFnVal: func(proc *os.Process, d *time.Duration) bool {
+			t.Errorf("waited for pid %d; the leftover agent must be asked to stop, not waited on", proc.Pid)
+			return true
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("got %d", exitCode)
+	}
+}
+
+// No agent running means nothing to stop and no child process spawned.
+func TestRunRootNoStopAgentWhenNoneRunning(t *testing.T) {
+	stopAgentCalls := 0
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg:           validLauncherConfig,
+		processFn:     func(string) (string, *os.Process, error) { return "", nil, nil },
+		configRunStopAgentFnVal: func() *commonExecutor.Result {
+			stopAgentCalls++
+			return &commonExecutor.Result{ExitCode: common.ErrSuccess}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("got %d", exitCode)
+	}
+	if stopAgentCalls != 0 {
+		t.Errorf("stopAgent called %d times with no agent running, want 0", stopAgentCalls)
+	}
+}
+
+// Regression: a failed stop must be reported but must not abort the launch. The
+// launcher's job at that point is to clean up, not to refuse to start.
+func TestRunRootSurvivesFailedStopAgent(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg:           validLauncherConfig,
+		processFn: func(name string) (string, *os.Process, error) {
+			if strings.Contains(name, executables.LauncherConfigAdminAgent) {
+				return "", &os.Process{Pid: 4242}, nil
+			}
+			return "", nil, nil
+		},
+		configRunStopAgentFnVal: func() *commonExecutor.Result {
+			return &commonExecutor.Result{Err: errors.New("stop failed"), ExitCode: 1}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("a failed agent stop must not fail the launch, got %d", exitCode)
+	}
+}
+
+// Regression: the signal handler and the deferred cleanup both used to run
+// config.Revert() and lock.Unlock() with no guard, so a Ctrl+C arriving while
+// the main path was finishing spawned two config.exe reverts over one hosts
+// lock and two stop-agent clients on one named pipe, and os.Exit could truncate
+// a revert still in flight. Teardown must happen at most once, and the second
+// caller must wait rather than race past.
+func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
+	var sigs chan<- os.Signal
+	// exited closes when the signal handler has run to the end, so the test does
+	// not restore osExitFn while that handler is still reading it.
+	exited := make(chan struct{})
+	unlocked := make(chan struct{}, 4)
+
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg:           validLauncherConfig,
+		newPidLock: func() fileLock.Locker {
+			return &fakePidLocker{}
+		},
+	})
+	defer restore()
+
+	// Own the pid lock so Unlock is observable.
+	locker := &countingLocker{onUnlock: func() { unlocked <- struct{}{} }}
+	origPidLock := newPidLockFn
+	newPidLockFn = func() fileLock.Locker { return locker }
+	t.Cleanup(func() { newPidLockFn = origPidLock })
+
+	origSignal := signalNotifyFn
+	origExit := osExitFn
+	signalNotifyFn = func(c chan<- os.Signal, _ ...os.Signal) { sigs = c }
+	osExitFn = func(int) { close(exited) }
+	t.Cleanup(func() { signalNotifyFn = origSignal; osExitFn = origExit })
+
+	// Hold runRoot inside the "a previous agent is still running" wait so the
+	// signal lands while the main path is still running, which is the race.
+	waiting := make(chan struct{})
+	release := make(chan struct{})
+	origWait := commonProcessWaitForProcessFn
+	commonProcessWaitForProcessFn = func(*os.Process, *time.Duration) bool {
+		close(waiting)
+		<-release
+		return true
+	}
+	t.Cleanup(func() { commonProcessWaitForProcessFn = origWait })
+
+	origProcess := commonProcessProcessFn
+	commonProcessProcessFn = func(name string) (string, *os.Process, error) {
+		if strings.Contains(name, executables.LauncherAgent) {
+			return "", &os.Process{Pid: 1}, nil
+		}
+		return "", nil, nil
+	}
+	t.Cleanup(func() { commonProcessProcessFn = origProcess })
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		_, _ = runRoot(fs)
+	}()
+
+	<-waiting
+	sigs <- syscall.SIGINT
+	// Wait for the signal path to finish its teardown before letting the main
+	// path return, so both definitely reach teardown.
+	select {
+	case <-unlocked:
+	case <-time.After(10 * time.Second):
+		t.Fatal("signal path never completed teardown")
+	}
+	<-exited
+	close(release)
+	<-done
+
+	if n := locker.calls(); n != 1 {
+		t.Errorf("lock unlocked %d times, want exactly 1", n)
+	}
+}
+
+// countingLocker records Unlock calls.
+type countingLocker struct {
+	fakePidLocker
+	calls32  int32
+	onUnlock func()
+}
+
+func (c *countingLocker) Unlock() error {
+	atomic.AddInt32(&c.calls32, 1)
+	if c.onUnlock != nil {
+		c.onUnlock()
+	}
+	return nil
+}
+
+func (c *countingLocker) calls() int32 { return atomic.LoadInt32(&c.calls32) }
