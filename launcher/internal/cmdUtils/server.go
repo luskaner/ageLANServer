@@ -98,7 +98,7 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 	server.QueryServers(multicastGroups, targetPorts, servers)
 	if len(servers) > 0 {
 		if procServers := processedServers(gameTitle, servers); len(procServers) > 0 {
-			idx := selectServerIndex(len(procServers), singleAutoSelect, os.Stdin)
+			idx := selectServerIndex(procServers, singleAutoSelect, os.Stdin)
 			if idx >= 0 {
 				selectedServer := procServers[idx]
 				ip = selectedServer.Ip
@@ -109,14 +109,18 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 	return
 }
 
-// selectServerIndex asks the user to pick one of the discovered servers.
+// selectServerIndex prints the discovered servers and asks the user to pick one.
 // Returns the 0-based index, or -1 when reading fails (e.g. stdin exhausted),
 // in which case the caller should fall back to starting its own server.
-func selectServerIndex(procCount int, singleAutoSelect bool, reader io.Reader) int {
+func selectServerIndex(procServers []*processedServer, singleAutoSelect bool, reader io.Reader) int {
+	procCount := len(procServers)
 	for {
-		logger.Printf("Found %d 'server'(s):\n", procCount)
+		logger.Println("Found the following 'server's:")
+		for i := range procServers {
+			logger.Printf("%d. %s\n", i+1, procServers[i].description)
+		}
 		if singleAutoSelect && procCount == 1 {
-			commonLogger.Println("Auto-selecting the only found 'server'.")
+			logger.Println("Auto-selecting the only found 'server'.")
 			return 0
 		}
 		logger.Printf("Enter the number of the 'server' (1-%d): ", procCount)
