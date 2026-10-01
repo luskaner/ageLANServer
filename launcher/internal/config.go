@@ -14,6 +14,7 @@ type ClientIsolation struct {
 type Config struct {
 	CanAddHost               bool
 	CanBroadcastBattleServer string
+	CanUseInternet           bool
 	Log                      bool
 	SetupCommand             []string
 	RevertCommand            []string

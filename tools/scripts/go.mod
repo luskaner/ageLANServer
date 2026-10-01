@@ -1,22 +1,21 @@
 module scripts
 
-go 1.26.0
+go 1.27.0
 
-require (
-	github.com/deckarep/golang-set/v2 v2.9.0
-	github.com/google/uuid v1.6.0
-	github.com/goreleaser/goreleaser/v2 v2.17.1
-	gopkg.in/yaml.v3 v3.0.1
+tool (
+	scripts/cmd/copyBattleServerManagerResources
+	scripts/cmd/copyLauncherResources
+	scripts/cmd/copyServerResources
+	scripts/cmd/createGameMockCA
+	scripts/cmd/createGameStructure
+	scripts/cmd/createServerResourcesFolder
+	scripts/cmd/generateGoreleaserConfig
 )
 
 require (
-	github.com/klauspost/compress v1.19.2 // indirect
-	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
-	github.com/rogpeppe/go-internal v1.15.0 // indirect
-	go.digitalxero.dev/go-msix v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.17.10 // indirect
-	go.mozilla.org/pkcs7 v0.10.0 // indirect
-	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
+	github.com/deckarep/golang-set/v2 v2.9.0
+	github.com/goreleaser/goreleaser/v2 v2.17.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -47,6 +46,7 @@ require (
 	github.com/go-git/go-git/v5 v5.19.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/goreleaser/chglog v0.7.4 // indirect
 	github.com/goreleaser/fileglob v1.4.0 // indirect
 	github.com/goreleaser/nfpm/v2 v2.47.0 // indirect
@@ -54,26 +54,37 @@ require (
 	github.com/invopop/jsonschema v0.14.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-runewidth v0.0.28 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
+	github.com/stretchr/testify v1.12.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
+	go.digitalxero.dev/go-msix v1.0.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.9 // indirect
+	go.mozilla.org/pkcs7 v0.10.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/exp v0.0.0-20260820142414-ca536658362e // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba // indirect; i
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

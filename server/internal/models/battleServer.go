@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageLANServer/common/uuid"
 	"github.com/luskaner/ageLANServer/server/internal"
 )
 
@@ -34,8 +34,12 @@ func localIp(r *http.Request) (ip string) {
 var localSubnets []*net.IPNet
 var publicIp string
 
-func CacheNetworkInterfaces() {
-	if internal.Connectivity {
+func CacheNetworkInterfaces(externalIPAddress string) {
+	if externalIPAddress != "auto" {
+		if ip := net.ParseIP(externalIPAddress); ip != nil && ip.To4() != nil {
+			publicIp = externalIPAddress
+		}
+	} else if internal.CanUseInternet {
 		if resp, err := http.Get("https://api.ipify.org/"); err == nil {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
@@ -47,6 +51,8 @@ func CacheNetworkInterfaces() {
 				}
 			}
 		}
+	}
+	if internal.CanUseInternet || (externalIPAddress != "" && externalIPAddress != "auto") {
 		if publicIp != "" {
 			if ifs, err := common.RunningNetworkInterfaces(); err == nil {
 				for _, ipNets := range ifs {
@@ -122,7 +128,7 @@ func (battleServer *MainBattleServer) LAN() bool {
 		battleServer.lanMu.Lock()
 		battleServer.lan = &lan
 		defer battleServer.lanMu.Unlock()
-		if guid, err := uuid.Parse(battleServer.Base.Region); err == nil && guid.Version() == 4 {
+		if _, err := uuid.Parse(battleServer.Base.Region); err == nil {
 			lan = true
 		}
 	} else {
@@ -185,7 +191,7 @@ func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) (ipV4 string)
 	ipV4 = localIp(r)
 	remoteIPStr, _, _ := net.SplitHostPort(r.RemoteAddr)
 	remoteIP := net.ParseIP(remoteIPStr)
-	if remoteIP == nil || remoteIP.To4() == nil || !internal.Connectivity {
+	if remoteIP == nil || remoteIP.To4() == nil || !internal.CanUseInternet {
 		return
 	}
 	for _, subnet := range localSubnets {

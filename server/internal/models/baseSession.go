@@ -118,6 +118,12 @@ func (sessions *BaseSessions[T, D]) nextExpiration() (alreadyExpired []T, nextEx
 	} else {
 		nextExpiration = sessions.expiry
 	}
+	// Clamp to a minimum positive interval to prevent NewTicker/Reset from
+	// panicking on zero or negative durations.
+	const minInterval = 100 * time.Millisecond
+	if nextExpiration < minInterval {
+		nextExpiration = minInterval
+	}
 	return
 }
 

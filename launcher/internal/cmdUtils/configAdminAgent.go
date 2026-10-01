@@ -3,7 +3,6 @@ package cmdUtils
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
@@ -26,8 +25,7 @@ func (c *Config) RunStopAgent() (result *exec.Result) {
 		}
 		result = options.Exec()
 	}); buffErr != nil {
-		result.Err = buffErr
-		result.ExitCode = common.ErrFileLog
+		commonLogger.Println("Failed to write stop_agent log:", buffErr)
 	}
 	return
 }

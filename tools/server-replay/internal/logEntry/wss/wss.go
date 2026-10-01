@@ -37,9 +37,9 @@ func (w *Websocket[D]) String() string {
 func (w *Websocket[D]) sender() bool {
 	if _, port, err := net.SplitHostPort(w.base.Receiver); err == nil {
 		return port == "443"
-	} else {
-		panic(err)
 	}
+	// A malformed receiver address cannot be attributed to the server side.
+	return false
 }
 
 func (w *Websocket[D]) conn() *websocket.Conn {

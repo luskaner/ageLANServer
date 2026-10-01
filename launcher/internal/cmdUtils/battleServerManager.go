@@ -30,7 +30,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 	var beforeConfigs []battleServer.Config
 	if stop {
 		var err error
-		beforeConfigs, err = battleServer.Configs(c.gameId, true)
+		beforeConfigs, err = battleServer.Configs(c.gameId, true, true)
 		if err != nil {
 			logger.Println("Could not get existing configurations:", err)
 			return internal.ErrBattleServerManagerRun
@@ -64,7 +64,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 	}
 	if result.Success() {
 		if stop {
-			afterConfigs, err := battleServer.Configs(c.gameId, true)
+			afterConfigs, err := battleServer.Configs(c.gameId, true, true)
 			if err == nil && len(afterConfigs) > 0 {
 				if absPath, err := filepath.Abs(executable); err == nil {
 					beforeConfigsSet := mapset.NewThreadUnsafeSet[battleServer.Config](beforeConfigs...)

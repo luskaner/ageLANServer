@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -20,22 +19,22 @@ var (
 
 func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	var exe string
-	exe, err = os.Executable()
+	exe, err = osExecutableFn()
 	if err != nil {
 		fmt.Println("Could not get executable path")
 		exitCode = common.ErrGeneral
 		return
 	}
 	serverExe := filepath.Join(filepath.Dir(filepath.Dir(exe)), executables.NativeFileName(true, executables.Server))
-	serverFolder := common.CertificatePairFolder(serverExe)
+	serverFolder := certificatePairFolderFn(serverExe)
 	if serverFolder == "" {
 		fmt.Println("Failed to determine certificate pairs folder")
 		exitCode = internal.ErrCertDirectory
 		return
 	}
 	if !values.Replace {
-		certificateFolder := common.CertificatePairFolder(serverExe)
-		if exists, _, _, _, _, _ := common.CertificatePairs(certificateFolder); exists {
+		certificateFolder := certificatePairFolderFn(serverExe)
+		if exists, _, _, _, _, _ := certificatePairsFn(certificateFolder); exists {
 			fmt.Println("Already have certificate pairs and replace is false, set replace to true or delete it manually.")
 			if values.IgnoreIfExisting {
 				return
@@ -44,7 +43,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 			return
 		}
 	}
-	if !internal.GenerateCertificatePairs(serverFolder) {
+	if !generateCertificatePairsFn(serverFolder) {
 		fmt.Println("Could not generate certificate pair.")
 		exitCode = internal.ErrCertCreate
 		return

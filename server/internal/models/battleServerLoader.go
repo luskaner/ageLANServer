@@ -18,7 +18,7 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 			Base: bs.Base,
 		})
 	}
-	tmpBattleServer, err := battleServer.Configs(gameId, true)
+	tmpBattleServer, err := battleServer.Configs(gameId, true, true)
 	if err != nil {
 		return err
 	}

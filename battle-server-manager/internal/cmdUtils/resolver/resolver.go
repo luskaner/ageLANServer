@@ -11,6 +11,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
+var (
+	battleServerResolvePath = battleServer.ResolvePath
+	resolveAutoPathFn       = resolveAutoPath
+	validPathFn             = validPath
+)
+
 func validPath(path string) bool {
 	if f, localErr := os.Stat(path); localErr == nil && !f.IsDir() {
 		return true
@@ -22,7 +28,7 @@ func locatablePath(locFn func(gameId string) (game game.Locatable, ok bool), gam
 	if locatable, ok := locFn(gameId); ok {
 		if folder := locatable.Path(); folder != "" {
 			tmpPath := filepath.Join(folder, battleServerPath)
-			if validPath(tmpPath) {
+			if validPathFn(tmpPath) {
 				path = tmpPath
 				commonLogger.Printf("\tFound in %s\n", name)
 			}
@@ -46,7 +52,7 @@ func ResolvePath(gameId string, executablePath string) (resolvedPath string, err
 		err = fmt.Errorf("invalid battle server executable path")
 		return
 	}
-	if validPath(path) {
+	if validPathFn(path) {
 		resolvedPath = path
 	} else {
 		err = fmt.Errorf("invalid battle server executable path")
@@ -63,14 +69,19 @@ func doResolveAutoPath(gameId string) (resolvedPath string, err error) {
 	}
 	var suffixPath string
 	var ok bool
-	if ok, suffixPath = battleServer.ResolvePath(gameId); !ok {
+	if ok, suffixPath = battleServerResolvePath(gameId); !ok {
 		err = fmt.Errorf("could not find battle server executable")
 		return
 	}
-	if path := resolveAutoPath(gameId, suffixPath); path == "" {
+	path := resolveAutoPathFn(gameId, suffixPath)
+	if path == "" {
 		err = fmt.Errorf("could not find battle server executable")
-	} else if validPath(path) {
-		resolvedPath = path
+		return
 	}
+	if !validPathFn(path) {
+		err = fmt.Errorf("could not find battle server executable")
+		return
+	}
+	resolvedPath = path
 	return
 }

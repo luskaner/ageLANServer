@@ -11,7 +11,7 @@ import (
 
 func (c *Config) NativeMacOsGame(executer base.Executor, considerCustomLauncher bool) bool {
 	if c.gameId == game.AoE2 && runtime.GOARCH == "arm64" {
-		if _, ok := executer.(steam.Exec); ok {
+		if _, ok := executer.(*steam.Exec); ok {
 			return true
 		}
 		if considerCustomLauncher {

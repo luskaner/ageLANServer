@@ -10,6 +10,7 @@ import (
 type SetupBaseValues struct {
 	MapIp                  net.IP
 	MacOsExclusiveMappings bool
+	CanUseInternet         bool
 	AddLocalCertData       []byte
 }
 
@@ -65,6 +66,8 @@ func InitSetUp(flags *pflag.FlagSet) (values *SetupBaseValues) {
 		"Add the certificate to the local machine's trusted root store",
 	)
 	flags.BoolVar(values.MacOsExclusiveMappingsRef(), "macExclusiveDomain", false, "macOS exclusive domain")
+	flags.BoolVar(&values.CanUseInternet, "canUseInternet", true, "Whether or not the process may use the internet to look up official domains.")
+	_ = flags.MarkHidden("canUseInternet")
 	return values
 }
 

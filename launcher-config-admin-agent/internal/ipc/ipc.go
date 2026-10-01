@@ -6,13 +6,16 @@ import (
 	"errors"
 	"io"
 	"net"
+	"strings"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/ipc"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"golang.org/x/net/idna"
 )
 
 var mappedIps = false
@@ -39,7 +42,9 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 				str += "OK"
 			}
 			commonLogger.Println(str)
-			continue
+			// The gob stream state is no longer trustworthy after a failed
+			// decode: continuing would loop on the same garbage forever.
+			return
 		}
 
 		var exitCode = internal.ErrNonExistingAction
@@ -65,26 +70,78 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 			exitCode = handleSetUp(logRoot, decoder)
 		case ipc.Exit:
 			str := "<- Exit: "
-			err = c.Close()
-			if err != nil {
+			// Acknowledge before tearing the connection down. Our clients run
+			// non-elevated and so cannot terminate this elevated process, which
+			// makes this handshake the only thing able to stop us. Without an
+			// ack the client cannot tell "still busy" from "never received the
+			// command", and used to guess with a short timed poll.
+			if err = encoder.Encode(common.ErrSuccess); err != nil {
 				str += err.Error()
 				exitCode = internal.ErrConnectionClosing
 			} else {
 				str += "OK"
-				exit = true
-				exitCode = common.ErrSuccess
 			}
-			commonLogger.Println(str)
+			if closeErr := c.Close(); closeErr != nil {
+				commonLogger.Println(str)
+				commonLogger.Println("Could not close connection:", closeErr)
+				if exitCode == common.ErrSuccess {
+					exitCode = internal.ErrConnectionClosing
+				}
+			} else {
+				commonLogger.Println(str)
+			}
+			exit = true
 		}
 
-		_ = encoder.Encode(exitCode)
+		// The Exit branch already replied and closed the connection; encoding
+		// again would write to a closed handle.
+		if !exit {
+			_ = encoder.Encode(exitCode)
+		}
 	}
 
 	return
 }
 
-func checkCertificateValidity(cert *x509.Certificate) bool {
-	return cert != nil
+func checkCertificateValidity(cert *x509.Certificate, gameId string) bool {
+	if cert == nil {
+		return false
+	}
+	// Security checks
+	// Disallow any domain or IP in CN
+	if strings.Contains(cert.Subject.CommonName, "*") {
+		return false
+	}
+	if _, err := idna.Lookup.ToASCII(cert.Subject.CommonName); err == nil {
+		return false
+	}
+	if parsedIP := net.ParseIP(cert.Subject.CommonName); parsedIP != nil {
+		return false
+	}
+	if !cert.IsCA {
+		return false
+	}
+	expectedKeyUsage := x509.KeyUsageCertSign
+	expectedExtKeyUsages := mapset.NewSet[x509.ExtKeyUsage]()
+	if common.SelfSignedCertGame(gameId) {
+		if !cert.MaxPathLenZero {
+			return false
+		}
+		selfSignedCertDomains := mapset.NewSet[string](common.SelfSignedCertDomains...)
+		certDNSNames := mapset.NewSet[string](cert.DNSNames...)
+		if !selfSignedCertDomains.Equal(certDNSNames) {
+			return false
+		}
+		expectedKeyUsage |= x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+		expectedExtKeyUsages.Append(x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth)
+	}
+	if expectedKeyUsage != cert.KeyUsage {
+		return false
+	}
+	if !expectedExtKeyUsages.Equal(mapset.NewSet[x509.ExtKeyUsage](cert.ExtKeyUsage...)) {
+		return false
+	}
+	return true
 }
 
 func handleSetUp(logRoot string, decoder *gob.Decoder) int {
@@ -99,6 +156,10 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		commonLogger.Println("IPs already mapped")
 		return internal.ErrIpsAlreadyMapped
 	}
+	if !game.SupportedGames.ContainsOne(msg.GameId) {
+		commonLogger.Println("Game is not supported")
+		return internal.ErrGameNotSupported
+	}
 	var cert *x509.Certificate
 	if msg.Certificate != nil {
 		if addedCert {
@@ -107,8 +168,8 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		}
 		str := "Parsing certificate: "
 		var err error
-		cert, err = x509.ParseCertificate(msg.Certificate)
-		if err != nil || !checkCertificateValidity(cert) {
+		cert, err = parseCertFn(msg.Certificate)
+		if err != nil || !checkCertificateValidity(cert, msg.GameId) {
 			if err != nil {
 				str += err.Error()
 			} else {
@@ -127,8 +188,8 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		suffix = "_hosts"
 	}
 	var result *exec.Result
-	if buffErr := commonLogger.FileLogger.Buffer("config-admin_setup"+suffix, func(writer io.Writer) {
-		result = executor.RunSetUp(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, cert, logRoot, writer, func(options exec.Options) {
+	if buffErr := bufferFn("config-admin_setup"+suffix, func(writer io.Writer) {
+		result = runSetUpFn(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, msg.CanUseInternet, cert, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
 				commonLogger.Println("run config admin setup", options.String())
 			}
@@ -158,8 +219,8 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 		return common.ErrSuccess
 	}
 	var result *exec.Result
-	if buffErr := commonLogger.FileLogger.Buffer("config-admin_revert", func(writer io.Writer) {
-		result = executor.RunRevert(revertIps, revertCert, true, logRoot, writer, func(options exec.Options) {
+	if buffErr := bufferFn("config-admin_revert", func(writer io.Writer) {
+		result = runRevertFn(revertIps, revertCert, true, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
 				commonLogger.Println("run config admin revert", options.String())
 			}
@@ -175,7 +236,7 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 }
 
 func StartServer(logRoot string) (exitCode int) {
-	l, err := SetupServer()
+	l, err := setupServerFn()
 	if err != nil {
 		commonLogger.Printf("Could not listen to IPC: %v\n", err)
 		exitCode = internal.ErrListen
@@ -183,7 +244,7 @@ func StartServer(logRoot string) (exitCode int) {
 	}
 	defer func(l net.Listener) {
 		_ = l.Close()
-		RevertServer()
+		revertServerFn()
 	}(l)
 
 	var conn net.Conn

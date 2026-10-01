@@ -74,7 +74,7 @@ func (c *Config) Revert() {
 	if c.battleServerRegion != "" && c.battleServerExe != "" {
 		logger.Println("Stopping battle server via 'battle-server-manager'...")
 		_ = commonLogger.FileLogger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
-			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options exec.Options) {
+			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options *exec.Options) {
 				commonLogger.Println("battle-server-manager_remove", options.String())
 			}); result.Success() {
 				logger.Println("Battle-server stopped (or was already).")
@@ -93,7 +93,7 @@ func (c *Config) Revert() {
 	if c.RequiresConfigRevert() {
 		logger.Println("Cleaning up...")
 		_ = commonLogger.FileLogger.Buffer("config_revert", func(writer io.Writer) {
-			if ok := launcherCommon.ConfigRevert(c.gameId, commonLogger.FileLogger.Folder(), false, writer, func(options exec.Options) {
+			if ok := launcherCommon.ConfigRevert(c.gameId, commonLogger.FileLogger.Folder(), false, writer, func(options *exec.Options) {
 				commonLogger.Println("run config revert", options.String())
 			}, executor.RunRevert); !ok {
 				logger.Println("Failed to clean up.")
@@ -115,7 +115,7 @@ func (c *Config) Revert() {
 	}
 	if c.RequiresRunningRevertCommand() {
 		_ = commonLogger.FileLogger.Buffer("revert_command", func(writer io.Writer) {
-			err := executor.RunRevertCommand(writer, func(options exec.Options) {
+			err := executor.RunRevertCommand(writer, func(options *exec.Options) {
 				commonLogger.Println("run revert command", options.String())
 			})
 			if err != nil {

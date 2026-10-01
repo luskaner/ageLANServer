@@ -11,4 +11,5 @@ const (
 	ErrIpsAlreadyMapped
 	ErrCertInvalid
 	ErrFlushCache
+	ErrGameNotSupported
 )

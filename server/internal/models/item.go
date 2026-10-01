@@ -180,9 +180,7 @@ func (i *ItemMetadata) Encode() (result string) {
 	if len(i.attributes) > 0 {
 		all["att"] = i.attributes
 	}
-	for k, v := range i.other {
-		all[k] = v
-	}
+	maps.Copy(all, i.other)
 	if res, err := json.Marshal(all); err == nil {
 		result = string(res)
 	}
@@ -273,15 +271,15 @@ type Item interface {
 
 type itemStorage struct {
 	Id              int32
-	Metadata        ItemMetadata `json:",omitempty,omitempty"`
+	Metadata        ItemMetadata
 	DefinitionId    int32
-	DurabilityId    int32     `json:",omitempty,omitempty"`
-	DurabilityCount int32     `json:",omitempty,omitempty"`
-	CreationDate    time.Time `json:",omitempty,omitempty"`
-	LocationId      int32     `json:",omitempty,omitempty"`
-	TradeId         int32     `json:",omitempty,omitempty"`
-	PermissionFlags uint32    `json:",omitempty,omitempty"`
-	MaxCharges      int32     `json:",omitempty,omitempty"`
+	DurabilityId    int32 `json:",omitempty"`
+	DurabilityCount int32 `json:",omitempty"`
+	CreationDate    time.Time
+	LocationId      int32  `json:",omitempty"`
+	TradeId         int32  `json:",omitempty"`
+	PermissionFlags uint32 `json:",omitempty"`
+	MaxCharges      int32  `json:",omitempty"`
 }
 
 type MainItem struct {

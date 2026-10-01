@@ -9,7 +9,7 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 )
 
-func RunRevertCommand(out io.Writer, optionsFn func(options exec.Options)) (err error) {
+func RunRevertCommand(out io.Writer, optionsFn func(options *exec.Options)) (err error) {
 	err = launcherCommon.RunRevertCommand(out, optionsFn)
 	certStore.ReloadSystemCertificates()
 	common.ClearDNSCache()

@@ -124,7 +124,7 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 		0,
 		servers,
 	)
-	expiration := time.Now().Add(time.Hour).UTC().Format(time.RFC1123)
+	expiration := time.Now().Add(time.Hour).UTC().Format(http.TimeFormat)
 	w.Header().Set("Set-Cookie", fmt.Sprintf("reliclink=%d; Expires=%s; Max-Age=3600", u.GetReliclink(), expiration))
 	w.Header().Set("Request-Context", "appId=cid-v1:d21b644d-4116-48ea-a602-d6167fb46535")
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

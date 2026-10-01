@@ -9,10 +9,16 @@ import (
 	"github.com/luskaner/ageLANServer/common/logger"
 )
 
+var (
+	certificatePairs = common.CertificatePairs
+	findServerPath   = executables.FindPath
+)
+
 func keyCert(parentFolder, gameId string) (resolvedCertFile string, resolvedKeyFile string, err error) {
-	ok, cert, key, _, selfSignedCert, selfSignedKey := common.CertificatePairs(parentFolder)
+	ok, cert, key, _, selfSignedCert, selfSignedKey := certificatePairs(parentFolder)
 	if !ok {
 		err = fmt.Errorf("no SSL certificate and keys found")
+		return
 	}
 	if gameId == game.AoE4 || gameId == game.AoM {
 		resolvedCertFile = cert
@@ -27,7 +33,7 @@ func keyCert(parentFolder, gameId string) (resolvedCertFile string, resolvedKeyF
 func ResolveSSLFilesPath(gameId string, certsPath string) (resolvedCertFile string, resolvedKeyFile string, err error) {
 	if certsPath == "auto" {
 		commonLogger.Println("Auto resolving SSL certificate and key files...")
-		serverExe := executables.FindPath(executables.NativeFileName(true, executables.Server))
+		serverExe := findServerPath(executables.NativeFileName(true, executables.Server))
 		if serverExe == "" {
 			err = fmt.Errorf("could not find server executable")
 			return

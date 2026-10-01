@@ -23,7 +23,10 @@ type Function struct {
 }
 
 func (b *Function) RunTyped(game models.Game, u models.User, parameters *Parameters) *Result {
-	athensGame := game.(*athens.Game)
+	athensGame, ok := game.(*athens.Game)
+	if !ok {
+		return &Result{}
+	}
 	athensUser := u.(*user.User)
 	nodes := GenerateNumberOfNodes()
 	nodeRows := GenerateNodeRows(nodes)

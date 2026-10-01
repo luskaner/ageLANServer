@@ -14,6 +14,40 @@ var (
 	procShellExecuteEx = modshell32.NewProc("ShellExecuteExW")
 )
 
+// Injectable Windows API functions for testing
+var (
+	waitForSingleObjectFn = windows.WaitForSingleObject
+	getExitCodeProcessFn  = windows.GetExitCodeProcess
+	getProcessIdFn        = windows.GetProcessId
+	shellExecuteExCallFn  = procShellExecuteEx.Call
+)
+
+// SetWaitForSingleObjectFn sets a custom WaitForSingleObject for testing.
+func SetWaitForSingleObjectFn(fn func(h windows.Handle, dwMilliseconds uint32) (uint32, error)) {
+	waitForSingleObjectFn = fn
+}
+
+// SetGetExitCodeProcessFn sets a custom GetExitCodeProcess for testing.
+func SetGetExitCodeProcessFn(fn func(h windows.Handle, exitCode *uint32) error) {
+	getExitCodeProcessFn = fn
+}
+
+// SetGetProcessIdFn sets a custom GetProcessId for testing.
+func SetGetProcessIdFn(fn func(h windows.Handle) (uint32, error)) {
+	getProcessIdFn = fn
+}
+
+// SetShellExecuteExCallFn sets a custom ShellExecuteEx Call for testing.
+func SetShellExecuteExCallFn(fn func(a ...uintptr) (uintptr, uintptr, error)) (restore func()) {
+	orig := shellExecuteExCallFn
+	if fn == nil {
+		shellExecuteExCallFn = procShellExecuteEx.Call
+	} else {
+		shellExecuteExCallFn = fn
+	}
+	return func() { shellExecuteExCallFn = orig }
+}
+
 type SHELLEXECUTEINFO struct {
 	cbSize         uint32
 	fMask          uint32
@@ -54,7 +88,7 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	}
 
 	var ret uintptr
-	ret, _, err = procShellExecuteEx.Call(uintptr(unsafe.Pointer(info)))
+	ret, _, err = shellExecuteExCallFn(uintptr(unsafe.Pointer(info)), 0, 0)
 	if ret == 0 {
 		return
 	}
@@ -62,18 +96,18 @@ func shellExecuteEx(verb string, start bool, executable string, executableWorkin
 	err = nil
 
 	if !start {
-		_, err = windows.WaitForSingleObject(info.hProcess, windows.INFINITE)
+		_, err = waitForSingleObjectFn(info.hProcess, windows.INFINITE)
 		if err != nil {
 			return
 		}
 		var tmpExitCode uint32
-		err = windows.GetExitCodeProcess(info.hProcess, &tmpExitCode)
+		err = getExitCodeProcessFn(info.hProcess, &tmpExitCode)
 		if err != nil {
 			return
 		}
 		exitCode = int(tmpExitCode)
 	} else if getPid {
-		pid, err = windows.GetProcessId(info.hProcess)
+		pid, err = getProcessIdFn(info.hProcess)
 	}
 
 	return
