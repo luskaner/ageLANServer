@@ -11,8 +11,8 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
+	"github.com/luskaner/ageLANServer/launcher-config/internal"
 )
 
 // mockCACert implements caCertifier for tests.
@@ -23,8 +23,8 @@ type mockCACert struct {
 	appendErr    error
 }
 
-func (m *mockCACert) Backup() error { return m.backupErr }
-func (m *mockCACert) Restore() (error, []*x509.Certificate) { return m.restoreErr, m.restoreCerts }
+func (m *mockCACert) Backup() error                          { return m.backupErr }
+func (m *mockCACert) Restore() (error, []*x509.Certificate)  { return m.restoreErr, m.restoreCerts }
 func (m *mockCACert) Append(certs []*x509.Certificate) error { return m.appendErr }
 
 type mockFileInfo struct{ isDir bool }
@@ -47,6 +47,7 @@ func saveCmdDeps(t *testing.T) {
 	oldRunFlush := runFlushCacheAdminFn
 	oldStartAgent := startAgentFn
 	oldStopAgent := stopAgentIfNeededFn
+	oldAgentRunning := configAdminAgentRunningFn
 	oldRemoveCerts := removeUserCertsFn
 	oldAddCerts := addUserCertsFn
 	oldNewCACert := newCACertFn
@@ -72,6 +73,7 @@ func saveCmdDeps(t *testing.T) {
 		runFlushCacheAdminFn = oldRunFlush
 		startAgentFn = oldStartAgent
 		stopAgentIfNeededFn = oldStopAgent
+		configAdminAgentRunningFn = oldAgentRunning
 		removeUserCertsFn = oldRemoveCerts
 		addUserCertsFn = oldAddCerts
 		newCACertFn = oldNewCACert
@@ -96,7 +98,9 @@ func successResult() *exec.Result { return &exec.Result{ExitCode: common.ErrSucc
 func failureResult() *exec.Result {
 	return &exec.Result{Err: errors.New("exec failed"), ExitCode: 1}
 }
-func startAgentSuccessResult() *exec.Result { return &exec.Result{ExitCode: common.ErrSuccess, Pid: 1234} }
+func startAgentSuccessResult() *exec.Result {
+	return &exec.Result{ExitCode: common.ErrSuccess, Pid: 1234}
+}
 
 var dummyCert = &x509.Certificate{Raw: []byte("dummy")}
 
@@ -410,6 +414,102 @@ func TestRunRevertAdminFailure(t *testing.T) {
 	}
 }
 
+// Regression: the 'config-admin-agent' shutdown used to be the last statement
+// of the happy path, so the ErrAdminRevert early return above leaked an
+// elevated process that only the user could kill.
+func TestRunRevertAdminFailureStopsAgent(t *testing.T) {
+	resetCmdState(t)
+	saveCmdDeps(t)
+	supportedGamesContainsFn = func(string) bool { return true }
+	isAdminFn = func() bool { return true }
+	connectAgentFn = func() error { return errors.New("not connected") }
+	runRevertAdminFn = func(string, bool, bool, bool) (error, int) { return errors.New("fail"), 1 }
+	newCACertFn = func(string, string) caCertifier { return &mockCACert{} }
+	initializeFn = func(string) error { return nil }
+	configAdminAgentRunningFn = func() bool { return true }
+	stopped := false
+	stopAgentIfNeededFn = func() bool { stopped = true; return true }
+
+	if _, exitCode := runRevert([]string{"--game", "age2", "--ip"}); exitCode != internal.ErrAdminRevert {
+		t.Fatalf("exitCode = %d, want ErrAdminRevert %d", exitCode, internal.ErrAdminRevert)
+	}
+	if !stopped {
+		t.Error("config-admin-agent was left running after a failed revert")
+	}
+}
+
+// Regression: the stop was gated on agentConnected, which is only allocated
+// inside the "revert needs elevation" branch. A running agent was therefore
+// never stopped for configs using a custom hosts/cert file.
+func TestRunRevertStopsAgentWithoutAdminElevation(t *testing.T) {
+	resetCmdState(t)
+	saveCmdDeps(t)
+	isAdminFn = func() bool { return true }
+	connectAgentFn = func() error { return errors.New("not connected") }
+	initializeFn = func(string) error { return nil }
+	configAdminAgentRunningFn = func() bool { return true }
+	stopped := false
+	stopAgentIfNeededFn = func() bool { stopped = true; return true }
+
+	// No --ip and no --certs, so RevertRequiresAdminElevationValues is false.
+	if _, exitCode := runRevert([]string{"--game", "age2"}); exitCode != common.ErrSuccess {
+		t.Fatalf("exitCode = %d, want 0", exitCode)
+	}
+	if !stopped {
+		t.Error("config-admin-agent was left running although the revert needed no elevation")
+	}
+}
+
+// No agent running means nothing to stop: the revert must not touch the IPC.
+func TestRunRevertDoesNotStopAbsentAgent(t *testing.T) {
+	resetCmdState(t)
+	saveCmdDeps(t)
+	isAdminFn = func() bool { return true }
+	connectAgentFn = func() error { return errors.New("not connected") }
+	runRevertAdminFn = func(string, bool, bool, bool) (error, int) { return nil, common.ErrSuccess }
+	initializeFn = func(string) error { return nil }
+	configAdminAgentRunningFn = func() bool { return false }
+	stopAgentIfNeededFn = func() bool { t.Error("stopped an agent that was not running"); return true }
+
+	if _, exitCode := runRevert([]string{"--game", "age2", "--ip"}); exitCode != common.ErrSuccess {
+		t.Fatalf("exitCode = %d, want 0", exitCode)
+	}
+}
+
+// A revert that succeeded but could not stop the agent must report it, so the
+// caller does not record the cleanup as done.
+func TestRunRevertStopAgentFailureIsReported(t *testing.T) {
+	resetCmdState(t)
+	saveCmdDeps(t)
+	isAdminFn = func() bool { return true }
+	connectAgentFn = func() error { return nil }
+	runRevertAdminFn = func(string, bool, bool, bool) (error, int) { return nil, common.ErrSuccess }
+	initializeFn = func(string) error { return nil }
+	configAdminAgentRunningFn = func() bool { return true }
+	stopAgentIfNeededFn = func() bool { return false }
+
+	if _, exitCode := runRevert([]string{"--game", "age2", "--ip"}); exitCode != internal.ErrRevertStopAgent {
+		t.Fatalf("exitCode = %d, want ErrRevertStopAgent %d", exitCode, internal.ErrRevertStopAgent)
+	}
+}
+
+// A stop failure must not mask an earlier, more specific failure.
+func TestRunRevertStopAgentFailureKeepsOriginalExitCode(t *testing.T) {
+	resetCmdState(t)
+	saveCmdDeps(t)
+	isAdminFn = func() bool { return true }
+	connectAgentFn = func() error { return nil }
+	runRevertAdminFn = func(string, bool, bool, bool) (error, int) { return errors.New("fail"), 1 }
+	newCACertFn = func(string, string) caCertifier { return &mockCACert{} }
+	initializeFn = func(string) error { return nil }
+	configAdminAgentRunningFn = func() bool { return true }
+	stopAgentIfNeededFn = func() bool { return false }
+
+	if _, exitCode := runRevert([]string{"--game", "age2", "--ip"}); exitCode != internal.ErrAdminRevert {
+		t.Fatalf("exitCode = %d, want the original ErrAdminRevert %d", exitCode, internal.ErrAdminRevert)
+	}
+}
+
 func TestRunRevertRemoveAllSuccess(t *testing.T) {
 	resetCmdState(t)
 	saveCmdDeps(t)
@@ -448,8 +548,14 @@ func TestRunSetUpAoE1DisablesMetadataAndCA(t *testing.T) {
 	bytesToCertFn = func([]byte) *x509.Certificate { return dummyCert }
 	addUserCertsFn = func([]*x509.Certificate) error { return nil }
 	metadataBackupFn = func(*commonUserData.Path) bool { t.Error("metadata backup should not be called for AoE1"); return true }
-	backupProfilesFn = func(*commonUserData.Path) bool { t.Error("profiles backup should not be called unless requested"); return true }
-	newCACertFn = func(string, string) caCertifier { t.Error("newCACert should not be called for AoE1"); return &mockCACert{} }
+	backupProfilesFn = func(*commonUserData.Path) bool {
+		t.Error("profiles backup should not be called unless requested")
+		return true
+	}
+	newCACertFn = func(string, string) caCertifier {
+		t.Error("newCACert should not be called for AoE1")
+		return &mockCACert{}
+	}
 	// Use non-admin path with no IP/cert to avoid admin call
 	_, exitCode := runSetUp([]string{"--game", "age1"})
 	if exitCode != common.ErrSuccess {
@@ -464,7 +570,10 @@ func TestRunSetUpAoE4DisablesCA(t *testing.T) {
 	statFn = func(string) (os.FileInfo, error) { return mockFileInfo{isDir: true}, nil }
 	initializeFn = func(string) error { return nil }
 	// AoE4 should disable AddCACertData
-	newCACertFn = func(string, string) caCertifier { t.Error("newCACert should not be called for AoE4"); return &mockCACert{} }
+	newCACertFn = func(string, string) caCertifier {
+		t.Error("newCACert should not be called for AoE4")
+		return &mockCACert{}
+	}
 	_, exitCode := runSetUp([]string{"--game", "age4"})
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("exitCode = %d, want 0", exitCode)

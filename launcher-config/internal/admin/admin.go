@@ -71,6 +71,16 @@ type Admin struct {
 	dec  *gob.Decoder
 }
 
+// Once the agent has acknowledged the shutdown all that is left on its side is
+// closing the listener, flushing its log and deleting its pid file. That tail
+// is short but not instant, and on a loaded machine (or with an antivirus
+// scanning the log folder) it used to overrun the previous 3s budget, which is
+// exactly the case that leaked an elevated process.
+const (
+	stopAgentPollAttempts = 100
+	stopAgentPollInterval = 100 * time.Millisecond
+)
+
 // newAdmin returns an Admin using the supplied deps. Tests build their own from
 // defaultDeps() plus field overrides; the production path uses Default.
 func newAdmin(d deps) *Admin {
@@ -191,12 +201,12 @@ func (a *Admin) StopAgentIfNeeded() bool {
 	}
 	commonLogger.Println("Trying to stop 'config-admin-agent'.")
 	if err := a.stopAgentIfNeeded(); err == nil {
-		for range 30 {
+		for range stopAgentPollAttempts {
 			if _, proc, err := a.deps.process(exeFileName); err == nil && proc == nil {
 				commonLogger.Println("Stopped 'config-admin-agent'")
 				return true
 			}
-			a.deps.sleep(100 * time.Millisecond)
+			a.deps.sleep(stopAgentPollInterval)
 		}
 		commonLogger.Println("Failed to stop 'config-admin-agent'")
 	} else {
@@ -210,24 +220,40 @@ func (a *Admin) StopAgentIfNeeded() bool {
 		}
 		commonLogger.Println("Failed to kill 'config-admin-agent'")
 		commonLogger.Println(err)
+		// The agent runs elevated while we usually do not, so on Windows the
+		// kill above is denied rather than merely unlikely. Say so instead of
+		// leaving the user with a bare failure they cannot act on.
+		if isAccessDenied(err) {
+			commonLogger.Println("It runs with admin privileges, so stopping it requires an elevated 'launcher'.")
+		}
 	}
 	return false
 }
 
 func (a *Admin) stopAgentIfNeeded() (err error) {
 	commonLogger.Println("Stopping agent")
-	if a.ipc != nil {
-		str := "-> Exit: "
-		err = a.enc.Encode(commonIpc.Exit)
-		if err != nil {
-			commonLogger.Println(str + "Could not encode")
-			return
-		}
-		commonLogger.Println(str + "OK")
-		a.clearIPCState()
-	} else {
+	if a.ipc == nil {
 		commonLogger.Println("Already stopped")
+		return
 	}
+	str := "-> Exit: "
+	if err = a.enc.Encode(commonIpc.Exit); err != nil {
+		commonLogger.Println(str + "Could not encode")
+		return
+	}
+	commonLogger.Println(str + "OK")
+	// Wait for the acknowledgement. The agent is elevated and this process is
+	// normally not, so the IPC handshake is the only shutdown path that can
+	// work here; guessing with a silent pipe is what made slow machines leak
+	// the agent. A decode failure is not fatal, the caller still polls below.
+	str = "<- Exit Code: "
+	var exitCode int
+	if decodeErr := a.dec.Decode(&exitCode); decodeErr != nil {
+		commonLogger.Println(str + "Could not decode")
+	} else {
+		commonLogger.Println(str + strconv.Itoa(exitCode))
+	}
+	a.clearIPCState()
 	return
 }
 

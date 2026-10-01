@@ -50,67 +50,83 @@ func waitUntilAnyProcessExist(names []string) (processes map[string]*os.Process)
 	return
 }
 
+// Cleanup is the agent's teardown: stop the server, then the battle server, the
+// revert command and finally the configuration. The order matters, stopping the
+// server before pulling the configuration leaves the game talking to a live
+// server whose certificate trust is being removed underneath it.
+//
+// This used to exist twice with different orders (here and in cmd.runRoot's
+// signal handler), so which one ran depended on how the agent was asked to stop.
+func Cleanup(values *agent.Values, exitCode *int) {
+	if values.ServerExecutable != "" {
+		commonLogger.Println("Killing server...")
+		if err := serverKillDoFn(values.ServerExecutable); err != nil {
+			commonLogger.Println("Failed to kill server.")
+			commonLogger.Println(err.Error())
+			if *exitCode == common.ErrSuccess {
+				*exitCode = internal.ErrFailedStopServer
+			}
+		}
+		if values.BattleServerManagerExecutable != "" && values.BattleServerRegion != "" {
+			commonLogger.Println("Shutting down battle-server...")
+			var result *exec.Result
+			logErr := loggerBufferFn("battle-server-manager_remove", func(writer io.Writer) {
+				result = removeBattleServerRegionFn(
+					values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options *exec.Options) {
+						if writer != nil {
+							commonLogger.Println("run battle-server-manager", options.String())
+						}
+					},
+				)
+			})
+			// Guard against a nil result before dereferencing it: the previous
+			// inline version panicked here when the log buffer or the call
+			// itself failed.
+			if result == nil {
+				result = &exec.Result{}
+			}
+			if logErr != nil {
+				result.ExitCode = common.ErrFileLog
+				result.Err = logErr
+			}
+			newExitCode := result.ExitCode
+			if !result.Success() {
+				commonLogger.Println("Failed to shut down battle-server.")
+				if result.ExitCode != common.ErrSuccess {
+					commonLogger.Println("Exit code: ", newExitCode)
+				}
+				if result.Err != nil {
+					commonLogger.Printf("Error: %v\n", result.Err)
+				}
+			}
+			if *exitCode == common.ErrSuccess {
+				*exitCode = newExitCode
+			}
+		}
+	}
+	_ = loggerBufferFn("revert_command_end", func(writer io.Writer) {
+		if err := runRevertCommandFn(writer, func(options *exec.Options) {
+			commonLogger.Println("run revert command", options.String())
+		}); err != nil {
+			commonLogger.Printf("Failed to revert command: %v\n", err)
+		}
+	})
+	_ = loggerBufferFn("config_revert_end", func(writer io.Writer) {
+		if !configRevertFn(values.GameId, values.LogRoot, true, writer, func(options *exec.Options) {
+			if writer != nil {
+				commonLogger.Println("run config revert", options.String())
+			}
+		}, nil) {
+			commonLogger.Println("Failed to revert configuration")
+		}
+	})
+}
+
 func Watch(values *agent.Values, exitCode *int, cleanupOnce *sync.Once) {
 	*exitCode = common.ErrSuccess
 	defer func() {
 		cleanupOnce.Do(func() {
-			if values.ServerExecutable != "" {
-				commonLogger.Println("Killing server...")
-				if err := serverKillDoFn(values.ServerExecutable); err != nil {
-					commonLogger.Println("Failed to kill server.")
-					commonLogger.Println(err.Error())
-					if *exitCode == common.ErrSuccess {
-						*exitCode = internal.ErrFailedStopServer
-					}
-				}
-				if values.BattleServerManagerExecutable != "" && values.BattleServerRegion != "" {
-					commonLogger.Println("Shutting down battle-server...")
-					var result *exec.Result
-					if logErr := loggerBufferFn("battle-server-manager_remove", func(writer io.Writer) {
-						result = removeBattleServerRegionFn(
-							values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options *exec.Options) {
-								if writer != nil {
-									commonLogger.Println("run battle-server-manager", options.String())
-								}
-							},
-						)
-					}); logErr != nil {
-						result.ExitCode = common.ErrFileLog
-						result.Err = logErr
-					}
-					newExitCode := result.ExitCode
-					if !result.Success() {
-						commonLogger.Println("Failed to shut down battle-server.")
-						if result.ExitCode != common.ErrSuccess {
-							commonLogger.Println("Exit code: ", newExitCode)
-						}
-						if result.Err != nil {
-							commonLogger.Printf("Error: %v\n", result.Err)
-						}
-					}
-					if *exitCode == common.ErrSuccess {
-						*exitCode = newExitCode
-					}
-				}
-			}
-			_ = loggerBufferFn("revert_command_end", func(writer io.Writer) {
-				if err := runRevertCommandFn(writer, func(options *exec.Options) {
-					if writer != nil {
-						commonLogger.Println("run revert command", options.String())
-					}
-				}); err != nil {
-					commonLogger.Printf("Failed to revert command: %v\n", err)
-				}
-			})
-			_ = loggerBufferFn("config_revert_end", func(writer io.Writer) {
-				if !configRevertFn(values.GameId, values.LogRoot, true, writer, func(options *exec.Options) {
-					if writer != nil {
-						commonLogger.Println("run config revert", options.String())
-					}
-				}, nil) {
-					commonLogger.Println("Failed to revert configuration")
-				}
-			})
+			Cleanup(values, exitCode)
 		})
 	}()
 	commonLogger.Println("Waiting up to 1 minute for game to start...")

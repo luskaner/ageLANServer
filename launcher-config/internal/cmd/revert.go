@@ -92,6 +92,27 @@ func runRevert(args []string) (err error, exitCode int) {
 	restoredMetadata = false
 	restoredProfiles = false
 
+	// 'config-admin-agent' is an elevated daemon that must never outlive this
+	// command. Whether there is one to stop is decided here, once, and the
+	// shutdown runs from a defer: it used to be the last statement of the happy
+	// path, so every early return below (invalid game or data path, user cert /
+	// metadata / profile / game cert failures, ErrAdminRevert, signals) left an
+	// elevated process running that only the user could kill.
+	//
+	// The gate is deliberately ConfigAdminAgentRunning and not
+	// RevertRequiresAdminElevationValues: whether the revert needs elevation
+	// says nothing about whether an agent is alive, so keying the shutdown off
+	// it skipped the stop entirely for custom hosts/cert files.
+	agentPresent := configAdminAgentRunningFn()
+	defer func() {
+		if !agentPresent {
+			return
+		}
+		if !stopAgentIfNeededFn() && exitCode == common.ErrSuccess {
+			exitCode = internal.ErrRevertStopAgent
+		}
+	}()
+
 	var flags *pflag.FlagSet
 	revertValues, flags = launcherCommonCmd.RevertFlagSet()
 	if err = flags.Parse(args); err != nil {
@@ -209,6 +230,8 @@ func runRevert(args []string) (err error, exitCode int) {
 	if launcherCommon.RevertRequiresAdminElevationValues(revertValues) {
 		agentConnected = new(connectAgentFn() == nil)
 		if *agentConnected {
+			// The agent is live and answering, so make sure the defer stops it.
+			agentPresent = true
 			commonLogger.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
 		} else {
 			str := "Running 'config-admin' to remove local cert and/or host mappings"
@@ -252,11 +275,6 @@ func runRevert(args []string) (err error, exitCode int) {
 	}
 	if exitCode == common.ErrSuccess && revertValues.CertFilePath != "" {
 		_ = removeFileFn(revertValues.CertFilePath)
-	}
-	if agentConnected != nil {
-		if !stopAgentIfNeededFn() && exitCode == common.ErrSuccess {
-			exitCode = internal.ErrRevertStopAgent
-		}
 	}
 	return
 }

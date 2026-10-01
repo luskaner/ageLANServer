@@ -3,6 +3,7 @@
 package admin
 
 import (
+	"errors"
 	"net"
 	"os"
 	"time"
@@ -31,6 +32,12 @@ func postAgentStart(pid uint32, file string) (ok bool) {
 		}
 	}
 	return
+}
+
+// isAccessDenied reports whether err is the privilege failure we get when a
+// non-elevated process tries to terminate an elevated one.
+func isAccessDenied(err error) bool {
+	return errors.Is(err, os.ErrPermission)
 }
 
 func DialIPC() (net.Conn, error) {

@@ -432,9 +432,17 @@ func TestHandleClientRevertSuccess(t *testing.T) {
 	if code != common.ErrSuccess {
 		t.Fatalf("code=%d", code)
 	}
-	// Send Exit and wait, do not decode (server closes before encoding)
+	// Send Exit: the server now acknowledges before closing the connection so
+	// a non-elevated client can tell "still shutting down" from "never got the
+	// command". Drain that ack, then wait for it to return.
 	enc.Encode(ipc.Exit)
-	client.Close()
+	var exitAck int
+	if err := dec.Decode(&exitAck); err != nil {
+		t.Fatal(err)
+	}
+	if exitAck != common.ErrSuccess {
+		t.Fatalf("exitAck=%d", exitAck)
+	}
 	select {
 	case <-done:
 	case <-time.After(time.Second):
@@ -451,8 +459,21 @@ func TestHandleClientExitSuccess(t *testing.T) {
 	if err := enc.Encode(ipc.Exit); err != nil {
 		t.Fatal(err)
 	}
-	// For Exit, server closes conn before encoding final code, so client will see EOF, not decoded value
-	// Just wait for server to exit
+	// The server acknowledges the shutdown before closing, so the client must
+	// read the ack instead of seeing an EOF.
+	var ack int
+	dec := gob.NewDecoder(client)
+	if err := dec.Decode(&ack); err != nil {
+		t.Fatal(err)
+	}
+	if ack != common.ErrSuccess {
+		t.Fatalf("ack=%d", ack)
+	}
+	// Then the connection is closed, so the client sees EOF.
+	var trailing int
+	if err := dec.Decode(&trailing); err == nil {
+		t.Error("expected EOF after the Exit ack")
+	}
 	select {
 	case <-done:
 	case <-time.After(time.Second):

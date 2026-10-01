@@ -306,6 +306,8 @@ func TestStopAgentIfNeededWithIPC(t *testing.T) {
 		dec := gob.NewDecoder(remote)
 		var cmd byte
 		_ = dec.Decode(&cmd)
+		// The agent acknowledges the shutdown before closing the connection.
+		_ = gob.NewEncoder(remote).Encode(common.ErrSuccess)
 	}()
 	a.deps.process = func(string) (string, *os.Process, error) { return "", nil, nil }
 	a.deps.nativeFileName = func(bool, string) string { return "dummy.exe" }
@@ -314,6 +316,84 @@ func TestStopAgentIfNeededWithIPC(t *testing.T) {
 	}
 	if a.ipc != nil {
 		t.Fatal("ipc should be cleared after stop")
+	}
+	wg.Wait()
+}
+
+// Regression: we cannot terminate the elevated agent from a non-elevated
+// process, so a missing acknowledgement means the shutdown command never
+// landed. It must be reported rather than silently treated as "sent".
+func TestStopAgentIfNeededReportsMissingAck(t *testing.T) {
+	a := newTestAdmin(t)
+	local, remote := net.Pipe()
+	defer local.Close()
+	defer remote.Close()
+	a.ipc = local
+	a.enc = gob.NewEncoder(local)
+	a.dec = gob.NewDecoder(local)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		dec := gob.NewDecoder(remote)
+		var cmd byte
+		_ = dec.Decode(&cmd)
+		// Drop the connection instead of acknowledging.
+		_ = remote.Close()
+	}()
+	// The process never goes away, so the poll times out and the kill is tried.
+	a.deps.process = func(string) (string, *os.Process, error) { return "/tmp/pid", &os.Process{Pid: 1}, nil }
+	a.deps.nativeFileName = func(bool, string) string { return "dummy.exe" }
+	a.deps.killPidProc = func(string, *os.Process) error { return os.ErrPermission }
+	a.deps.sleep = func(time.Duration) {}
+	if a.StopAgentIfNeeded() {
+		t.Fatal("expected false: the agent neither acknowledged nor could be killed")
+	}
+	if a.ipc != nil {
+		t.Error("ipc should be cleared even when the acknowledgement is missing")
+	}
+	wg.Wait()
+}
+
+// A slow agent must not be declared failed: the acknowledgement plus the poll
+// has to be given room to complete the shutdown.
+func TestStopAgentIfNeededWaitsForSlowAgent(t *testing.T) {
+	a := newTestAdmin(t)
+	local, remote := net.Pipe()
+	defer local.Close()
+	defer remote.Close()
+	a.ipc = local
+	a.enc = gob.NewEncoder(local)
+	a.dec = gob.NewDecoder(local)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		dec := gob.NewDecoder(remote)
+		var cmd byte
+		_ = dec.Decode(&cmd)
+		_ = gob.NewEncoder(remote).Encode(common.ErrSuccess)
+	}()
+
+	// Still running for the first few polls, then gone.
+	polls := 0
+	a.deps.process = func(string) (string, *os.Process, error) {
+		polls++
+		if polls > 5 {
+			return "", nil, nil
+		}
+		return "/tmp/pid", &os.Process{Pid: 1}, nil
+	}
+	a.deps.nativeFileName = func(bool, string) string { return "dummy.exe" }
+	a.deps.killPidProc = func(string, *os.Process) error { t.Error("should not need to kill an acknowledged agent"); return nil }
+	a.deps.sleep = func(time.Duration) {}
+	if !a.StopAgentIfNeeded() {
+		t.Fatal("expected true: a slow but acknowledged agent must still succeed")
+	}
+	if polls <= 5 {
+		t.Errorf("polls = %d, expected the poll to keep waiting while the agent was alive", polls)
 	}
 	wg.Wait()
 }

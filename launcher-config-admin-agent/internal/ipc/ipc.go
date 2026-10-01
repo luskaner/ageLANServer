@@ -70,19 +70,34 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 			exitCode = handleSetUp(logRoot, decoder)
 		case ipc.Exit:
 			str := "<- Exit: "
-			err = c.Close()
-			if err != nil {
+			// Acknowledge before tearing the connection down. Our clients run
+			// non-elevated and so cannot terminate this elevated process, which
+			// makes this handshake the only thing able to stop us. Without an
+			// ack the client cannot tell "still busy" from "never received the
+			// command", and used to guess with a short timed poll.
+			if err = encoder.Encode(common.ErrSuccess); err != nil {
 				str += err.Error()
 				exitCode = internal.ErrConnectionClosing
 			} else {
 				str += "OK"
-				exit = true
-				exitCode = common.ErrSuccess
 			}
-			commonLogger.Println(str)
+			if closeErr := c.Close(); closeErr != nil {
+				commonLogger.Println(str)
+				commonLogger.Println("Could not close connection:", closeErr)
+				if exitCode == common.ErrSuccess {
+					exitCode = internal.ErrConnectionClosing
+				}
+			} else {
+				commonLogger.Println(str)
+			}
+			exit = true
 		}
 
-		_ = encoder.Encode(exitCode)
+		// The Exit branch already replied and closed the connection; encoding
+		// again would write to a closed handle.
+		if !exit {
+			_ = encoder.Encode(exitCode)
+		}
 	}
 
 	return

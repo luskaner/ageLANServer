@@ -10,11 +10,12 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/common/hosts"
+	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
 	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
 type caCertifier interface {
@@ -24,30 +25,31 @@ type caCertifier interface {
 }
 
 var (
-	isAdminFn             = executor.IsAdmin
-	connectAgentFn        = admin.ConnectAgentIfNeeded
-	connectAgentRetriesFn = admin.ConnectAgentIfNeededWithRetries
-	runSetUpAdminFn       = admin.RunSetUp
-	runRevertAdminFn      = admin.RunRevert
-	runFlushCacheAdminFn  = admin.RunFlushCache
-	startAgentFn          = admin.StartAgent
-	stopAgentIfNeededFn   = admin.StopAgentIfNeeded
-	removeUserCertsFn     = wrapper.RemoveUserCerts
-	addUserCertsFn        = wrapper.AddUserCerts
-	newCACertFn           func(gameId string, gamePath string) caCertifier
-	initializeFn          = internal.Initialize
-	metadataFn            func(path *commonUserData.Path) userData.Data
-	metadataBackupFn      func(path *commonUserData.Path) bool
-	metadataRestoreFn     func(path *commonUserData.Path) bool
-	backupProfilesFn      func(path *commonUserData.Path) bool
-	restoreProfilesFn     func(path *commonUserData.Path, reverseFailed bool) bool
-	addHostsFn            func(ip net.IP, gameId string, hostFilePath string, lineEnding string, withMacOsExclusive bool, flushFn func() *exec.Result) (bool, error)
-	bytesToCertFn         = common.BytesToCertificate
-	writeAsPemFn          = common.WriteAsPem
-	createFileFn          = os.Create
-	removeFileFn          = os.Remove
-	statFn                = os.Stat
-	supportedGamesContainsFn = func(gameId string) bool { return game.SupportedGames.ContainsOne(gameId) }
+	isAdminFn                 = executor.IsAdmin
+	connectAgentFn            = admin.ConnectAgentIfNeeded
+	connectAgentRetriesFn     = admin.ConnectAgentIfNeededWithRetries
+	runSetUpAdminFn           = admin.RunSetUp
+	runRevertAdminFn          = admin.RunRevert
+	runFlushCacheAdminFn      = admin.RunFlushCache
+	startAgentFn              = admin.StartAgent
+	stopAgentIfNeededFn       = admin.StopAgentIfNeeded
+	configAdminAgentRunningFn = func() bool { return launcherCommon.ConfigAdminAgentRunning(false) }
+	removeUserCertsFn         = wrapper.RemoveUserCerts
+	addUserCertsFn            = wrapper.AddUserCerts
+	newCACertFn               func(gameId string, gamePath string) caCertifier
+	initializeFn              = internal.Initialize
+	metadataFn                func(path *commonUserData.Path) userData.Data
+	metadataBackupFn          func(path *commonUserData.Path) bool
+	metadataRestoreFn         func(path *commonUserData.Path) bool
+	backupProfilesFn          func(path *commonUserData.Path) bool
+	restoreProfilesFn         func(path *commonUserData.Path, reverseFailed bool) bool
+	addHostsFn                func(ip net.IP, gameId string, hostFilePath string, lineEnding string, withMacOsExclusive bool, flushFn func() *exec.Result) (bool, error)
+	bytesToCertFn             = common.BytesToCertificate
+	writeAsPemFn              = common.WriteAsPem
+	createFileFn              = os.Create
+	removeFileFn              = os.Remove
+	statFn                    = os.Stat
+	supportedGamesContainsFn  = func(gameId string) bool { return game.SupportedGames.ContainsOne(gameId) }
 )
 
 func init() {

@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -68,13 +69,13 @@ var (
 )
 
 var (
-	initConfigFn   = initConfig
-	newPidLockFn   = func() fileLock.Locker { return &fileLock.PidLock{} }
-	isAdminFn      = func() bool { return commonExecutor.IsAdmin() }
-	chdirToExeFn   = common.ChdirToExe
-	openMainLogFn  = logger.OpenMainFileLog
-	printFileFn    = logger.PrintFile
-	writeFileLogFn = logger.WriteFileLog
+	initConfigFn      = initConfig
+	newPidLockFn      = func() fileLock.Locker { return &fileLock.PidLock{} }
+	isAdminFn         = func() bool { return commonExecutor.IsAdmin() }
+	chdirToExeFn      = common.ChdirToExe
+	openMainLogFn     = logger.OpenMainFileLog
+	printFileFn       = logger.PrintFile
+	writeFileLogFn    = logger.WriteFileLog
 	dnsConnectivityFn = common.DNSConnectivity
 )
 
@@ -97,35 +98,36 @@ var (
 	configKillAgentFn               = config.KillAgent
 	launcherCommonConfigRevertFn    = launcherCommon.ConfigRevert
 	executorRunRevertFn             = executor.RunRevert
-	commonLoggerFileLoggerBufferFn = func(name string, fn func(io.Writer)) error {
+	commonLoggerFileLoggerBufferFn  = func(name string, fn func(io.Writer)) error {
 		if commonLogger.FileLogger == nil {
 			return nil
 		}
 		return commonLogger.FileLogger.Buffer(name, fn)
 	}
-	newConfigFlushCacheOptionsFn   = executor.NewConfigFlushCacheOptions
-	executablesNativeFileNameFn    = executables.NativeFileName
-	configRunSetupCommandFn        = config.RunSetupCommand
-	netipParseAddrFn               = netip.ParseAddr
-	discoverServersFn              = cmdUtils.DiscoverServersAndSelectBestIpAddr
-	serverGetExecutablePathFn      = server.GetExecutablePath
-	serverGenerateCertsFn          = server.GenerateServerCertificates
-	configRunBattleServerManagerFn = config.RunBattleServerManager
-	configStartServerFn            = config.StartServer
-	serverReadCACertFn             = server.ReadCACertificateFromServer
-	configMapHostsFn               = config.MapHosts
-	configAddCertFn                = config.AddCert
-	configIsolateUserDataFn        = config.IsolateUserData
-	configAddCACertToGameFn        = config.AddCACertToGame
-	configLaunchAgentAndGameFn     = config.LaunchAgentAndGame
-	serverFilterServerIPsFn        = server.FilterServerIPs
-	bsManagerStartFlagSetFn        = bsManager.StartFlagSet
-	commonHostOrIpToIpsFn          = common.HostOrIpToIps
+	newConfigFlushCacheOptionsFn    = executor.NewConfigFlushCacheOptions
+	executablesNativeFileNameFn     = executables.NativeFileName
+	configRunSetupCommandFn         = config.RunSetupCommand
+	netipParseAddrFn                = netip.ParseAddr
+	discoverServersFn               = cmdUtils.DiscoverServersAndSelectBestIpAddr
+	serverGetExecutablePathFn       = server.GetExecutablePath
+	serverGenerateCertsFn           = server.GenerateServerCertificates
+	configRunBattleServerManagerFn  = config.RunBattleServerManager
+	configStartServerFn             = config.StartServer
+	serverReadCACertFn              = server.ReadCACertificateFromServer
+	configMapHostsFn                = config.MapHosts
+	configAddCertFn                 = config.AddCert
+	configIsolateUserDataFn         = config.IsolateUserData
+	configAddCACertToGameFn         = config.AddCACertToGame
+	configLaunchAgentAndGameFn      = config.LaunchAgentAndGame
+	configRunStopAgentFn            = config.RunStopAgent
+	serverFilterServerIPsFn         = server.FilterServerIPs
+	bsManagerStartFlagSetFn         = bsManager.StartFlagSet
+	commonHostOrIpToIpsFn           = common.HostOrIpToIps
 	commonStringSliceToNetIPSliceFn = common.StringSliceToNetIPSlice
-	commonNetIPSliceToNetIPSetFn   = common.NetIPSliceToNetIPSet
-	uuidParseFn                    = uuid.Parse
-	uuidMustParseFn                = uuid.MustParse
-	uuidNilFn                      = uuid.Nil
+	commonNetIPSliceToNetIPSetFn    = common.NetIPSliceToNetIPSet
+	uuidParseFn                     = uuid.Parse
+	uuidMustParseFn                 = uuid.MustParse
+	uuidNilFn                       = uuid.Nil
 )
 
 func Execute() (err error, exitCode int) {
@@ -134,7 +136,7 @@ func Execute() (err error, exitCode int) {
 	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
-	fs.Bool("canUseInternet", true, "Whether or not the 'launcher' may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
+	fs.Bool("internet", true, "Whether or not the 'launcher' may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
 	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
 	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
 	if runtime.GOOS != "linux" {
@@ -234,18 +236,38 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	var atomicExitCode atomic.Int32
 	atomicExitCode.Store(int32(common.ErrSuccess))
+	// Teardown runs at most once and never concurrently. The signal handler
+	// below and this deferred cleanup could both decide to tear down; unguarded
+	// they raced, spawning two config.exe reverts over one hosts lock and two
+	// stop-agent clients on one named pipe, which is one way an elevated
+	// 'config-admin-agent' outlived the launcher. The mutex also makes the
+	// second caller wait instead of returning, so the signal handler's
+	// os.Exit cannot truncate a revert that is still in flight.
+	var teardownMutex sync.Mutex
+	teardownRan := false
+	teardown := func(force bool) {
+		teardownMutex.Lock()
+		defer teardownMutex.Unlock()
+		if teardownRan {
+			return
+		}
+		teardownRan = true
+		// force comes from the signal handler, where the user asked to stop
+		// and the exit code says nothing about how far setup got.
+		if force || atomicExitCode.Load() != int32(common.ErrSuccess) {
+			config.Revert()
+		}
+		logger.WriteFileLog(gameId, "before exit")
+		commonLogger.CloseFileLog()
+		_ = lock.Unlock()
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Println(r)
 			logger.Println(string(debug.Stack()))
 			atomicExitCode.Store(int32(common.ErrGeneral))
 		}
-		if atomicExitCode.Load() != int32(common.ErrSuccess) {
-			config.Revert()
-		}
-		logger.WriteFileLog(gameId, "before exit")
-		commonLogger.CloseFileLog()
-		_ = lock.Unlock()
+		teardown(false)
 		exitCode = int(atomicExitCode.Load())
 	}()
 	writeFileLogFn(gameId, "start")
@@ -442,11 +464,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		return
 	}
 	if isolation && isolationPath == "" {
-	if isolationPath = configIsolationPathFn(executer); isolationPath == "" {
-		logger.Println("Failed to auto retrieve isolation path")
-		atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
-		return
-	}
+		if isolationPath = configIsolationPathFn(executer); isolationPath == "" {
+			logger.Println("Failed to auto retrieve isolation path")
+			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
+			return
+		}
 		logger.SetBasePath(isolationPath)
 		logger.WriteFileLog(gameId, "post isolation path")
 	}
@@ -483,9 +505,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	go func() {
 		_, sigOk := <-sigs
 		if sigOk {
-			config.Revert()
-			commonLogger.CloseFileLog()
-			_ = lock.Unlock()
+			teardown(true)
 			os.Exit(int(atomicExitCode.Load()))
 		}
 	}()
@@ -497,11 +517,23 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			logger.Println("'agent' did not exit on its own.")
 		}
 	}
-	cfgAdminAgentWaitDuration := 10 * time.Second
 	if _, proc, localErr := commonProcessProcessFn(executablesNativeFileNameFn(false, executables.LauncherConfigAdminAgent)); localErr == nil && proc != nil {
-		logger.Printf("'config-admin-agent' is running, waiting up to %s for it to end...\n", cfgAdminAgentWaitDuration)
-		if !commonProcessWaitForProcessFn(proc, &cfgAdminAgentWaitDuration) {
-			logger.Println("'config-admin-agent' did not exit on its own.")
+		// It never exits on its own: only an explicit 'Exit' sent over the IPC
+		// pipe stops it. This used to just wait for it, which stalled every
+		// launch for the full timeout and then left the elevated process in
+		// place, still holding the mapped-ips/cert state of the previous
+		// session so the next setUp failed with 'already mapped'. Ask it to stop.
+		logger.Println("'config-admin-agent' from a previous run is still active, stopping it...")
+		if result := configRunStopAgentFn(); result.Success() {
+			logger.Println("'config-admin-agent' stopped.")
+		} else {
+			logger.Println("Failed to stop 'config-admin-agent'.")
+			if result.Err != nil {
+				logger.Println("Error message: " + result.Err.Error())
+			}
+			if result.ExitCode != common.ErrSuccess {
+				logger.Println("Exit code: " + strconv.Itoa(result.ExitCode))
+			}
 		}
 	}
 	if gameRunningFn() {
@@ -747,7 +779,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"Config.Certificate.CanTrustInPc":           "local",
 		"Config.Certificate.CanTrustInGame":         true,
 		"Config.CanBroadcastBattleServer":           "auto",
-		"Config.CanUseInternet":                      true,
+		"Config.CanUseInternet":                     true,
 		"Config.Log":                                false,
 		"Client.Isolation.Metadata":                 "required",
 		"Client.Isolation.Profiles":                 "required",
@@ -776,7 +808,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		"canAddHost":                    "Config.CanAddHost",
 		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
 		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",
-		"canUseInternet":                "Config.CanUseInternet",
+		"internet":                      "Config.CanUseInternet",
 		"log":                           "Config.Log",
 		"isolateMetadata":               "Client.Isolation.Metadata",
 		"isolateProfiles":               "Client.Isolation.Profiles",
@@ -889,5 +921,3 @@ func validateRequiredTrueFalse(value string, name string, validValues mapset.Set
 	}
 	return common.ErrSuccess
 }
-
-
