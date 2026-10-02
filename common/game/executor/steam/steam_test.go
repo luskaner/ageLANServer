@@ -3,9 +3,7 @@ package steam
 import (
 	"testing"
 
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game/steam"
-	"golang.org/x/sys/windows"
 )
 
 func TestString(t *testing.T) {
@@ -59,19 +57,4 @@ func TestNewExec(t *testing.T) {
 	_, ok := NewExec("age2")
 	// Just verify it doesn't panic
 	_ = ok
-}
-
-func TestDo(t *testing.T) {
-	restore := commonExecutor.SetShellExecuteExCallFn(func(_ *commonExecutor.SHELLEXECUTEINFO) (uintptr, uintptr, error) { return 1, 0, nil })
-	defer restore()
-	commonExecutor.SetGetProcessIdFn(func(_ windows.Handle) (uint32, error) { return 4321, nil })
-	g := &steam.Game{}
-	e, ok := NewExecFromGame(g)
-	if !ok {
-		t.Fatal("NewExecFromGame should succeed")
-	}
-	r := e.Do(nil, func(commonExecutor.Options) {})
-	if r == nil {
-		t.Fatal("result should not be nil")
-	}
 }

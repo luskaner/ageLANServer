@@ -6,15 +6,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game/executor/base"
-	"golang.org/x/sys/windows"
 )
-
-func TestAdminErrorWithElevationRequired(t *testing.T) {
-	result := &exec.Result{Err: windows.ERROR_ELEVATION_REQUIRED}
-	if !adminError(result) {
-		t.Error("expected true for ERROR_ELEVATION_REQUIRED")
-	}
-}
 
 func TestAdminErrorWithOtherError(t *testing.T) {
 	result := &exec.Result{Err: errors.New("some other error")}

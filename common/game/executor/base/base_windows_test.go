@@ -6,6 +6,10 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 )
 
+// Split out of base_test.go: StartUri goes through ShellExecuteExW on Windows,
+// so faking it needs the Windows-only seam. Verbatim from base_test.go; only
+// the location moved. The Linux and macOS StartUri implementations use xdg-open
+// and open respectively and have no test here.
 func TestStartUri(t *testing.T) {
 	restore := commonExecutor.SetShellExecuteExCallFn(func(_ *commonExecutor.SHELLEXECUTEINFO) (uintptr, uintptr, error) { return 1, 0, nil })
 	defer restore()

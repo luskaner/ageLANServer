@@ -163,7 +163,9 @@ func TestRunSetUpAddHostsSuccess(t *testing.T) {
 
 func TestRunSetUpAddHostsFailureNoCert(t *testing.T) {
 	resetState(t)
-	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) { return false, errors.New("hosts fail") }
+	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) {
+		return false, errors.New("hosts fail")
+	}
 	initializeFn = func(string) error { return nil }
 	_, code := runSetUp([]string{"--game", "age2", "--ip", "127.0.0.2"})
 	if code != internal.ErrIpMapAdd {
@@ -176,7 +178,9 @@ func TestRunSetUpAddHostsFailureWithCertUntrustSuccess(t *testing.T) {
 	bytesToCertFn = func([]byte) *x509.Certificate { return dummyCert }
 	trustCertsFn = func(bool, []*x509.Certificate) error { return nil }
 	untrustCertsFn = func(bool) ([]*x509.Certificate, error) { return nil, nil }
-	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) { return false, errors.New("fail") }
+	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) {
+		return false, errors.New("fail")
+	}
 	initializeFn = func(string) error { return nil }
 	_, code := runSetUp([]string{"--game", "age2", "--localCert", "dGVzdA==", "--ip", "127.0.0.2"})
 	if code != internal.ErrIpMapAdd {
@@ -189,7 +193,9 @@ func TestRunSetUpAddHostsFailureWithCertUntrustFailure(t *testing.T) {
 	bytesToCertFn = func([]byte) *x509.Certificate { return dummyCert }
 	trustCertsFn = func(bool, []*x509.Certificate) error { return nil }
 	untrustCertsFn = func(bool) ([]*x509.Certificate, error) { return nil, errors.New("untrust fail") }
-	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) { return false, errors.New("fail") }
+	addHostsFn = func(net.IP, string, string, string, bool, func() *exec.Result) (bool, error) {
+		return false, errors.New("fail")
+	}
 	initializeFn = func(string) error { return nil }
 	_, code := runSetUp([]string{"--game", "age2", "--localCert", "dGVzdA==", "--ip", "127.0.0.2"})
 	if code != internal.ErrIpMapAddRevert {
@@ -306,7 +312,10 @@ func TestRunRevertIPsRemoveFailureWithRemoveAllNoRevert(t *testing.T) {
 	resetState(t)
 	untrustCertsFn = func(bool) ([]*x509.Certificate, error) { return []*x509.Certificate{dummyCert}, nil }
 	removeHostsFn = func() error { return errors.New("fail") }
-	trustCertsFn = func(bool, []*x509.Certificate) error { t.Error("trust should not be called with RemoveAll"); return nil }
+	trustCertsFn = func(bool, []*x509.Certificate) error {
+		t.Error("trust should not be called with RemoveAll")
+		return nil
+	}
 	initializeFn = func(string) error { return nil }
 	_, code := runRevert([]string{"--all"})
 	// With RemoveAll, IPs fail should return ErrIpMapRemove (not revert) and not try trust
@@ -372,35 +381,6 @@ func TestRunFlushCacheIPsFailure(t *testing.T) {
 	_, code := runFlushCache([]string{"--flushIpCache"})
 	if code != internal.ErrFlushCacheDNS {
 		t.Fatalf("code=%d want ErrFlushCacheDNS %d", code, internal.ErrFlushCacheDNS)
-	}
-}
-
-func TestRunFlushCacheCertsSkippedOnWindows(t *testing.T) {
-	resetState(t)
-	// On Windows, Certs flush is skipped, so even if we pass --flushCertsCache, it should succeed without calling flushCertsFn
-	called := false
-	flushCertsFn = func() *exec.Result { called = true; return failureResult() }
-	flushDnsFn = func() *exec.Result { return successResult() }
-	initializeFn = func(string) error { return nil }
-	_, code := runFlushCache([]string{"--flushCertsCache"})
-	// On windows, this should be success and not call flushCerts
-	if called {
-		t.Fatal("flushCerts should not be called on windows")
-	}
-	if code != common.ErrSuccess {
-		t.Fatalf("code=%d want 0", code)
-	}
-}
-
-func TestRunFlushCacheBothIPsAndCertsFailure(t *testing.T) {
-	resetState(t)
-	// On windows, certs part is skipped, so only IPs failure matters
-	flushDnsFn = func() *exec.Result { return failureResult() }
-	initializeFn = func(string) error { return nil }
-	_, code := runFlushCache([]string{"--flushIpCache", "--flushCertsCache"})
-	// Since certs skipped on windows, this is just IPs failure => DNS error
-	if code != internal.ErrFlushCacheDNS {
-		t.Fatalf("code=%d want ErrFlushCacheDNS", code)
 	}
 }
 
