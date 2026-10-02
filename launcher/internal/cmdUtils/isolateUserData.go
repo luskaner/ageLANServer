@@ -64,4 +64,3 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 	}
 	return
 }
-

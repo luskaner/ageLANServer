@@ -100,4 +100,3 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 	}
 	return
 }
-

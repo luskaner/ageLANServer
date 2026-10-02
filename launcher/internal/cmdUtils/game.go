@@ -144,5 +144,3 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}
 	return
 }
-
-

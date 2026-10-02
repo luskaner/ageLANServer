@@ -61,6 +61,7 @@ func GetBasePath() string {
 	defer state.mu.RUnlock()
 	return state.BasePath
 }
+
 var dataTypeToString = map[int]string{
 	userData.TypeServer: "Own Backup",
 	userData.TypeBackup: "Original Backup",

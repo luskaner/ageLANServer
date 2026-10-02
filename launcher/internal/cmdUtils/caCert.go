@@ -52,4 +52,3 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 	}
 	return
 }
-

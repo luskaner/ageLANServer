@@ -155,4 +155,3 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	}
 	return
 }
-
