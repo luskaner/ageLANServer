@@ -8,12 +8,33 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/uuid"
 	"github.com/luskaner/ageLANServer/server/internal"
 )
+
+// externalIPTimeout bounds the lookup of this machine's public address.
+//
+// It used to use http.DefaultClient, which has no timeout at all, followed by an
+// unbounded io.ReadAll. This runs during startup, before the server binds the
+// port the launcher polls to decide it came up, and the launcher's budget for
+// that is a handful of seconds: it then concludes the server failed and kills it.
+// A captive portal, a proxy or a half-open TLS path was therefore enough to get
+// the server killed by the launcher on the very machine that made it slow.
+const externalIPTimeout = 3 * time.Second
+
+// maxExternalIPBody caps the read so a misbehaving endpoint cannot stream for as
+// long as the client timeout happens to allow.
+const maxExternalIPBody = 64
+
+// externalIPClient is a var so tests can exercise the lookup without a network.
+var externalIPClient = &http.Client{Timeout: externalIPTimeout}
+
+// externalIPURL is a var so tests can point the lookup at a local server.
+var externalIPURL = "https://api.ipify.org/"
 
 func localIp(r *http.Request) (ip string) {
 	addr, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr)
@@ -40,11 +61,13 @@ func CacheNetworkInterfaces(externalIPAddress string) {
 			publicIp = externalIPAddress
 		}
 	} else if internal.CanUseInternet {
-		if resp, err := http.Get("https://api.ipify.org/"); err == nil {
+		// Bounded on purpose: see externalIPTimeout. Failing here is fine, the
+		// public address is only used to pick subnets for LAN broadcast.
+		if resp, err := externalIPClient.Get(externalIPURL); err == nil {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
 			}(resp.Body)
-			if ipBytes, err := io.ReadAll(resp.Body); err == nil {
+			if ipBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxExternalIPBody)); err == nil {
 				ipStr := string(ipBytes)
 				if ip := net.ParseIP(ipStr); ip != nil && ip.To4() != nil {
 					publicIp = ipStr
