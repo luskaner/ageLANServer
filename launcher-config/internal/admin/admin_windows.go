@@ -11,8 +11,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func postAgentStart(_ uint32, _ string) bool { return true }
-
 // isAccessDenied reports whether err is the privilege failure we get when a
 // non-elevated process tries to terminate an elevated one.
 func isAccessDenied(err error) bool {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
+	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
@@ -32,7 +33,6 @@ type deps struct {
 	process            func(name string) (string, *os.Process, error)
 	killPidProc        func(pid string, proc *os.Process) error
 	dialIPC            func() (net.Conn, error)
-	postAgentStart     func(pid uint32, file string) bool
 	nativeFileName     func(bin bool, name string) string
 	sleep              func(time.Duration)
 	getLoggerFolder    func() string
@@ -49,7 +49,6 @@ func defaultDeps() deps {
 		process:            commonProcess.Process,
 		killPidProc:        commonProcess.KillPidProc,
 		dialIPC:            DialIPC,
-		postAgentStart:     postAgentStart,
 		nativeFileName:     executables.NativeFileName,
 		sleep:              time.Sleep,
 		getLoggerFolder: func() string {
@@ -161,6 +160,38 @@ func (a *Admin) RunRevert(logRoot string, unmapIPs bool, removeCert bool, failfa
 		exitCode = common.ErrFileLog
 	}
 	return
+}
+
+// postAgentStartAttempts and postAgentStartInterval bound how long we wait for a
+// freshly launched agent to become reachable.
+//
+// Readiness means "its IPC endpoint answers", the same predicate the caller
+// checks next, and not "its pid file exists". The pid file is written before the
+// agent is usable, so polling it reported a still-starting agent as ready on
+// Windows the same way it reported one on Unix, which is how a slow machine got
+// an agent killed for merely taking its time.
+const (
+	postAgentStartAttempts = 60
+	postAgentStartInterval = 1 * time.Second
+)
+
+func (a *Admin) postAgentStart() bool {
+	if commonExecutor.IsAdmin() {
+		// Already elevated, so there is nothing to wait for.
+		return true
+	}
+	for range postAgentStartAttempts {
+		conn, err := a.deps.dialIPC()
+		if err == nil {
+			// Probe only: the caller connects properly right after this.
+			if conn != nil {
+				_ = conn.Close()
+			}
+			return true
+		}
+		a.deps.sleep(postAgentStartInterval)
+	}
+	return false
 }
 
 func (a *Admin) RunFlushCache(logRoot string, ips bool, certs bool) (err error, exitCode int) {
@@ -311,13 +342,12 @@ func (a *Admin) ConnectAgentIfNeeded() (err error) {
 
 func (a *Admin) StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
 	commonLogger.Println("Starting agent")
-	var file string
 	logRoot := a.deps.getLoggerFolder()
-	file, result = a.deps.runFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
+	_, result = a.deps.runFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
 		commonLogger.Println("start config-admin-agent:", options.String())
 	})
 	if result.Success() {
-		if !a.deps.postAgentStart(result.Pid, file) {
+		if !a.postAgentStart() {
 			result.Err = fmt.Errorf("agent process failed to start")
 		}
 	}

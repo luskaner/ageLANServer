@@ -188,7 +188,7 @@ func TestStartAgentSuccess(t *testing.T) {
 	a.deps.runFlushCacheAgent = func(bool, bool, string, io.Writer, func(*exec.Options)) (string, *exec.Result) {
 		return "/tmp/file", &exec.Result{ExitCode: common.ErrSuccess, Pid: 123}
 	}
-	a.deps.postAgentStart = func(uint32, string) bool { return true }
+	a.deps.dialIPC = func() (net.Conn, error) { return nil, nil }
 	result := a.StartAgent(true, true)
 	if !result.Success() {
 		t.Fatalf("expected success, got %+v", result)
@@ -201,7 +201,8 @@ func TestStartAgentPostStartFailure(t *testing.T) {
 	a.deps.runFlushCacheAgent = func(bool, bool, string, io.Writer, func(*exec.Options)) (string, *exec.Result) {
 		return "/tmp/file", &exec.Result{ExitCode: common.ErrSuccess, Pid: 123}
 	}
-	a.deps.postAgentStart = func(uint32, string) bool { return false }
+	a.deps.dialIPC = func() (net.Conn, error) { return nil, errors.New("no agent") }
+	a.deps.sleep = func(time.Duration) {}
 	result := a.StartAgent(true, true)
 	if result.Err == nil {
 		t.Fatal("expected error when postAgentStart fails")
