@@ -540,7 +540,7 @@ func (m *mockListener) Accept() (net.Conn, error) {
 	}
 	return conn, nil
 }
-func (m *mockListener) Close() error { close(m.closeCh); return nil }
+func (m *mockListener) Close() error   { close(m.closeCh); return nil }
 func (m *mockListener) Addr() net.Addr { return &net.TCPAddr{} }
 
 func TestStartServerListenFailure(t *testing.T) {

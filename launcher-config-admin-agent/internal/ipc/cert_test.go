@@ -22,13 +22,13 @@ func validGameCert(gameId string) *x509.Certificate {
 		Subject: pkix.Name{
 			CommonName: invalidIDNACN,
 		},
-		IsCA:         true,
+		IsCA:           true,
 		MaxPathLenZero: true,
-		DNSNames:     domains,
-		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(time.Hour),
+		DNSNames:       domains,
+		KeyUsage:       x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:    []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		NotBefore:      time.Now(),
+		NotAfter:       time.Now().Add(time.Hour),
 	}
 }
 

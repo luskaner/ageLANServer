@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"io"
+	"net"
 	"testing"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -21,6 +22,8 @@ func resetState(t *testing.T) {
 	oldInit := initializeOrExitFn
 	oldRunFlush := runFlushCacheFn
 	oldStart := startServerFn
+	oldListen := listenFn
+	oldServe := serveFn
 	oldNewPid := newPidLockFn
 	oldPidLock := pidLockFn
 	oldPidUnlock := pidUnlockFn
@@ -34,6 +37,8 @@ func resetState(t *testing.T) {
 		initializeOrExitFn = oldInit
 		runFlushCacheFn = oldRunFlush
 		startServerFn = oldStart
+		listenFn = oldListen
+		serveFn = oldServe
 		newPidLockFn = oldNewPid
 		pidLockFn = oldPidLock
 		pidUnlockFn = oldPidUnlock
@@ -62,6 +67,8 @@ func resetState(t *testing.T) {
 	newPidLockFn = func() *fileLock.PidLock { return &fileLock.PidLock{} }
 	isAdminFn = func() bool { return true }
 	startServerFn = func(string) int { return common.ErrSuccess }
+	listenFn = func() (net.Listener, error) { return fakeListener{}, nil }
+	serveFn = func(string, net.Listener) int { return common.ErrSuccess }
 	runFlushCacheFn = func(bool, bool, string, io.Writer, func(*exec.Options)) (string, *exec.Result) {
 		return "", &exec.Result{ExitCode: common.ErrSuccess}
 	}
@@ -161,7 +168,7 @@ func TestRunRootFlushCacheFailure(t *testing.T) {
 
 func TestRunRootStartServerSuccess(t *testing.T) {
 	resetState(t)
-	startServerFn = func(string) int { return 42 }
+	serveFn = func(string, net.Listener) int { return 42 }
 	_, code := runRoot(nil)
 	if code != 42 {
 		t.Fatalf("code=%d want 42", code)
@@ -170,7 +177,7 @@ func TestRunRootStartServerSuccess(t *testing.T) {
 
 func TestRunRootPanicRecovery(t *testing.T) {
 	resetState(t)
-	startServerFn = func(string) int { panic("test panic") }
+	serveFn = func(string, net.Listener) int { panic("test panic") }
 	_, code := runRoot(nil)
 	if code != common.ErrGeneral {
 		t.Fatalf("code=%d want ErrGeneral", code)
@@ -180,14 +187,22 @@ func TestRunRootPanicRecovery(t *testing.T) {
 func TestRunRootNoFlushStartsServer(t *testing.T) {
 	resetState(t)
 	called := false
-	startServerFn = func(s string) int { called = true; return common.ErrSuccess }
+	serveFn = func(_ string, _ net.Listener) int { called = true; return common.ErrSuccess }
 	values.IPs = false
 	values.Certs = false
 	_, code := runRoot(nil)
 	if !called {
-		t.Fatal("startServer should be called when no flush")
+		t.Fatal("serve should be called when no flush")
 	}
 	if code != common.ErrSuccess {
 		t.Fatalf("code=%d", code)
 	}
 }
+
+// fakeListener satisfies net.Listener so runRoot can be exercised without
+// creating a real named pipe.
+type fakeListener struct{}
+
+func (fakeListener) Accept() (net.Conn, error) { return nil, errors.New("not accepting") }
+func (fakeListener) Close() error              { return nil }
+func (fakeListener) Addr() net.Addr            { return nil }

@@ -235,22 +235,32 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 	return result.ExitCode
 }
 
-func StartServer(logRoot string) (exitCode int) {
+// Listen creates the named pipe without accepting anything on it yet.
+//
+// It is separate from Serve so the caller can make the pipe exist before it does
+// any slow work. A client only needs the pipe to be present to consider the
+// agent up; making that depend on a cache flush meant a slow machine could not
+// be reached in time, and the caller's answer to that was to kill an agent that
+// was merely still starting.
+func Listen() (net.Listener, error) {
 	l, err := setupServerFn()
 	if err != nil {
 		commonLogger.Printf("Could not listen to IPC: %v\n", err)
-		exitCode = internal.ErrListen
-		return
+		return nil, err
 	}
+	return l, nil
+}
+
+// Serve accepts connections until one asks the agent to exit.
+func Serve(logRoot string, l net.Listener) (exitCode int) {
 	defer func(l net.Listener) {
 		_ = l.Close()
 		revertServerFn()
 	}(l)
 
-	var conn net.Conn
 	for {
 		commonLogger.Println("Waiting for connection...")
-		conn, err = l.Accept()
+		conn, err := l.Accept()
 		if err != nil {
 			commonLogger.Printf("Could not accept connection: %v\n", err)
 			continue
@@ -261,4 +271,13 @@ func StartServer(logRoot string) (exitCode int) {
 		}
 	}
 	return
+}
+
+func StartServer(logRoot string) (exitCode int) {
+	l, err := Listen()
+	if err != nil {
+		exitCode = internal.ErrListen
+		return
+	}
+	return Serve(logRoot, l)
 }

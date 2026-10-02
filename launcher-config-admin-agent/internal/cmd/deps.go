@@ -16,6 +16,8 @@ var (
 	initializeOrExitFn = internal.InitializeOrExit
 	runFlushCacheFn    = launcherCommonExecutor.RunFlushCache
 	startServerFn      = ipc.StartServer
+	listenFn           = ipc.Listen
+	serveFn            = ipc.Serve
 	newPidLockFn       = func() *fileLock.PidLock { return &fileLock.PidLock{} }
 	pidLockFn          = func(l *fileLock.PidLock) error { return l.Lock() }
 	pidUnlockFn        = func(l *fileLock.PidLock) error { return l.Unlock() }

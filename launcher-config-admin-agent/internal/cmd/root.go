@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"net"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -64,6 +65,18 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 			exitCode = common.ErrSignal
 		}
 	}()
+	// Create the pipe before the flush below. The flush runs ipconfig, which on a
+	// slow machine takes seconds, and the caller polls for this pipe for a couple
+	// of seconds after launching us. Listening last meant that on such a machine
+	// the caller gave up, killed an agent that was only still starting, and then
+	// the agent carried on and sat in Accept forever. The pid file is already
+	// written above, so the caller could see it alive the whole time.
+	var listener net.Listener
+	if listener, err = listenFn(); err != nil {
+		exitCode = internal.ErrListen
+		return
+	}
+	defer func() { _ = listener.Close() }()
 	if values.IPs || values.Certs {
 		if values.IPs {
 			commonLogger.Println("Flushing IP cache...")
@@ -91,7 +104,8 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 			return
 		}
 	}
-	exitCode = startServerFn(values.LogRoot)
+	// Serve only now, so no command can race the flush, but the pipe has been
+	// answerable since before it started.
+	exitCode = serveFn(values.LogRoot, listener)
 	return
 }
-

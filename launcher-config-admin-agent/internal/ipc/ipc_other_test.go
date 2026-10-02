@@ -25,4 +25,3 @@ func TestRevertServerRemovesSocketPath(t *testing.T) {
 		t.Fatal("socket path was not removed by RevertServer")
 	}
 }
-

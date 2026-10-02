@@ -262,12 +262,22 @@ func (a *Admin) stopAgentIfNeeded() (err error) {
 	return
 }
 
+// Once the agent is listening, three seconds was what it took to start it. The
+// budget has to cover launching an elevated process, initialising its log and
+// taking its pid lock, all of which a loaded machine can stretch. The agent
+// creates its pipe before its slow work now, so this no longer has to race the
+// cache flush, but it still should not be the tightest number in the code.
+const (
+	connectAttempts = 100
+	connectInterval = 100 * time.Millisecond
+)
+
 func (a *Admin) ConnectAgentIfNeededWithRetries() bool {
-	for range 30 {
+	for range connectAttempts {
 		if a.ConnectAgentIfNeeded() == nil {
 			return true
 		}
-		a.deps.sleep(100 * time.Millisecond)
+		a.deps.sleep(connectInterval)
 	}
 	return false
 }
