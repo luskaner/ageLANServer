@@ -134,3 +134,7 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	}
 	return
 }
+
+// Windows has no graceful signal: os.Process.Signal only accepts os.Kill, so
+// KillProc goes straight to TerminateProcess.
+const platformSupportsGracefulSignal = false

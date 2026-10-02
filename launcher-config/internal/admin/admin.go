@@ -213,6 +213,10 @@ func (a *Admin) StopAgentIfNeeded() bool {
 		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
 		commonLogger.Println(err)
 	}
+	// Fallback. On Windows this only has a chance when we are already elevated:
+	// the agent runs elevated, and TerminateProcess on a process at a higher
+	// integrity level is denied, so from an unelevated config.exe this is not
+	// merely unlikely but impossible.
 	if pid, proc, err := a.deps.process(exeFileName); err == nil && proc != nil {
 		if err = a.deps.killPidProc(pid, proc); err == nil {
 			commonLogger.Println("Successfully killed 'config-admin-agent'.")
@@ -220,11 +224,12 @@ func (a *Admin) StopAgentIfNeeded() bool {
 		}
 		commonLogger.Println("Failed to kill 'config-admin-agent'")
 		commonLogger.Println(err)
-		// The agent runs elevated while we usually do not, so on Windows the
-		// kill above is denied rather than merely unlikely. Say so instead of
-		// leaving the user with a bare failure they cannot act on.
 		if isAccessDenied(err) {
-			commonLogger.Println("It runs with admin privileges, so stopping it requires an elevated 'launcher'.")
+			// Say what actually happened and what the user can do, instead of
+			// leaving a bare failure. It will not harm anything: it only waits on
+			// a named pipe that nothing else is going to answer.
+			commonLogger.Println("It is running with admin privileges and this process is not, so it cannot be terminated from here.")
+			commonLogger.Println("It does nothing on its own and is harmless, and Windows will end it at sign out. To remove it now, end 'config-admin-agent' in the task manager, or run the 'launcher' as administrator next time.")
 		}
 	}
 	return false

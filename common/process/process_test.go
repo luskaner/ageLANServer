@@ -395,8 +395,8 @@ func TestKillProcWaitTimeout(t *testing.T) {
 	}
 	proc := cmd.Process
 	err := KillProc(proc)
-	if err == nil || err.Error() != "timeout" {
-		t.Fatalf("expected timeout, got %v", err)
+	if !errors.Is(err, ErrKillTimeout) {
+		t.Fatalf("expected ErrKillTimeout, got %v", err)
 	}
 	_ = proc.Kill()
 	_ = cmd.Wait()
@@ -412,15 +412,65 @@ func TestKillProcessError(t *testing.T) {
 	}
 }
 
+// The graceful branch is skipped on Windows, so this has to opt in explicitly.
+// It also stubs procKillFn: without the branch being taken the real Kill would
+// be pointed at this very test process.
 func TestKillProcSignalSuccess(t *testing.T) {
 	origSignal := procSignalFn
 	origWait := waitForProcessFn
-	defer func() { procSignalFn = origSignal; waitForProcessFn = origWait }()
+	origGraceful := supportsGracefulSignal
+	origKill := procKillFn
+	defer func() {
+		procSignalFn = origSignal
+		waitForProcessFn = origWait
+		supportsGracefulSignal = origGraceful
+		procKillFn = origKill
+	}()
+	supportsGracefulSignal = true
+	procKillFn = func(*os.Process) error { return errors.New("kill must not be reached") }
 	procSignalFn = func(*os.Process, os.Signal) error { return nil }
 	waitForProcessFn = func(*os.Process, *time.Duration) bool { return true }
 	proc, _ := os.FindProcess(os.Getpid())
 	if err := KillProc(proc); err != nil {
 		t.Fatalf("KillProc should succeed when Signal and Wait succeed, got %v", err)
+	}
+}
+
+// Regression: the graceful branch used to be attempted everywhere, including
+// Windows where os.Process.Signal only accepts os.Kill. It always failed there
+// and the error was discarded, so the function looked like it tried to be polite
+// when it had not, and the fallback kill looked like a second attempt rather
+// than the only one.
+func TestKillProcSkipsSignalWhereUnsupported(t *testing.T) {
+	origSignal := procSignalFn
+	origKill := procKillFn
+	origGraceful := supportsGracefulSignal
+	origWait := waitForProcessFn
+	defer func() {
+		procSignalFn = origSignal
+		procKillFn = origKill
+		supportsGracefulSignal = origGraceful
+		waitForProcessFn = origWait
+	}()
+	supportsGracefulSignal = false
+	signalled := false
+	procSignalFn = func(*os.Process, os.Signal) error {
+		signalled = true
+		return nil
+	}
+	killed := false
+	procKillFn = func(*os.Process) error { killed = true; return nil }
+	waitForProcessFn = func(*os.Process, *time.Duration) bool { return true }
+
+	proc, _ := os.FindProcess(os.Getpid())
+	if err := KillProc(proc); err != nil {
+		t.Fatalf("KillProc: %v", err)
+	}
+	if signalled {
+		t.Error("signalled even though the platform has no graceful signal")
+	}
+	if !killed {
+		t.Error("Kill must be the one and only attempt")
 	}
 }
 

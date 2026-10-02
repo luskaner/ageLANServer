@@ -117,16 +117,29 @@ func KillPidProc(pidPath string, proc *os.Process) (err error) {
 	return osRemoveFn(pidPath)
 }
 
+// ErrKillTimeout means the process was told to terminate but had not exited
+// within waitDuration.
+var ErrKillTimeout = errors.New("timeout waiting for the process to exit")
+
+// supportsGracefulSignal is false on Windows, where os.Process.Signal only
+// accepts os.Kill. Sending os.Interrupt always fails there with "not supported",
+// so the graceful branch in KillProc could never run and its error was silently
+// discarded, making the function look like it tried to be polite when it had not.
+// A package var so tests can exercise the branch explicitly on any platform.
+var supportsGracefulSignal = platformSupportsGracefulSignal
+
 func KillProc(proc *os.Process) (err error) {
-	if err = procSignalFn(proc, os.Interrupt); err == nil && waitForProcessFn(proc, &waitDuration) {
-		return
+	if supportsGracefulSignal {
+		if err = procSignalFn(proc, os.Interrupt); err == nil && waitForProcessFn(proc, &waitDuration) {
+			return
+		}
 	}
 	err = procKillFn(proc)
 	if err != nil {
 		return
 	}
 	if !waitForProcessFn(proc, &waitDuration) {
-		err = errors.New("timeout")
+		err = ErrKillTimeout
 	}
 	return
 }
