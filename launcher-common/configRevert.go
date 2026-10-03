@@ -155,7 +155,7 @@ func (r *Reverter) ConfigRevert(
 		}
 		var revertEnd string
 		if requiresRevertAdminElevation {
-			revertEnd += `, authorize 'config-admin' if needed`
+			revertEnd += ", authorize config-admin if needed"
 		}
 		for _, currentRevertFlags := range multipleRevertFlags {
 			commonLogger.Println("Reverting configuration" + revertEnd + `...`)
@@ -163,7 +163,7 @@ func (r *Reverter) ConfigRevert(
 				success = true
 			} else {
 				if r.deps.agentRunning(headless) {
-					commonLogger.Println("\t'config-admin-agent' process is still executing. Kill it using the task manager with admin rights.")
+					commonLogger.Println("\tconfig-admin-agent process is still executing. Kill it using the task manager with admin rights.")
 				} else {
 					commonLogger.Println("\tFailed to cleanup configuration, try to do it manually.")
 				}

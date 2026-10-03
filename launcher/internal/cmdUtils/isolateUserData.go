@@ -34,7 +34,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 		if profiles {
 			isolateItems = append(isolateItems, "profiles")
 		}
-		logger.Println("Backing up " + strings.Join(isolateItems, " and ") + ".")
+		logger.Step("%s", "Backing up "+strings.Join(isolateItems, " and ")+".")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_isolate", func(writer io.Writer) {
 			cfgSetupOpts := executor.NewConfigSetupOptions()
@@ -49,17 +49,17 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 			cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
-				logger.Println(isolateMsg + strings.Join(isolateItems, " or ") + ".")
+				logger.Fail("%s", isolateMsg+strings.Join(isolateItems, " or ")+".")
 				exitCode = internal.ErrMetadataProfilesSetup
 				if result.Err != nil {
-					logger.Println("Error message: " + result.Err.Error())
+					logger.Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+					logger.Fault("Exit code: %d.", result.ExitCode)
 				}
 			}
 		}); err != nil {
-			logger.Println("Failed to write isolate setup log:", err)
+			logger.Fail("Failed to write isolate setup log: %s", err)
 		}
 	}
 	return

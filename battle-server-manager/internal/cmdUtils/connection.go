@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common/battleServer"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var waitInitTimeout = 10 * time.Second
@@ -33,7 +33,7 @@ func WaitForBattleServerInit(config battleServer.Config) (ok bool) {
 		t *= 3
 	}
 	timeout := time.After(t)
-	commonLogger.Printf("Waiting up to %s for the initialization to complete...", t)
+	cmdlog.Step("Waiting up to %s for the initialization to complete...", t)
 loop:
 	for {
 		select {

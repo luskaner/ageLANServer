@@ -5,7 +5,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/spf13/pflag"
 )
 
@@ -18,6 +18,6 @@ func runClean(args []string) (err error, exitCode int) {
 		exitCode = common.ErrSyntax
 		return
 	}
-	commonLogger.Println("Cleaning up...")
+	cmdlog.Step("Cleaning up...")
 	return removeAllFnClean(true)
 }

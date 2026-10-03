@@ -19,12 +19,32 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
 )
 
+// processFn is indirected so a test can decide whether an agent is running, which
+// is the difference between a teardown that prints a step and one that prints
+// nothing.
+var processFn = commonProcess.Process
+
+// AgentRunning reports whether there is a config-admin-agent process to stop.
+func (c *Config) AgentRunning() bool {
+	_, proc, err := processFn(executables.NativeFileName(false, executables.LauncherAgent))
+	return err == nil && proc != nil
+}
+
+// KillAgent stops the agent, and says so only when there was one.
+//
+// Announcing "Stopping config-admin-agent..." over an agent that is not running
+// would be a step that did not happen, and on a clean run that is every run.
 func (c *Config) KillAgent() {
 	agent := executables.NativeFileName(false, executables.LauncherAgent)
-	err := commonProcess.Kill(agent)
-	if err != nil {
-		logger.Println("Failed to kill it: ", err, ", try using the task manager.")
+	if _, proc, err := processFn(agent); err != nil || proc == nil {
+		return
 	}
+	logger.Step("Stopping config-admin-agent...")
+	if err := commonProcess.Kill(agent); err != nil {
+		logger.Warn("Failed to kill it: %s, try using the task manager.", err)
+		return
+	}
+	logger.Ok("config-admin-agent stopped.")
 }
 
 func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (exitCode int) {
@@ -39,16 +59,16 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	revertCommand := c.RevertCommand()
 	requiresConfigRevert := c.RequiresConfigRevert()
 	if loggerPath != "" || len(revertCommand) > 0 || canBroadcastBattleServer == "true" || len(c.serverExe) > 0 || requiresConfigRevert {
-		str := "Starting 'agent'"
+		str := "Starting agent"
 		if canBroadcastBattleServer == "true" {
 			str += ", authorize it in firewall if needed"
 		}
-		logger.Println(str + "...")
+		logger.Step("%s", str+"...")
 		steamProcess, steamMacOsNative, xboxProcess := executer.GameProcesses()
 		var err error
 		var f *os.File
 		if f, err = commonLogger.FileLogger.Open("agent"); err != nil {
-			logger.Println("Error message: " + err.Error())
+			logger.Fail("Error message: %s", err.Error())
 			return common.ErrFileLog
 		}
 		// Convert explicitly: assigning a nil *os.File directly to io.Writer
@@ -77,24 +97,24 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		// Close the parent's handle: the child inherited its own copy.
 		_ = f.Close()
 		if !result.Success() {
-			logger.Println("Failed to start 'agent'.")
+			logger.Fail("Failed to start agent.")
 			exitCode = internal.ErrAgentStart
 			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
+				logger.Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Fault("Exit code: %d.", result.ExitCode)
 			}
 			return
 		}
 
-		logger.Println("'Agent' started.")
+		logger.Ok("Agent started.")
 	}
 	str := "Starting game"
 	if customExecutor.Executable != "" {
 		str += ", authorize it if needed"
 	}
-	logger.Println(str + "...")
+	logger.Step("%s", str+"...")
 	var result *commonExecutor.Result
 	var values map[string]string = nil
 	if c.hostFilePath != "" {
@@ -116,7 +136,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}
 	args, err := ParseCommandArgs(clientExecutableArgs, values)
 	if err != nil {
-		logger.Println("Failed to parse client executable arguments")
+		logger.Fail("Failed to parse client executable arguments")
 		exitCode = internal.ErrInvalidClientArgs
 		return
 	}
@@ -126,7 +146,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
-				logger.Println("Using a user certificate. If it fails to connect to the 'server', try setting the config setting 'Config.Certificate.CanTrustInPc' to 'local'.")
+				logger.Warn("Using a user certificate. If it fails to connect to the server, try setting the config setting Config.Certificate.CanTrustInPc to \"local\".")
 			}
 			result = customExecutor.DoElevated(args, func(options commonExecutor.Options) {
 				commonLogger.Println("start elevated game", options.String())
@@ -136,11 +156,11 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	if !result.Success() {
 		exitCode = internal.ErrGameLauncherStart
 		if result.Err != nil {
-			logger.Println("Game failed to start. Error message: " + result.Err.Error())
+			logger.Fail("Game failed to start. Error message: %s", result.Err.Error())
 		}
 		c.KillAgent()
 	} else {
-		logger.Println("Game started.")
+		logger.Ok("Game started.")
 	}
 	return
 }

@@ -1,10 +1,14 @@
 package cmdUtils
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/ui"
 )
 
 // tempStores reemplaza los ArgsStore globales por ficheros temporales para que
@@ -92,5 +96,73 @@ func TestConfigRequiresRunningRevertCommand(t *testing.T) {
 	}
 	if !c.RequiresRunningRevertCommand() {
 		t.Fatal("setupCommandRan=true with store should require")
+	}
+}
+
+// The heading is only honest when there is something to undo. Revert runs on every
+// exit, but on a clean run it has nothing left to print, so asking for the phase
+// is what keeps a heading over an empty phase off the screen.
+func TestHasTeardownWork(t *testing.T) {
+	t.Cleanup(func() { _ = launcherCommon.RevertConfigStore.Delete() })
+	// Pinned, so the answer does not depend on whether an agent happens to be
+	// running on the machine that runs the tests.
+	orig := processFn
+	t.Cleanup(func() { processFn = orig })
+	processFn = func(string) (string, *os.Process, error) { return "", nil, errors.New("not running") }
+	if err := launcherCommon.RevertConfigStore.Store([]string{"--revert"}); err != nil {
+		t.Fatalf("storing revert args: %v", err)
+	}
+	c := &Config{}
+	if !c.HasTeardownWork() {
+		t.Error("a stored revert argument is work")
+	}
+	if err := launcherCommon.RevertConfigStore.Delete(); err != nil {
+		t.Fatalf("clearing the store: %v", err)
+	}
+	if c.HasTeardownWork() {
+		t.Error("a Config that touched nothing must report no work")
+	}
+	c.serverExe = "server.exe"
+	if !c.HasTeardownWork() {
+		t.Error("a started server is work")
+	}
+	c.serverExe = ""
+	c.battleServerExe = "bsm.exe"
+	if c.HasTeardownWork() {
+		t.Error("a battle server executable with no region is not work")
+	}
+	c.battleServerRegion = "eu"
+	if !c.HasTeardownWork() {
+		t.Error("a battle server region is work")
+	}
+}
+
+// The teardown announces the agent only when there is one to stop. A clean run has
+// no agent by then, and "Stopping config-admin-agent..." over nothing is a step
+// that did not happen.
+func TestKillAgentOnlySpeaksWhenThereIsAnAgent(t *testing.T) {
+	orig := processFn
+	t.Cleanup(func() { processFn = orig })
+	c := &Config{}
+	var out strings.Builder
+	console := ui.SetOutput(&out)
+	defer console()
+
+	processFn = func(string) (string, *os.Process, error) { return "", nil, errors.New("not running") }
+	if c.AgentRunning() {
+		t.Error("no agent must not report one running")
+	}
+	out.Reset()
+	c.KillAgent()
+	if out.Len() != 0 {
+		t.Errorf("KillAgent printed %q with no agent running", out.String())
+	}
+
+	processFn = func(string) (string, *os.Process, error) { return "pid", &os.Process{}, nil }
+	if !c.AgentRunning() {
+		t.Error("a running agent must be reported")
+	}
+	if !c.HasTeardownWork() {
+		t.Error("a running agent is teardown work, and needs its heading")
 	}
 }

@@ -6,11 +6,12 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
 )
 
 func FlushDns() (result *exec.Result) {
-	commonLogger.Println("Flushing DNS cache...")
+	commonLogger.Println(commonUi.Step("Flushing DNS cache..."))
 	options := exec.Options{
 		File:        "dscacheutil",
 		SpecialFile: true,
@@ -30,7 +31,7 @@ func FlushDns() (result *exec.Result) {
 		if writer != nil {
 			options.Stdout = writer
 			options.Stderr = writer
-			commonLogger.Printf("run dscacheutil: %s\n", options.String())
+			commonLogger.Println(commonUi.Detail("run dscacheutil: %s", options.String()))
 		}
 		result = options.Exec()
 	}); err != nil {
@@ -48,7 +49,7 @@ func FlushDns() (result *exec.Result) {
 		if writer != nil {
 			options.Stdout = writer
 			options.Stderr = writer
-			commonLogger.Printf("run killall: %s\n", options.String())
+			commonLogger.Println(commonUi.Detail("run killall: %s", options.String()))
 		}
 		result = options.Exec()
 	}); err != nil {

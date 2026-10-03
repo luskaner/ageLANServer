@@ -6,13 +6,15 @@ import (
 	"os"
 
 	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var version = "development"
 
 func main() {
-	commonLogger.Initialize(os.Stdout)
+	cmdlog.Initialize()
+	cmdlog.Banner(executables.BattleServerManager, version)
 	cmd.Version = version
 	common.ChdirToExe()
 	err, exitCode := cmd.Execute()

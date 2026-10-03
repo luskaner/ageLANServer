@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/uuid"
 )
 
 // Starts a UDP server that responds to announce queries with a valid reply.
@@ -106,4 +107,50 @@ func TestAnnounceIdLength(t *testing.T) {
 
 func itoa(v int) string {
 	return strconv.Itoa(v)
+}
+
+// Progress is reported from several goroutines at once, so it has to be safe to
+// call the callback while the map it counts is being written.
+func TestReportIsRaceFreeAndCountsFoundServers(t *testing.T) {
+	servers := map[uuid.UUID]*AnnounceMessage{}
+	var mu sync.Mutex
+	mu.Lock()
+	servers[uuid.MustParse("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")] = &AnnounceMessage{}
+	mu.Unlock()
+
+	var rounds []int
+	progress := func(round, total, found int) {
+		if total != announceRounds {
+			t.Errorf("total = %d, want %d", total, announceRounds)
+		}
+		if round < 1 || round > total {
+			t.Errorf("round %d out of range", round)
+		}
+		if found != 1 {
+			t.Errorf("found = %d, want 1", found)
+		}
+		mu.Lock()
+		rounds = append(rounds, round)
+		mu.Unlock()
+	}
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for round := 1; round <= announceRounds; round++ {
+				report(progress, servers, &mu, round, announceRounds)
+			}
+		}()
+	}
+	wg.Wait()
+	if len(rounds) != 4*announceRounds {
+		t.Errorf("got %d reports, want %d", len(rounds), 4*announceRounds)
+	}
+}
+
+// A nil callback is the normal case for every caller that does not show progress,
+// and it must not cost anything.
+func TestReportWithoutCallbackIsANoOp(t *testing.T) {
+	report(nil, map[uuid.UUID]*AnnounceMessage{}, &sync.Mutex{}, 1, announceRounds)
 }

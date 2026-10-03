@@ -12,7 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/luskaner/ageLANServer/launcher-common/ipc"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
 	"golang.org/x/net/idna"
@@ -31,17 +31,17 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 	for !exit {
 		if err = decoder.Decode(&action); err != nil {
 			if errors.Is(err, io.EOF) {
-				commonLogger.Println("Closing connection...")
+				cmdlog.Step("Closing connection...")
 				return
 			}
-			commonLogger.Println("Could not decode action:", err)
+			cmdlog.Fail("Could not decode action: %s", err)
 			str := "-> ErrDecode: "
 			if err = encoder.Encode(internal.ErrDecode); err != nil {
 				str += err.Error()
 			} else {
 				str += "OK"
 			}
-			commonLogger.Println(str)
+			cmdlog.Fail("%s", str)
 			// The gob stream state is no longer trustworthy after a failed
 			// decode: continuing would loop on the same garbage forever.
 			return
@@ -54,19 +54,19 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 			str := "<- Revert: "
 			if err = encoder.Encode(common.ErrSuccess); err != nil {
 				str += err.Error()
+				cmdlog.Fail("%s", str)
 			} else {
-				str += "OK"
+				cmdlog.Step("%sOK", str)
 			}
-			commonLogger.Println(str)
 			exitCode = handleRevert(logRoot, decoder)
 		case ipc.Setup:
 			str := "<- Setup: "
 			if err = encoder.Encode(common.ErrSuccess); err != nil {
 				str += err.Error()
+				cmdlog.Fail("%s", str)
 			} else {
-				str += "OK"
+				cmdlog.Step("%sOK", str)
 			}
-			commonLogger.Println(str)
 			exitCode = handleSetUp(logRoot, decoder)
 		case ipc.Exit:
 			str := "<- Exit: "
@@ -82,13 +82,13 @@ func handleClient(logRoot string, c net.Conn) (exit bool) {
 				str += "OK"
 			}
 			if closeErr := c.Close(); closeErr != nil {
-				commonLogger.Println(str)
-				commonLogger.Println("Could not close connection:", closeErr)
+				cmdlog.Fail("%s", str)
+				cmdlog.Fault("Could not close connection: %s", closeErr)
 				if exitCode == common.ErrSuccess {
 					exitCode = internal.ErrConnectionClosing
 				}
 			} else {
-				commonLogger.Println(str)
+				cmdlog.Step("%s", str)
 			}
 			exit = true
 		}
@@ -146,24 +146,24 @@ func checkCertificateValidity(cert *x509.Certificate, gameId string) bool {
 
 func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 	var msg ipc.SetupCommand
-	commonLogger.Println("<- SetupCommand")
+	cmdlog.Step("<- SetupCommand")
 	if err := decoder.Decode(&msg); err != nil {
-		commonLogger.Println("Could not decode command:", err)
+		cmdlog.Fail("Could not decode command: %s", err)
 		return internal.ErrDecode
 	}
-	commonLogger.Printf("<- %v\n", msg)
+	cmdlog.Printf("<- %v\n", msg)
 	if len(msg.IP) > 0 && mappedIps {
-		commonLogger.Println("IPs already mapped")
+		cmdlog.Info("IPs already mapped")
 		return internal.ErrIpsAlreadyMapped
 	}
 	if !game.SupportedGames.ContainsOne(msg.GameId) {
-		commonLogger.Println("Game is not supported")
+		cmdlog.Fail("Game is not supported")
 		return internal.ErrGameNotSupported
 	}
 	var cert *x509.Certificate
 	if msg.Certificate != nil {
 		if addedCert {
-			commonLogger.Println("certificate already added")
+			cmdlog.Info("certificate already added")
 			return internal.ErrCertAlreadyAdded
 		}
 		str := "Parsing certificate: "
@@ -179,7 +179,7 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 		}
 
 		str += "OK"
-		commonLogger.Println(str)
+		cmdlog.Println(str)
 	}
 	var suffix string
 	if cert != nil {
@@ -191,7 +191,7 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 	if buffErr := bufferFn("config-admin_setup"+suffix, func(writer io.Writer) {
 		result = runSetUpFn(msg.GameId, msg.IP, msg.MacOsExclusiveMappings, msg.CanUseInternet, cert, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
-				commonLogger.Println("run config admin setup", options.String())
+				cmdlog.Println("run config admin setup", options.String())
 			}
 		})
 	}); buffErr != nil {
@@ -206,23 +206,23 @@ func handleSetUp(logRoot string, decoder *gob.Decoder) int {
 
 func handleRevert(logRoot string, decoder *gob.Decoder) int {
 	var msg ipc.RevertCommand
-	commonLogger.Println("<- RevertCommand")
+	cmdlog.Step("<- RevertCommand")
 	if err := decoder.Decode(&msg); err != nil {
-		commonLogger.Println("Could not decode command:", err)
+		cmdlog.Fail("Could not decode command: %s", err)
 		return internal.ErrDecode
 	}
-	commonLogger.Printf("<- %v\n", msg)
+	cmdlog.Printf("<- %v\n", msg)
 	revertIps := msg.IPs && mappedIps
 	revertCert := msg.Certificate && addedCert
 	if !revertIps && !revertCert {
-		commonLogger.Println("Everything is already reverted.")
+		cmdlog.Info("Everything is already reverted.")
 		return common.ErrSuccess
 	}
 	var result *exec.Result
 	if buffErr := bufferFn("config-admin_revert", func(writer io.Writer) {
 		result = runRevertFn(revertIps, revertCert, true, logRoot, writer, func(options *exec.Options) {
 			if writer != nil {
-				commonLogger.Println("run config admin revert", options.String())
+				cmdlog.Println("run config admin revert", options.String())
 			}
 		})
 	}); buffErr != nil {
@@ -245,7 +245,7 @@ func handleRevert(logRoot string, decoder *gob.Decoder) int {
 func Listen() (net.Listener, error) {
 	l, err := setupServerFn()
 	if err != nil {
-		commonLogger.Printf("Could not listen to IPC: %v\n", err)
+		cmdlog.Fail("Could not listen to IPC: %s", err)
 		return nil, err
 	}
 	return l, nil
@@ -259,13 +259,13 @@ func Serve(logRoot string, l net.Listener) (exitCode int) {
 	}(l)
 
 	for {
-		commonLogger.Println("Waiting for connection...")
+		cmdlog.Step("Waiting for connection...")
 		conn, err := l.Accept()
 		if err != nil {
-			commonLogger.Printf("Could not accept connection: %v\n", err)
+			cmdlog.Fail("Could not accept connection: %s", err)
 			continue
 		}
-		commonLogger.Println("Accepted connection: ", conn.RemoteAddr().String())
+		cmdlog.Ok("Accepted connection: %s", conn.RemoteAddr())
 		if handleClient(logRoot, conn) {
 			break
 		}

@@ -14,6 +14,7 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/spf13/pflag"
@@ -83,10 +84,10 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 	if result.Success() {
 		revertArgs := c.ConfigRevertFlagOptions().Flags()
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
-			logger.Println("Failed to store revert arguments, reverting setup...")
+			logger.Warn("Failed to store revert arguments, reverting setup...")
 			result = RunRevert(revertArgs, false, c.Out, c.OptionsFn)
 			if !result.Success() {
-				logger.Println("Failed to revert setup.")
+				logger.Fail("Failed to revert setup.")
 			}
 			// Join both errors: the caller needs to know about the store
 			// failure AND that the compensating revert may have also failed
@@ -146,10 +147,15 @@ func (c *ConfigFlushCacheOptions) RunFlushCache() (result *exec.Result) {
 			return &exec.Result{ExitCode: common.ErrFileLog}
 		}
 	} else {
-		str += ", authorize 'config-admin-agent' if needed"
+		str += ", authorize config-admin-agent if needed"
 	}
 	str += "..."
-	logger.Println(str)
+	// The wait for an elevated flush is the longest step in a run and it has
+	// nothing to report while it happens, so it animates in place and fills the
+	// terminal's progress indicator instead of leaving one static line the reader
+	// has to guess at.
+	flush := commonUi.Start(str)
+	flushProgress := commonUi.BeginProgress()
 	commonLogger.Println("run config flushCache", options.String())
 	result = options.Exec()
 	if c.Certs {
@@ -159,15 +165,20 @@ func (c *ConfigFlushCacheOptions) RunFlushCache() (result *exec.Result) {
 		common.ClearDNSCache()
 	}
 	if !result.Success() {
-		commonLogger.Println("Failed to flush cache")
+		flush.Stop()
+		flushProgress.Fail()
+		commonLogger.Println(commonUi.Fail("Failed to flush cache"))
 		if result.Err != nil {
-			commonLogger.Println("Received error:")
-			commonLogger.Println(result.Err)
+			commonLogger.Println(commonUi.Fault("Received error:"))
+			commonLogger.Println(commonUi.Detail("%s", result.Err))
 		}
 		if result.ExitCode != common.ErrSuccess {
-			commonLogger.Println("Received exit code:")
-			commonLogger.Println(result.ExitCode)
+			commonLogger.Println(commonUi.Fault("Received exit code:"))
+			commonLogger.Println(commonUi.Detail("%d", result.ExitCode))
 		}
+	} else {
+		flushProgress.Done()
+		flush.Done("Cache flushed")
 	}
 	return
 }

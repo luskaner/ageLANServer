@@ -49,7 +49,7 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 				}
 				for _, multicastIf := range multicastIfs {
 					if joinErr := pckConn.JoinGroup(multicastIf, multicastAddr); joinErr != nil {
-						commonLogger.Printf("Failed to join multicast group %v on interface %s: %v\n", multicastGroup, multicastIf.Name, joinErr)
+						commonLogger.Printf("Failed to join multicast group %s on interface %s: %s\n", multicastGroup, multicastIf.Name, joinErr)
 					}
 				}
 			}

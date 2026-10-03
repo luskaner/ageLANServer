@@ -30,7 +30,7 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 	if len(battleServers) == 0 {
 		switch gameId {
 		case game.AoE2:
-			logger.Println("No Battle Server for AoE 2: DE. macOS native clients will not be able to play/observe games.")
+			logger.Warn("No Battle Server for AoE 2: DE. macOS native clients will not be able to play/observe games.")
 		case game.AoE4, game.AoM:
 			return fmt.Errorf("no battle server")
 		}

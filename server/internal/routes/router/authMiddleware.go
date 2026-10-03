@@ -259,8 +259,8 @@ func safeString(data i.A, index int) (string, bool) {
 	return s, ok
 }
 
-// safeNestedFloat extracts a float64 from the nested structure:
-// data[index] → i.A → [0] → i.A → [1] → float64.
+// safeNestedFloat extracts a float64 from the nested structure, that is
+// data[index], then its "A" member, then [0], then its "A" member, then [1].
 func safeNestedFloat(data i.A, index int) float64 {
 	if index < 0 || index >= len(data) {
 		return 0

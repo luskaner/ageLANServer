@@ -4,7 +4,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/fileLock"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var Version string
@@ -23,8 +23,8 @@ var (
 func Execute() (err error, exitCode int) {
 	lock := newPidLock()
 	if err = lock.Lock(); err != nil {
-		commonLogger.Println("Failed to lock pid file. Kill process 'battle-server-manager' if it is running in your task manager.")
-		commonLogger.Println(err.Error())
+		cmdlog.Fail("Failed to lock pid file. Kill process battle-server-manager if it is running in your task manager.")
+		cmdlog.Fault("%s", err.Error())
 		exitCode = common.ErrPidLock
 		return
 	}

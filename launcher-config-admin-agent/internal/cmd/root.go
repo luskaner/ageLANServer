@@ -11,9 +11,9 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
 	"github.com/spf13/pflag"
 )
@@ -36,7 +36,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	}
 	lock := newPidLockFn()
 	if err = pidLockFn(lock); err != nil {
-		commonLogger.Println("Failed to lock pid file. Kill process 'config-admin-agent' if it is running in your task manager.")
+		cmdlog.Fail("Failed to lock pid file. Kill process config-admin-agent if it is running in your task manager.")
 		loggerCloseFn()
 		exitCode = common.ErrPidLock
 		return
@@ -44,14 +44,14 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	defer func() {
 		loggerCloseFn()
 		if r := recover(); r != nil {
-			commonLogger.Println(r)
-			commonLogger.Println(string(debug.Stack()))
+			cmdlog.Fail("%s", r)
+			cmdlog.Fault("%s", string(debug.Stack()))
 			exitCode = common.ErrGeneral
 		}
 		_ = pidUnlockFn(lock)
 	}()
 	if !isAdminFn() {
-		commonLogger.Println("Program must be run as admin")
+		cmdlog.Fail("Program must be run as admin")
 		exitCode = launcherCommon.ErrNotAdmin
 		return
 	}
@@ -79,16 +79,16 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	defer func() { _ = listener.Close() }()
 	if values.IPs || values.Certs {
 		if values.IPs {
-			commonLogger.Println("Flushing IP cache...")
+			cmdlog.Step("Flushing IP cache...")
 		}
 		if values.Certs {
-			commonLogger.Println("Flushing certificate cache...")
+			cmdlog.Step("Flushing certificate cache...")
 		}
 		var result *exec.Result
 		if buffErr := bufferFn("config-admin_flushCache", func(writer io.Writer) {
 			_, result = runFlushCacheFn(values.IPs, values.Certs, values.LogRoot, writer, func(options *exec.Options) {
 				if writer != nil {
-					commonLogger.Println("run config admin flushCache", options.String())
+					cmdlog.Println("run config admin flushCache", options.String())
 				}
 			})
 		}); buffErr != nil {
@@ -96,9 +96,9 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 			return
 		}
 		if !result.Success() {
-			commonLogger.Println("Failed to flush cache with exit code: ", result.ExitCode)
+			cmdlog.Fail("Failed to flush cache with exit code: %d", result.ExitCode)
 			if result.Err != nil {
-				commonLogger.Println(result.Err.Error())
+				cmdlog.Fault("%s", result.Err.Error())
 			}
 			exitCode = internal.ErrFlushCache
 			return

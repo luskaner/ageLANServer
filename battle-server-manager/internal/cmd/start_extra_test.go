@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"battle-server-manager/internal"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/game"
-	"battle-server-manager/internal"
 )
 
 func setupStartMocks(t *testing.T) func() {

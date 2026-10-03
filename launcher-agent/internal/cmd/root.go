@@ -13,6 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/spf13/pflag"
 )
 
@@ -37,7 +38,7 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	commonLogger.Initialize(os.Stdout)
 	lock := createLockFn()
 	if err = lock.Lock(); err != nil {
-		commonLogger.Println("Failed to lock pid file. Kill process 'agent' if it is running in your task manager.")
+		cmdlog.Fail("Failed to lock pid file. Kill process agent if it is running in your task manager.")
 		exitCode = common.ErrPidLock
 		return
 	}
@@ -54,15 +55,15 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	go func() {
 		_, ok := <-sigs
 		if ok {
-			commonLogger.Println("Received terminate signal, shutting down...")
+			cmdlog.Step("Received terminate signal, shutting down...")
 			code.Set(common.ErrSignal)
 			cleanupOnce.Do(func() {
 				watch.Cleanup(values, code)
 			})
 			if err = lock.Unlock(); err != nil {
-				commonLogger.Printf("Failed to unlock: %v\n", err)
+				cmdlog.Fail("Failed to unlock: %s", err)
 			}
-			commonLogger.Printf("Exit code: %d\n", code.Get())
+			cmdlog.Fault("Exit code: %d", code.Get())
 		}
 	}()
 	watchFn(

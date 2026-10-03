@@ -6,7 +6,8 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 func ExecuteBattleServer(gameId string, path string, region string, name string, ports []int, certFile string,
@@ -62,7 +63,7 @@ func ExecuteBattleServer(gameId string, path string, region string, name string,
 			options.Stderr = f
 		}
 	}
-	commonLogger.Println("Executing:", options)
+	cmdlog.Step("Executing: %s", options)
 	if result := execWithOptions(gameId, &options); result.Success() {
 		pid = result.Pid
 	} else {

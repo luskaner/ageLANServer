@@ -18,6 +18,7 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/executor"
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 )
 
@@ -230,19 +231,19 @@ func (a *Admin) StopAgentIfNeeded() bool {
 			return true
 		}
 	}
-	commonLogger.Println("Trying to stop 'config-admin-agent'.")
+	commonLogger.Println(commonUi.Step("Trying to stop config-admin-agent."))
 	if err := a.stopAgentIfNeeded(); err == nil {
 		for range stopAgentPollAttempts {
 			if _, proc, err := a.deps.process(exeFileName); err == nil && proc == nil {
-				commonLogger.Println("Stopped 'config-admin-agent'")
+				commonLogger.Println(commonUi.Ok("Stopped config-admin-agent"))
 				return true
 			}
 			a.deps.sleep(stopAgentPollInterval)
 		}
-		commonLogger.Println("Failed to stop 'config-admin-agent'")
+		commonLogger.Println(commonUi.Fail("Failed to stop config-admin-agent"))
 	} else {
-		commonLogger.Println("Failed to trying stopping 'config-admin-agent'")
-		commonLogger.Println(err)
+		commonLogger.Println(commonUi.Fail("Failed to trying stopping config-admin-agent"))
+		commonLogger.Println(commonUi.Detail("%s", err))
 	}
 	// Fallback. On Windows this only has a chance when we are already elevated:
 	// the agent runs elevated, and TerminateProcess on a process at a higher
@@ -250,34 +251,34 @@ func (a *Admin) StopAgentIfNeeded() bool {
 	// merely unlikely but impossible.
 	if pid, proc, err := a.deps.process(exeFileName); err == nil && proc != nil {
 		if err = a.deps.killPidProc(pid, proc); err == nil {
-			commonLogger.Println("Successfully killed 'config-admin-agent'.")
+			commonLogger.Println(commonUi.Ok("Successfully killed config-admin-agent."))
 			return true
 		}
-		commonLogger.Println("Failed to kill 'config-admin-agent'")
-		commonLogger.Println(err)
+		commonLogger.Println(commonUi.Fail("Failed to kill config-admin-agent"))
+		commonLogger.Println(commonUi.Detail("%s", err))
 		if isAccessDenied(err) {
 			// Say what actually happened and what the user can do, instead of
 			// leaving a bare failure. It will not harm anything: it only waits on
 			// a named pipe that nothing else is going to answer.
-			commonLogger.Println("It is running with admin privileges and this process is not, so it cannot be terminated from here.")
-			commonLogger.Println("It does nothing on its own and is harmless, and Windows will end it at sign out. To remove it now, end 'config-admin-agent' in the task manager, or run the 'launcher' as administrator next time.")
+			commonLogger.Println(commonUi.Detail("It is running with admin privileges and this process is not, so it cannot be terminated from here."))
+			commonLogger.Println(commonUi.Detail("It does nothing on its own and is harmless, and Windows will end it at sign out. To remove it now, end config-admin-agent in the task manager, or run the launcher as administrator next time."))
 		}
 	}
 	return false
 }
 
 func (a *Admin) stopAgentIfNeeded() (err error) {
-	commonLogger.Println("Stopping agent")
+	commonLogger.Println(commonUi.Step("Stopping agent"))
 	if a.ipc == nil {
-		commonLogger.Println("Already stopped")
+		commonLogger.Println(commonUi.Info("Already stopped"))
 		return
 	}
 	str := "-> Exit: "
 	if err = a.enc.Encode(commonIpc.Exit); err != nil {
-		commonLogger.Println(str + "Could not encode")
+		commonLogger.Println(commonUi.Fail("%s", str+"Could not encode"))
 		return
 	}
-	commonLogger.Println(str + "OK")
+	commonLogger.Println(commonUi.Ok("%s", str+"OK"))
 	// Wait for the acknowledgement. The agent is elevated and this process is
 	// normally not, so the IPC handshake is the only shutdown path that can
 	// work here; guessing with a silent pipe is what made slow machines leak
@@ -285,9 +286,9 @@ func (a *Admin) stopAgentIfNeeded() (err error) {
 	str = "<- Exit Code: "
 	var exitCode int
 	if decodeErr := a.dec.Decode(&exitCode); decodeErr != nil {
-		commonLogger.Println(str + "Could not decode")
+		commonLogger.Println(commonUi.Fail("%s", str+"Could not decode"))
 	} else {
-		commonLogger.Println(str + strconv.Itoa(exitCode))
+		commonLogger.Println(commonUi.Ok("%s", str+strconv.Itoa(exitCode)))
 	}
 	a.clearIPCState()
 	return
@@ -323,9 +324,9 @@ func (a *Admin) clearIPCState() {
 }
 
 func (a *Admin) ConnectAgentIfNeeded() (err error) {
-	commonLogger.Println("Connecting to agent")
+	commonLogger.Println(commonUi.Step("Connecting to agent"))
 	if a.ipc != nil {
-		commonLogger.Println("Already connected")
+		commonLogger.Println(commonUi.Info("Already connected"))
 		return
 	}
 	var conn net.Conn
@@ -333,7 +334,7 @@ func (a *Admin) ConnectAgentIfNeeded() (err error) {
 	if err != nil {
 		return
 	}
-	commonLogger.Println("Connected")
+	commonLogger.Println(commonUi.Ok("Connected"))
 	a.ipc = conn
 	a.enc = gob.NewEncoder(a.ipc)
 	a.dec = gob.NewDecoder(a.ipc)
@@ -341,10 +342,10 @@ func (a *Admin) ConnectAgentIfNeeded() (err error) {
 }
 
 func (a *Admin) StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result) {
-	commonLogger.Println("Starting agent")
+	commonLogger.Println(commonUi.Step("Starting agent"))
 	logRoot := a.deps.getLoggerFolder()
 	_, result = a.deps.runFlushCacheAgent(flushIPs, flushCerts, logRoot, nil, func(options *exec.Options) {
-		commonLogger.Println("start config-admin-agent:", options.String())
+		commonLogger.Println(commonUi.Detail("start config-admin-agent: %s", options.String()))
 	})
 	if result.Success() {
 		if !a.postAgentStart() {
@@ -357,33 +358,33 @@ func (a *Admin) StartAgent(flushIPs bool, flushCerts bool) (result *exec.Result)
 func (a *Admin) sendAgent(commandType byte, commandName string, commandFn func() any) (err error, exitCode int) {
 	str := fmt.Sprintf("-> %s: ", commandName)
 	if err = a.enc.Encode(commandType); err != nil {
-		commonLogger.Println(str + "Could not encode")
+		commonLogger.Println(commonUi.Fail("%s", str+"Could not encode"))
 		return
 	}
-	commonLogger.Println(str + "OK")
+	commonLogger.Println(commonUi.Ok("%s", str+"OK"))
 	str = "<- Exit Code: "
 	if err = a.dec.Decode(&exitCode); err != nil || exitCode != common.ErrSuccess {
 		if err != nil {
-			commonLogger.Println(str + "Could not decode")
+			commonLogger.Println(commonUi.Fail("%s", str+"Could not decode"))
 		} else {
-			commonLogger.Println(str + strconv.Itoa(exitCode))
+			commonLogger.Println(commonUi.Fail("%s", str+strconv.Itoa(exitCode)))
 		}
 		return
 	}
-	commonLogger.Println(str + strconv.Itoa(exitCode))
+	commonLogger.Println(commonUi.Ok("%s", str+strconv.Itoa(exitCode)))
 	data := commandFn()
 	str = fmt.Sprintf("-> %v: ", data)
 	if err = a.enc.Encode(data); err != nil {
-		commonLogger.Println(str + "Could not encode")
+		commonLogger.Println(commonUi.Fail("%s", str+"Could not encode"))
 		return
 	}
-	commonLogger.Println(str + "OK")
+	commonLogger.Println(commonUi.Ok("%s", str+"OK"))
 	str = "<- Exit Code: "
 	if err = a.dec.Decode(&exitCode); err != nil {
-		commonLogger.Println(str + "Could not decode")
+		commonLogger.Println(commonUi.Fail("%s", str+"Could not decode"))
 		return
 	}
-	commonLogger.Println(str + strconv.Itoa(exitCode))
+	commonLogger.Println(commonUi.Ok("%s", str+strconv.Itoa(exitCode)))
 	return
 }
 

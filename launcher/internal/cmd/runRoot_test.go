@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"crypto/x509"
 	"errors"
 	"io"
@@ -29,6 +30,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/uuid"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
@@ -67,6 +69,54 @@ func (f *fakePidLocker) Lock() error   { return f.lockErr }
 func (f *fakePidLocker) Unlock() error { return f.unlockErr }
 
 var _ fileLock.Locker = (*fakePidLocker)(nil)
+
+// fakeDialog is the backend runRoot tests run against: no test may open a real
+// graphical window, and none may block reading stdin, which is what the real
+// backends do while waiting for an answer.
+type fakeDialog struct {
+	confirmCalls int
+	confirm      bool
+}
+
+func (f *fakeDialog) Name() string { return "fake" }
+
+func (f *fakeDialog) SelectServer([]dialog.ServerCandidate, io.Reader) (int, bool) {
+	return 0, true
+}
+
+func (f *fakeDialog) ListCandidates([]dialog.ServerCandidate) {}
+
+func (f *fakeDialog) ConfirmStartServer(string, io.Reader) bool {
+	f.confirmCalls++
+	return f.confirm
+}
+
+// captureStdout redirects os.Stdout for the duration of fn and returns what was
+// written to it.
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	orig := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = orig }()
+
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe: %v", err)
+	}
+	return <-done
+}
 
 func TestRunRootInvalidGame(t *testing.T) {
 	oldGameId, oldCfgFile, oldGameCfgFile := gameId, cfgFile, gameCfgFile
@@ -186,6 +236,7 @@ func validLauncherConfig() *internal.Configuration {
 	c := &internal.Configuration{}
 	c.Config.Certificate.CanTrustInPc = "local"
 	c.Config.CanBroadcastBattleServer = "auto"
+	c.Config.Dialog = "auto"
 	c.Server.Start = "auto"
 	c.Server.Stop = "auto"
 	c.Server.BattleServerManager.Run = "true"
@@ -648,6 +699,7 @@ type runRootOverrides struct {
 	dnsConnectivityFnVal              func() bool
 	configRunStopAgentFnVal           func() *commonExecutor.Result
 	waitForProcessFnVal               func(*os.Process, *time.Duration) bool
+	dialogNewFnVal                    func(string) dialog.Resolution
 }
 
 func applyOverrides(t *testing.T, o runRootOverrides) func() {
@@ -694,6 +746,8 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	origDNSConnectivity := dnsConnectivityFn
 	origRunStopAgent := configRunStopAgentFn
 	origWaitForProcess := commonProcessWaitForProcessFn
+	origDialogNew := dialogNewFn
+	t.Cleanup(dialog.Reset)
 
 	gameId = o.gameId
 	cfgFile = ""
@@ -903,8 +957,18 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	} else {
 		commonProcessWaitForProcessFn = func(*os.Process, *time.Duration) bool { return true }
 	}
+	if o.dialogNewFnVal != nil {
+		dialogNewFn = o.dialogNewFnVal
+	} else {
+		// Confirm by default so the tests keep reaching the server start path,
+		// which is what they were written for.
+		dialogNewFn = func(string) dialog.Resolution {
+			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "fake"}
+		}
+	}
 
 	return func() {
+		dialog.Reset()
 		gameId, cfgFile, gameCfgFile = origGameId, origCfgFile, origGameCfgFile
 		newPidLockFn = origNewPidLock
 		initConfigFn = origInitConfig
@@ -947,6 +1011,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 		dnsConnectivityFn = origDNSConnectivity
 		configRunStopAgentFn = origRunStopAgent
 		commonProcessWaitForProcessFn = origWaitForProcess
+		dialogNewFn = origDialogNew
 	}
 }
 
@@ -1598,3 +1663,228 @@ func (c *countingLocker) Unlock() error {
 }
 
 func (c *countingLocker) calls() int32 { return atomic.LoadInt32(&c.calls32) }
+
+func TestValidationDialogValue(t *testing.T) {
+	for _, mode := range []string{dialog.ModeAuto, dialog.ModeTrue, dialog.ModeFalse} {
+		if ec := validateDialogValue(mode); ec != common.ErrSuccess {
+			t.Errorf("for dialog=%s, expected success, got %d", mode, ec)
+		}
+	}
+	if ec := validateDialogValue("xxx"); ec != internal.ErrInvalidDialog {
+		t.Errorf("expected %d for an invalid dialog mode, got %d", internal.ErrInvalidDialog, ec)
+	}
+}
+
+// An invalid dialog mode must abort before anything is started or reverted on
+// the user's behalf.
+func TestRunRootInvalidDialogValue(t *testing.T) {
+	startServerCalls := 0
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Config.Dialog = "xxx"
+			return c
+		},
+		configStartServerFnVal: func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string) {
+			startServerCalls++
+			return common.ErrSuccess, "127.0.0.1"
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != internal.ErrInvalidDialog {
+		t.Fatalf("got %d, want %d", exitCode, internal.ErrInvalidDialog)
+	}
+	if startServerCalls != 0 {
+		t.Errorf("the server was started %d times with an invalid dialog mode", startServerCalls)
+	}
+}
+
+// A "true" mode on a system without graphical dialogs must warn and continue on
+// the console, never abort.
+func TestRunRootUsesConsoleWhenDialogsUnavailable(t *testing.T) {
+	const reason = "Graphical dialogs are not available in this system, using the console instead."
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Config.Dialog = dialog.ModeTrue
+			return c
+		},
+		dialogNewFnVal: func(mode string) dialog.Resolution {
+			if mode != dialog.ModeTrue {
+				t.Errorf("dialog.New called with %q, want %q", mode, dialog.ModeTrue)
+			}
+			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console", Reason: reason}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	out := captureStdout(t, func() {
+		if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+			t.Errorf("an unavailable dialog must not abort the launch, got %d", exitCode)
+		}
+	})
+	// The backend name is not printed any more: a console dialog is visible, and a
+	// graphical one is too. Only the fallback matters, because it means the
+	// configured choice was not honoured, and it has to reach the user.
+	if strings.Contains(out, "Dialog backend") {
+		t.Errorf("the backend line is gone, got:\n%s", out)
+	}
+	if !strings.Contains(out, reason) {
+		t.Errorf("output missing %q, got:\n%s", reason, out)
+	}
+}
+
+// Regression: the old prompt only had "press enter", so there was no way to
+// decline. A declined confirmation must abort with its own exit code, and
+// nothing may be started on the user's behalf.
+func TestRunRootServerStartCanceled(t *testing.T) {
+	dlg := &fakeDialog{confirm: false}
+	startServerCalls := 0
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		dialogNewFnVal: func(string) dialog.Resolution {
+			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		},
+		configStartServerFnVal: func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string) {
+			startServerCalls++
+			return common.ErrSuccess, "127.0.0.1"
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != internal.ErrServerStartCanceled {
+		t.Fatalf("got %d, want %d", exitCode, internal.ErrServerStartCanceled)
+	}
+	if dlg.confirmCalls != 1 {
+		t.Errorf("the confirmation was asked %d times, want 1", dlg.confirmCalls)
+	}
+	if startServerCalls != 0 {
+		t.Errorf("the server was started %d times after the user canceled", startServerCalls)
+	}
+}
+
+func TestRunRootServerStartConfirmed(t *testing.T) {
+	dlg := &fakeDialog{confirm: true}
+	var gotValues *cmdServer.Values
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		dialogNewFnVal: func(string) dialog.Resolution {
+			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		},
+		configStartServerFnVal: func(_ string, _ *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) {
+			gotValues = v
+			return common.ErrSuccess, "127.0.0.1"
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("got %d, want success", exitCode)
+	}
+	if dlg.confirmCalls != 1 {
+		t.Errorf("the confirmation was asked %d times, want 1", dlg.confirmCalls)
+	}
+	if gotValues == nil {
+		t.Fatal("the server was never started")
+	}
+	if len(gotValues.GameIds) != 1 || gotValues.GameIds[0] != "age2" {
+		t.Errorf("server started with game ids %v, want [age2]", gotValues.GameIds)
+	}
+}
+
+// The dialog double answers false, so a call would surface as an unexpected
+// exit code rather than as a silent false positive.
+func TestRunRootServerStartWithoutConfirmationSkipsDialog(t *testing.T) {
+	dlg := &fakeDialog{confirm: false}
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *internal.Configuration {
+			c := validLauncherConfig()
+			c.Server.StartWithoutConfirmation = true
+			return c
+		},
+		dialogNewFnVal: func(string) dialog.Resolution {
+			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		t.Fatalf("got %d, want success without asking", exitCode)
+	}
+	if dlg.confirmCalls != 0 {
+		t.Errorf("the confirmation was asked %d times, want 0", dlg.confirmCalls)
+	}
+}
+
+// The header used to announce the config files and the game three times over: in
+// the summary at the top, in a line of its own where they were loaded, and once
+// more as "Game age2." when the game was about to be looked for. One place is
+// enough, and the phases have to be visible as headings.
+func TestRunRootHeaderHasNoDuplicates(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		dialogNewFnVal: func(string) dialog.Resolution {
+			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console"}
+		},
+	})
+	defer restore()
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	out := captureStdout(t, func() {
+		if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+			t.Errorf("got %d, want success", exitCode)
+		}
+	})
+	for _, gone := range []string{
+		"Using main config file",
+		"Using game config file",
+		"Game age2",
+		"Dialog backend",
+	} {
+		if strings.Contains(out, gone) {
+			t.Errorf("%q is printed more than once, got:\n%s", gone, out)
+		}
+	}
+	for _, want := range []string{"Configuration", "Initial teardown", "Execution"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the %q heading is missing, got:\n%s", want, out)
+		}
+	}
+	// The teardown of what the previous run left behind always happens, and it is
+	// its own phase before Execution. The teardown of this run's own changes must
+	// not add a second one: on a clean run it has nothing to undo, and a heading
+	// over nothing is worse than no heading. The two are named apart, so one can
+	// never be mistaken for the other.
+	if n := strings.Count(out, "teardown"); n != 1 {
+		t.Errorf("a teardown heading appears %d times, want 1, got:\n%s", n, out)
+	}
+	if strings.Contains(out, "Final teardown") {
+		t.Errorf("a clean run must not announce a final teardown, got:\n%s", out)
+	}
+	// And the phases have to be in the order they happen in.
+	configuration := strings.Index(out, "Configuration")
+	teardown := strings.Index(out, "Initial teardown")
+	execution := strings.Index(out, "Execution")
+	if !(configuration < teardown && teardown < execution) {
+		t.Errorf("phases out of order, got:\n%s", out)
+	}
+	// The game is named exactly once, in the summary.
+	if n := strings.Count(out, "age2"); n != 1 {
+		t.Errorf("the game is named %d times, want 1, got:\n%s", n, out)
+	}
+}

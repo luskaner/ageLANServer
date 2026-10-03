@@ -15,6 +15,7 @@ type Config struct {
 	CanAddHost               bool
 	CanBroadcastBattleServer string
 	CanUseInternet           bool
+	Dialog                   string
 	Log                      bool
 	SetupCommand             []string
 	RevertCommand            []string

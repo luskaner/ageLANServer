@@ -63,9 +63,9 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 		}
 		if _, proc, err := commonProcess.Process(executablePath); err == nil && proc != nil {
 			if err = serverKill.Do(executablePath); err != nil {
-				logger.Println("Failed to stop 'server'")
-				logger.Println("Error message: " + err.Error())
-				logger.Println("You may try killing it manually. Kill process 'server' in your task manager.")
+				logger.Fail("Failed to stop server")
+				logger.Fault("Error message: %s", err.Error())
+				logger.Fault("You may try killing it manually. Kill process server in your task manager.")
 			}
 		}
 		result = nil
@@ -77,26 +77,26 @@ func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate
 	certificateFolder := common.CertificatePairFolder(serverExecutablePath)
 	if exists, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(certificateFolder); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
-			logger.Println("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			logger.Fail("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
 			exitCode = internal.ErrServerCertMissingExpired
 			return
 		}
 		if certificateFolder == "" {
-			logger.Println("Cannot find certificate folder of the 'server'. Make sure the folder structure of the 'server' is correct.")
+			logger.Fail("Cannot find certificate folder of the server. Make sure the folder structure of the server is correct.")
 			exitCode = internal.ErrServerCertDirectory
 			return
 		}
 		if result := GenerateCertificatePair(certificateFolder, func(options *commonExecutor.Options) {
 
 		}); !result.Success() {
-			logger.Println("Failed to generate certificate pair. Check the folder and its permissions")
+			logger.Fail("Failed to generate certificate pair. Check the folder and its permissions")
 			exitCode = internal.ErrServerCertCreate
 			if result != nil {
 				if result.Err != nil {
-					logger.Println("Error message: " + result.Err.Error())
+					logger.Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+					logger.Fault("Exit code: %d.", result.ExitCode)
 				}
 			}
 			return
@@ -134,10 +134,32 @@ func FilterServerIPs(id uuid.UUID, serverName string, gameTitle string, possible
 	return
 }
 
+// announceRounds is how many times the announce is repeated. A single datagram
+// gets lost, so the wait would be unreliable without it, and it is also what the
+// progress indicator counts.
+const announceRounds = 3
+
+// Progress reports how the discovery is going: round is 1-based out of
+// announceRounds, and found is how many distinct 'server's have answered so far.
+// It is called from several goroutines at once.
+type Progress func(round, rounds, found int)
+
+// QueryServers fills servers with every 'server' that answers the announce.
 func QueryServers(
 	multicastGroups mapset.Set[netip.Addr],
 	targetPorts mapset.Set[uint16],
 	servers map[uuid.UUID]*AnnounceMessage,
+) {
+	QueryServersWithProgress(multicastGroups, targetPorts, servers, nil)
+}
+
+// QueryServersWithProgress is QueryServers with a progress callback. The callback
+// may be called from several goroutines at once.
+func QueryServersWithProgress(
+	multicastGroups mapset.Set[netip.Addr],
+	targetPorts mapset.Set[uint16],
+	servers map[uuid.UUID]*AnnounceMessage,
+	progress Progress,
 ) {
 	sourceToTargetAddrs := sourceToTargetUDPAddrs(
 		multicastGroups,
@@ -252,17 +274,34 @@ func QueryServers(
 	for _, sg := range socketGroups {
 		wg.Go(func() {
 			packetBuffer := make([]byte, len(common.AnnounceHeader)+AnnounceIdLength)
-			for round := range 3 {
-				if round > 0 {
+			for round := 1; round <= announceRounds; round++ {
+				if round > 1 {
 					time.Sleep(time.Second)
 				}
 				for _, target := range sg.targets {
 					sendAndReceive(&packetBuffer, sg.conn, target, servers)
 				}
+				report(progress, servers, &serverLock, round, announceRounds)
 			}
 		})
 	}
 	wg.Wait()
+	report(progress, servers, &serverLock, announceRounds, announceRounds)
+}
+
+// report forwards one progress tick, if anybody is listening.
+//
+// found is read under the lock because the map is written by every socket
+// goroutine at the same time; reading len() of it unguarded is a data race, and
+// the race detector in CI is right about that.
+func report(progress Progress, servers map[uuid.UUID]*AnnounceMessage, lock *sync.Mutex, round, rounds int) {
+	if progress == nil {
+		return
+	}
+	lock.Lock()
+	found := len(servers)
+	lock.Unlock()
+	progress(round, rounds, found)
 }
 
 func calculateBroadcastIPv4(ip net.IP, mask net.IPMask) net.IP {

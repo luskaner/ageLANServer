@@ -7,6 +7,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 )
 
 func runStopAgent(_ []string) (err error, exitCode int) {
@@ -18,7 +19,7 @@ func runStopAgent(_ []string) (err error, exitCode int) {
 			exitCode = common.ErrSignal
 		}
 	}()
-	commonLogger.Println("Stopping agent if needed...")
+	commonLogger.Println(commonUi.Step("Stopping agent if needed..."))
 	_ = stopAgentIfNeededFn()
 	return
 }

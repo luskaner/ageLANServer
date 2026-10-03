@@ -40,5 +40,3 @@ func StartAgent(game string, steamProcess bool, steamMacOsProcess bool, xboxProc
 	result = options.Exec()
 	return
 }
-
-

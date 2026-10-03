@@ -9,6 +9,14 @@ CanAddHost = true
 CanBroadcastBattleServer = 'auto'
 # Whether to log all the info the terminal plus more info to a file. Enable it for errors.
 Log = false
+# Whether to ask the interactive questions (which server to use, and whether to start
+# one) in a graphical window instead of in the console.
+# 'auto': use graphical dialogs when they are available in the system, otherwise use the console.
+# 'true': same as 'auto', but a warning is printed when falling back to the console.
+# 'false': always ask in the console.
+# Note: graphical dialogs are always available in Windows and macOS. In Linux-like systems
+# they require 'qarma', 'zenity' or 'matedialog' to be installed.
+Dialog = 'auto'
 
 [Config.Certificate]
 # Whether or not to trust the certificate of the server in user or local store, or not at all.

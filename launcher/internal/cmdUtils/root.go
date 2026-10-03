@@ -52,6 +52,22 @@ func (c *Config) RequiresRunningRevertCommand() bool {
 	return c.setupCommandRan && len(c.revertCommand()) > 0
 }
 
+// HasTeardownWork reports whether Revert has anything it would show the user.
+//
+// It exists so the caller can decide whether a phase heading is honest. Revert
+// runs on every exit, but on a clean run each step already undid its own changes,
+// so all that is left is a kill that finds nothing, a log close and a lock
+// release: three things that print nothing. Announcing a phase for that is worse
+// than staying quiet, because the reader is told to wait for work that does not
+// exist.
+func (c *Config) HasTeardownWork() bool {
+	return c.AgentRunning() ||
+		c.serverExe != "" ||
+		(c.battleServerRegion != "" && c.battleServerExe != "") ||
+		c.RequiresConfigRevert() ||
+		c.RequiresRunningRevertCommand()
+}
+
 func (c *Config) RevertCommand() []string {
 	if c.setupCommandRan {
 		return c.revertCommand()
@@ -63,53 +79,53 @@ func (c *Config) Revert() {
 	logger.WriteFileLog(c.gameId, "pre-revert")
 	c.KillAgent()
 	if c.serverExe != "" {
-		logger.Println("Stopping 'server'...")
+		logger.Step("Stopping server...")
 		if err := serverKill.Do(c.serverExe); err == nil {
-			logger.Println("'Server' stopped.")
+			logger.Ok("Server stopped.")
 		} else {
-			logger.Println("Failed to stop 'server'.")
-			logger.Println("Error message: " + err.Error())
+			logger.Fail("Failed to stop server.")
+			logger.Fault("Error message: %s", err.Error())
 		}
 	}
 	if c.battleServerRegion != "" && c.battleServerExe != "" {
-		logger.Println("Stopping battle server via 'battle-server-manager'...")
+		logger.Step("Stopping battle server via battle-server-manager...")
 		_ = commonLogger.FileLogger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
 			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options *exec.Options) {
 				commonLogger.Println("battle-server-manager_remove", options.String())
 			}); result.Success() {
-				logger.Println("Battle-server stopped (or was already).")
+				logger.Ok("Battle-server stopped (or was already).")
 			} else {
-				logger.Println("Failed to stop the battle-server.")
+				logger.Fail("Failed to stop the battle-server.")
 				if result.Err != nil {
-					logger.Println("Error message: " + result.Err.Error())
+					logger.Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+					logger.Fault("Exit code: %d.", result.ExitCode)
 				}
-				logger.Printf("You may try killing it manually. Kill process '%s' if it is running in your task manager.\n", battleServer.Executable)
+				logger.Fault("You may try killing it manually. Kill process %s if it is running in your task manager.", battleServer.Executable)
 			}
 		})
 	}
 	if c.RequiresConfigRevert() {
-		logger.Println("Cleaning up...")
+		logger.Step("Cleaning up...")
 		_ = commonLogger.FileLogger.Buffer("config_revert", func(writer io.Writer) {
 			if ok := launcherCommon.ConfigRevert(c.gameId, commonLogger.FileLogger.Folder(), false, writer, func(options *exec.Options) {
 				commonLogger.Println("run config revert", options.String())
 			}, executor.RunRevert); !ok {
-				logger.Println("Failed to clean up.")
+				logger.Fail("Failed to clean up.")
 			}
 		})
 	} else if launcherCommon.ConfigAdminAgentRunning(false) {
-		logger.Println("Stopping 'config-admin-agent'...")
+		logger.Step("Stopping config-admin-agent...")
 		if result := c.RunStopAgent(); result.Success() {
-			logger.Println("'Config-admin-agent' stopped.")
+			logger.Ok("Config-admin-agent stopped.")
 		} else {
-			logger.Println("Failed to stop agent.")
+			logger.Fail("Failed to stop agent.")
 			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
+				logger.Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Println("Exit code: " + strconv.Itoa(result.ExitCode))
+				logger.Fault("Exit code: %s", strconv.Itoa(result.ExitCode))
 			}
 		}
 	}
@@ -119,10 +135,10 @@ func (c *Config) Revert() {
 				commonLogger.Println("run revert command", options.String())
 			})
 			if err != nil {
-				logger.Println("Failed to run revert command.")
-				logger.Println("Error message: " + err.Error())
+				logger.Fail("Failed to run revert command.")
+				logger.Fault("Error message: %s", err.Error())
 			} else {
-				logger.Println("Ran Revert command.")
+				logger.Ok("Ran Revert command.")
 			}
 		})
 	}
@@ -147,14 +163,14 @@ func GameRunning() bool {
 	if !someProcessRunning() {
 		return false
 	}
-	logger.Println("Some Age game is already running, waiting up to 1 minute for the game to exit.")
+	logger.Step("Some Age game is already running, waiting up to 1 minute for the game to exit.")
 	timeout := time.After(1 * time.Minute)
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-timeout:
-			logger.Println("The game did not exit in time.")
+			logger.Warn("The game did not exit in time.")
 			return true
 		case <-ticker.C:
 			if !someProcessRunning() {

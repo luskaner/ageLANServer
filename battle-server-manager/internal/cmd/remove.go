@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var (
@@ -27,24 +27,24 @@ func runRemove(args []string) (err error, exitCode int) {
 	var games mapset.Set[string]
 	games, err = parsedGameIdsFnRemove(&values.GameIds)
 	if err != nil {
-		commonLogger.Println(err.Error())
+		cmdlog.Fail("%s", err.Error())
 		exitCode = internal.ErrGames
 		return
 	}
 	var configs []battleServer.Config
 	for g := range games.Iter() {
-		commonLogger.Printf("Game: %s\n", g)
-		commonLogger.Printf("\tRemoving '%s' region...\n", values.Region)
+		cmdlog.Section("Game " + g)
+		cmdlog.Step("Removing %s region...", values.Region)
 		configs, err = battleServerConfigsFn(g, false, false)
 		if err != nil {
-			commonLogger.Printf("\t%s\n", err)
+			cmdlog.Fault("%s", err)
 			continue
 		}
 		configs = slices.DeleteFunc(configs, func(c battleServer.Config) bool {
 			return c.Region != values.Region
 		})
 		if !removeFn(g, configs, false) {
-			commonLogger.Println("\tNo configuration needs it.")
+			cmdlog.Info("No configuration needs it.")
 		}
 	}
 	return

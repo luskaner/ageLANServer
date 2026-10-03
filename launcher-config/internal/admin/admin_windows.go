@@ -8,6 +8,7 @@ import (
 	"github.com/Microsoft/go-winio"
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	"golang.org/x/sys/windows"
 )
 
@@ -19,6 +20,6 @@ func isAccessDenied(err error) bool {
 
 func DialIPC() (net.Conn, error) {
 	path := commonIpc.Path()
-	commonLogger.Printf("Using %s\n", path)
+	commonLogger.Println(commonUi.Detail("Using %s", path))
 	return winio.DialPipe(path, nil)
 }

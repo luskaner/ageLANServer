@@ -6,7 +6,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executables"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var (
@@ -32,7 +32,7 @@ func keyCert(parentFolder, gameId string) (resolvedCertFile string, resolvedKeyF
 
 func ResolveSSLFilesPath(gameId string, certsPath string) (resolvedCertFile string, resolvedKeyFile string, err error) {
 	if certsPath == "auto" {
-		commonLogger.Println("Auto resolving SSL certificate and key files...")
+		cmdlog.Step("Auto resolving SSL certificate and key files...")
 		serverExe := findServerPath(executables.NativeFileName(true, executables.Server))
 		if serverExe == "" {
 			err = fmt.Errorf("could not find server executable")

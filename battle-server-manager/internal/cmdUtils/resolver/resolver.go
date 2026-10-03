@@ -8,7 +8,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var (
@@ -30,7 +30,7 @@ func locatablePath(locFn func(gameId string) (game game.Locatable, ok bool), gam
 			tmpPath := filepath.Join(folder, battleServerPath)
 			if validPathFn(tmpPath) {
 				path = tmpPath
-				commonLogger.Printf("\tFound in %s\n", name)
+				cmdlog.Detail("Found in %s", name)
 			}
 		}
 	}
@@ -39,7 +39,7 @@ func locatablePath(locFn func(gameId string) (game game.Locatable, ok bool), gam
 
 func ResolvePath(gameId string, executablePath string) (resolvedPath string, err error) {
 	if executablePath == "auto" {
-		commonLogger.Println("Auto resolving executable path...")
+		cmdlog.Step("Auto resolving executable path...")
 		if resolvedPath, err = doResolveAutoPath(gameId); err != nil {
 			err = fmt.Errorf("auto resolution failed: %w", err)
 		}

@@ -10,12 +10,12 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/gameLogs"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 
@@ -100,20 +100,20 @@ func (e *ExitCode) SetIfSuccess(code int) {
 // signal handler), so which one ran depended on how the agent was asked to stop.
 func Cleanup(values *agent.Values, exitCode *ExitCode) {
 	if values.ServerExecutable != "" {
-		commonLogger.Println("Killing server...")
+		cmdlog.Step("Killing server...")
 		if err := serverKillDoFn(values.ServerExecutable); err != nil {
-			commonLogger.Println("Failed to kill server.")
-			commonLogger.Println(err.Error())
+			cmdlog.Fail("Failed to kill server.")
+			cmdlog.Fault("%s", err.Error())
 			exitCode.SetIfSuccess(internal.ErrFailedStopServer)
 		}
 		if values.BattleServerManagerExecutable != "" && values.BattleServerRegion != "" {
-			commonLogger.Println("Shutting down battle-server...")
+			cmdlog.Step("Shutting down battle-server...")
 			var result *exec.Result
 			logErr := loggerBufferFn("battle-server-manager_remove", func(writer io.Writer) {
 				result = removeBattleServerRegionFn(
 					values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options *exec.Options) {
 						if writer != nil {
-							commonLogger.Println("run battle-server-manager", options.String())
+							cmdlog.Println("run battle-server-manager", options.String())
 						}
 					},
 				)
@@ -130,12 +130,12 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 			}
 			newExitCode := result.ExitCode
 			if !result.Success() {
-				commonLogger.Println("Failed to shut down battle-server.")
+				cmdlog.Fail("Failed to shut down battle-server.")
 				if result.ExitCode != common.ErrSuccess {
-					commonLogger.Println("Exit code: ", newExitCode)
+					cmdlog.Fault("Exit code: %d", newExitCode)
 				}
 				if result.Err != nil {
-					commonLogger.Printf("Error: %v\n", result.Err)
+					cmdlog.Fault("Error: %s", result.Err)
 				}
 			}
 			exitCode.SetIfSuccess(newExitCode)
@@ -143,18 +143,18 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 	}
 	_ = loggerBufferFn("revert_command_end", func(writer io.Writer) {
 		if err := runRevertCommandFn(writer, func(options *exec.Options) {
-			commonLogger.Println("run revert command", options.String())
+			cmdlog.Println("run revert command", options.String())
 		}); err != nil {
-			commonLogger.Printf("Failed to revert command: %v\n", err)
+			cmdlog.Fail("Failed to revert command: %s", err)
 		}
 	})
 	_ = loggerBufferFn("config_revert_end", func(writer io.Writer) {
 		if !configRevertFn(values.GameId, values.LogRoot, true, writer, func(options *exec.Options) {
 			if writer != nil {
-				commonLogger.Println("run config revert", options.String())
+				cmdlog.Println("run config revert", options.String())
 			}
 		}, nil) {
-			commonLogger.Println("Failed to revert configuration")
+			cmdlog.Fail("Failed to revert configuration")
 		}
 	})
 }
@@ -165,16 +165,16 @@ func Watch(values *agent.Values, exitCode *ExitCode, cleanupOnce *sync.Once) {
 			Cleanup(values, exitCode)
 		})
 	}()
-	commonLogger.Println("Waiting up to 1 minute for game to start...")
+	cmdlog.Step("Waiting up to 1 minute for game to start...")
 	processes := waitUntilAnyProcessExistFn(values.ProcessNames)
 	if len(processes) == 0 {
-		commonLogger.Println("Failed to find the game.")
+		cmdlog.Fail("Failed to find the game.")
 		exitCode.SetIfSuccess(internal.ErrGameTimeoutStart)
 		return
 	}
 	if values.BattleServerLANRebroadcast {
 		port := battleServer.BroadcastPort(values.GameId)
-		commonLogger.Printf("Broadcasting BattleServer port to %d...\n", port)
+		cmdlog.Step("Broadcasting BattleServer port to %d...", port)
 		rebroadcastFn(exitCode, int(port))
 	}
 	var procPids []int
@@ -184,9 +184,9 @@ func Watch(values *agent.Values, exitCode *ExitCode, cleanupOnce *sync.Once) {
 		procPids = append(procPids, p.Pid)
 		processesList = append(processesList, p)
 	}
-	commonLogger.Printf("Waiting for PIDs %v to end\n", procPids)
+	cmdlog.Step("Waiting for PIDs %v to end", procPids)
 	if !waitForProcessesToExitFn(processesList) {
-		commonLogger.Println("Failed to wait.")
+		cmdlog.Fail("Failed to wait.")
 		exitCode.SetIfSuccess(internal.ErrFailedWaitForProcess)
 		return
 	}

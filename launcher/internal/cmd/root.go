@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -42,9 +41,11 @@ import (
 	"github.com/luskaner/ageLANServer/common/paths"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
@@ -57,11 +58,15 @@ var configPaths = []string{paths.ResourcesDir, "."}
 var config = &cmdUtils.Config{}
 
 var (
-	Version                        string
-	cfgFile                        string
-	gameCfgFile                    string
-	gameId                         string
-	filesToPrint                   []string
+	Version      string
+	cfgFile      string
+	gameCfgFile  string
+	gameId       string
+	output       string
+	filesToPrint []string
+	// usedConfigFile is the main config file initConfig ended up loading, kept
+	// next to filesToPrint so the session summary can name it.
+	usedConfigFile                 string
 	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
 	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](autoValue, falseValue, "user", "local")
 	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
@@ -130,6 +135,9 @@ var (
 	uuidNilFn                       = uuid.Nil
 	signalNotifyFn                  = signal.Notify
 	osExitFn                        = os.Exit
+	// runRoot reinstalls the dialog with dialog.Set, so a test cannot inject a
+	// fake Dialog through dialog.Set alone: it has to own the whole backend.
+	dialogNewFn = dialog.New
 )
 
 func Execute() (err error, exitCode int) {
@@ -137,14 +145,18 @@ func Execute() (err error, exitCode int) {
 	fs := singleFs.Fs()
 	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
+	fs.StringP("dialog", "d", autoValue, `Whether to ask the interactive questions (which server to use, and whether to start one) in a graphical window instead of in the console, "auto" uses graphical dialogs if they are available in the system, "false" always asks in the console. It always falls back to the console if graphical dialogs are unavailable.`)
+	// Registered here rather than in common/cmd/addDefaultFlags because that one
+	// is shared with the modules outside this change's scope.
+	fs.StringVar(&output, "output", autoValue, `How much to decorate the console output with, "auto" picks whatever the terminal can show without turning characters into boxes, "color" asks for colour but still degrades to plain text if the console cannot do it, "ascii" guarantees plain ASCII text. It also reads the AGE_LANSERVER_OUTPUT environment variable.`)
 	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
-	fs.Bool("internet", true, "Whether or not the 'launcher' may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
-	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the 'server' with the official domain. Including to avoid receiving that it's on maintenance. Ignored if 'clientExeArgs' contains '{HostFilePath}'. Will require admin privileges.")
-	canTrustCertificateStr := `Trust the certificate of the 'server' if needed. "false"`
+	fs.Bool("internet", true, "Whether or not the launcher may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
+	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Ignored if clientExeArgs contains '{HostFilePath}'. Will require admin privileges.")
+	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
 	if runtime.GOOS != "linux" {
 		canTrustCertificateStr += `, "user"`
 	}
-	canTrustCertificateStr += ` or local (will require admin privileges). Ignored if 'clientExeArgs' contains '{CertFilePath}'.`
+	canTrustCertificateStr += ` or local (will require admin privileges). Ignored if clientExeArgs contains '{CertFilePath}'.`
 	fs.StringP("canTrustCertificate", "c", "local", canTrustCertificateStr)
 	if runtime.GOOS == "windows" {
 		fs.StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
@@ -158,15 +170,15 @@ func Execute() (err error, exitCode int) {
 	fs.StringP("isolateProfiles", "p", "required", "Isolate the user's profile of the game, otherwise, it will be shared. If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.")
 	fs.String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
 	fs.String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
-	fs.StringP("serverStart", "a", "auto", `Start the 'server' if needed, "auto" will start a 'server' if one is not already running, "true" (will start a 'server' regardless if one is already running), "false" (will require an already running 'server').`)
-	fs.StringP("serverStop", "o", "auto", `Stop the 'server' if started, "auto" will stop the 'server' if one was started, "false" (will not stop the 'server' regardless if one was started), "true" (will not stop the 'server' even if it was started).`)
+	fs.StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
+	fs.StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
 	fs.StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
 	fs.StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
-	fs.StringP("server", "s", "", `Hostname of the 'server' to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
+	fs.StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
 	fs.Bool("serverSingleAutoSelect", false, `Auto-select the server when a single one is discovered.`)
 	serverExe := executables.NativeFileName(false, executables.Server)
-	fs.StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the 'server', "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
-	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the 'server' executable if starting it. Execute the 'server' help flag for available arguments. You may use environment variables.`+pathNamesInfo)
+	fs.StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
+	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
 	clientExeTip := `The type of game client or the path. "auto" will use `
 	if runtime.GOOS != "darwin" {
 		clientExeTip += "Steam"
@@ -207,30 +219,33 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if gameId == "" {
 		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
+	// The explicit flag gets the last word over AGE_LANSERVER_OUTPUT, and this is
+	// the first point where the parsed flags are available.
+	ui.ApplyOverride(output)
 
 	lock := newPidLockFn()
 	if err = lock.Lock(); err != nil {
-		logger.Println("Failed to lock pid file. Kill process 'launcher' if it is running in your task manager.")
-		logger.Println(err.Error())
+		logger.Fail("Failed to lock pid file. Kill process launcher if it is running in your task manager.")
+		logger.Detail("%s", err.Error())
 		exitCode = common.ErrPidLock
 		return
 	}
 	cfg := initConfigFn(fs)
 	logger.LogEnabled = cfg.Config.Log
 	if err = openMainLogFn(gameId); err != nil {
-		logger.Println("Failed to open file log")
-		logger.Println(err.Error())
+		logger.Fail("Failed to open file log")
+		logger.Detail("%s", err.Error())
 		exitCode = common.ErrFileLog
 		return
 	}
 	if !cfg.Config.CanUseInternet {
 		internal.CanUseInternet = false
-		logger.Println("Internet usage is disabled via config.")
+		logger.Info("Internet usage is disabled via config.")
 	} else {
 		internal.CanUseInternet = dnsConnectivityFn()
 	}
 	if !internal.CanUseInternet {
-		logger.Println("No internet connectivity, some features will fallback gracefully.")
+		logger.Warn("No internet connectivity, some features will fallback gracefully.")
 	}
 	common.SetUseInternet(internal.CanUseInternet)
 	for _, fileToPrint := range filesToPrint {
@@ -242,7 +257,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	// below and this deferred cleanup could both decide to tear down; unguarded
 	// they raced, spawning two config.exe reverts over one hosts lock and two
 	// stop-agent clients on one named pipe, which is one way an elevated
-	// 'config-admin-agent' outlived the launcher. The mutex also makes the
+	// config-admin-agent outlived the launcher. The mutex also makes the
 	// second caller wait instead of returning, so the signal handler's
 	// os.Exit cannot truncate a revert that is still in flight.
 	var teardownMutex sync.Mutex
@@ -254,9 +269,20 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			return
 		}
 		teardownRan = true
+		// A taskbar button left half filled after the program is gone is worse than
+		// no button at all, and this is the one path every exit goes through.
+		ui.ClearProgress()
 		// force comes from the signal handler, where the user asked to stop
 		// and the exit code says nothing about how far setup got.
+		//
+		// The heading is printed only when there is something to undo. On a clean run
+		// each step reverted its own changes as it finished, so all that is left here
+		// is closing a log and releasing a lock: a heading over that announces work
+		// that is not happening, which is worse than no heading at all.
 		if force || atomicExitCode.Load() != int32(common.ErrSuccess) {
+			if config.HasTeardownWork() {
+				ui.Section("Final teardown")
+			}
 			config.Revert()
 		}
 		logger.WriteFileLog(gameId, "before exit")
@@ -265,13 +291,44 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Println(r)
-			logger.Println(string(debug.Stack()))
+			logger.Fail("%s", r)
+			logger.Detail("%s", string(debug.Stack()))
 			atomicExitCode.Store(int32(common.ErrGeneral))
 		}
 		teardown(false)
 		exitCode = int(atomicExitCode.Load())
 	}()
+	if ec := validateDialogValue(cfg.Config.Dialog); ec != common.ErrSuccess {
+		atomicExitCode.Store(int32(ec))
+		return
+	}
+	dialogResolution := dialogNewFn(cfg.Config.Dialog)
+	dialog.SetOutput(dialog.Output{Println: logger.Println, Printf: logger.Printf})
+	dialog.Set(dialogResolution.Dialog)
+	// Registered after the teardown defer so, by LIFO, it runs before it.
+	defer dialog.Reset()
+	// ui.Banner prints nothing when the console width is unknown, so a redirected
+	// run or a pipe never gets a banner in the middle of its output.
+	ui.Banner(executables.Launcher, Version)
+	// One place for the three facts the run depends on. They used to be announced
+	// once here and once again further down, which is how a mismatch between the
+	// two copies of the same fact looked like a bug.
+	ui.Section("Configuration")
+	ui.KV(0, "main config file", orNone(usedConfigFile))
+	ui.KV(0, "game config file", orNone(gameCfgFile))
+	ui.KV(0, "game", gameId)
+	// Printed only when the console could show more than it is showing, because
+	// the fallback is a code page and not a decision: without this line the ASCII
+	// markers look like the intended output rather than like what they are.
+	if hint := ui.UpgradeHint(); hint != "" {
+		logger.Info("%s", hint)
+	}
+	// The backend in use is not worth a line of its own: a graphical dialog is
+	// visible, and a console one answers on the terminal. Only the fallback is
+	// news, because it means the configured choice was not honoured.
+	if dialogResolution.Reason != "" {
+		logger.Warn("%s", dialogResolution.Reason)
+	}
 	writeFileLogFn(gameId, "start")
 	isAdmin := isAdminFn()
 	canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
@@ -313,7 +370,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		return
 	}
 	if !gameSupportedGamesContainsOneFn(gameId) {
-		logger.Println("Invalid game type")
+		logger.Fail("Invalid game type")
 		atomicExitCode.Store(int32(launcherCommon.ErrInvalidGame))
 		return
 	}
@@ -330,17 +387,17 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		serverArgsValues, serverSingleFlagSet = cmdServer.SingleFlagSet("", nil, nil)
 		serverFlags = serverSingleFlagSet.Fs()
 		if err = serverFlags.Parse(serverArgs); err != nil {
-			logger.Println("Failed to parse 'server' executable arguments")
+			logger.Fail("Failed to parse server executable arguments")
 			atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
 			return
 		}
 		if _, err = uuidParseFn(serverArgsValues.Id); err != nil {
-			logger.Println("You must provide a valid UUID for the server ID using the '--id' argument in 'server' executable arguments")
+			logger.Fail("You must provide a valid UUID for the server ID using the --id argument in server executable arguments")
 			atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
 			return
 		}
 	} else {
-		logger.Println("Failed to parse 'server' executable arguments")
+		logger.Fail("Failed to parse server executable arguments")
 		atomicExitCode.Store(int32(internal.ErrInvalidServerArgs))
 		return
 	}
@@ -350,28 +407,28 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		serverValues,
 	)
 	if err != nil {
-		logger.Println("Failed to parse 'battle-server-manager' executable arguments")
+		logger.Fail("Failed to parse battle-server-manager executable arguments")
 		atomicExitCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
 		return
 	}
 	var setupCommand []string
 	setupCommand, err = parseCommandArgsFn(cfg.Config.SetupCommand, nil)
 	if err != nil {
-		logger.Println("Failed to parse setup command")
+		logger.Fail("Failed to parse setup command")
 		atomicExitCode.Store(int32(internal.ErrInvalidSetupCommand))
 		return
 	}
 	var revertCommand []string
 	revertCommand, err = parseCommandArgsFn(cfg.Config.RevertCommand, nil)
 	if err != nil {
-		logger.Println("Failed to parse revert command")
+		logger.Fail("Failed to parse revert command")
 		atomicExitCode.Store(int32(internal.ErrInvalidRevertCommand))
 		return
 	}
 	canAddHost := cfg.Config.CanAddHost
 	clientExecutable := cfg.Client.Executable.Path
 	if clientExecutable == "steam" && runtime.GOOS == "darwin" && gameId != game.AoE2 {
-		logger.Println("Only AoE 2: DE is supported on 'steam'. Use 'steam_crossover' or 'steam_wine' instead.")
+		logger.Fail("Only AoE 2: DE is supported on 'steam'. Use 'steam_crossover' or 'steam_wine' instead.")
 		atomicExitCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 		return
 	}
@@ -394,14 +451,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		if cfg.Client.Isolation.Path != "auto" {
 			var isolationDir os.FileInfo
 			if isolationDir, isolationPath, err = commonParsePathFn(commonEnhancedViperFn(cfg.Client.Isolation.Path), nil); err != nil || !isolationDir.IsDir() {
-				logger.Println("Invalid isolation path")
+				logger.Fail("Invalid isolation path")
 				atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
 				return
 			}
 			logger.SetBasePath(isolationPath)
 			logger.WriteFileLog(gameId, "post isolation path")
 		} else if runtime.GOOS != "windows" && !clientExecutableOfficial {
-			logger.Println("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
+			logger.Fail("You must set the Client.Isolation.Path as you are using a custom launcher with isolation.")
 			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
 			return
 		}
@@ -410,7 +467,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if serverExecutable = cfg.Server.Executable.Path; serverExecutable != "auto" {
 		var serverFile os.FileInfo
 		if serverFile, serverExecutable, err = commonParsePathFn(commonEnhancedViperFn(cfg.Server.Executable.Path), nil); err != nil || serverFile.IsDir() {
-			logger.Println("Invalid 'server' executable")
+			logger.Fail("Invalid server executable")
 			atomicExitCode.Store(int32(internal.ErrInvalidServerPath))
 			return
 		}
@@ -419,7 +476,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if battleServerManagerExecutable = cfg.Server.BattleServerManager.Executable.Path; battleServerManagerExecutable != "auto" {
 		var battleServerManagerFile os.FileInfo
 		if battleServerManagerFile, battleServerManagerExecutable, err = commonParsePathFn(commonEnhancedViperFn(cfg.Server.BattleServerManager.Executable.Path), nil); err != nil || battleServerManagerFile.IsDir() {
-			logger.Println("Invalid 'battle-server-manager' executable")
+			logger.Fail("Invalid battle-server-manager executable")
 			atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
 			return
 		}
@@ -427,47 +484,52 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if !clientExecutableOfficial {
 		var clientFile os.FileInfo
 		if clientFile, clientExecutable, err = commonParsePathFn(commonEnhancedViperFn(cfg.Client.Executable.Path), nil); err != nil || clientFile.IsDir() {
-			logger.Println("Invalid client executable")
+			logger.Fail("Invalid client executable")
 			atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
 			return
 		}
 	} else if !isolateProfiles || (gameId != game.AoE1 && !isolateMetadata) {
-		logger.Println("Isolating profiles and metadata is a must when using an official launcher.")
+		logger.Fail("Isolating profiles and metadata is a must when using an official launcher.")
 		atomicExitCode.Store(int32(internal.ErrRequiredIsolation))
 		return
 	} else {
-		logger.Println("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
+		logger.Warn("Make sure you disable the cloud saves in the launcher settings to avoid issues.")
 	}
 
 	if isAdmin {
-		logger.Println("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
+		logger.Warn("Running as administrator, this is not recommended for security reasons. It will request isolated admin privileges if/when needed.")
 		if runtime.GOOS != "windows" {
-			logger.Println(" It can also cause issues and restrict the functionality.")
+			logger.Detail("It can also cause issues and restrict the functionality.")
 		}
 	}
 
 	serverHost := cfg.Server.Host
 
-	logger.Printf("Game %s.\n", gameId)
 	if clientExecutable == "msstore" && gameId == game.AoM {
-		logger.Println("The Microsoft Store (Xbox) version is not supported on this game.")
+		logger.Fail("The Microsoft Store (Xbox) version is not supported on this game.")
 		atomicExitCode.Store(int32(internal.ErrGameUnsupportedLauncherCombo))
 		return
 	}
 	configSetGameIdFn(gameId)
-	logger.Println("Looking for the game...")
+	// Finding the game is the first thing that takes long enough to look broken,
+	// so it gets an in place line and the terminal's own progress indicator rather
+	// than a "Step" the reader has to trust is still running.
+	gameSearch := ui.Start("Looking for the game...")
+	gameProgress := ui.BeginProgress()
 	var gamePath string
 	executer := makeExecFn(gameId, clientExecutable)
 	if executer != nil {
-		logger.Printf("Game found on %s.\n", executer.String())
+		gameProgress.Done()
+		gameSearch.Done("Game found on %s.", executer.String())
 	} else {
-		logger.Println("Game not found.")
+		gameProgress.Fail()
+		gameSearch.Fail("Game not found.")
 		atomicExitCode.Store(int32(internal.ErrGameLauncherNotFound))
 		return
 	}
 	if isolation && isolationPath == "" {
 		if isolationPath = configIsolationPathFn(executer); isolationPath == "" {
-			logger.Println("Failed to auto retrieve isolation path")
+			logger.Fail("Failed to auto retrieve isolation path")
 			atomicExitCode.Store(int32(internal.ErrInvalidIsolationPath))
 			return
 		}
@@ -481,7 +543,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			var clientFile os.FileInfo
 			var clientPath string
 			if clientFile, clientPath, err = commonParsePathFn(commonEnhancedViperFn(cfg.Client.Path), nil); err != nil || !clientFile.IsDir() {
-				logger.Println("Invalid client path")
+				logger.Fail("Invalid client path")
 				atomicExitCode.Store(int32(internal.ErrInvalidClientPath))
 				return
 			}
@@ -514,9 +576,9 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	agentWaitDuration := time.Minute
 	agent := executablesNativeFileNameFn(false, executables.LauncherAgent)
 	if _, proc, localErr := commonProcessProcessFn(agent); localErr == nil && proc != nil {
-		logger.Printf("'agent' is running, waiting up to %s for it to end...\n", agentWaitDuration)
+		logger.Step("agent is running, waiting up to %s for it to end...", agentWaitDuration)
 		if !commonProcessWaitForProcessFn(proc, &agentWaitDuration) {
-			logger.Println("'agent' did not exit on its own.")
+			logger.Warn("agent did not exit on its own.")
 		}
 	}
 	if _, proc, localErr := commonProcessProcessFn(executablesNativeFileNameFn(false, executables.LauncherConfigAdminAgent)); localErr == nil && proc != nil {
@@ -525,16 +587,16 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		// launch for the full timeout and then left the elevated process in
 		// place, still holding the mapped-ips/cert state of the previous
 		// session so the next setUp failed with 'already mapped'. Ask it to stop.
-		logger.Println("'config-admin-agent' from a previous run is still active, stopping it...")
+		logger.Step("config-admin-agent from a previous run is still active, stopping it...")
 		if result := configRunStopAgentFn(); result.Success() {
-			logger.Println("'config-admin-agent' stopped.")
+			logger.Ok("config-admin-agent stopped.")
 		} else {
-			logger.Println("Failed to stop 'config-admin-agent'.")
+			logger.Fail("Failed to stop config-admin-agent.")
 			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
+				logger.Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Println("Exit code: " + strconv.Itoa(result.ExitCode))
+				logger.Fault("Exit code: %s", strconv.Itoa(result.ExitCode))
 			}
 		}
 	}
@@ -547,7 +609,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		* No running config-admin-agent nor agent processes
 		* Any previous changes are reverted
 	*/
-	logger.Println("Cleaning up (if needed)...")
+	// This is a teardown, not a setup step: what it undoes is what the previous
+	// run left behind, not anything this one has done. Labelling it as execution
+	// work is what made "Cleaning up" read as part of the startup, and calling
+	// both of them "Teardown" is what made the two look like a bug.
+	ui.Section("Initial teardown")
+	logger.Step("Cleaning up (if needed)...")
 	configKillAgentFn()
 	if err = commonLoggerFileLoggerBufferFn("config_revert_initial", func(writer io.Writer) {
 		launcherCommon.ConfigRevert("", commonLogger.FileLogger.Folder(), false, writer, func(options *exec.Options) {
@@ -578,14 +645,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 	}
 	if _, proc, localErr := commonProcessProcessFn(executablesNativeFileNameFn(false, executables.Server)); localErr == nil && proc != nil {
-		logger.Println("'Server' is already running, If you did not start it manually, kill the 'server' process using the task manager and execute the 'launcher' again.")
+		logger.Warn("Server is already running, If you did not start it manually, kill the server process using the task manager and execute the launcher again.")
 	}
 	if err = commonLoggerFileLoggerBufferFn("revert_command_initial", func(writer io.Writer) {
 		if err = executor.RunRevertCommand(writer, func(options *exec.Options) {
 			commonLogger.Println("run revert command", options.String())
 		}); err != nil {
-			logger.Println("Failed to run revert command.")
-			logger.Println("Error message: " + err.Error())
+			logger.Fail("Failed to run revert command.")
+			logger.Fault("Error message: %s", err.Error())
 		}
 	}); err != nil {
 		atomicExitCode.Store(int32(common.ErrFileLog))
@@ -594,22 +661,25 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	logger.WriteFileLog(gameId, "post initial cleanup")
 	if len(revertCommand) > 0 {
 		if err = launcherCommon.RevertCommandStore.Store(revertCommand); err != nil {
-			logger.Println("Failed to store revert command")
+			logger.Fail("Failed to store revert command")
 			atomicExitCode.Store(int32(internal.ErrInvalidRevertCommand))
 			return
 		}
 	}
+	// Everything from here on is this run's own work: the previous run's leftovers
+	// are gone, and what follows is what the game will actually see.
+	ui.Section("Execution")
 	// Setup
-	logger.Println("Setting up...")
+	logger.Step("Setting up...")
 	if len(setupCommand) > 0 {
-		logger.Printf("Running setup command '%s' and waiting for it to exit...\n", cfg.Config.SetupCommand)
+		logger.Step("Running setup command '%s' and waiting for it to exit...", cfg.Config.SetupCommand)
 		result := configRunSetupCommandFn(setupCommand)
 		if !result.Success() {
 			if result.Err != nil {
-				logger.Printf("Error: %s\n", result.Err)
+				logger.Fault("Error: %s", result.Err)
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Fault("Exit code: %d.", result.ExitCode)
 			}
 			atomicExitCode.Store(int32(internal.ErrSetupCommand))
 			return
@@ -628,7 +698,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			if IP, localErr := netipParseAddrFn(str); localErr == nil && IP.Is4() && IP.IsMulticast() {
 				multicastIPs.Add(IP)
 			} else {
-				logger.Printf("Invalid multicast group \"%s\"\n", str)
+				logger.Fail("Invalid multicast group \"%s\"", str)
 				atomicExitCode.Store(int32(internal.ErrAnnouncementMulticastGroup))
 				return
 			}
@@ -655,16 +725,16 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	if serverStart == "false" {
 		if serverStop == "true" {
-			logger.Println("serverStart is false. Ignoring serverStop being true.")
+			logger.Warn("serverStart is false. Ignoring serverStop being true.")
 		}
 		if serverIP == "" {
 			if serverHost == "" {
-				logger.Println("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
+				logger.Fail("serverStart is false. serverHost must be fulfilled as it is needed to know which host to connect to.")
 				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
 				return
 			}
 			if addr, localErr := netipParseAddrFn(serverHost); localErr == nil && addr.Is6() {
-				logger.Println("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
+				logger.Fail("serverStart is false. serverHost must be fulfilled with a host or Ipv4 address.")
 				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
 				return
 			}
@@ -674,7 +744,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				gameId,
 				commonNetIPSliceToNetIPSetFn(commonStringSliceToNetIPSliceFn(commonHostOrIpToIpsFn(serverHost))),
 			); data == nil {
-				logger.Println("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
+				logger.Fail("serverStart is false. Failed to resolve serverHost to a valid and reachable IP.")
 				atomicExitCode.Store(int32(internal.ErrInvalidServerHost))
 				return
 			} else {
@@ -691,27 +761,29 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 		battleServerRequired := configBattleServerRequiredFn(executer)
 		if battleServerManagerRun == "false" && battleServerRequired {
-			logger.Println("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
+			logger.Warn("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 		}
 		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && battleServerRequired)
-		if cfg.Server.Start == "auto" {
-			str := "No 'server's were found, proceeding to"
+		if cfg.Server.Start == autoValue && !cfg.Server.StartWithoutConfirmation {
+			str := "No servers were found, proceeding to"
 			if runBattleServerManager {
 				str += " start a battle server (if needed) and then"
 			}
-			if !cfg.Server.StartWithoutConfirmation {
-				logger.Println(str + " start the 'server'. Press enter to continue...")
-				_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+			str += " start the server."
+			if !dialog.Active().ConfirmStartServer(str, os.Stdin) {
+				logger.Fail("Canceled starting the server.")
+				atomicExitCode.Store(int32(internal.ErrServerStartCanceled))
+				return
 			}
 		}
 		serverExecutablePath := serverGetExecutablePathFn(serverExecutable)
 		if serverExecutablePath == "" {
-			logger.Println("Cannot find 'server' executable path. Set it manually in Server.Executable.")
+			logger.Fail("Cannot find server executable path. Set it manually in Server.Executable.")
 			atomicExitCode.Store(int32(internal.ErrServerExecutable))
 			return
 		}
 		if serverExecutable != serverExecutablePath {
-			logger.Println("Found 'server' executable path:", serverExecutablePath)
+			logger.Ok("Found server executable path: %s", serverExecutablePath)
 		}
 		if ec := serverGenerateCertsFn(serverExecutablePath, canTrustCertificate != "false"); ec != common.ErrSuccess {
 			atomicExitCode.Store(int32(ec))
@@ -720,7 +792,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		if runBattleServerManager {
 			values, flags := bsManagerStartFlagSetFn(nil)
 			if err = flags.Parse(battleServerManagerArgs); err != nil {
-				logger.Println("Failed to parse 'battle-server-manager' executable arguments")
+				logger.Fail("Failed to parse battle-server-manager executable arguments")
 				atomicExitCode.Store(int32(internal.ErrInvalidServerBattleServerManagerArgs))
 				return
 			}
@@ -744,7 +816,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	serverCertificate := serverReadCACertFn(serverIP)
 	if serverCertificate == nil {
-		logger.Println("Failed to read certificate from " + serverIP + ". Try to access it with your browser and checking the certificate.")
+		logger.Fail("Failed to read certificate from %s. Try to access it with your browser and checking the certificate.", serverIP)
 		atomicExitCode.Store(int32(internal.ErrReadCert))
 		return
 	}
@@ -777,6 +849,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 	k := koanf.New(".")
 	defaults := map[string]any{
+		"Config.Dialog":                             autoValue,
 		"Config.CanAddHost":                         "true",
 		"Config.Certificate.CanTrustInPc":           "local",
 		"Config.Certificate.CanTrustInGame":         true,
@@ -807,6 +880,7 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
 	}
 	bindings := map[string]string{
+		"dialog":                        "Config.Dialog",
 		"canAddHost":                    "Config.CanAddHost",
 		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
 		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",
@@ -836,11 +910,13 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 		}
 	}
 	usedFile := common.LoadKoanfLayersOrExit(k, defaults, mainfileCandidates, toml.Parser(), fs, bindings, executables.Launcher, commonLogger.Println)
+	usedConfigFile = usedFile
 	if cfgFile != "" && usedFile == "" {
-		logger.Println("No config file found, using defaults.")
+		logger.Warn("No config file found, using defaults.")
 	}
 	if usedFile != "" {
-		logger.Println("Using main config file:", usedFile)
+		// Not printed here: the summary at the top of the run already names this
+		// file, and two copies of the same path is one more thing to keep in sync.
 		filesToPrint = append(filesToPrint, usedFile)
 	}
 	var gameFileCandidates []string
@@ -853,20 +929,35 @@ func initConfig(fs *pflag.FlagSet) *internal.Configuration {
 	}
 	var err error
 	if gameCfgFile, err = common.LoadKoanfLayers(k, map[string]any{}, gameFileCandidates, toml.Parser(), fs, nil, executables.Launcher); err == nil {
-		logger.Println("Using game config file:", gameCfgFile)
 		filesToPrint = append(filesToPrint, gameCfgFile)
 	} else {
 		if _, ok := errors.AsType[*common.KoanfFileLoadError](err); !ok {
-			logger.Println("Error parsing game config file:", gameCfgFile+":"+err.Error())
+			logger.Fail("Error parsing game config file: %s:%s", gameCfgFile, err.Error())
 			os.Exit(internal.ErrGameConfigParse)
 		}
 	}
 	var c internal.Configuration
 	if err := k.Unmarshal("", &c); err != nil {
-		logger.Printf("unable to decode configuration: %v\n", err)
+		logger.Fail("unable to decode configuration: %v", err)
 		os.Exit(common.ErrConfigParse)
 	}
 	return &c
+}
+
+// orNone names an optional path in the session summary.
+func orNone(path string) string {
+	if path == "" {
+		return "none"
+	}
+	return path
+}
+
+func validateDialogValue(dialogMode string) (exitCode int) {
+	if !autoTrueFalseValues.Contains(dialogMode) {
+		logger.Fail("Invalid value for dialog (auto/true/false): %s", dialogMode)
+		return internal.ErrInvalidDialog
+	}
+	return common.ErrSuccess
 }
 
 func validateCanTrustCertificate(canTrustCertificate string) (exitCode int) {
@@ -875,7 +966,7 @@ func validateCanTrustCertificate(canTrustCertificate string) (exitCode int) {
 		validValues.Remove("user")
 	}
 	if !validValues.Contains(canTrustCertificate) {
-		logger.Printf("Invalid value for canTrustCertificate (%s): %s\n", strings.Join(validValues.ToSlice(), "/"), canTrustCertificate)
+		logger.Fail("Invalid value for canTrustCertificate (%s): %s", strings.Join(validValues.ToSlice(), "/"), canTrustCertificate)
 		return internal.ErrInvalidCanTrustCertificate
 	}
 	return common.ErrSuccess
@@ -883,7 +974,7 @@ func validateCanTrustCertificate(canTrustCertificate string) (exitCode int) {
 
 func validateCanBroadcastBattleServer(canBroadcastBattleServer string) (exitCode int) {
 	if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
-		logger.Printf("Invalid value for canBroadcastBattleServer (auto/false): %s\n", canBroadcastBattleServer)
+		logger.Fail("Invalid value for canBroadcastBattleServer (auto/false): %s", canBroadcastBattleServer)
 		return internal.ErrInvalidCanBroadcastBattleServer
 	}
 	return common.ErrSuccess
@@ -891,7 +982,7 @@ func validateCanBroadcastBattleServer(canBroadcastBattleServer string) (exitCode
 
 func validateServerStartValue(serverStart string) (exitCode int) {
 	if !autoTrueFalseValues.Contains(serverStart) {
-		logger.Printf("Invalid value for serverStart (auto/true/false): %s\n", serverStart)
+		logger.Fail("Invalid value for serverStart (auto/true/false): %s", serverStart)
 		return internal.ErrInvalidServerStart
 	}
 	return common.ErrSuccess
@@ -903,7 +994,7 @@ func validateServerStopValue(serverStop string, nonWindowsAdmin bool) (exitCode 
 		validValues.Remove(falseValue)
 	}
 	if !validValues.Contains(serverStop) {
-		logger.Printf("Invalid value for serverStop (%s): %s\n", strings.Join(validValues.ToSlice(), "/"), serverStop)
+		logger.Fail("Invalid value for serverStop (%s): %s", strings.Join(validValues.ToSlice(), "/"), serverStop)
 		return internal.ErrInvalidServerStop
 	}
 	return common.ErrSuccess
@@ -911,7 +1002,7 @@ func validateServerStopValue(serverStop string, nonWindowsAdmin bool) (exitCode 
 
 func validateRequiredTrueFalse(value string, name string, validValues mapset.Set[string]) (exitCode int) {
 	if !validValues.Contains(value) {
-		logger.Printf("Invalid value for %s (%s): %s\n", name, strings.Join(validValues.ToSlice(), "/"), value)
+		logger.Fail("Invalid value for %s (%s): %s", name, strings.Join(validValues.ToSlice(), "/"), value)
 		switch name {
 		case "Server.BattleServerManager.Run":
 			return internal.ErrInvalidServerBattleServerManagerRun

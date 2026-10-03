@@ -9,6 +9,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/logger"
 	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 )
 
 // isAccessDenied reports whether err is the privilege failure we get when a
@@ -19,6 +20,6 @@ func isAccessDenied(err error) bool {
 
 func DialIPC() (net.Conn, error) {
 	path := commonIpc.Path()
-	commonLogger.Printf("Using unix:%s\n", path)
+	commonLogger.Println(commonUi.Detail("Using unix:%s", path))
 	return net.Dial("unix", path)
 }

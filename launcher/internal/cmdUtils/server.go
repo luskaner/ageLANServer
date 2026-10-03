@@ -18,8 +18,10 @@ import (
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/pflag"
 )
@@ -28,6 +30,9 @@ type processedServer struct {
 	server.MesuredIpAddress
 	id          uuid.UUID
 	description string
+	// label is a compact version of description, without the alternative IPs and
+	// hostnames, for dialogs with little horizontal room.
+	label string
 }
 
 func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
@@ -75,14 +80,17 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 			}
 			sb.WriteString(")")
 		}
-		_, _ = fmt.Fprintf(&sb, " - %d ms (%s)",
-			bestAddress.Latency.Truncate(time.Millisecond).Milliseconds(),
-			internalData.Version,
-		)
+		latencyMs := bestAddress.Latency.Truncate(time.Millisecond).Milliseconds()
+		_, _ = fmt.Fprintf(&sb, " - %d ms (%s)", latencyMs, internalData.Version)
 		processed = append(processed, &processedServer{
 			id:               serverId,
 			MesuredIpAddress: bestAddress,
 			description:      sb.String(),
+			// Only what decides the choice, in an order that survives a narrow
+			// list: the address that will be used, the latency, the version.
+			label: fmt.Sprintf("%s - %d ms (%s)",
+				bestAddress.Ip.String(), latencyMs, internalData.Version,
+			),
 		})
 	}
 	slices.SortStableFunc(processed, func(a, b *processedServer) int {
@@ -94,13 +102,33 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
 	id = uuid.Nil()
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
-	logger.Println("Looking for 'server's, you might need to allow the 'launcher' in the firewall...")
-	server.QueryServers(multicastGroups, targetPorts, servers)
+	// The search takes a couple of seconds and prints nothing until it is over,
+	// so it gets an in place line and the terminal's own progress indicator: the
+	// last one is the only indicator still visible once the console has scrolled or
+	// the window is in the background.
+	search := ui.Start("Looking for servers...")
+	bar := ui.BeginProgress()
+	server.QueryServersWithProgress(multicastGroups, targetPorts, servers, func(round, rounds, found int) {
+		// Percentages, not fractions: the indicator has one scale and it is 0 to
+		// 100. A round of zero would divide by zero, and it never happens, but the
+		// clamp is the difference between a bar and a panic.
+		bar.Set(round * 100 / max(rounds, 1))
+	})
+	bar.Done()
+	// The firewall hint is the one thing the reader can act on, so it is printed
+	// only when nothing answered, where it is news, and not on every run.
+	if len(servers) == 0 {
+		search.Info("No servers found. You might need to allow the launcher in the firewall.")
+	} else {
+		// The numbered list that follows is the outcome; two lines saying the same
+		// thing would be noise.
+		search.Stop()
+	}
 	if len(servers) > 0 {
 		if procServers := processedServers(gameTitle, servers); len(procServers) > 0 {
-			idx := selectServerIndex(procServers, singleAutoSelect, os.Stdin)
-			if idx >= 0 {
-				selectedServer := procServers[idx]
+			idx, ok := selectDiscoveredServer(procServers, singleAutoSelect, os.Stdin)
+			if i := usableServerIndex(idx, ok, len(procServers)); i >= 0 {
+				selectedServer := procServers[i]
 				ip = selectedServer.Ip
 				id = selectedServer.id
 			}
@@ -109,41 +137,47 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 	return
 }
 
-// selectServerIndex prints the discovered servers and asks the user to pick one.
-// Returns the 0-based index, or -1 when reading fails (e.g. stdin exhausted),
-// in which case the caller should fall back to starting its own server.
-func selectServerIndex(procServers []*processedServer, singleAutoSelect bool, reader io.Reader) int {
-	procCount := len(procServers)
-	for {
-		logger.Println("Found the following 'server's:")
-		for i := range procServers {
-			logger.Printf("%d. %s\n", i+1, procServers[i].description)
+// selectDiscoveredServer resolves which of the processed servers to use. It
+// returns the 0-based index into procServers and false when the user declined
+// to pick one, in which case the caller falls back to starting its own server.
+func selectDiscoveredServer(procServers []*processedServer, singleAutoSelect bool, stdin io.Reader) (int, bool) {
+	candidates := make([]dialog.ServerCandidate, len(procServers))
+	for i, procServer := range procServers {
+		candidates[i] = dialog.ServerCandidate{
+			Description: procServer.description,
+			Label:       procServer.label,
 		}
-		if singleAutoSelect && procCount == 1 {
-			logger.Println("Auto-selecting the only found 'server'.")
-			return 0
-		}
-		logger.Printf("Enter the number of the 'server' (1-%d): ", procCount)
-		var option int
-		if _, err := fmt.Fscan(reader, &option); err != nil {
-			// Stdin exhausted or broken: we can never get a valid answer,
-			// so retrying would spin forever printing the list.
-			logger.Println("Could not read selection from input.")
-			return -1
-		}
-		if option < 1 || option > procCount {
-			logger.Println("Invalid option. Please enter a number from the list.")
-			continue
-		}
-		return option - 1
 	}
+	if singleAutoSelect && len(procServers) == 1 {
+		// Auto-selecting still lists the candidate first: that is what the
+		// console has always done before this shortcut, and the backend that
+		// would have rendered the list is not rendering anything now.
+		dialog.Active().ListCandidates(candidates)
+		// Left undecorated on purpose: select_server_test.go pins this line byte
+		// for byte, and a marker there would buy nothing the numbered list above
+		// does not already give.
+		logger.Println("Auto-selecting the only found server.")
+		return 0, true
+	}
+	return dialog.Active().SelectServer(candidates, stdin)
+}
+
+// usableServerIndex turns the dialog answer into a safe index into procServers.
+// It returns -1 when the user declined, or when a backend reports an index that
+// is out of range, so the caller starts its own server instead of indexing out
+// of bounds.
+func usableServerIndex(idx int, ok bool, procCount int) int {
+	if !ok || idx < 0 || idx >= procCount {
+		return -1
+	}
+	return idx
 }
 
 func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (exitCode int, ip string) {
 	if !internal.CanUseInternet {
 		values.CanUseInternet = false
 	}
-	logger.Println("Starting 'server', authorize it in firewall if needed...")
+	logger.Step("Starting server, authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -156,22 +190,22 @@ func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cm
 		commonLogger.Println("start server", options.String())
 	})
 	if result.Success() {
-		logger.Println("'Server' started.")
+		logger.Ok("Server started.")
 		if stop {
 			c.serverExe = serverExe
 		}
 	} else {
-		logger.Println("Could not start 'server'.")
+		logger.Fail("Could not start server.")
 		exitCode = internal.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
+				logger.Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Fault("Exit code: %d.", result.ExitCode)
 			}
 		} else {
-			logger.Println("Try running the 'server' manually.")
+			logger.Detail("Try running the server manually.")
 		}
 	}
 	return

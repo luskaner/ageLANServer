@@ -20,6 +20,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cert"
+	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher-common/userData"
 )
 
@@ -140,15 +141,61 @@ func PrintFile(name string, path string) {
 	}
 }
 
+// Printf and Println write to both sinks: the file log through commonLogger,
+// which is what keeps launcher.txt grepeable and free of escape sequences, and
+// the console through ui, which is what adds the styling. The two halves are
+// deliberately separate calls on the same format string, so a restyled console
+// line can never leak into the file log.
 func Printf(format string, a ...any) {
 	commonLogger.PrefixPrintf("main", format, a...)
-	fmt.Printf(format, a...)
+	ui.Printf(format, a...)
 }
 
 func Println(a ...any) {
 	commonLogger.PrefixPrintln("main", a...)
-	fmt.Println(a...)
+	ui.Println(a...)
 }
+
+// dual writes the plain wording to the file log and the marked rendering of that
+// same wording to the console. The two are built from one format string on
+// purpose: it is impossible for the console to end up with text the log does not
+// have, or the other way round.
+func dual(plain string, marked string) {
+	commonLogger.PrefixPrintln("main", plain)
+	ui.Println(marked)
+}
+
+// text applies fmt only when arguments were supplied, so a message with a stray
+// percent sign and no arguments survives untouched.
+func text(format string, a ...any) string {
+	if len(a) == 0 {
+		return format
+	}
+	return fmt.Sprintf(format, a...)
+}
+
+// Ok reports a completed operation.
+func Ok(format string, a ...any) { dual(text(format, a...), ui.Ok(format, a...)) }
+
+// Fail reports a failed operation.
+func Fail(format string, a ...any) { dual(text(format, a...), ui.Fail(format, a...)) }
+
+// Warn reports a non blocking problem.
+func Warn(format string, a ...any) { dual(text(format, a...), ui.Warn(format, a...)) }
+
+// Info reports a step in progress or a note.
+func Info(format string, a ...any) { dual(text(format, a...), ui.Info(format, a...)) }
+
+// Step reports an action that is being carried out.
+func Step(format string, a ...any) { dual(text(format, a...), ui.Step(format, a...)) }
+
+// Detail reports a line subordinate to the message above it.
+func Detail(format string, a ...any) { dual(text(format, a...), ui.Detail(format, a...)) }
+
+// Fault reports a subordinate line that belongs to a failure: the error message,
+// the exit code, the place to look. Red, because it is the part of a failure the
+// reader acts on.
+func Fault(format string, a ...any) { dual(text(format, a...), ui.Fault(format, a...)) }
 
 func writeProcessesStatus(_ string) error {
 	for _, processName := range processesLog {

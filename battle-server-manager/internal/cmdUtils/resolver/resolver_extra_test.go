@@ -223,4 +223,3 @@ func TestKeyCertViaResolveSSL(t *testing.T) {
 	_ = common.CertificatePairFolder
 	_ = battleServer.Folder
 }
-

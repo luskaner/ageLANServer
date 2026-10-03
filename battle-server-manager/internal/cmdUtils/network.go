@@ -5,22 +5,22 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var (
-	listenTCP       = func(address string) (error, net.Listener) {
+	listenTCP = func(address string) (error, net.Listener) {
 		var addr *net.TCPAddr
 		var err error
 		addr, err = net.ResolveTCPAddr("tcp4", address)
 		if err != nil {
-			fmt.Println(err)
+			cmdlog.Fault("Could not resolve %s: %s", address, err)
 			return err, nil
 		}
 		var listener *net.TCPListener
 		listener, err = net.ListenTCP("tcp4", addr)
 		if err != nil {
-			fmt.Println(err)
+			cmdlog.Fault("Could not listen on %s: %s", address, err)
 			return err, nil
 		}
 		return nil, listener
@@ -60,7 +60,7 @@ func GeneratePortsAsNeeded(ports []int) (generatedPorts []int, err error) {
 		}
 	}
 	if len(missingIndexes) > 0 {
-		commonLogger.Println("Generating ports...")
+		cmdlog.Step("Generating ports...")
 		generatedPorts, err = findUnusedPorts(len(missingIndexes))
 		if err != nil {
 			return nil, err

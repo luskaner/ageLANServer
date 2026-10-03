@@ -48,4 +48,6 @@ const (
 	ErrRequiredIsolation
 	ErrGameConfigParse
 	ErrFlushCache
+	ErrInvalidDialog
+	ErrServerStartCanceled
 )

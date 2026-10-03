@@ -15,10 +15,10 @@ import (
 )
 
 func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool, macOsExclusiveMappings bool) (exitCode int) {
-	logger.Println("Adding CA certificate to game if needed...")
+	logger.Step("Adding CA certificate to game if needed...")
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
-		logger.Println("Could not read game CA certificates:", err)
+		logger.Fail("Could not read game CA certificates: %s", err)
 		return internal.ErrConfigCACertAdd
 	}
 	var addCert bool
@@ -37,17 +37,17 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		cfgSetupOpts.AddCACertData = serverCertificate.Raw
 		cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
-			logger.Println("Failed to save CA certificate to game")
+			logger.Fail("Failed to save CA certificate to game")
 			exitCode = internal.ErrConfigCACertAdd
 			if result.Err != nil {
-				logger.Println("Error message: " + result.Err.Error())
+				logger.Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Printf(`Exit code: %d.`+"\n", result.ExitCode)
+				logger.Fault("Exit code: %d.", result.ExitCode)
 			}
 		}
 	}); err != nil {
-		logger.Println("Error message: " + err.Error())
+		logger.Fail("Error message: %s", err.Error())
 		return common.ErrFileLog
 	}
 	return

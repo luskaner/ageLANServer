@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"battle-server-manager/internal"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common/battleServer"
 )
 
@@ -155,7 +155,7 @@ func TestWriteConfig_MaxIndexUnsorted(t *testing.T) {
 
 	cfg := battleServer.Config{
 		Base: battleServer.Base{Region: "r", Name: "n", IPv4: "127.0.0.1", BsPort: ln1.Addr().(*net.TCPAddr).Port, WebSocketPort: ln2.Addr().(*net.TCPAddr).Port},
-		PID: uint32(os.Getpid()),
+		PID:  uint32(os.Getpid()),
 	}
 	if err := WriteConfig(gameId, cfg); err != nil {
 		t.Fatal(err)
@@ -409,12 +409,10 @@ func TestWriteConfig_MarshalError(t *testing.T) {
 	t.Cleanup(func() { _ = os.Remove(dir) })
 	cfg := battleServer.Config{
 		Base: battleServer.Base{Region: "r", Name: "n", IPv4: "127.0.0.1", BsPort: 1, WebSocketPort: 2},
-		PID: 1,
+		PID:  1,
 	}
 	err := WriteConfig(gameId, cfg)
 	if err == nil {
 		t.Error("expected error when folder is file")
 	}
 }
-
-

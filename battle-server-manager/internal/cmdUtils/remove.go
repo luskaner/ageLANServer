@@ -7,34 +7,33 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 )
 
 var (
-	parsedGameIdsFnRemoveAll   = ParsedGameIds
-	battleServerConfigsFn      = battleServer.Configs
-	removeFnRemoveAll          = Remove
-	findProcessFn              = process.FindProcess
-	killProcFn                 = process.KillProc
+	parsedGameIdsFnRemoveAll = ParsedGameIds
+	battleServerConfigsFn    = battleServer.Configs
+	removeFnRemoveAll        = Remove
+	findProcessFn            = process.FindProcess
+	killProcFn               = process.KillProc
 )
 
 func Kill(config battleServer.Config) bool {
 	proc, err := findProcessFn(int(config.PID))
 	if err == nil && proc != nil {
-		str := "\t\tProcess still running, killing it..."
 		if err = killProcFn(proc); err == nil {
-			commonLogger.Println(str + " OK")
+			cmdlog.Ok("Process still running, killed.")
 			return true
 		}
-		commonLogger.Println(str+" failed with error: ", err)
+		cmdlog.Fail("Process still running, could not kill it: %s", err)
 		return false
 	}
 	return true
 }
 
 func remove(gameId string, config battleServer.Config) bool {
-	commonLogger.Println("\tRemoving:", config.Region)
+	cmdlog.Step("Removing %s...", config.Region)
 	_ = Kill(config)
 	folder := battleServer.Folder(gameId)
 	if f, err := os.Stat(folder); err != nil || !f.IsDir() {
@@ -42,15 +41,14 @@ func remove(gameId string, config battleServer.Config) bool {
 	}
 	fullPath := filepath.Join(folder, config.Path())
 	if f, err := os.Stat(fullPath); err != nil || f.IsDir() {
-		commonLogger.Println("Failed with error: ", err)
+		cmdlog.Fail("Failed with error: %s", err)
 		return false
 	}
-	str := "\t\tRemoving config file..."
 	if err := os.Remove(fullPath); err != nil {
-		commonLogger.Println(str+" failed with error: ", err)
+		cmdlog.Fail("Removing config file failed with error: %s", err)
 		return false
 	}
-	commonLogger.Println(str + " OK")
+	cmdlog.Ok("Removed config file.")
 	return true
 }
 
@@ -77,20 +75,20 @@ func RemoveAll(onlyInvalid bool) (err error, exitCode int) {
 	var games mapset.Set[string]
 	games, err = parsedGameIdsFnRemoveAll(nil)
 	if err != nil {
-		commonLogger.Println(err.Error())
+		cmdlog.Fail("%s", err.Error())
 		exitCode = internal.ErrGames
 		return
 	}
 	var configs []battleServer.Config
 	for g := range games.Iter() {
-		commonLogger.Printf("Game: %s\n", g)
+		cmdlog.Section("Game " + g)
 		configs, err = battleServerConfigsFn(g, false, false)
 		if err != nil {
-			commonLogger.Printf("\t%s\n", err)
+			cmdlog.Fault("%s", err)
 			continue
 		}
 		if !removeFnRemoveAll(g, configs, onlyInvalid) {
-			commonLogger.Println("\tNo configuration needs it.")
+			cmdlog.Info("No configuration needs it.")
 		}
 	}
 	return

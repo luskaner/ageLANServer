@@ -13,48 +13,49 @@ import (
 	"github.com/luskaner/ageLANServer/common/logger"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
 	"github.com/luskaner/ageLANServer/launcher-config/internal"
 	"github.com/spf13/pflag"
 )
 
 func addUserCerts(removedUserCerts []*x509.Certificate) bool {
-	commonLogger.Println("Adding previously removed user certificate")
+	commonLogger.Println(commonUi.Step("Adding previously removed user certificate"))
 	if err := addUserCertsFn(removedUserCerts); err == nil {
-		commonLogger.Println("Successfully added user certificate")
+		commonLogger.Println(commonUi.Ok("Successfully added user certificate"))
 		return true
 	}
-	commonLogger.Println("Failed to add user certificate")
+	commonLogger.Println(commonUi.Fail("Failed to add user certificate"))
 	return false
 }
 
 func backupMetadata() bool {
-	commonLogger.Println("Backing up previously restored metadata")
+	commonLogger.Println(commonUi.Step("Backing up previously restored metadata"))
 	if metadataBackupFn(path) {
-		commonLogger.Println("Successfully backed up metadata")
+		commonLogger.Println(commonUi.Ok("Successfully backed up metadata"))
 		return true
 	}
-	commonLogger.Println("Failed to back up metadata")
+	commonLogger.Println(commonUi.Fail("Failed to back up metadata"))
 	return false
 }
 
 func backupProfiles() bool {
-	commonLogger.Println("Backing up previously restored profiles")
+	commonLogger.Println(commonUi.Step("Backing up previously restored profiles"))
 	if backupProfilesFn(path) {
-		commonLogger.Println("Successfully backed up profiles")
+		commonLogger.Println(commonUi.Ok("Successfully backed up profiles"))
 		return true
 	}
-	commonLogger.Println("Failed to back up profiles")
+	commonLogger.Println(commonUi.Fail("Failed to back up profiles"))
 	return false
 }
 
 func addCaCerts(removedCaCerts []*x509.Certificate) bool {
-	commonLogger.Println("Restoring previously added game's certificate store...")
+	commonLogger.Println(commonUi.Step("Restoring previously added game's certificate store..."))
 	if err := newCACertFn(revertValues.GameId, revertValues.GamePath).Append(removedCaCerts); err == nil {
-		commonLogger.Println("Successfully restored game's certificate store.")
+		commonLogger.Println(commonUi.Ok("Successfully restored game's certificate store."))
 		return true
 	}
-	commonLogger.Println("Failed to restore game's certificate store.")
+	commonLogger.Println(commonUi.Fail("Failed to restore game's certificate store."))
 	return false
 }
 
@@ -92,7 +93,7 @@ func runRevert(args []string) (err error, exitCode int) {
 	restoredMetadata = false
 	restoredProfiles = false
 
-	// 'config-admin-agent' is an elevated daemon that must never outlive this
+	// config-admin-agent is an elevated daemon that must never outlive this
 	// command. Whether there is one to stop is decided here, once, and the
 	// shutdown runs from a defer: it used to be the last statement of the happy
 	// path, so every early return below (invalid game or data path, user cert /
@@ -133,7 +134,7 @@ func runRevert(args []string) (err error, exitCode int) {
 	}()
 	if revertValues.LogRoot != "" {
 		if initErr := initializeFn(revertValues.LogRoot); initErr != nil {
-			commonLogger.Println("Failed to initialize file logging:", initErr)
+			commonLogger.Println(commonUi.Fail("Failed to initialize file logging: %s", initErr))
 		}
 	}
 	reverseFailed := true
@@ -156,71 +157,71 @@ func runRevert(args []string) (err error, exitCode int) {
 	}
 	if revertValues.Metadata || revertValues.Profiles {
 		if !supportedGamesContainsFn(revertValues.GameId) {
-			commonLogger.Println("Invalid game type")
+			commonLogger.Println(commonUi.Fail("Invalid game type"))
 			exitCode = launcherCommon.ErrInvalidGame
 			undoRevert()
 			return
 		}
 		var fileInfo os.FileInfo
 		if fileInfo, err = statFn(revertValues.DataPath); err != nil || !fileInfo.IsDir() {
-			commonLogger.Println("Invalid data path")
+			commonLogger.Println(commonUi.Fail("Invalid data path"))
 			exitCode = internal.ErrInvalidDataPath
 			undoRevert()
 			return
 		}
 		path = commonUserData.NewPath(revertValues.DataPath, revertValues.GameId)
 	}
-	commonLogger.Printf("Reverting configuration for %s...\n", revertValues.GameId)
+	commonLogger.Println(commonUi.Step("Reverting configuration for %s...", revertValues.GameId))
 	if revertValues.RemoveUserCert {
-		commonLogger.Println("Removing user certificates, authorize it if needed...")
+		commonLogger.Println(commonUi.Step("Removing user certificates, authorize it if needed..."))
 		if removedUserCerts, _ = removeUserCertsFn(); removedUserCerts != nil {
-			commonLogger.Println("Successfully removed user certificates")
+			commonLogger.Println(commonUi.Ok("Successfully removed user certificates"))
 		} else {
-			commonLogger.Println("Failed to remove user certificates")
+			commonLogger.Println(commonUi.Fail("Failed to remove user certificates"))
 			exitCode = internal.ErrUserCertRemove
 			undoRevert()
 			return
 		}
 	}
 	if revertValues.Metadata {
-		commonLogger.Println("Restoring metadata")
+		commonLogger.Println(commonUi.Step("Restoring metadata"))
 		if metadataRestoreFn(path) {
-			commonLogger.Println("Successfully restored metadata")
+			commonLogger.Println(commonUi.Ok("Successfully restored metadata"))
 			restoredMetadata = true
 		} else {
-			commonLogger.Println("Failed to restore metadata")
+			commonLogger.Println(commonUi.Fail("Failed to restore metadata"))
 			exitCode = internal.ErrMetadataRestore
 			undoRevert()
 			return
 		}
 	}
 	if revertValues.Profiles {
-		commonLogger.Println("Restoring profiles")
+		commonLogger.Println(commonUi.Step("Restoring profiles"))
 		if restoreProfilesFn(path, reverseFailed) {
-			commonLogger.Println("Successfully restored profiles")
+			commonLogger.Println(commonUi.Ok("Successfully restored profiles"))
 			restoredProfiles = true
 		} else {
-			commonLogger.Println("Failed to restore profiles")
+			commonLogger.Println(commonUi.Fail("Failed to restore profiles"))
 			exitCode = internal.ErrProfilesRestore
 			undoRevert()
 			return
 		}
 	}
 	if revertValues.RestoreCAStoreCert {
-		commonLogger.Println("Restoring original certificate game's store...")
+		commonLogger.Println(commonUi.Step("Restoring original certificate game's store..."))
 		if revertValues.GamePath == "" {
-			commonLogger.Println("Game path is required to restore the original game's store")
+			commonLogger.Println(commonUi.Fail("Game path is required to restore the original game's store"))
 			exitCode = internal.ErrGamePathMissing
 			undoRevert()
 			return
 		}
 		cert := newCACertFn(revertValues.GameId, revertValues.GamePath)
 		if err, removedCaCerts = cert.Restore(); err == nil {
-			commonLogger.Println("Successfully restored original game's store.")
+			commonLogger.Println(commonUi.Ok("Successfully restored original game's store."))
 		} else {
-			commonLogger.Println("Failed to restore original game's store.")
-			commonLogger.Println("Received error:")
-			commonLogger.Println(err)
+			commonLogger.Println(commonUi.Fail("Failed to restore original game's store."))
+			commonLogger.Println(commonUi.Fault("Received error:"))
+			commonLogger.Println(commonUi.Detail("%s", err))
 			exitCode = internal.ErrGameCertRestore
 			undoRevert()
 			return
@@ -232,35 +233,35 @@ func runRevert(args []string) (err error, exitCode int) {
 		if *agentConnected {
 			// The agent is live and answering, so make sure the defer stops it.
 			agentPresent = true
-			commonLogger.Println("Communicating with 'config-admin-agent' to remove local cert and/or host mappings...")
+			commonLogger.Println(commonUi.Step("Communicating with config-admin-agent to remove local cert and/or host mappings..."))
 		} else {
-			str := "Running 'config-admin' to remove local cert and/or host mappings"
+			str := "Running config-admin to remove local cert and/or host mappings"
 			if !isAdminFn() {
 				str += ", authorize it if needed"
 			}
-			commonLogger.Println(str + "...")
+			commonLogger.Println(commonUi.Step("%s", str+"..."))
 		}
 		err, exitCode = runRevertAdminFn(revertValues.LogRoot, revertValues.IPs, revertValues.Certs, !revertValues.RemoveAll)
 		if err == nil && exitCode == common.ErrSuccess {
 			if *agentConnected {
-				commonLogger.Println("Successfully communicated with 'config-admin-agent'")
+				commonLogger.Println(commonUi.Ok("Successfully communicated with config-admin-agent"))
 			} else {
-				commonLogger.Println("Successfully ran 'config-admin'")
+				commonLogger.Println(commonUi.Ok("Successfully ran config-admin"))
 			}
 		} else {
 			if err != nil {
-				commonLogger.Println("Received error:")
-				commonLogger.Println(err)
+				commonLogger.Println(commonUi.Fault("Received error:"))
+				commonLogger.Println(commonUi.Detail("%s", err))
 			}
 			if exitCode != common.ErrSuccess {
-				commonLogger.Println("Received exit code:")
-				commonLogger.Println(exitCode)
+				commonLogger.Println(commonUi.Fault("Received exit code:"))
+				commonLogger.Println(commonUi.Detail("%d", exitCode))
 			}
 			exitCode = internal.ErrAdminRevert
 			if *agentConnected {
-				commonLogger.Println("Failed to communicate with 'config-admin-agent'")
+				commonLogger.Println(commonUi.Fail("Failed to communicate with config-admin-agent"))
 			} else {
-				commonLogger.Println("Failed to run 'config-admin'")
+				commonLogger.Println(commonUi.Fail("Failed to run config-admin"))
 			}
 			undoRevert()
 			return
