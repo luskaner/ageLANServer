@@ -67,9 +67,8 @@ func configure() {
 			dialog.SetOutput(dialog.Output{Println: loggerReporter{}.Println, Printf: loggerReporter{}.Printf})
 			return resolution
 		},
-		PromptOutput: &session.Sinks{Println: loggerReporter{}.Println, Printf: loggerReporter{}.Printf},
-		Stdin:        os.Stdin,
-		Presenter:    ui.Presenter{},
+		Stdin:     os.Stdin,
+		Presenter: ui.Presenter{},
 	})
 }
 

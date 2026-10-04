@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 )
 
 // Regression: Root.Open had no O_TRUNC, so rewriting a file with shorter
@@ -64,24 +63,28 @@ func TestCloseFileLogDumpsBufferSafely(t *testing.T) {
 	Printf(marker)
 
 	var wg sync.WaitGroup
-	stop := make(chan struct{})
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 500; i++ {
-			select {
-			case <-stop:
-				return
-			default:
+	// Several writers, so the writes really are concurrent with each other and
+	// the race detector has something to look at.
+	//
+	// They are waited for rather than raced against the close. This test is
+	// about what CloseFileLog promises about the buffer it took: that the
+	// snapshot reached the file and that the buffer is empty afterwards. A
+	// writer still running after the close refills the buffer, so the emptiness
+	// assertion below is only meaningful once they have stopped, and a sleep used
+	// to stand in for that, which made the test a report about how busy the
+	// machine was.
+	for range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 500; i++ {
 				Printf("concurrent line %d", i)
 			}
-		}
-	}()
-	time.Sleep(20 * time.Millisecond)
+		}()
+	}
+	wg.Wait()
 
 	CloseFileLog()
-	close(stop)
-	wg.Wait()
 	_ = f.Sync()
 
 	content, readErr := os.ReadFile(tmp)
@@ -121,4 +124,3 @@ func TestBufferWrapperWriteAndReset(t *testing.T) {
 	}
 	var _ io.Writer = &b // must keep satisfying io.Writer
 }
-

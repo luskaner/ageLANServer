@@ -50,9 +50,7 @@ func TestConsoleConfiguresItselfWithTheSession(t *testing.T) {
 	if installed.NewDialog == nil {
 		t.Error("the session was left with no way to ask anything")
 	}
-	if installed.PromptOutput == nil || installed.PromptOutput.Println == nil {
-		t.Error("the session cannot route a console prompt to the log file")
-	}
+
 }
 
 // The dialog backend the console offers is the console's own, so a run that asks

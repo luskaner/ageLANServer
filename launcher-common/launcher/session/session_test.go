@@ -619,7 +619,7 @@ type runRootOverrides struct {
 	configRunSetupCommandFnVal        func([]string) *commonExecutor.Result
 	dnsConnectivityFnVal              func() bool
 	configRunStopAgentFnVal           func() *commonExecutor.Result
-	waitForProcessFnVal               func(*os.Process, *time.Duration) bool
+	waitForProcessFnVal               func(context.Context, *os.Process, *time.Duration) bool
 	dialogNewFnVal                    func(string) launcher.Resolution
 }
 
@@ -876,7 +876,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	if o.waitForProcessFnVal != nil {
 		commonProcessWaitForProcessFn = o.waitForProcessFnVal
 	} else {
-		commonProcessWaitForProcessFn = func(*os.Process, *time.Duration) bool { return true }
+		commonProcessWaitForProcessFn = func(context.Context, *os.Process, *time.Duration) bool { return true }
 	}
 	if o.dialogNewFnVal != nil {
 		dialogNewFn = o.dialogNewFnVal
@@ -1425,7 +1425,7 @@ func TestRunRootDoesNotWaitForLeftoverConfigAdminAgent(t *testing.T) {
 		configRunStopAgentFnVal: func() *commonExecutor.Result {
 			return &commonExecutor.Result{ExitCode: common.ErrSuccess}
 		},
-		waitForProcessFnVal: func(proc *os.Process, d *time.Duration) bool {
+		waitForProcessFnVal: func(_ context.Context, proc *os.Process, d *time.Duration) bool {
 			t.Errorf("waited for pid %d; the leftover agent must be asked to stop, not waited on", proc.Pid)
 			return true
 		},
@@ -1524,7 +1524,7 @@ func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
 	waiting := make(chan struct{})
 	release := make(chan struct{})
 	origWait := commonProcessWaitForProcessFn
-	commonProcessWaitForProcessFn = func(*os.Process, *time.Duration) bool {
+	commonProcessWaitForProcessFn = func(_ context.Context, _ *os.Process, _ *time.Duration) bool {
 		close(waiting)
 		<-release
 		return true

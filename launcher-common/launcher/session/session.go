@@ -33,7 +33,6 @@ import (
 	gameExecutor "github.com/luskaner/ageLANServer/common/game/executor"
 	"github.com/luskaner/ageLANServer/common/game/executor/custom"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/paths"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
@@ -91,9 +90,6 @@ type Setup struct {
 	// asking anything, so a test cannot inject a fake backend through the
 	// registry alone: it has to own the whole resolver.
 	NewDialog func(mode string) launcher.Resolution
-	// PromptOutput is where a console backend writes its questions. A frontend
-	// that asks in its own window leaves it nil.
-	PromptOutput *Sinks
 	// Stdin is what a console backend reads its answers from. A frontend that
 	// asks in its own window leaves it nil and its backend ignores it.
 	Stdin io.Reader
@@ -104,23 +100,6 @@ type Setup struct {
 	// that draw are several layers below the session and are shared. A frontend
 	// that leaves it nil gets a run with no decoration.
 	Presenter launcher.Presenter
-}
-
-// Sinks are the places a console backend writes its questions to. They exist so
-// the prompts reach the log file like everything else instead of going straight
-// to a terminal the log knows nothing about.
-type Sinks struct {
-	Println func(...any)
-	Printf  func(string, ...any)
-}
-
-// Sinks returns the installed prompt sinks, tolerating a partially installed
-// Setup.
-func (s *Setup) sinks() (out Sinks) {
-	if s == nil || s.PromptOutput == nil {
-		return Sinks{}
-	}
-	return *s.PromptOutput
 }
 
 // Configure installs what a frontend brings to the session. It is safe to call
@@ -173,11 +152,6 @@ func promptInput() io.Reader {
 	return os.Stdin
 }
 
-func setPromptOutput(s Sinks) { promptOutput = s }
-
-var promptOutput Sinks
-
-var configPaths = []string{paths.ResourcesDir, "."}
 var config = &ops.Config{}
 
 // report is how the shared logic talks to this frontend.
@@ -198,7 +172,6 @@ var (
 	initConfigFn      = initConfig
 	newPidLockFn      = func() fileLock.Locker { return &fileLock.PidLock{} }
 	isAdminFn         = func() bool { return commonExecutor.IsAdmin() }
-	chdirToExeFn      = common.ChdirToExe
 	openMainLogFn     = logger.OpenMainFileLog
 	printFileFn       = logger.PrintFile
 	writeFileLogFn    = logger.WriteFileLog
@@ -219,7 +192,7 @@ var (
 	commonEnhancedViperFn           = common.EnhancedViperStringToStringSlice
 	executablesFindPathFn           = executables.FindPath
 	commonProcessProcessFn          = commonProcess.Process
-	commonProcessWaitForProcessFn   = commonProcess.WaitForProcess
+	commonProcessWaitForProcessFn   = commonProcess.WaitForProcessContext
 	gameRunningFn                   = func() bool { return ops.GameRunning(reportOrDiscard()) }
 	configKillAgentFn               = config.KillAgent
 	launcherCommonConfigRevertFn    = launcherCommon.ConfigRevert
@@ -354,9 +327,6 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 		return
 	}
 	dialogResolution := dialogNewFn(cfg.Config.Dialog)
-	if sinks := setup.sinks(); sinks.Println != nil {
-		setPromptOutput(sinks)
-	}
 	launcher.SetDialog(dialogResolution.Dialog)
 	// Registered after the teardown defer so, by LIFO, it runs before it.
 	defer launcher.ResetDialog()
@@ -657,7 +627,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	agent := executablesNativeFileNameFn(false, executables.LauncherAgent)
 	if _, proc, localErr := commonProcessProcessFn(agent); localErr == nil && proc != nil {
 		reportOrDiscard().Step("agent is running, waiting up to %s for it to end...", agentWaitDuration)
-		if !commonProcessWaitForProcessFn(proc, &agentWaitDuration) {
+		if !commonProcessWaitForProcessFn(ctx, proc, &agentWaitDuration) {
 			reportOrDiscard().Warn("agent did not exit on its own.")
 		}
 	}
