@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/netip"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"slices"
@@ -21,8 +19,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/uuid"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/knadh/koanf/parsers/toml/v2"
-	"github.com/knadh/koanf/v2"
 	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	"github.com/luskaner/ageLANServer/common/game"
@@ -50,12 +46,11 @@ import (
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 )
 
-const autoValue = "auto"
-const trueValue = "true"
-const falseValue = "false"
-
 var configPaths = []string{paths.ResourcesDir, "."}
 var config = &cmdUtils.Config{}
+
+// report is how the shared logic talks to this frontend.
+var report launcher.Reporter = loggerReporter{}
 
 var (
 	Version      string
@@ -66,11 +61,7 @@ var (
 	filesToPrint []string
 	// usedConfigFile is the main config file initConfig ended up loading, kept
 	// next to filesToPrint so the session summary can name it.
-	usedConfigFile                 string
-	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
-	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](autoValue, falseValue, "user", "local")
-	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, falseValue)
-	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](trueValue, falseValue, "required")
+	usedConfigFile string
 )
 
 var (
@@ -142,78 +133,21 @@ var (
 
 func Execute() (err error, exitCode int) {
 	singleFs := commonCmd.NewSingleFlagSet(runRoot, Version)
-	fs := singleFs.Fs()
-	fs.StringVar(&cfgFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	fs.StringVar(&gameCfgFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	fs.StringP("dialog", "d", autoValue, `Whether to ask the interactive questions (which server to use, and whether to start one) in a graphical window instead of in the console, "auto" uses graphical dialogs if they are available in the system, "false" always asks in the console. It always falls back to the console if graphical dialogs are unavailable.`)
-	// Registered here rather than in common/cmd/addDefaultFlags because that one
-	// is shared with the modules outside this change's scope.
-	fs.StringVar(&output, "output", autoValue, `How much to decorate the console output with, "auto" picks whatever the terminal can show without turning characters into boxes, "color" asks for colour but still degrades to plain text if the console cannot do it, "ascii" guarantees plain ASCII text. It also reads the AGE_LANSERVER_OUTPUT environment variable.`)
-	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
-	fs.Bool("internet", true, "Whether or not the launcher may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
-	fs.StringP("canAddHost", "t", "true", "Add a local dns entry if it's needed to connect to the server with the official domain. Including to avoid receiving that it's on maintenance. Ignored if clientExeArgs contains '{HostFilePath}'. Will require admin privileges.")
-	canTrustCertificateStr := `Trust the certificate of the server if needed. "false"`
-	if runtime.GOOS != "linux" {
-		canTrustCertificateStr += `, "user"`
+	// The options are registered by the shared launcher, not here, so a
+	// graphical frontend registering the same ones gets the same names, the
+	// same defaults and the same help out of the same files.
+	if err := launcher.BindFlags(singleFs.Fs(), launcher.Values{
+		ConfigFile:     &cfgFile,
+		GameConfigFile: &gameCfgFile,
+		GameID:         &gameId,
+		Output:         &output,
+	}); err != nil {
+		return err, common.ErrSyntax
 	}
-	canTrustCertificateStr += ` or local (will require admin privileges). Ignored if clientExeArgs contains '{CertFilePath}'.`
-	fs.StringP("canTrustCertificate", "c", "local", canTrustCertificateStr)
-	if runtime.GOOS == "windows" {
-		fs.StringP("canBroadcastBattleServer", "b", "auto", `Whether or not to broadcast the game BattleServer to all interfaces in LAN (not just the most priority one)`)
-	}
-	var pathNamesInfo string
-	if runtime.GOOS == "windows" {
-		pathNamesInfo += " Path names need to use double backslashes within single quotes or be within double quotes."
-	}
-	commonCmd.GameVarCommand(fs, &gameId)
-	fs.StringP("isolateMetadata", "m", "required", "Isolate the metadata cache of the game, otherwise, it will be shared. Not compatible with AoE:DE. If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.")
-	fs.StringP("isolateProfiles", "p", "required", "Isolate the user's profile of the game, otherwise, it will be shared. If 'required' it will resolve to 'true' if using the official launcher, 'false' otherwise.")
-	fs.String("setupCommand", "", `Executable to run (including arguments) to run first after the "Setting up..." line. The command must return a 0 exit code to continue. If you need to keep it running spawn a new separate process. You may use environment variables.`+pathNamesInfo)
-	fs.String("revertCommand", "", `Executable to run (including arguments) to run after setupCommand, game has exited and everything has been reverted. It may run before if there is an error. You may use environment variables.`+pathNamesInfo)
-	fs.StringP("serverStart", "a", "auto", `Start the server if needed, "auto" will start a server if one is not already running, "true" (will start a server regardless if one is already running), "false" (will require an already running server).`)
-	fs.StringP("serverStop", "o", "auto", `Stop the server if started, "auto" will stop the server if one was started, "false" (will not stop the server regardless if one was started), "true" (will not stop the server even if it was started).`)
-	fs.StringSliceP("serverAnnouncePorts", "n", []string{strconv.Itoa(common.AnnouncePort)}, `Announce ports to listen to. If not including the default port, default configured 'servers' will not get discovered.`)
-	fs.StringSliceP("serverAnnounceMulticastGroups", "g", []string{common.AnnounceMulticastGroup}, `Announce multicast groups to join. If not including the default group, default configured 'servers' will not get discovered via Multicast.`)
-	fs.StringP("server", "s", "", `Hostname of the server to connect to. If not absent, serverStart will be assumed to be false. Ignored otherwise`)
-	fs.Bool("serverSingleAutoSelect", false, `Auto-select the server when a single one is discovered.`)
-	serverExe := executables.NativeFileName(false, executables.Server)
-	fs.StringP("serverPath", "z", "auto", fmt.Sprintf(`The executable path of the server, "auto", will be try to execute in this order "./%s/%s", "../%s" and finally "../%s/%s", otherwise set the path (relative or absolute).`, executables.Server, serverExe, serverExe, executables.Server, serverExe))
-	fs.StringP("serverPathArgs", "r", "", `The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments. You may use environment variables.`+pathNamesInfo)
-	clientExeTip := `The type of game client or the path. "auto" will use `
-	if runtime.GOOS != "darwin" {
-		clientExeTip += "Steam"
-	}
-	unixClientExeTip := `Steam (CrossOver) and then the Steam (Wine) one if found`
-	if runtime.GOOS == "windows" {
-		clientExeTip += ` and then the Xbox one if found`
-	}
-	if runtime.GOOS == "linux" {
-		clientExeTip += `, `
-	}
-	if runtime.GOOS != "windows" {
-		clientExeTip += unixClientExeTip
-	}
-	clientExeTip += `. Use a path to the game launcher,`
-	if runtime.GOOS != "darwin" {
-		clientExeTip += ` "steam"`
-	}
-	if runtime.GOOS == "linux" {
-		clientExeTip += `,`
-	}
-	if runtime.GOOS != "windows" {
-		clientExeTip += ` "steam_crossover" or "steam_wine"`
-	}
-	if runtime.GOOS == "windows" {
-		clientExeTip += ` or "msstore"`
-	}
-	clientExeTip += " to use the default launcher."
-	fs.StringP("clientExe", "l", "auto", clientExeTip)
-	fs.StringP("clientExeArgs", "i", "", "The arguments to pass to the client launcher if it is custom. You may use environment variables and '{HostFilePath}'/'{CertFilePath}' replacement variables."+pathNamesInfo)
 
-	// Default values & bindings will be handled in initConfig
+	// Default values & bindings will be handled in LoadConfig
 	return singleFs.Execute()
 }
-
 func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	// validate required flags
 	if gameId == "" {
@@ -298,7 +232,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		teardown(false)
 		exitCode = int(atomicExitCode.Load())
 	}()
-	if ec := validateDialogValue(cfg.Config.Dialog); ec != common.ErrSuccess {
+	if ec := launcher.ValidateDialogValue(report, cfg.Config.Dialog); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
@@ -332,40 +266,40 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	writeFileLogFn(gameId, "start")
 	isAdmin := isAdminFn()
 	canTrustCertificate := cfg.Config.Certificate.CanTrustInPc
-	if ec := validateCanTrustCertificate(canTrustCertificate); ec != common.ErrSuccess {
+	if ec := launcher.ValidateCanTrustCertificate(report, canTrustCertificate); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
 	canBroadcastBattleServer := "false"
 	if runtime.GOOS == "windows" && (gameId != game.AoM && gameId != game.AoE4) {
 		canBroadcastBattleServer = cfg.Config.CanBroadcastBattleServer
-		if ec := validateCanBroadcastBattleServer(canBroadcastBattleServer); ec != common.ErrSuccess {
+		if ec := launcher.ValidateCanBroadcastBattleServer(report, canBroadcastBattleServer); ec != common.ErrSuccess {
 			atomicExitCode.Store(int32(ec))
 			return
 		}
 	}
 	serverStart := cfg.Server.Start
-	if ec := validateServerStartValue(serverStart); ec != common.ErrSuccess {
+	if ec := launcher.ValidateServerStartValue(report, serverStart); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
 	serverStop := cfg.Server.Stop
-	if ec := validateServerStopValue(serverStop, runtime.GOOS != "windows" && isAdmin); ec != common.ErrSuccess {
+	if ec := launcher.ValidateServerStopValue(report, serverStop, runtime.GOOS != "windows" && isAdmin); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
 	battleServerManagerRun := cfg.Server.BattleServerManager.Run
-	if ec := validateRequiredTrueFalse(battleServerManagerRun, "Server.BattleServerManager.Run", requiredTrueFalseValues); ec != common.ErrSuccess {
+	if ec := launcher.ValidateRequiredTrueFalse(report, battleServerManagerRun, "Server.BattleServerManager.Run", launcher.RequiredTrueFalseValues()); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
 	isolateMetadataStr := cfg.Client.Isolation.Metadata
-	if ec := validateRequiredTrueFalse(isolateMetadataStr, "Client.Isolation.Metadata", requiredTrueFalseValues); ec != common.ErrSuccess {
+	if ec := launcher.ValidateRequiredTrueFalse(report, isolateMetadataStr, "Client.Isolation.Metadata", launcher.RequiredTrueFalseValues()); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
 	isolateProfilesStr := cfg.Client.Isolation.Profiles
-	if ec := validateRequiredTrueFalse(isolateProfilesStr, "Client.Isolation.Profiles", requiredTrueFalseValues); ec != common.ErrSuccess {
+	if ec := launcher.ValidateRequiredTrueFalse(report, isolateProfilesStr, "Client.Isolation.Profiles", launcher.RequiredTrueFalseValues()); ec != common.ErrSuccess {
 		atomicExitCode.Store(int32(ec))
 		return
 	}
@@ -764,7 +698,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			logger.Warn("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 		}
 		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && battleServerRequired)
-		if cfg.Server.Start == autoValue && !cfg.Server.StartWithoutConfirmation {
+		if cfg.Server.Start == launcher.ModeAuto && !cfg.Server.StartWithoutConfirmation {
 			str := "No servers were found, proceeding to"
 			if runBattleServerManager {
 				str += " start a battle server (if needed) and then"
@@ -847,102 +781,49 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 }
 
 func initConfig(fs *pflag.FlagSet) *launcher.Configuration {
-	k := koanf.New(".")
-	defaults := map[string]any{
-		"Config.Dialog":                             autoValue,
-		"Config.CanAddHost":                         "true",
-		"Config.Certificate.CanTrustInPc":           "local",
-		"Config.Certificate.CanTrustInGame":         true,
-		"Config.CanBroadcastBattleServer":           "auto",
-		"Config.CanUseInternet":                     true,
-		"Config.Log":                                false,
-		"Client.Isolation.Metadata":                 "required",
-		"Client.Isolation.Profiles":                 "required",
-		"Config.SetupCommand":                       []string{},
-		"Config.RevertCommand":                      []string{},
-		"Client.Executable":                         "auto",
-		"Client.ExecutableArgs":                     []string{},
-		"Client.Path":                               "auto",
-		"Server.Start":                              "auto",
-		"Server.Stop":                               "auto",
-		"Server.SingleAutoSelect":                   false,
-		"Server.StartWithoutConfirmation":           false,
-		"Server.Executable":                         "auto",
-		"Server.ExecutableArgs":                     []string{"-e", "{Game}", "--id", "{Id}"},
-		"Server.Host":                               netip.IPv4Unspecified().String(),
-		"Server.AnnouncePorts":                      []int{common.AnnouncePort},
-		"Server.AnnounceMulticastGroups":            []string{common.AnnounceMulticastGroup},
-		"Server.BattleServerManager.Run":            "true",
-		"Server.BattleServerManager.Executable":     "auto",
-		"Server.BattleServerManager.ExecutableArgs": []string{"-e", "{Game}", "-r"},
+	cfg, loaded, err := launcher.LoadConfig(fs, launcher.Values{
+		ConfigFile:     &cfgFile,
+		GameConfigFile: &gameCfgFile,
+		GameID:         &gameId,
+	}, loggerReporter{})
+	usedConfigFile = loaded.MainFile
+	filesToPrint = loaded.FilesToPrint
+	if err == nil {
+		return cfg
 	}
-	for g := range game.SupportedGames.Iter() {
-		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
-	}
-	bindings := map[string]string{
-		"dialog":                        "Config.Dialog",
-		"canAddHost":                    "Config.CanAddHost",
-		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
-		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",
-		"internet":                      "Config.CanUseInternet",
-		"log":                           "Config.Log",
-		"isolateMetadata":               "Client.Isolation.Metadata",
-		"isolateProfiles":               "Client.Isolation.Profiles",
-		"setupCommand":                  "Config.SetupCommand",
-		"revertCommand":                 "Config.RevertCommand",
-		"serverStart":                   "Server.Start",
-		"serverStop":                    "Server.Stop",
-		"serverSingleAutoSelect":        "Server.SingleAutoSelect",
-		"serverAnnouncePorts":           "Server.AnnouncePorts",
-		"serverAnnounceMulticastGroups": "Server.AnnounceMulticastGroups",
-		"server":                        "Server.Host",
-		"serverPath":                    "Server.Executable",
-		"serverPathArgs":                "Server.ExecutableArgs",
-		"clientExe":                     "Client.Executable",
-		"clientExeArgs":                 "Client.ExecutableArgs",
-	}
-	var mainfileCandidates []string
-	if cfgFile != "" {
-		mainfileCandidates = append(mainfileCandidates, cfgFile)
-	} else {
-		for _, configPath := range configPaths {
-			mainfileCandidates = append(mainfileCandidates, filepath.Join(configPath, "config.toml"))
-		}
-	}
-	usedFile := common.LoadKoanfLayersOrExit(k, defaults, mainfileCandidates, toml.Parser(), fs, bindings, executables.Launcher, commonLogger.Println)
-	usedConfigFile = usedFile
-	if cfgFile != "" && usedFile == "" {
-		logger.Warn("No config file found, using defaults.")
-	}
-	if usedFile != "" {
-		// Not printed here: the summary at the top of the run already names this
-		// file, and two copies of the same path is one more thing to keep in sync.
-		filesToPrint = append(filesToPrint, usedFile)
-	}
-	var gameFileCandidates []string
-	if gameCfgFile != "" {
-		gameFileCandidates = append(gameFileCandidates, gameCfgFile)
-	} else {
-		for _, configPath := range configPaths {
-			gameFileCandidates = append(gameFileCandidates, filepath.Join(configPath, fmt.Sprintf("config.%s.toml", gameId)))
-		}
-	}
-	var err error
-	if gameCfgFile, err = common.LoadKoanfLayers(k, map[string]any{}, gameFileCandidates, toml.Parser(), fs, nil, executables.Launcher); err == nil {
-		filesToPrint = append(filesToPrint, gameCfgFile)
-	} else {
-		if _, ok := errors.AsType[*common.KoanfFileLoadError](err); !ok {
-			logger.Fail("Error parsing game config file: %s:%s", gameCfgFile, err.Error())
-			os.Exit(launcher.ErrGameConfigParse)
-		}
-	}
-	var c launcher.Configuration
-	if err := k.Unmarshal("", &c); err != nil {
-		logger.Fail("unable to decode configuration: %v", err)
+	// The shared loader reports the problem but not how this frontend says it,
+	// which is the same split as everywhere else: it does not know whether this
+	// is a terminal or a window.
+	var ee *launcher.ExitError
+	if !errors.As(err, &ee) {
+		logger.Fail("%s", err.Error())
 		os.Exit(common.ErrConfigParse)
 	}
-	return &c
+	if ee.Game {
+		logger.Fail("Error parsing game config file: %s:%s", ee.Path, ee.Err.Error())
+	} else if fileErr, ok := errors.AsType[*common.KoanfFileLoadError](ee.Err); ok {
+		commonLogger.Println("Error parsing config file:", fileErr.Path+":", fileErr.Err.Error())
+	} else {
+		commonLogger.Println("Error loading config:", ee.Err.Error())
+	}
+	os.Exit(ee.Code)
+	return nil
 }
+
+// loggerReporter is the console's Reporter. It exists so the shared logic can
+// say what it is doing without knowing that a console is listening: the same
+// calls the file log gets, and the same decoration.
+type loggerReporter struct{}
+
+func (loggerReporter) Ok(format string, a ...any)     { logger.Ok(format, a...) }
+func (loggerReporter) Fail(format string, a ...any)   { logger.Fail(format, a...) }
+func (loggerReporter) Warn(format string, a ...any)   { logger.Warn(format, a...) }
+func (loggerReporter) Info(format string, a ...any)   { logger.Info(format, a...) }
+func (loggerReporter) Step(format string, a ...any)   { logger.Step(format, a...) }
+func (loggerReporter) Detail(format string, a ...any) { logger.Detail(format, a...) }
+func (loggerReporter) Fault(format string, a ...any)  { logger.Fault(format, a...) }
+func (loggerReporter) Println(a ...any)               { logger.Println(a...) }
+func (loggerReporter) Printf(format string, a ...any) { logger.Printf(format, a...) }
 
 // orNone names an optional path in the session summary.
 func orNone(path string) string {
@@ -950,67 +831,4 @@ func orNone(path string) string {
 		return "none"
 	}
 	return path
-}
-
-func validateDialogValue(dialogMode string) (exitCode int) {
-	if !autoTrueFalseValues.Contains(dialogMode) {
-		logger.Fail("Invalid value for dialog (auto/true/false): %s", dialogMode)
-		return launcher.ErrInvalidDialog
-	}
-	return common.ErrSuccess
-}
-
-func validateCanTrustCertificate(canTrustCertificate string) (exitCode int) {
-	validValues := mapset.NewThreadUnsafeSet[string](autoValue, falseValue, "user", "local")
-	if runtime.GOOS == "linux" {
-		validValues.Remove("user")
-	}
-	if !validValues.Contains(canTrustCertificate) {
-		logger.Fail("Invalid value for canTrustCertificate (%s): %s", strings.Join(validValues.ToSlice(), "/"), canTrustCertificate)
-		return launcher.ErrInvalidCanTrustCertificate
-	}
-	return common.ErrSuccess
-}
-
-func validateCanBroadcastBattleServer(canBroadcastBattleServer string) (exitCode int) {
-	if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
-		logger.Fail("Invalid value for canBroadcastBattleServer (auto/false): %s", canBroadcastBattleServer)
-		return launcher.ErrInvalidCanBroadcastBattleServer
-	}
-	return common.ErrSuccess
-}
-
-func validateServerStartValue(serverStart string) (exitCode int) {
-	if !autoTrueFalseValues.Contains(serverStart) {
-		logger.Fail("Invalid value for serverStart (auto/true/false): %s", serverStart)
-		return launcher.ErrInvalidServerStart
-	}
-	return common.ErrSuccess
-}
-
-func validateServerStopValue(serverStop string, nonWindowsAdmin bool) (exitCode int) {
-	validValues := mapset.NewThreadUnsafeSet[string](autoValue, trueValue, falseValue)
-	if nonWindowsAdmin {
-		validValues.Remove(falseValue)
-	}
-	if !validValues.Contains(serverStop) {
-		logger.Fail("Invalid value for serverStop (%s): %s", strings.Join(validValues.ToSlice(), "/"), serverStop)
-		return launcher.ErrInvalidServerStop
-	}
-	return common.ErrSuccess
-}
-
-func validateRequiredTrueFalse(value string, name string, validValues mapset.Set[string]) (exitCode int) {
-	if !validValues.Contains(value) {
-		logger.Fail("Invalid value for %s (%s): %s", name, strings.Join(validValues.ToSlice(), "/"), value)
-		switch name {
-		case "Server.BattleServerManager.Run":
-			return launcher.ErrInvalidServerBattleServerManagerRun
-		case "Client.Isolation.Metadata":
-			return launcher.ErrInvalidIsolateMetadata
-		case "Client.Isolation.Profiles":
-			return launcher.ErrInvalidIsolateProfiles
-		}
-	}
-	return common.ErrSuccess
 }

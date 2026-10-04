@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/netip"
 	"os"
-	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -150,85 +149,6 @@ func TestRunRootPidLockError(t *testing.T) {
 	_, exitCode := runRoot(fs)
 	if exitCode != common.ErrPidLock {
 		t.Errorf("expected exit code %d on pid lock error, got %d", common.ErrPidLock, exitCode)
-	}
-}
-
-func TestValidationCanTrustCertificateInvalid(t *testing.T) {
-	exitCode := validateCanTrustCertificate("invalid-value")
-	if exitCode != launcher.ErrInvalidCanTrustCertificate {
-		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidCanTrustCertificate, exitCode)
-	}
-}
-
-func TestValidationCanTrustCertificateValid(t *testing.T) {
-	for _, val := range []string{"auto", "false", "local"} {
-		exitCode := validateCanTrustCertificate(val)
-		if exitCode != common.ErrSuccess {
-			t.Errorf("for canTrustCertificate=%s, expected success, got %d", val, exitCode)
-		}
-	}
-	if runtime.GOOS == "darwin" {
-		if exitCode := validateCanTrustCertificate("user"); exitCode != common.ErrSuccess {
-			t.Errorf("expected success for 'user' on darwin, got %d", exitCode)
-		}
-	}
-	if exitCode := validateCanTrustCertificate("local"); exitCode != common.ErrSuccess {
-		t.Errorf("expected success for 'local', got %d", exitCode)
-	}
-}
-
-func TestValidationServerStartInvalid(t *testing.T) {
-	exitCode := validateServerStartValue("invalid")
-	if exitCode != launcher.ErrInvalidServerStart {
-		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidServerStart, exitCode)
-	}
-}
-
-func TestValidationServerStopInvalid(t *testing.T) {
-	for _, stop := range []string{"auto", "true", "false"} {
-		if exitCode := validateServerStopValue(stop, false); exitCode != common.ErrSuccess {
-			t.Errorf("for serverStop=%s (non-admin), expected success, got %d", stop, exitCode)
-		}
-	}
-	exitCode := validateServerStopValue("invalid-value", true)
-	if exitCode != launcher.ErrInvalidServerStop {
-		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidServerStop, exitCode)
-	}
-}
-
-func TestValidationCanBroadcastBattleServer(t *testing.T) {
-	if ec := validateCanBroadcastBattleServer("auto"); ec != common.ErrSuccess {
-		t.Errorf("expected success for auto, got %d", ec)
-	}
-	if ec := validateCanBroadcastBattleServer("false"); ec != common.ErrSuccess {
-		t.Errorf("expected success for false, got %d", ec)
-	}
-	if ec := validateCanBroadcastBattleServer("true"); ec != launcher.ErrInvalidCanBroadcastBattleServer {
-		t.Errorf("expected invalid for true, got %d", ec)
-	}
-	if ec := validateCanBroadcastBattleServer("bad"); ec != launcher.ErrInvalidCanBroadcastBattleServer {
-		t.Errorf("expected invalid for bad, got %d", ec)
-	}
-}
-
-func TestValidationRequiredTrueFalse(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    string
-		field    string
-		wantCode int
-	}{
-		{"valid true", "true", "Server.BattleServerManager.Run", common.ErrSuccess},
-		{"valid required", "required", "Client.Isolation.Metadata", common.ErrSuccess},
-		{"invalid", "bad", "Server.BattleServerManager.Run", launcher.ErrInvalidServerBattleServerManagerRun},
-		{"invalid metadata", "bad", "Client.Isolation.Metadata", launcher.ErrInvalidIsolateMetadata},
-		{"invalid profiles", "bad", "Client.Isolation.Profiles", launcher.ErrInvalidIsolateProfiles},
-	}
-	for _, tt := range tests {
-		ec := validateRequiredTrueFalse(tt.value, tt.field, requiredTrueFalseValues)
-		if ec != tt.wantCode {
-			t.Errorf("%s: expected %d, got %d", tt.name, tt.wantCode, ec)
-		}
 	}
 }
 
@@ -1663,17 +1583,6 @@ func (c *countingLocker) Unlock() error {
 }
 
 func (c *countingLocker) calls() int32 { return atomic.LoadInt32(&c.calls32) }
-
-func TestValidationDialogValue(t *testing.T) {
-	for _, mode := range []string{dialog.ModeAuto, dialog.ModeTrue, dialog.ModeFalse} {
-		if ec := validateDialogValue(mode); ec != common.ErrSuccess {
-			t.Errorf("for dialog=%s, expected success, got %d", mode, ec)
-		}
-	}
-	if ec := validateDialogValue("xxx"); ec != launcher.ErrInvalidDialog {
-		t.Errorf("expected %d for an invalid dialog mode, got %d", launcher.ErrInvalidDialog, ec)
-	}
-}
 
 // An invalid dialog mode must abort before anything is started or reverted on
 // the user's behalf.
