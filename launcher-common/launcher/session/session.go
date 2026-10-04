@@ -330,8 +330,8 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	launcher.SetDialog(dialogResolution.Dialog)
 	// Registered after the teardown defer so, by LIFO, it runs before it.
 	defer launcher.ResetDialog()
-	// ui.Banner prints nothing when the console width is unknown, so a redirected
-	// run or a pipe never gets a banner in the middle of its output.
+	// The console's presenter draws nothing when the console width is unknown, so a
+	// redirected run or a pipe never gets a banner in the middle of its output.
 	launcher.ActivePresenter().Banner(executables.Launcher, setup.Version)
 	// One place for the three facts the run depends on. They used to be announced
 	// once here and once again further down, which is how a mismatch between the

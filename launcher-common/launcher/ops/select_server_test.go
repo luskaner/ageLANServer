@@ -203,9 +203,9 @@ func TestUsableServerIndexRejectsOutOfRangeIndex(t *testing.T) {
 
 // stubConsole is the console backend as far as these tests are concerned: it
 // prints the same lines to the same place. The real backend is a console
-// frontend and lives in launcher/internal/dialog, where its own formatting is
-// covered; what matters here is that the run and the backend agree on the order
-// of the output, which is a promise made on both sides.
+// frontend and lives in the console launcher's dialog package, where its own
+// formatting is covered; what matters here is that the run and the backend agree on
+// the order of the output, which is a promise made on both sides.
 type stubConsole struct{}
 
 func (stubConsole) Name() string { return "console" }
