@@ -7,7 +7,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
@@ -50,7 +50,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
 				logger.Fail("%s", isolateMsg+strings.Join(isolateItems, " or ")+".")
-				exitCode = internal.ErrMetadataProfilesSetup
+				exitCode = launcher.ErrMetadataProfilesSetup
 				if result.Err != nil {
 					logger.Fault("Error message: %s", result.Err.Error())
 				}

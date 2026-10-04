@@ -11,7 +11,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/hosts"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/server"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
@@ -23,14 +23,14 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 			if !common.Matches(ip, domain) {
 				if !canMap {
 					logger.Fail("%s", "serverStart is false and canAddHost is false but server does not match "+domain+". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
-					exitCode = internal.ErrConfigIpMap
+					exitCode = launcher.ErrConfigIpMap
 					return
 				}
 				mapIP = true
 			} else if err := server.CheckConnectionFromServer(domain, true, nil); err != nil {
 				logger.Fail("%s", "serverStart is false and host matches. "+domain+" must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
 				logger.Fault("Error: %s", err.Error())
-				exitCode = internal.ErrServerUnreachable
+				exitCode = launcher.ErrServerUnreachable
 				return
 			}
 		}
@@ -43,14 +43,14 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 			hostFileLock, err := hosts.CreateTemp()
 			if err != nil {
 				logger.Fail("Failed to create temp hosts file with IP %s: %s", ip, err.Error())
-				return internal.ErrConfigIpMapAdd
+				return launcher.ErrConfigIpMapAdd
 			}
 			tmpName := hostFileLock.File.Name()
 			c.hostFilePath, _ = filepath.Abs(tmpName)
 			str += fmt.Sprintf("Saving hosts to '%s' file", tmpName)
 			if err = hostFileLock.Unlock(); err != nil {
 				logger.Fail("Failed to unlock temp hosts file %s: %s", tmpName, err.Error())
-				return internal.ErrConfigIpMapAdd
+				return launcher.ErrConfigIpMapAdd
 			}
 		} else {
 			// No quotes around the address: the inline styler already marks it as a
@@ -87,7 +87,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 				if logFolder := commonLogger.FileLogger.Folder(); logFolder != "" {
 					logger.Fault("Check log folder %s for config_setup_hosts* and config-admin_setup_hosts* files.", logFolder)
 				}
-				exitCode = internal.ErrConfigIpMapAdd
+				exitCode = launcher.ErrConfigIpMapAdd
 			} else if customHostFile {
 				if parsedIP := net.ParseIP(ip); parsedIP != nil {
 					mappings := hosts.Mappings(gameId, parsedIP, macOsExclusiveMappings)
@@ -95,7 +95,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 						common.CacheMapping(string(hostToCache), ipToCache.String())
 					}
 				} else {
-					exitCode = internal.ErrConfigIpMapAdd
+					exitCode = launcher.ErrConfigIpMapAdd
 				}
 			}
 		}); err != nil {

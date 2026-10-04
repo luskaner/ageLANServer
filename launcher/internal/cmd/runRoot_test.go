@@ -29,7 +29,7 @@ import (
 	commonServer "github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/common/uuid"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
@@ -155,8 +155,8 @@ func TestRunRootPidLockError(t *testing.T) {
 
 func TestValidationCanTrustCertificateInvalid(t *testing.T) {
 	exitCode := validateCanTrustCertificate("invalid-value")
-	if exitCode != internal.ErrInvalidCanTrustCertificate {
-		t.Errorf("expected exit code %d, got %d", internal.ErrInvalidCanTrustCertificate, exitCode)
+	if exitCode != launcher.ErrInvalidCanTrustCertificate {
+		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidCanTrustCertificate, exitCode)
 	}
 }
 
@@ -179,8 +179,8 @@ func TestValidationCanTrustCertificateValid(t *testing.T) {
 
 func TestValidationServerStartInvalid(t *testing.T) {
 	exitCode := validateServerStartValue("invalid")
-	if exitCode != internal.ErrInvalidServerStart {
-		t.Errorf("expected exit code %d, got %d", internal.ErrInvalidServerStart, exitCode)
+	if exitCode != launcher.ErrInvalidServerStart {
+		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidServerStart, exitCode)
 	}
 }
 
@@ -191,8 +191,8 @@ func TestValidationServerStopInvalid(t *testing.T) {
 		}
 	}
 	exitCode := validateServerStopValue("invalid-value", true)
-	if exitCode != internal.ErrInvalidServerStop {
-		t.Errorf("expected exit code %d, got %d", internal.ErrInvalidServerStop, exitCode)
+	if exitCode != launcher.ErrInvalidServerStop {
+		t.Errorf("expected exit code %d, got %d", launcher.ErrInvalidServerStop, exitCode)
 	}
 }
 
@@ -203,10 +203,10 @@ func TestValidationCanBroadcastBattleServer(t *testing.T) {
 	if ec := validateCanBroadcastBattleServer("false"); ec != common.ErrSuccess {
 		t.Errorf("expected success for false, got %d", ec)
 	}
-	if ec := validateCanBroadcastBattleServer("true"); ec != internal.ErrInvalidCanBroadcastBattleServer {
+	if ec := validateCanBroadcastBattleServer("true"); ec != launcher.ErrInvalidCanBroadcastBattleServer {
 		t.Errorf("expected invalid for true, got %d", ec)
 	}
-	if ec := validateCanBroadcastBattleServer("bad"); ec != internal.ErrInvalidCanBroadcastBattleServer {
+	if ec := validateCanBroadcastBattleServer("bad"); ec != launcher.ErrInvalidCanBroadcastBattleServer {
 		t.Errorf("expected invalid for bad, got %d", ec)
 	}
 }
@@ -220,9 +220,9 @@ func TestValidationRequiredTrueFalse(t *testing.T) {
 	}{
 		{"valid true", "true", "Server.BattleServerManager.Run", common.ErrSuccess},
 		{"valid required", "required", "Client.Isolation.Metadata", common.ErrSuccess},
-		{"invalid", "bad", "Server.BattleServerManager.Run", internal.ErrInvalidServerBattleServerManagerRun},
-		{"invalid metadata", "bad", "Client.Isolation.Metadata", internal.ErrInvalidIsolateMetadata},
-		{"invalid profiles", "bad", "Client.Isolation.Profiles", internal.ErrInvalidIsolateProfiles},
+		{"invalid", "bad", "Server.BattleServerManager.Run", launcher.ErrInvalidServerBattleServerManagerRun},
+		{"invalid metadata", "bad", "Client.Isolation.Metadata", launcher.ErrInvalidIsolateMetadata},
+		{"invalid profiles", "bad", "Client.Isolation.Profiles", launcher.ErrInvalidIsolateProfiles},
 	}
 	for _, tt := range tests {
 		ec := validateRequiredTrueFalse(tt.value, tt.field, requiredTrueFalseValues)
@@ -232,8 +232,8 @@ func TestValidationRequiredTrueFalse(t *testing.T) {
 	}
 }
 
-func validLauncherConfig() *internal.Configuration {
-	c := &internal.Configuration{}
+func validLauncherConfig() *launcher.Configuration {
+	c := &launcher.Configuration{}
 	c.Config.Certificate.CanTrustInPc = "local"
 	c.Config.CanBroadcastBattleServer = "auto"
 	c.Config.Dialog = "auto"
@@ -273,7 +273,7 @@ func TestRunRootUnsupportedGame(t *testing.T) {
 	cfgFile = ""
 	gameCfgFile = ""
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		return validLauncherConfig()
 	}
 	openMainLogFn = func(gameID string) error { return nil }
@@ -290,15 +290,15 @@ func TestRunRootUnsupportedGame(t *testing.T) {
 func TestRunRootValidationFailures(t *testing.T) {
 	tests := []struct {
 		name     string
-		mutate   func(c *internal.Configuration)
+		mutate   func(c *launcher.Configuration)
 		wantCode int
 	}{
-		{"invalid canTrustCertificate", func(c *internal.Configuration) { c.Config.Certificate.CanTrustInPc = "bad" }, internal.ErrInvalidCanTrustCertificate},
-		{"invalid serverStart", func(c *internal.Configuration) { c.Server.Start = "bad" }, internal.ErrInvalidServerStart},
-		{"invalid serverStop", func(c *internal.Configuration) { c.Server.Stop = "bad" }, internal.ErrInvalidServerStop},
-		{"invalid battleServerManagerRun", func(c *internal.Configuration) { c.Server.BattleServerManager.Run = "bad" }, internal.ErrInvalidServerBattleServerManagerRun},
-		{"invalid isolateMetadata", func(c *internal.Configuration) { c.Client.Isolation.Metadata = "bad" }, internal.ErrInvalidIsolateMetadata},
-		{"invalid isolateProfiles", func(c *internal.Configuration) { c.Client.Isolation.Profiles = "bad" }, internal.ErrInvalidIsolateProfiles},
+		{"invalid canTrustCertificate", func(c *launcher.Configuration) { c.Config.Certificate.CanTrustInPc = "bad" }, launcher.ErrInvalidCanTrustCertificate},
+		{"invalid serverStart", func(c *launcher.Configuration) { c.Server.Start = "bad" }, launcher.ErrInvalidServerStart},
+		{"invalid serverStop", func(c *launcher.Configuration) { c.Server.Stop = "bad" }, launcher.ErrInvalidServerStop},
+		{"invalid battleServerManagerRun", func(c *launcher.Configuration) { c.Server.BattleServerManager.Run = "bad" }, launcher.ErrInvalidServerBattleServerManagerRun},
+		{"invalid isolateMetadata", func(c *launcher.Configuration) { c.Client.Isolation.Metadata = "bad" }, launcher.ErrInvalidIsolateMetadata},
+		{"invalid isolateProfiles", func(c *launcher.Configuration) { c.Client.Isolation.Profiles = "bad" }, launcher.ErrInvalidIsolateProfiles},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -320,7 +320,7 @@ func TestRunRootValidationFailures(t *testing.T) {
 			cfgFile = ""
 			gameCfgFile = ""
 			newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-			initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+			initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 				c := validLauncherConfig()
 				tt.mutate(c)
 				return c
@@ -352,7 +352,7 @@ func TestRunRootOpenFileLogError(t *testing.T) {
 	cfgFile = ""
 	gameCfgFile = ""
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		return validLauncherConfig()
 	}
 	openMainLogFn = func(gameID string) error { return errors.New("open fail") }
@@ -384,7 +384,7 @@ func TestRunRootServerArgsParseFailure(t *testing.T) {
 	cfgFile = ""
 	gameCfgFile = ""
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		c := validLauncherConfig()
 		c.Server.Args = []string{"bad-args"}
 		return c
@@ -397,8 +397,8 @@ func TestRunRootServerArgsParseFailure(t *testing.T) {
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerArgs {
-		t.Errorf("expected exit code %d for server args parse fail, got %d", internal.ErrInvalidServerArgs, exitCode)
+	if exitCode != launcher.ErrInvalidServerArgs {
+		t.Errorf("expected exit code %d for server args parse fail, got %d", launcher.ErrInvalidServerArgs, exitCode)
 	}
 }
 
@@ -423,7 +423,7 @@ func TestRunRootSetupCommandParseFailure(t *testing.T) {
 	cfgFile = ""
 	gameCfgFile = ""
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		c := validLauncherConfig()
 		c.Config.SetupCommand = []string{"setup", "bad"}
 		return c
@@ -443,8 +443,8 @@ func TestRunRootSetupCommandParseFailure(t *testing.T) {
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidSetupCommand {
-		t.Errorf("expected exit code %d for setup command parse fail, got %d", internal.ErrInvalidSetupCommand, exitCode)
+	if exitCode != launcher.ErrInvalidSetupCommand {
+		t.Errorf("expected exit code %d for setup command parse fail, got %d", launcher.ErrInvalidSetupCommand, exitCode)
 	}
 }
 
@@ -467,7 +467,7 @@ func TestRunRootInvalidIsolationPath(t *testing.T) {
 	}()
 	gameId = "aoe2"
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		c := validLauncherConfig()
 		c.Client.Isolation.Path = "custom/path"
 		return c
@@ -480,8 +480,8 @@ func TestRunRootInvalidIsolationPath(t *testing.T) {
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidIsolationPath {
-		t.Errorf("expected %d for invalid isolation path, got %d", internal.ErrInvalidIsolationPath, exitCode)
+	if exitCode != launcher.ErrInvalidIsolationPath {
+		t.Errorf("expected %d for invalid isolation path, got %d", launcher.ErrInvalidIsolationPath, exitCode)
 	}
 }
 
@@ -504,7 +504,7 @@ func TestRunRootInvalidServerExecutable(t *testing.T) {
 	}()
 	gameId = "aoe2"
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		c := validLauncherConfig()
 		c.Server.Executable.Path = "bad/server.exe"
 		return c
@@ -521,8 +521,8 @@ func TestRunRootInvalidServerExecutable(t *testing.T) {
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerPath {
-		t.Errorf("expected %d for invalid server path, got %d", internal.ErrInvalidServerPath, exitCode)
+	if exitCode != launcher.ErrInvalidServerPath {
+		t.Errorf("expected %d for invalid server path, got %d", launcher.ErrInvalidServerPath, exitCode)
 	}
 }
 
@@ -545,7 +545,7 @@ func TestRunRootGameLauncherNotFound(t *testing.T) {
 	}()
 	gameId = "aoe2"
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		return validLauncherConfig()
 	}
 	openMainLogFn = func(gameID string) error { return nil }
@@ -556,8 +556,8 @@ func TestRunRootGameLauncherNotFound(t *testing.T) {
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrGameLauncherNotFound {
-		t.Errorf("expected %d for game launcher not found, got %d", internal.ErrGameLauncherNotFound, exitCode)
+	if exitCode != launcher.ErrGameLauncherNotFound {
+		t.Errorf("expected %d for game launcher not found, got %d", launcher.ErrGameLauncherNotFound, exitCode)
 	}
 }
 
@@ -586,7 +586,7 @@ func TestRunRootGameAlreadyRunning(t *testing.T) {
 	}()
 	gameId = "age1"
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		c := validLauncherConfig()
 		c.Client.Executable.Path = "auto"
 		return c
@@ -602,8 +602,8 @@ func TestRunRootGameAlreadyRunning(t *testing.T) {
 	gameRunningFn = func() bool { return true }
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrGameAlreadyRunning {
-		t.Errorf("expected %d for game already running, got %d", internal.ErrGameAlreadyRunning, exitCode)
+	if exitCode != launcher.ErrGameAlreadyRunning {
+		t.Errorf("expected %d for game already running, got %d", launcher.ErrGameAlreadyRunning, exitCode)
 	}
 }
 
@@ -636,7 +636,7 @@ func TestRunRootConfigRevertBufferError(t *testing.T) {
 	}()
 	gameId = "age1"
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
-	initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration {
+	initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration {
 		return validLauncherConfig()
 	}
 	openMainLogFn = func(gameID string) error { return nil }
@@ -657,7 +657,7 @@ func TestRunRootConfigRevertBufferError(t *testing.T) {
 
 type runRootOverrides struct {
 	gameId                            string
-	cfg                               func() *internal.Configuration
+	cfg                               func() *launcher.Configuration
 	isAdmin                           bool
 	gameSupported                     bool
 	makeExec                          base.Executor
@@ -758,9 +758,9 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 		newPidLockFn = func() fileLock.Locker { return &fakePidLocker{} }
 	}
 	if o.cfg != nil {
-		initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration { return o.cfg() }
+		initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration { return o.cfg() }
 	} else {
-		initConfigFn = func(fs *pflag.FlagSet) *internal.Configuration { return validLauncherConfig() }
+		initConfigFn = func(fs *pflag.FlagSet) *launcher.Configuration { return validLauncherConfig() }
 	}
 	if o.openLog != nil {
 		openMainLogFn = func(gameID string) error { return o.openLog }
@@ -1051,7 +1051,7 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.AnnounceMulticastGroups = []string{"not-a-multicast"}
 			return c
@@ -1060,8 +1060,8 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrAnnouncementMulticastGroup {
-		t.Errorf("expected %d for invalid multicast group, got %d", internal.ErrAnnouncementMulticastGroup, exitCode)
+	if exitCode != launcher.ErrAnnouncementMulticastGroup {
+		t.Errorf("expected %d for invalid multicast group, got %d", launcher.ErrAnnouncementMulticastGroup, exitCode)
 	}
 }
 
@@ -1094,7 +1094,7 @@ func TestRunRootServerHostEmpty(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.Start = "false"
 			c.Server.Host = ""
@@ -1104,8 +1104,8 @@ func TestRunRootServerHostEmpty(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerHost {
-		t.Errorf("expected %d for empty serverHost, got %d", internal.ErrInvalidServerHost, exitCode)
+	if exitCode != launcher.ErrInvalidServerHost {
+		t.Errorf("expected %d for empty serverHost, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
 }
 
@@ -1114,7 +1114,7 @@ func TestRunRootServerHostIPv6(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.Start = "false"
 			c.Server.Host = "::1"
@@ -1124,8 +1124,8 @@ func TestRunRootServerHostIPv6(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerHost {
-		t.Errorf("expected %d for IPv6 serverHost, got %d", internal.ErrInvalidServerHost, exitCode)
+	if exitCode != launcher.ErrInvalidServerHost {
+		t.Errorf("expected %d for IPv6 serverHost, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
 }
 
@@ -1134,7 +1134,7 @@ func TestRunRootServerHostResolutionFailure(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.Start = "false"
 			c.Server.Host = "192.168.1.50"
@@ -1147,8 +1147,8 @@ func TestRunRootServerHostResolutionFailure(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerHost {
-		t.Errorf("expected %d for server host resolution failure, got %d", internal.ErrInvalidServerHost, exitCode)
+	if exitCode != launcher.ErrInvalidServerHost {
+		t.Errorf("expected %d for server host resolution failure, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
 }
 
@@ -1162,8 +1162,8 @@ func TestRunRootServerExecutableNotFound(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrServerExecutable {
-		t.Errorf("expected %d for server executable not found, got %d", internal.ErrServerExecutable, exitCode)
+	if exitCode != launcher.ErrServerExecutable {
+		t.Errorf("expected %d for server executable not found, got %d", launcher.ErrServerExecutable, exitCode)
 	}
 }
 
@@ -1177,8 +1177,8 @@ func TestRunRootReadCertFailure(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrReadCert {
-		t.Errorf("expected %d for read cert failure, got %d", internal.ErrReadCert, exitCode)
+	if exitCode != launcher.ErrReadCert {
+		t.Errorf("expected %d for read cert failure, got %d", launcher.ErrReadCert, exitCode)
 	}
 }
 
@@ -1256,7 +1256,7 @@ func TestRunRootBattleServerManagerParseFailure(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.BattleServerManager.Run = "true"
 			return c
@@ -1272,8 +1272,8 @@ func TestRunRootBattleServerManagerParseFailure(t *testing.T) {
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	_, exitCode := runRoot(fs)
-	if exitCode != internal.ErrInvalidServerBattleServerManagerArgs {
-		t.Errorf("expected %d for battle server manager parse failure, got %d", internal.ErrInvalidServerBattleServerManagerArgs, exitCode)
+	if exitCode != launcher.ErrInvalidServerBattleServerManagerArgs {
+		t.Errorf("expected %d for battle server manager parse failure, got %d", launcher.ErrInvalidServerBattleServerManagerArgs, exitCode)
 	}
 }
 
@@ -1300,7 +1300,7 @@ func TestRunRootServerFoundWithFilter(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.Start = "false"
 			c.Server.Host = "192.168.1.50"
@@ -1354,7 +1354,7 @@ func TestRunRootCanUseInternetDisabledByConfig(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.CanUseInternet = false
 			return c
@@ -1362,9 +1362,9 @@ func TestRunRootCanUseInternetDisabledByConfig(t *testing.T) {
 		dnsConnectivityFnVal: func() bool { return true },
 	})
 	defer restore()
-	origInternet := internal.CanUseInternet
+	origInternet := launcher.CanUseInternet
 	defer func() {
-		internal.CanUseInternet = origInternet
+		launcher.CanUseInternet = origInternet
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -1372,8 +1372,8 @@ func TestRunRootCanUseInternetDisabledByConfig(t *testing.T) {
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
-	if internal.CanUseInternet {
-		t.Error("internal.CanUseInternet should be false when config disables internet")
+	if launcher.CanUseInternet {
+		t.Error("launcher.CanUseInternet should be false when config disables internet")
 	}
 }
 
@@ -1382,7 +1382,7 @@ func TestRunRootCanUseInternetProbeWhenConnectivity(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.CanUseInternet = true
 			return c
@@ -1390,9 +1390,9 @@ func TestRunRootCanUseInternetProbeWhenConnectivity(t *testing.T) {
 		dnsConnectivityFnVal: func() bool { return true },
 	})
 	defer restore()
-	origInternet := internal.CanUseInternet
+	origInternet := launcher.CanUseInternet
 	defer func() {
-		internal.CanUseInternet = origInternet
+		launcher.CanUseInternet = origInternet
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -1400,8 +1400,8 @@ func TestRunRootCanUseInternetProbeWhenConnectivity(t *testing.T) {
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
-	if !internal.CanUseInternet {
-		t.Error("internal.CanUseInternet should be true when connectivity probe succeeds")
+	if !launcher.CanUseInternet {
+		t.Error("launcher.CanUseInternet should be true when connectivity probe succeeds")
 	}
 }
 
@@ -1410,7 +1410,7 @@ func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.CanUseInternet = true
 			return c
@@ -1418,9 +1418,9 @@ func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
 		dnsConnectivityFnVal: func() bool { return false },
 	})
 	defer restore()
-	origInternet := internal.CanUseInternet
+	origInternet := launcher.CanUseInternet
 	defer func() {
-		internal.CanUseInternet = origInternet
+		launcher.CanUseInternet = origInternet
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -1428,8 +1428,8 @@ func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
-	if internal.CanUseInternet {
-		t.Error("internal.CanUseInternet should be false when connectivity probe fails")
+	if launcher.CanUseInternet {
+		t.Error("launcher.CanUseInternet should be false when connectivity probe fails")
 	}
 }
 
@@ -1438,7 +1438,7 @@ func TestRunRootCanTrustCertificateAuto(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.Certificate.CanTrustInPc = "auto"
 			return c
@@ -1670,8 +1670,8 @@ func TestValidationDialogValue(t *testing.T) {
 			t.Errorf("for dialog=%s, expected success, got %d", mode, ec)
 		}
 	}
-	if ec := validateDialogValue("xxx"); ec != internal.ErrInvalidDialog {
-		t.Errorf("expected %d for an invalid dialog mode, got %d", internal.ErrInvalidDialog, ec)
+	if ec := validateDialogValue("xxx"); ec != launcher.ErrInvalidDialog {
+		t.Errorf("expected %d for an invalid dialog mode, got %d", launcher.ErrInvalidDialog, ec)
 	}
 }
 
@@ -1683,7 +1683,7 @@ func TestRunRootInvalidDialogValue(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.Dialog = "xxx"
 			return c
@@ -1695,8 +1695,8 @@ func TestRunRootInvalidDialogValue(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != internal.ErrInvalidDialog {
-		t.Fatalf("got %d, want %d", exitCode, internal.ErrInvalidDialog)
+	if _, exitCode := runRoot(fs); exitCode != launcher.ErrInvalidDialog {
+		t.Fatalf("got %d, want %d", exitCode, launcher.ErrInvalidDialog)
 	}
 	if startServerCalls != 0 {
 		t.Errorf("the server was started %d times with an invalid dialog mode", startServerCalls)
@@ -1711,7 +1711,7 @@ func TestRunRootUsesConsoleWhenDialogsUnavailable(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Config.Dialog = dialog.ModeTrue
 			return c
@@ -1761,8 +1761,8 @@ func TestRunRootServerStartCanceled(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != internal.ErrServerStartCanceled {
-		t.Fatalf("got %d, want %d", exitCode, internal.ErrServerStartCanceled)
+	if _, exitCode := runRoot(fs); exitCode != launcher.ErrServerStartCanceled {
+		t.Fatalf("got %d, want %d", exitCode, launcher.ErrServerStartCanceled)
 	}
 	if dlg.confirmCalls != 1 {
 		t.Errorf("the confirmation was asked %d times, want 1", dlg.confirmCalls)
@@ -1811,7 +1811,7 @@ func TestRunRootServerStartWithoutConfirmationSkipsDialog(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		cfg: func() *internal.Configuration {
+		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
 			c.Server.StartWithoutConfirmation = true
 			return c

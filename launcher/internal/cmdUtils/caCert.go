@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 )
@@ -19,7 +19,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
 		logger.Fail("Could not read game CA certificates: %s", err)
-		return internal.ErrConfigCACertAdd
+		return launcher.ErrConfigCACertAdd
 	}
 	var addCert bool
 	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId, macOsExclusiveMappings), caPool, canAddCert)
@@ -38,7 +38,7 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 			logger.Fail("Failed to save CA certificate to game")
-			exitCode = internal.ErrConfigCACertAdd
+			exitCode = launcher.ErrConfigCACertAdd
 			if result.Err != nil {
 				logger.Fault("Error message: %s", result.Err.Error())
 			}

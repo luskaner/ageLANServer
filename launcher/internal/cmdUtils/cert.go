@@ -15,7 +15,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	server2 "github.com/luskaner/ageLANServer/common/server"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
@@ -29,28 +29,28 @@ func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.C
 				if cert == nil {
 					logger.Fail("%s", "Failed to read certificate from "+host+".")
 					logger.Fault("Error: %s", err.Error())
-					exitCode = internal.ErrReadCert
+					exitCode = launcher.ErrReadCert
 					return
 				} else if !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 					logger.Fail("%s", "The certificate for "+host+" does not match the server certificate.")
 					logger.Fault("Error: %s", err.Error())
-					exitCode = internal.ErrCertMismatch
+					exitCode = launcher.ErrCertMismatch
 					return
 				}
 				requiresFixing = true
 			} else {
 				logger.Fail("%s", host+" must have been trusted manually.")
 				logger.Fault("Error: %s", err.Error())
-				exitCode = internal.ErrConfigCert
+				exitCode = launcher.ErrConfigCert
 				return
 			}
 		} else if cert := server.ReadCACertificateFromServer(host); cert == nil || !bytes.Equal(cert.Raw, serverCertificate.Raw) {
 			logger.Fail("%s", "The certificate for "+host+" does not match the server certificate (or could not be read).")
-			exitCode = internal.ErrCertMismatch
+			exitCode = launcher.ErrCertMismatch
 			return
 		} else if !server2.LanServerHost(serverId, gameId, host, false, rootCAs) {
 			logger.Fail("%s", "Something went wrong, "+host+" does not point to a lan server.")
-			exitCode = internal.ErrServerConnectSecure
+			exitCode = launcher.ErrServerConnectSecure
 			return
 		}
 	}
@@ -77,10 +77,10 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 	if customCertFile {
 		certFile, err := os.CreateTemp("", common.Name+"_cert_*.pem")
 		if err != nil {
-			return internal.ErrConfigCertAdd
+			return launcher.ErrConfigCertAdd
 		}
 		if err = certFile.Close(); err != nil {
-			return internal.ErrConfigCertAdd
+			return launcher.ErrConfigCertAdd
 		}
 		c.certFilePath, _ = filepath.Abs(certFile.Name())
 		addLocalCertData = serverCertificate.Raw
@@ -123,7 +123,7 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 			} else {
 				logger.Fail("Failed to trust certificate")
 			}
-			errorCode = internal.ErrConfigCertAdd
+			errorCode = launcher.ErrConfigCertAdd
 			if result.Err != nil {
 				logger.Fault("Error message: %s", result.Err.Error())
 				setupErr = result.Err
@@ -137,18 +137,18 @@ func (c *Config) AddCert(gameId string, serverId uuid.UUID, serverCertificate *x
 		return common.ErrFileLog
 	}
 	if setupErr != nil {
-		return internal.ErrConfigCertAdd
+		return launcher.ErrConfigCertAdd
 	}
 	if !customCertFile {
 		for _, host := range hosts {
 			if err = server2.CheckConnectionFromServer(host, false, nil); err != nil {
 				logger.Fail("%s", host+" must have been trusted automatically at this point.")
 				logger.Fault("Error: %s", err.Error())
-				errorCode = internal.ErrServerConnectSecure
+				errorCode = launcher.ErrServerConnectSecure
 				return
 			} else if !server2.LanServerHost(serverId, gameId, host, false, nil) {
 				logger.Fail("%s", "Something went wrong, "+host+" either points to the original server or there is a certificate issue.")
-				errorCode = internal.ErrTrustCert
+				errorCode = launcher.ErrTrustCert
 				return
 			}
 		}

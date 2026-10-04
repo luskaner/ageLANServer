@@ -33,7 +33,7 @@ func (zenityDialog) SelectServer(servers []ServerCandidate, stdin io.Reader) (in
 	// The compact Label keeps the address, the latency and the version.
 	items := make([]string, len(servers))
 	for i, s := range servers {
-		items[i] = fmt.Sprintf("%d. %s", i+1, s.label())
+		items[i] = fmt.Sprintf("%d. %s", i+1, label(s))
 	}
 	selected, err := zenityListFn(
 		// The quotes are back here on purpose: a graphical dialog has no colour

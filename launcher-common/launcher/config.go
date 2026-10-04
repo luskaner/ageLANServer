@@ -1,4 +1,4 @@
-package internal
+package launcher
 
 type Executable struct {
 	Path string   `koanf:"Executable"`

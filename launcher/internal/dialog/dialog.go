@@ -1,5 +1,7 @@
-// Package dialog abstracts the launcher's interactive prompts so they can be
-// answered either in a graphical window or in the console.
+// Package dialog holds the launcher console's answers to the interactive
+// prompts. The prompts themselves, and the Dialog interface, live in
+// launcher-common/launcher: every frontend asks the same questions, and only the
+// way they are asked differs.
 //
 // It must not import cmdUtils or cmdUtils/logger: cmdUtils needs dialog, and
 // cmdUtils/logger needs dialog too, so console output goes through the
@@ -8,61 +10,36 @@ package dialog
 
 import (
 	"fmt"
-	"io"
 	"sync"
 	"sync/atomic"
+
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 )
 
-// Mode values accepted by Config.Dialog and --dialog.
+// The vocabulary belongs to the shared package, so a graphical frontend answers
+// the same questions with the same types. These aliases keep this package's
+// callers saying dialog.ServerCandidate instead of repeating where it came from.
+type (
+	Dialog          = launcher.Dialog
+	ServerCandidate = launcher.ServerCandidate
+)
+
 const (
-	ModeAuto  = "auto"
-	ModeTrue  = "true"
-	ModeFalse = "false"
+	ModeAuto  = launcher.ModeAuto
+	ModeTrue  = launcher.ModeTrue
+	ModeFalse = launcher.ModeFalse
 )
 
-// ServerCandidate is one discovered server offered to the user.
-type ServerCandidate struct {
-	// Description is the full line, with every discovered IP and hostname. The
-	// console shows it as is.
-	Description string
-	// Label is a compact summary for backends with little horizontal room.
-	// Graphical backends use this so the decisive part (address, latency,
-	// version) survives instead of being clipped off the end.
-	Label string
-}
-
-// label returns the compact summary, falling back to the full description when
-// no compact one was provided.
-func (c ServerCandidate) label() string {
+// label is the compact summary of a candidate, falling back to the full
+// description when no compact one was provided.
+//
+// It is a backend detail rather than a method on the candidate: which of the two
+// forms fits depends on how much room the backend has.
+func label(c ServerCandidate) string {
 	if c.Label == "" {
 		return c.Description
 	}
 	return c.Label
-}
-
-// Dialog is the set of interactive prompts the launcher needs.
-type Dialog interface {
-	// Name returns the backend identifier recorded in the log file.
-	Name() string
-
-	// SelectServer asks which of the discovered servers to use. servers
-	// holds the candidates already sorted by latency. It returns the 0-based
-	// index into servers.
-	// ok is false when the user declined to pick one, in which case the
-	// caller must fall back to its own default (start its own server).
-	// stdin is only read by the console implementation.
-	SelectServer(servers []ServerCandidate, stdin io.Reader) (index int, ok bool)
-
-	// ListCandidates shows the candidate list without asking anything. The
-	// console backend prints it, exactly as SelectServer does before its
-	// prompt, so paths that answer on their own still leave the console user
-	// with a trace of what was considered. Backends that render the list in
-	// their own window leave it as a no-op.
-	ListCandidates(servers []ServerCandidate)
-
-	// ConfirmStartServer asks whether to go ahead and start the server.
-	// It returns false only when the user actively declined.
-	ConfirmStartServer(text string, stdin io.Reader) bool
 }
 
 // Output are the sinks the console prompts write to. They mirror

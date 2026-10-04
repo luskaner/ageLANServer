@@ -1,4 +1,4 @@
-package internal
+package launcher
 
 import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"

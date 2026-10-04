@@ -1,3 +1,3 @@
-package internal
+package launcher
 
 var CanUseInternet bool

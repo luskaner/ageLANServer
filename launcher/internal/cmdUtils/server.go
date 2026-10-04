@@ -18,8 +18,8 @@ import (
 	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher/internal"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/luskaner/ageLANServer/launcher/internal/server"
@@ -174,7 +174,7 @@ func usableServerIndex(idx int, ok bool, procCount int) int {
 }
 
 func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cmdServer.Values, stop bool) (exitCode int, ip string) {
-	if !internal.CanUseInternet {
+	if !launcher.CanUseInternet {
 		values.CanUseInternet = false
 	}
 	logger.Step("Starting server, authorize it in firewall if needed...")
@@ -196,7 +196,7 @@ func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cm
 		}
 	} else {
 		logger.Fail("Could not start server.")
-		exitCode = internal.ErrServerStart
+		exitCode = launcher.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
 				logger.Fault("Error message: %s", result.Err.Error())

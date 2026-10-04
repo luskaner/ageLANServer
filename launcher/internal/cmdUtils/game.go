@@ -13,7 +13,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/game/executor/custom"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/executor"
 	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
@@ -98,7 +98,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		_ = f.Close()
 		if !result.Success() {
 			logger.Fail("Failed to start agent.")
-			exitCode = internal.ErrAgentStart
+			exitCode = launcher.ErrAgentStart
 			if result.Err != nil {
 				logger.Fault("Error message: %s", result.Err.Error())
 			}
@@ -137,7 +137,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	args, err := ParseCommandArgs(clientExecutableArgs, values)
 	if err != nil {
 		logger.Fail("Failed to parse client executable arguments")
-		exitCode = internal.ErrInvalidClientArgs
+		exitCode = launcher.ErrInvalidClientArgs
 		return
 	}
 
@@ -154,7 +154,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		}
 	}
 	if !result.Success() {
-		exitCode = internal.ErrGameLauncherStart
+		exitCode = launcher.ErrGameLauncherStart
 		if result.Err != nil {
 			logger.Fail("Game failed to start. Error message: %s", result.Err.Error())
 		}

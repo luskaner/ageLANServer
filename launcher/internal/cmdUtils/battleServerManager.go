@@ -14,7 +14,7 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/spf13/pflag"
 )
@@ -24,7 +24,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 		executable = executables.FindPath(executables.NativeFileName(true, "battle-server-manager"))
 		if executable == "" {
 			logger.Fail("Could not find battle-server-manager executable")
-			return internal.ErrBattleServerManagerRun
+			return launcher.ErrBattleServerManagerRun
 		}
 	}
 	var beforeConfigs []battleServer.Config
@@ -33,7 +33,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 		beforeConfigs, err = battleServer.Configs(c.gameId, true, true)
 		if err != nil {
 			logger.Fail("Could not get existing configurations: %s", err)
-			return internal.ErrBattleServerManagerRun
+			return launcher.ErrBattleServerManagerRun
 		}
 	}
 	if logRoot := commonLogger.FileLogger.Folder(); logRoot != "" {
@@ -90,7 +90,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 	if result.ExitCode != common.ErrSuccess {
 		logger.Fault("Exit code: %d", result.ExitCode)
 	}
-	return internal.ErrBattleServerManagerRun
+	return launcher.ErrBattleServerManagerRun
 }
 
 func (c *Config) gameRequiresBattleServer() bool {
