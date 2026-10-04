@@ -11,6 +11,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/notify"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
 	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
@@ -73,5 +74,33 @@ func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	)
 	exitCode = code.Get()
 	_ = lock.Unlock()
+	// The session is over and this is the only moment left to tell the user so. The
+	// terminal is a window nobody is looking at by now, and the answer they want is
+	// the one they cannot ask for: whether the machine is clean again. Both outcomes
+	// are announced, because "everything is back to normal" is the message that lets
+	// them stop thinking about it, and "something did not revert" is the one that
+	// makes them go and read the logs.
+	announce(*values.GameIdRef(), exitCode)
 	return
+}
+
+// announce is the notification, behind a var so a test can observe it without a
+// desktop.
+var announce = func(game string, exitCode int) {
+	var err error
+	if exitCode == common.ErrSuccess {
+		err = notify.SessionEnded(game)
+	} else {
+		err = notify.SessionFailed(game, exitCode)
+	}
+	// A notification that cannot be shown changes nothing about the run: the exit
+	// code was already decided and the file log already has the reason. It is
+	// recorded so that a user who saw no notification can find out why.
+	switch {
+	case err == nil:
+	case notify.Unsupported(err):
+		cmdlog.Detail("This system cannot show desktop notifications: %s", err)
+	default:
+		cmdlog.Detail("Could not show the desktop notification: %s", err)
+	}
 }
