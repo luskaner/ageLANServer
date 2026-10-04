@@ -41,7 +41,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/spf13/pflag"
 	"slices"
 )
@@ -95,6 +94,16 @@ type Setup struct {
 	// PromptOutput is where a console backend writes its questions. A frontend
 	// that asks in its own window leaves it nil.
 	PromptOutput *Sinks
+	// Stdin is what a console backend reads its answers from. A frontend that
+	// asks in its own window leaves it nil and its backend ignores it.
+	Stdin io.Reader
+	// Presenter is how the session shows where it is: the banner, the headings,
+	// the summary and the indicators that run while something is in progress.
+	//
+	// It lands in a slot rather than being passed down, because the operations
+	// that draw are several layers below the session and are shared. A frontend
+	// that leaves it nil gets a run with no decoration.
+	Presenter launcher.Presenter
 }
 
 // Sinks are the places a console backend writes its questions to. They exist so
@@ -117,7 +126,10 @@ func (s *Setup) sinks() (out Sinks) {
 // Configure installs what a frontend brings to the session. It is safe to call
 // more than once, and a later call replaces an earlier one: a test that installs
 // its own reporter must not have to undo someone else's.
-func Configure(s Setup) { setup = s }
+func Configure(s Setup) {
+	setup = s
+	launcher.SetPresenter(s.Presenter)
+}
 
 // Current returns what a frontend installed. It exists so that a frontend's own
 // tests can check what they handed over, and so that an embedder can see the
@@ -144,6 +156,21 @@ func reportOrDiscard() launcher.Reporter {
 		return setup.Report
 	}
 	return launcher.Discard{}
+}
+
+// promptInput is where a console backend reads its answers from, defaulting to
+// the process's own standard input.
+//
+// It is read once per run rather than passed down: the prompts happen several
+// layers below the session, inside operations that are shared, and threading a
+// reader through all of them to say "the terminal" would be noise. A frontend
+// that asks in a window installs a backend that reads nothing, and never gets
+// here.
+func promptInput() io.Reader {
+	if setup.Stdin != nil {
+		return setup.Stdin
+	}
+	return os.Stdin
 }
 
 func setPromptOutput(s Sinks) { promptOutput = s }
@@ -208,7 +235,7 @@ var (
 	configRunSetupCommandFn      = config.RunSetupCommand
 	netipParseAddrFn             = netip.ParseAddr
 	discoverServersFn            = func(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (uuid.UUID, net.IP) {
-		return cmdUtils.DiscoverServersAndSelectBestIpAddr(reportOrDiscard(), gameTitle, singleAutoSelect, multicastGroups, targetPorts)
+		return cmdUtils.DiscoverServersAndSelectBestIpAddr(reportOrDiscard(), promptInput(), gameTitle, singleAutoSelect, multicastGroups, targetPorts)
 	}
 	serverGetExecutablePathFn = server.GetExecutablePath
 	serverGenerateCertsFn     = func(serverExecutablePath string, canTrustCertificate bool) int {
@@ -242,7 +269,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	// The explicit flag gets the last word over AGE_LANSERVER_OUTPUT, and this is
 	// the first point where the parsed flags are available.
-	ui.ApplyOverride(output)
+	launcher.ActivePresenter().ApplyOutput(output)
 
 	lock := newPidLockFn()
 	if err = lock.Lock(); err != nil {
@@ -295,7 +322,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 		teardownRan = true
 		// A taskbar button left half filled after the program is gone is worse than
 		// no button at all, and this is the one path every exit goes through.
-		ui.ClearProgress()
+		launcher.ActivePresenter().ClearProgress()
 		// force comes from the signal handler, where the user asked to stop
 		// and the exit code says nothing about how far setup got.
 		//
@@ -305,7 +332,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 		// that is not happening, which is worse than no heading at all.
 		if force || atomicExitCode.Load() != int32(common.ErrSuccess) {
 			if config.HasTeardownWork() {
-				ui.Section("Final teardown")
+				launcher.ActivePresenter().Section("Final teardown")
 			}
 			config.Revert()
 		}
@@ -335,18 +362,18 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	defer launcher.ResetDialog()
 	// ui.Banner prints nothing when the console width is unknown, so a redirected
 	// run or a pipe never gets a banner in the middle of its output.
-	ui.Banner(executables.Launcher, setup.Version)
+	launcher.ActivePresenter().Banner(executables.Launcher, setup.Version)
 	// One place for the three facts the run depends on. They used to be announced
 	// once here and once again further down, which is how a mismatch between the
 	// two copies of the same fact looked like a bug.
-	ui.Section("Configuration")
-	ui.KV(0, "main config file", orNone(usedConfigFile))
-	ui.KV(0, "game config file", orNone(gameCfgFile))
-	ui.KV(0, "game", gameId)
+	launcher.ActivePresenter().Section("Configuration")
+	launcher.ActivePresenter().KV(0, "main config file", orNone(usedConfigFile))
+	launcher.ActivePresenter().KV(0, "game config file", orNone(gameCfgFile))
+	launcher.ActivePresenter().KV(0, "game", gameId)
 	// Printed only when the console could show more than it is showing, because
 	// the fallback is a code page and not a decision: without this line the ASCII
 	// markers look like the intended output rather than like what they are.
-	if hint := ui.UpgradeHint(); hint != "" {
+	if hint := launcher.ActivePresenter().Hint(); hint != "" {
 		reportOrDiscard().Info("%s", hint)
 	}
 	// The backend in use is not worth a line of its own: a graphical dialog is
@@ -540,8 +567,8 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	// Finding the game is the first thing that takes long enough to look broken,
 	// so it gets an in place line and the terminal's own progress indicator rather
 	// than a "Step" the reader has to trust is still running.
-	gameSearch := ui.Start("Looking for the game...")
-	gameProgress := ui.BeginProgress()
+	gameSearch := launcher.ActivePresenter().Start("Looking for the game...")
+	gameProgress := launcher.ActivePresenter().BeginProgress()
 	var gamePath string
 	executer := makeExecFn(gameId, clientExecutable)
 	if executer != nil {
@@ -666,7 +693,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	// run left behind, not anything this one has done. Labelling it as execution
 	// work is what made "Cleaning up" read as part of the startup, and calling
 	// both of them "Teardown" is what made the two look like a bug.
-	ui.Section("Initial teardown")
+	launcher.ActivePresenter().Section("Initial teardown")
 	reportOrDiscard().Step("Cleaning up (if needed)...")
 	configKillAgentFn()
 	if err = commonLoggerFileLoggerBufferFn("config_revert_initial", func(writer io.Writer) {
@@ -728,7 +755,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	if cancelled("setting up") {
 		return
 	}
-	ui.Section("Execution")
+	launcher.ActivePresenter().Section("Execution")
 	// Setup
 	reportOrDiscard().Step("Setting up...")
 	if len(setupCommand) > 0 {
@@ -830,7 +857,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 				str += " start a battle server (if needed) and then"
 			}
 			str += " start the server."
-			if !launcher.ActiveDialog().ConfirmStartServer(str, os.Stdin) {
+			if !launcher.ActiveDialog().ConfirmStartServer(str, promptInput()) {
 				reportOrDiscard().Fail("Canceled starting the server.")
 				atomicExitCode.Store(int32(launcher.ErrServerStartCanceled))
 				return

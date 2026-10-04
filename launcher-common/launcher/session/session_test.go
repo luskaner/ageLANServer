@@ -1751,6 +1751,9 @@ func TestRunRootHeaderHasNoDuplicates(t *testing.T) {
 		},
 	})
 	defer restore()
+	// The headings and the summary are drawn by the Presenter, so a test that
+	// asserts on them has to install one that draws somewhere it can read.
+	installFrontend(t, stdoutReporter{}, stdoutPresenter{})
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	out := captureStdout(t, func() {
 		if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
@@ -1813,3 +1816,42 @@ func (stdoutReporter) Detail(f string, a ...any) { fmt.Println(fmt.Sprintf(f, a.
 func (stdoutReporter) Fault(f string, a ...any)  { fmt.Println(fmt.Sprintf(f, a...)) }
 func (stdoutReporter) Println(a ...any)          { fmt.Println(a...) }
 func (stdoutReporter) Printf(f string, a ...any) { fmt.Printf(f, a...) }
+
+// installFrontend points the session at a reporter and a presenter for the
+// duration of a test.
+func installFrontend(t *testing.T, r launcher.Reporter, p launcher.Presenter) {
+	t.Helper()
+	installReporter(t, r)
+	orig := launcher.ActivePresenter()
+	t.Cleanup(func() { launcher.SetPresenter(orig) })
+	launcher.SetPresenter(p)
+}
+
+// stdoutPresenter draws on the standard output, undecorated, so a test that
+// asserts on what a run drew can capture it.
+type stdoutPresenter struct{ launcher.SilentPresenter }
+
+func (stdoutPresenter) Banner(program, version string) { fmt.Printf("%s %s\n", program, version) }
+func (stdoutPresenter) Section(title string)           { fmt.Printf("\n%s\n", title) }
+func (stdoutPresenter) KV(_ int, key, value string)    { fmt.Printf("%s: %s\n", key, value) }
+
+func (stdoutPresenter) Start(label string) launcher.Spinner {
+	fmt.Println(label)
+	return &stdoutSpinner{}
+}
+
+func (stdoutPresenter) BeginProgress() launcher.Progress { return &stdoutProgress{} }
+func (stdoutPresenter) ClearProgress()                   {}
+
+type stdoutSpinner struct{}
+
+func (*stdoutSpinner) Done(f string, a ...any) { fmt.Println(fmt.Sprintf(f, a...)) }
+func (*stdoutSpinner) Fail(f string, a ...any) { fmt.Println(fmt.Sprintf(f, a...)) }
+func (*stdoutSpinner) Info(f string, a ...any) { fmt.Println(fmt.Sprintf(f, a...)) }
+func (*stdoutSpinner) Stop()                   {}
+
+type stdoutProgress struct{}
+
+func (*stdoutProgress) Set(int) {}
+func (*stdoutProgress) Done()   {}
+func (*stdoutProgress) Fail()   {}

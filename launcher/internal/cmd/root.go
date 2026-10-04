@@ -14,8 +14,10 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/session"
+	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 	"github.com/spf13/pflag"
+	"os"
 )
 
 // Version is set from main and shown in the session summary.
@@ -66,6 +68,8 @@ func configure() {
 			return resolution
 		},
 		PromptOutput: &session.Sinks{Println: loggerReporter{}.Println, Printf: loggerReporter{}.Printf},
+		Stdin:        os.Stdin,
+		Presenter:    ui.Presenter{},
 	})
 }
 

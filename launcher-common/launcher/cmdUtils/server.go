@@ -5,7 +5,6 @@ import (
 	"io"
 	"net"
 	"net/netip"
-	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/spf13/pflag"
 )
 
@@ -97,15 +95,15 @@ func processedServers(r launcher.Reporter, gameTitle string, servers map[uuid.UU
 	return processed
 }
 
-func DiscoverServersAndSelectBestIpAddr(r launcher.Reporter, gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
+func DiscoverServersAndSelectBestIpAddr(r launcher.Reporter, stdin io.Reader, gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
 	id = uuid.Nil()
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
 	// The search takes a couple of seconds and prints nothing until it is over,
 	// so it gets an in place line and the terminal's own progress indicator: the
 	// last one is the only indicator still visible once the console has scrolled or
 	// the window is in the background.
-	search := ui.Start("Looking for servers...")
-	bar := ui.BeginProgress()
+	search := launcher.ActivePresenter().Start("Looking for servers...")
+	bar := launcher.ActivePresenter().BeginProgress()
 	server.QueryServersWithProgress(multicastGroups, targetPorts, servers, func(round, rounds, found int) {
 		// Percentages, not fractions: the indicator has one scale and it is 0 to
 		// 100. A round of zero would divide by zero, and it never happens, but the
@@ -124,7 +122,7 @@ func DiscoverServersAndSelectBestIpAddr(r launcher.Reporter, gameTitle string, s
 	}
 	if len(servers) > 0 {
 		if procServers := processedServers(r, gameTitle, servers); len(procServers) > 0 {
-			idx, ok := selectDiscoveredServer(r, procServers, singleAutoSelect, os.Stdin)
+			idx, ok := selectDiscoveredServer(r, procServers, singleAutoSelect, stdin)
 			if i := usableServerIndex(idx, ok, len(procServers)); i >= 0 {
 				selectedServer := procServers[i]
 				ip = selectedServer.Ip
