@@ -255,6 +255,10 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	// Everything the run does from here reports through this, so the same session
 	// could be read in a terminal or in a window by installing a different one.
 	config.Report = reportOrDiscard()
+	// Whatever a previous session in this process changed is not this run's to
+	// undo, and reporting that it changed something it did not would send the
+	// teardown after a server this run never started.
+	config.Reset()
 	logger.LogEnabled = cfg.Config.Log
 	if err = openMainLogFn(gameId); err != nil {
 		reportOrDiscard().Fail("Failed to open file log")

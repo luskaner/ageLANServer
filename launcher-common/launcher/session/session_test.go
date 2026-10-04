@@ -1855,3 +1855,54 @@ type stdoutProgress struct{}
 func (*stdoutProgress) Set(int) {}
 func (*stdoutProgress) Done()   {}
 func (*stdoutProgress) Fail()   {}
+
+// The session has to run the real setup command, because that is what marks that
+// a revert may be needed.
+//
+// The marker lives inside Config.RunSetupCommand, and the session reaches it
+// through an injectable that the test harness replaces with a fake that succeeds.
+// So "the real one runs" is the half of this that can be observed from here: the
+// command in this test does not exist, so the real one fails, and the run says so.
+// The marker itself is asserted where it is set, in the operations package.
+//
+// What is deliberately not asserted here is that the revert command then runs.
+// That depends on a store in the temporary directory and on a global file logger,
+// both of which every test in this process shares, and the teardown consumes the
+// store when it does run: the question is real but it is not answerable from
+// here without making the harness own that state.
+func TestRunRunsTheRealSetupCommand(t *testing.T) {
+	restore := applyOverrides(t, runRootOverrides{
+		gameId:        "age2",
+		isAdmin:       false,
+		gameSupported: true,
+		cfg: func() *launcher.Configuration {
+			c := validLauncherConfig()
+			// A command that does not exist, so the real setup command fails
+			// here and the run goes no further.
+			c.Config.SetupCommand = []string{"no-such-setup-command"}
+			return c
+		},
+		configRunSetupCommandFnVal: config.RunSetupCommand,
+	})
+	defer restore()
+
+	rec := &recordingReporter{}
+	installFrontend(t, rec, stdoutPresenter{})
+
+	_, exitCode := Run(context.Background(), pflag.NewFlagSet("test", pflag.ContinueOnError))
+	if exitCode != launcher.ErrSetupCommand {
+		t.Fatalf("exit code = %d, want %d from the setup command", exitCode, launcher.ErrSetupCommand)
+	}
+	// The fake the harness installs elsewhere returns success, which would end the
+	// run here with no complaint at all. A reported failure is the proof that the
+	// real command ran.
+	said := false
+	for _, line := range rec.faults {
+		if strings.Contains(line, "no-such-setup-command") {
+			said = true
+		}
+	}
+	if !said {
+		t.Errorf("the setup command's own failure was never reported, faults: %q", rec.faults)
+	}
+}

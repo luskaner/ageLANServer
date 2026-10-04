@@ -52,6 +52,26 @@ type Config struct {
 	battleServerExe    string
 }
 
+// Reset returns the Config to what a run that has changed nothing looks like.
+//
+// The unexported fields record what this run changed, which is what lets a
+// failure be undone and what tells teardown whether there is anything to undo.
+// They belong to a run, not to a process, so a frontend that performs a second
+// session in the same process has to clear them: otherwise the second run
+// inherits that the first one started a server, and tries to stop it.
+//
+// Report is left alone. It is the frontend's, not the run's, and it is installed
+// before the run starts rather than by it.
+func (c *Config) Reset() {
+	c.gameId = ""
+	c.serverExe = ""
+	c.setupCommandRan = false
+	c.hostFilePath = ""
+	c.certFilePath = ""
+	c.battleServerRegion = ""
+	c.battleServerExe = ""
+}
+
 // report is the Reporter this config was given, or one that discards.
 //
 // The zero Config has no Reporter, and it is a legitimate value: tests build one
@@ -215,6 +235,15 @@ func GameRunning(r launcher.Reporter) bool {
 }
 
 func (c *Config) RunSetupCommand(cmd []string) (result *exec.Result) {
+	// Marked before it runs, not after it succeeds: the point of the flag is that
+	// something was done to the machine that a revert command may have to undo,
+	// and a setup command that failed halfway has still done half of it.
+	//
+	// Without this the flag was never set outside tests, so the revert command
+	// only ever ran through the agent, and a run that failed before the agent was
+	// launched silently skipped it. That is the case the option documents itself
+	// for: "It may run before if there is an error."
+	c.setupCommandRan = true
 	var args []string
 	if len(cmd) > 1 {
 		args = cmd[1:]
