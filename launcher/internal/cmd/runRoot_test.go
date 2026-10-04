@@ -1493,9 +1493,6 @@ func TestRunRootSurvivesFailedStopAgent(t *testing.T) {
 // caller must wait rather than race past.
 func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
 	var sigs chan<- os.Signal
-	// exited closes when the signal handler has run to the end, so the test does
-	// not restore osExitFn while that handler is still reading it.
-	exited := make(chan struct{})
 	unlocked := make(chan struct{}, 4)
 
 	restore := applyOverrides(t, runRootOverrides{
@@ -1516,10 +1513,10 @@ func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
 	t.Cleanup(func() { newPidLockFn = origPidLock })
 
 	origSignal := signalNotifyFn
-	origExit := osExitFn
+	origStop := signalStopFn
 	signalNotifyFn = func(c chan<- os.Signal, _ ...os.Signal) { sigs = c }
-	osExitFn = func(int) { close(exited) }
-	t.Cleanup(func() { signalNotifyFn = origSignal; osExitFn = origExit })
+	signalStopFn = func(chan<- os.Signal) {}
+	t.Cleanup(func() { signalNotifyFn = origSignal; signalStopFn = origStop })
 
 	// Hold runRoot inside the "a previous agent is still running" wait so the
 	// signal lands while the main path is still running, which is the race.
@@ -1558,7 +1555,6 @@ func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("signal path never completed teardown")
 	}
-	<-exited
 	close(release)
 	<-done
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
@@ -130,7 +131,7 @@ var (
 	uuidMustParseFn                 = uuid.MustParse
 	uuidNilFn                       = uuid.Nil
 	signalNotifyFn                  = signal.Notify
-	osExitFn                        = os.Exit
+	signalStopFn                    = signal.Stop
 	// runRoot reinstalls the dialog with dialog.Set, so a test cannot inject a
 	// fake Dialog through dialog.Set alone: it has to own the whole backend.
 	dialogNewFn = dialog.New
@@ -153,7 +154,26 @@ func Execute() (err error, exitCode int) {
 	// Default values & bindings will be handled in LoadConfig
 	return singleFs.Execute()
 }
+
+// runRoot is the console's entry point.
+//
+// It exists to be the function a flag set can call, so it takes no context and
+// gets one. A frontend that keeps running, such as a window, calls runSession
+// directly with a context it can cancel.
 func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
+	return runSession(context.Background(), fs)
+}
+
+// runSession performs the run and returns its exit code instead of ending the
+// process.
+//
+// It used to end the process from a signal handler goroutine, which for a
+// frontend that keeps running would take the whole application down with it,
+// and which for anyone could truncate a revert that was still in flight.
+// Stopping is now a cancelled context: the handler tears down, cancels, and the
+// run unwinds through the same return path as any other outcome, so the deferred
+// teardown still runs exactly once and nothing is left behind.
+func runSession(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	// validate required flags
 	if gameId == "" {
 		return errors.New("required flag 'game' not set"), common.ErrSyntax
@@ -506,15 +526,42 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if commonLogger.FileLogger != nil {
 		logger.SetMacOsExclusiveMappings(macOsExclusiveMappings)
 	}
+	// Read once, here, rather than where it is used. This handler outlives the
+	// call that started it, and a frontend that starts another run in between
+	// would otherwise have this one stop the signals of the other.
+	stopSignals := signalStopFn
 	sigs := make(chan os.Signal, 1)
 	signalNotifyFn(sigs, syscall.SIGINT, syscall.SIGTERM)
+	defer stopSignals(sigs)
+	// The signal asks for a stop; it does not perform one. Forcing the teardown
+	// here is deliberate: whoever sent it did not wait for the run to reach a
+	// convenient point, and a revert that had not started yet still has to
+	// happen. Cancelling rather than exiting lets the run unwind on its own,
+	// which is what keeps a revert in flight from being cut off.
+	ctx, cancelRun := context.WithCancel(ctx)
+	defer cancelRun()
 	go func() {
-		_, sigOk := <-sigs
-		if sigOk {
-			teardown(true)
-			osExitFn(int(atomicExitCode.Load()))
+		select {
+		case _, sigOk := <-sigs:
+			if sigOk {
+				teardown(true)
+				cancelRun()
+			}
+		case <-ctx.Done():
 		}
 	}()
+	// cancelled reports whether the run was asked to stop before this point, and
+	// says so once instead of at every check.
+	var stopped bool
+	cancelled := func(at string) bool {
+		if stopped || ctx.Err() == nil {
+			return stopped
+		}
+		stopped = true
+		logger.Step("Stopped before %s.", at)
+		atomicExitCode.Store(int32(launcher.ErrCanceled))
+		return true
+	}
 	agentWaitDuration := time.Minute
 	agent := executablesNativeFileNameFn(false, executables.LauncherAgent)
 	if _, proc, localErr := commonProcessProcessFn(agent); localErr == nil && proc != nil {
@@ -610,6 +657,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	// Everything from here on is this run's own work: the previous run's leftovers
 	// are gone, and what follows is what the game will actually see.
+	// A check per phase, at the points where the run is about to start changing
+	// the machine. Checking here rather than inside the shared operations means
+	// one place decides where a stop is safe, and every step after the check
+	// runs to completion: a stop never lands halfway through a revert.
+	if cancelled("setting up") {
+		return
+	}
 	ui.Section("Execution")
 	// Setup
 	logger.Step("Setting up...")
@@ -718,6 +772,9 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				return
 			}
 		}
+		if cancelled("starting the server") {
+			return
+		}
 		serverExecutablePath := serverGetExecutablePathFn(serverExecutable)
 		if serverExecutablePath == "" {
 			logger.Fail("Cannot find server executable path. Set it manually in Server.Executable.")
@@ -760,6 +817,12 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	if serverCertificate == nil {
 		logger.Fail("Failed to read certificate from %s. Try to access it with your browser and checking the certificate.", serverIP)
 		atomicExitCode.Store(int32(launcher.ErrReadCert))
+		return
+	}
+	// Past this point the run stops hosts, installs certificates and launches the
+	// game, and each of those is something the user would have to undo by hand.
+	// It is the last moment where stopping is still free.
+	if cancelled("changing the machine") {
 		return
 	}
 	atomicExitCode.Store(int32(configMapHostsFn(gameId, serverIP, macOsExclusiveMappings, canAddHost, customHostFile)))

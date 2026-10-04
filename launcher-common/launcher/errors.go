@@ -50,4 +50,13 @@ const (
 	ErrFlushCache
 	ErrInvalidDialog
 	ErrServerStartCanceled
+	// ErrCanceled is the code for a run that was asked to stop before it
+	// finished.
+	//
+	// It is distinct from success because the user asked for something and did
+	// not get it: nothing was set up, or something was set up and put back, and
+	// either way the game did not run. A caller that only cares whether the
+	// machine is clean can ignore it; a caller showing a result should not tell
+	// someone a cancelled launch worked.
+	ErrCanceled
 )
