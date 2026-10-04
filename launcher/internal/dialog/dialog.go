@@ -21,6 +21,7 @@ import (
 type (
 	Dialog          = launcher.Dialog
 	ServerCandidate = launcher.ServerCandidate
+	Resolution      = launcher.Resolution
 )
 
 const (
@@ -46,16 +47,6 @@ func label(c ServerCandidate) string {
 type Output struct {
 	Println func(...any)
 	Printf  func(string, ...any)
-}
-
-// Resolution is the outcome of resolving the configured mode to a backend.
-type Resolution struct {
-	Dialog Dialog
-	// Name is "zenity" or "console".
-	Name string
-	// Reason is non-empty when the configured mode could not be honoured and
-	// the console fallback was used instead. It is meant to be logged.
-	Reason string
 }
 
 var (

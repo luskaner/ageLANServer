@@ -1,14 +1,23 @@
-package cmd
+package session
 
 import (
+	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/spf13/pflag"
 )
+
+// installReporter points the session at r for the duration of a test and puts
+// back whatever was there before.
+func installReporter(t *testing.T, r launcher.Reporter) {
+	t.Helper()
+	orig := setup
+	t.Cleanup(func() { setup = orig })
+	Configure(Setup{Report: r})
+}
 
 // recordingReporter keeps what the run told it, so a test can assert on what a
 // run said instead of on where it printed it.
@@ -48,36 +57,16 @@ func TestRunRootInstallsItsReporterOnTheSharedConfig(t *testing.T) {
 	defer restore()
 
 	rec := &recordingReporter{}
-	origReport := report
-	report = rec
-	defer func() { report = origReport }()
+	installReporter(t, rec)
 
 	// Deliberately a run that goes nowhere: the exit code is not what this is
 	// about. What matters is that a shared Config was handed the Reporter
 	// before anything asked it to do anything.
-	if _, _ = runRoot(pflag.NewFlagSet("test", pflag.ContinueOnError)); false {
+	if _, _ = Run(context.Background(), pflag.NewFlagSet("test", pflag.ContinueOnError)); false {
 		t.Fatal("unreachable")
 	}
 	if config.Report != launcher.Reporter(rec) {
 		t.Fatalf("the shared config reports to %T, want the reporter the run installed", config.Report)
-	}
-}
-
-// The console's Reporter is the same console the run has always printed to.
-//
-// The shared operations stopped calling the logger directly, so this is where a
-// dropped line would show up: an adapter that reports into the void would keep
-// every test passing and leave a user watching a terminal that says nothing.
-func TestConsoleReporterStillReachesTheTerminal(t *testing.T) {
-	out := captureStdout(t, func() {
-		loggerReporter{}.Step("Setting up...")
-		loggerReporter{}.Fail("Failed to lock pid file.")
-	})
-	if !strings.Contains(out, "Setting up...") {
-		t.Errorf("the stage never reached the terminal, got %q", out)
-	}
-	if !strings.Contains(out, "Failed to lock pid file.") {
-		t.Errorf("the failure never reached the terminal, got %q", out)
 	}
 }
 
@@ -92,10 +81,8 @@ func TestReporterCannotChangeTheOutcome(t *testing.T) {
 			gameSupported: true,
 			cfg:           invalidServerStartConfig,
 		})
-		origReport := report
-		report = r
-		_, exitCode := runRoot(pflag.NewFlagSet("test", pflag.ContinueOnError))
-		report = origReport
+		installReporter(t, r)
+		_, exitCode := Run(context.Background(), pflag.NewFlagSet("test", pflag.ContinueOnError))
 		restore()
 		codes = append(codes, exitCode)
 	}

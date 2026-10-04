@@ -1,9 +1,11 @@
-package cmd
+package session
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/netip"
@@ -31,7 +33,6 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
-	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
 )
 
 type fakeFileInfo struct{ isDir bool }
@@ -79,11 +80,11 @@ type fakeDialog struct {
 
 func (f *fakeDialog) Name() string { return "fake" }
 
-func (f *fakeDialog) SelectServer([]dialog.ServerCandidate, io.Reader) (int, bool) {
+func (f *fakeDialog) SelectServer([]launcher.ServerCandidate, io.Reader) (int, bool) {
 	return 0, true
 }
 
-func (f *fakeDialog) ListCandidates([]dialog.ServerCandidate) {}
+func (f *fakeDialog) ListCandidates([]launcher.ServerCandidate) {}
 
 func (f *fakeDialog) ConfirmStartServer(string, io.Reader) bool {
 	f.confirmCalls++
@@ -126,7 +127,7 @@ func TestRunRootInvalidGame(t *testing.T) {
 	gameCfgFile = ""
 
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSyntax {
 		t.Errorf("expected exit code %d for missing gameId, got %d", common.ErrSyntax, exitCode)
 	}
@@ -146,7 +147,7 @@ func TestRunRootPidLockError(t *testing.T) {
 	newPidLockFn = func() fileLock.Locker { return &fakePidLocker{lockErr: errors.New("pid lock")} }
 
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrPidLock {
 		t.Errorf("expected exit code %d on pid lock error, got %d", common.ErrPidLock, exitCode)
 	}
@@ -201,7 +202,7 @@ func TestRunRootUnsupportedGame(t *testing.T) {
 	gameSupportedGamesContainsOneFn = func(id string) bool { return false }
 
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcherCommon.ErrInvalidGame {
 		t.Errorf("expected exit code %d for unsupported game, got %d", launcherCommon.ErrInvalidGame, exitCode)
 	}
@@ -249,7 +250,7 @@ func TestRunRootValidationFailures(t *testing.T) {
 			isAdminFn = func() bool { return false }
 			gameSupportedGamesContainsOneFn = func(id string) bool { return true }
 			fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-			_, exitCode := runRoot(fs)
+			_, exitCode := Run(context.Background(), fs)
 			if exitCode != tt.wantCode {
 				t.Errorf("%s: expected exit code %d, got %d", tt.name, tt.wantCode, exitCode)
 			}
@@ -277,7 +278,7 @@ func TestRunRootOpenFileLogError(t *testing.T) {
 	}
 	openMainLogFn = func(gameID string) error { return errors.New("open fail") }
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrFileLog {
 		t.Errorf("expected exit code %d for file log error, got %d", common.ErrFileLog, exitCode)
 	}
@@ -316,7 +317,7 @@ func TestRunRootServerArgsParseFailure(t *testing.T) {
 		return nil, errors.New("parse fail")
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerArgs {
 		t.Errorf("expected exit code %d for server args parse fail, got %d", launcher.ErrInvalidServerArgs, exitCode)
 	}
@@ -362,7 +363,7 @@ func TestRunRootSetupCommandParseFailure(t *testing.T) {
 		return origFn(args, values)
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidSetupCommand {
 		t.Errorf("expected exit code %d for setup command parse fail, got %d", launcher.ErrInvalidSetupCommand, exitCode)
 	}
@@ -399,7 +400,7 @@ func TestRunRootInvalidIsolationPath(t *testing.T) {
 		return nil, "", errors.New("bad path")
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidIsolationPath {
 		t.Errorf("expected %d for invalid isolation path, got %d", launcher.ErrInvalidIsolationPath, exitCode)
 	}
@@ -440,7 +441,7 @@ func TestRunRootInvalidServerExecutable(t *testing.T) {
 		return fakeFileInfo{isDir: false}, "ok", nil
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerPath {
 		t.Errorf("expected %d for invalid server path, got %d", launcher.ErrInvalidServerPath, exitCode)
 	}
@@ -475,7 +476,7 @@ func TestRunRootGameLauncherNotFound(t *testing.T) {
 		return nil
 	}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrGameLauncherNotFound {
 		t.Errorf("expected %d for game launcher not found, got %d", launcher.ErrGameLauncherNotFound, exitCode)
 	}
@@ -521,7 +522,7 @@ func TestRunRootGameAlreadyRunning(t *testing.T) {
 	commonProcessProcessFn = func(s string) (string, *os.Process, error) { return "", nil, nil }
 	gameRunningFn = func() bool { return true }
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrGameAlreadyRunning {
 		t.Errorf("expected %d for game already running, got %d", launcher.ErrGameAlreadyRunning, exitCode)
 	}
@@ -569,7 +570,7 @@ func TestRunRootConfigRevertBufferError(t *testing.T) {
 	configKillAgentFn = func() {}
 	commonLoggerFileLoggerBufferFn = func(name string, fn func(io.Writer)) error { return errors.New("buffer fail") }
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrFileLog {
 		t.Errorf("expected %d for buffer error, got %d", common.ErrFileLog, exitCode)
 	}
@@ -619,7 +620,7 @@ type runRootOverrides struct {
 	dnsConnectivityFnVal              func() bool
 	configRunStopAgentFnVal           func() *commonExecutor.Result
 	waitForProcessFnVal               func(*os.Process, *time.Duration) bool
-	dialogNewFnVal                    func(string) dialog.Resolution
+	dialogNewFnVal                    func(string) launcher.Resolution
 }
 
 func applyOverrides(t *testing.T, o runRootOverrides) func() {
@@ -667,7 +668,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	origRunStopAgent := configRunStopAgentFn
 	origWaitForProcess := commonProcessWaitForProcessFn
 	origDialogNew := dialogNewFn
-	t.Cleanup(dialog.Reset)
+	t.Cleanup(launcher.ResetDialog)
 
 	gameId = o.gameId
 	cfgFile = ""
@@ -882,13 +883,13 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	} else {
 		// Confirm by default so the tests keep reaching the server start path,
 		// which is what they were written for.
-		dialogNewFn = func(string) dialog.Resolution {
-			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "fake"}
+		dialogNewFn = func(string) launcher.Resolution {
+			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "fake"}
 		}
 	}
 
 	return func() {
-		dialog.Reset()
+		launcher.ResetDialog()
 		gameId, cfgFile, gameCfgFile = origGameId, origCfgFile, origGameCfgFile
 		newPidLockFn = origNewPidLock
 		initConfigFn = origInitConfig
@@ -960,7 +961,7 @@ func TestRunRootFlushCacheError(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode == common.ErrSuccess {
 		t.Errorf("expected non-success for flush cache with empty FlushCacheValues, got %d", exitCode)
 	}
@@ -979,7 +980,7 @@ func TestRunRootMulticastInvalid(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrAnnouncementMulticastGroup {
 		t.Errorf("expected %d for invalid multicast group, got %d", launcher.ErrAnnouncementMulticastGroup, exitCode)
 	}
@@ -1003,7 +1004,7 @@ func TestRunRootServerFoundByDiscovery(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success for server found by discovery, got %d", exitCode)
 	}
@@ -1023,7 +1024,7 @@ func TestRunRootServerHostEmpty(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerHost {
 		t.Errorf("expected %d for empty serverHost, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
@@ -1043,7 +1044,7 @@ func TestRunRootServerHostIPv6(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerHost {
 		t.Errorf("expected %d for IPv6 serverHost, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
@@ -1066,7 +1067,7 @@ func TestRunRootServerHostResolutionFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerHost {
 		t.Errorf("expected %d for server host resolution failure, got %d", launcher.ErrInvalidServerHost, exitCode)
 	}
@@ -1081,7 +1082,7 @@ func TestRunRootServerExecutableNotFound(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrServerExecutable {
 		t.Errorf("expected %d for server executable not found, got %d", launcher.ErrServerExecutable, exitCode)
 	}
@@ -1096,7 +1097,7 @@ func TestRunRootReadCertFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrReadCert {
 		t.Errorf("expected %d for read cert failure, got %d", launcher.ErrReadCert, exitCode)
 	}
@@ -1113,7 +1114,7 @@ func TestRunRootMapHostsFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrGeneral {
 		t.Errorf("expected %d for map hosts failure, got %d", common.ErrGeneral, exitCode)
 	}
@@ -1130,7 +1131,7 @@ func TestRunRootAddCertFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrGeneral {
 		t.Errorf("expected %d for add cert failure, got %d", common.ErrGeneral, exitCode)
 	}
@@ -1147,7 +1148,7 @@ func TestRunRootIsolateUserDataFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrGeneral {
 		t.Errorf("expected %d for isolate user data failure, got %d", common.ErrGeneral, exitCode)
 	}
@@ -1164,7 +1165,7 @@ func TestRunRootStartServerFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrGeneral {
 		t.Errorf("expected %d for start server failure, got %d", common.ErrGeneral, exitCode)
 	}
@@ -1191,7 +1192,7 @@ func TestRunRootBattleServerManagerParseFailure(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != launcher.ErrInvalidServerBattleServerManagerArgs {
 		t.Errorf("expected %d for battle server manager parse failure, got %d", launcher.ErrInvalidServerBattleServerManagerArgs, exitCode)
 	}
@@ -1208,7 +1209,7 @@ func TestRunRootLaunchAgentSuccess(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success for launch agent, got %d", exitCode)
 	}
@@ -1239,7 +1240,7 @@ func TestRunRootServerFoundWithFilter(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success for server found with filter, got %d", exitCode)
 	}
@@ -1263,7 +1264,7 @@ func TestRunRootServerNotFoundNoServerHost(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success when starting server after no discovery, got %d", exitCode)
 	}
@@ -1288,7 +1289,7 @@ func TestRunRootCanUseInternetDisabledByConfig(t *testing.T) {
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
@@ -1316,7 +1317,7 @@ func TestRunRootCanUseInternetProbeWhenConnectivity(t *testing.T) {
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
@@ -1344,7 +1345,7 @@ func TestRunRootCanUseInternetProbeNoConnectivity(t *testing.T) {
 		common.SetUseInternet(origInternet)
 	}()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Fatalf("expected success, got %d", exitCode)
 	}
@@ -1366,7 +1367,7 @@ func TestRunRootCanTrustCertificateAuto(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	_, exitCode := runRoot(fs)
+	_, exitCode := Run(context.Background(), fs)
 	if exitCode != common.ErrSuccess {
 		t.Errorf("expected success for canTrustCertificate auto, got %d", exitCode)
 	}
@@ -1398,7 +1399,7 @@ func TestRunRootStopsLeftoverConfigAdminAgent(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("stopping a leftover agent must not fail the launch, got %d", exitCode)
 	}
 	if stopAgentCalls != 1 {
@@ -1431,7 +1432,7 @@ func TestRunRootDoesNotWaitForLeftoverConfigAdminAgent(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("got %d", exitCode)
 	}
 }
@@ -1452,7 +1453,7 @@ func TestRunRootNoStopAgentWhenNoneRunning(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("got %d", exitCode)
 	}
 	if stopAgentCalls != 0 {
@@ -1480,7 +1481,7 @@ func TestRunRootSurvivesFailedStopAgent(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("a failed agent stop must not fail the launch, got %d", exitCode)
 	}
 }
@@ -1543,7 +1544,7 @@ func TestRunRootTeardownRunsOnceUnderSignal(t *testing.T) {
 	go func() {
 		defer close(done)
 		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		_, _ = runRoot(fs)
+		_, _ = Run(context.Background(), fs)
 	}()
 
 	<-waiting
@@ -1600,7 +1601,7 @@ func TestRunRootInvalidDialogValue(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != launcher.ErrInvalidDialog {
+	if _, exitCode := Run(context.Background(), fs); exitCode != launcher.ErrInvalidDialog {
 		t.Fatalf("got %d, want %d", exitCode, launcher.ErrInvalidDialog)
 	}
 	if startServerCalls != 0 {
@@ -1618,20 +1619,21 @@ func TestRunRootUsesConsoleWhenDialogsUnavailable(t *testing.T) {
 		gameSupported: true,
 		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
-			c.Config.Dialog = dialog.ModeTrue
+			c.Config.Dialog = launcher.ModeTrue
 			return c
 		},
-		dialogNewFnVal: func(mode string) dialog.Resolution {
-			if mode != dialog.ModeTrue {
-				t.Errorf("dialog.New called with %q, want %q", mode, dialog.ModeTrue)
+		dialogNewFnVal: func(mode string) launcher.Resolution {
+			if mode != launcher.ModeTrue {
+				t.Errorf("dialog.New called with %q, want %q", mode, launcher.ModeTrue)
 			}
-			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console", Reason: reason}
+			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console", Reason: reason}
 		},
 	})
 	defer restore()
+	installReporter(t, stdoutReporter{})
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	out := captureStdout(t, func() {
-		if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 			t.Errorf("an unavailable dialog must not abort the launch, got %d", exitCode)
 		}
 	})
@@ -1656,8 +1658,8 @@ func TestRunRootServerStartCanceled(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) dialog.Resolution {
-			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		dialogNewFnVal: func(string) launcher.Resolution {
+			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 		configStartServerFnVal: func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string) {
 			startServerCalls++
@@ -1666,7 +1668,7 @@ func TestRunRootServerStartCanceled(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != launcher.ErrServerStartCanceled {
+	if _, exitCode := Run(context.Background(), fs); exitCode != launcher.ErrServerStartCanceled {
 		t.Fatalf("got %d, want %d", exitCode, launcher.ErrServerStartCanceled)
 	}
 	if dlg.confirmCalls != 1 {
@@ -1684,8 +1686,8 @@ func TestRunRootServerStartConfirmed(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) dialog.Resolution {
-			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		dialogNewFnVal: func(string) launcher.Resolution {
+			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 		configStartServerFnVal: func(_ string, _ *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) {
 			gotValues = v
@@ -1694,7 +1696,7 @@ func TestRunRootServerStartConfirmed(t *testing.T) {
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("got %d, want success", exitCode)
 	}
 	if dlg.confirmCalls != 1 {
@@ -1721,13 +1723,13 @@ func TestRunRootServerStartWithoutConfirmationSkipsDialog(t *testing.T) {
 			c.Server.StartWithoutConfirmation = true
 			return c
 		},
-		dialogNewFnVal: func(string) dialog.Resolution {
-			return dialog.Resolution{Dialog: dlg, Name: "fake"}
+		dialogNewFnVal: func(string) launcher.Resolution {
+			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+	if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 		t.Fatalf("got %d, want success without asking", exitCode)
 	}
 	if dlg.confirmCalls != 0 {
@@ -1744,14 +1746,14 @@ func TestRunRootHeaderHasNoDuplicates(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) dialog.Resolution {
-			return dialog.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console"}
+		dialogNewFnVal: func(string) launcher.Resolution {
+			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console"}
 		},
 	})
 	defer restore()
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	out := captureStdout(t, func() {
-		if _, exitCode := runRoot(fs); exitCode != common.ErrSuccess {
+		if _, exitCode := Run(context.Background(), fs); exitCode != common.ErrSuccess {
 			t.Errorf("got %d, want success", exitCode)
 		}
 	})
@@ -1793,3 +1795,21 @@ func TestRunRootHeaderHasNoDuplicates(t *testing.T) {
 		t.Errorf("the game is named %d times, want 1, got:\n%s", n, out)
 	}
 }
+
+// stdoutReporter writes everything undecorated to the standard output, so a test
+// that asserts on what a run printed can capture it.
+//
+// It stands in for the console's reporter, which decorates and writes to the log
+// file as well. The decoration is that frontend's business and is covered where
+// it lives.
+type stdoutReporter struct{ launcher.Discard }
+
+func (stdoutReporter) Ok(f string, a ...any)     { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Fail(f string, a ...any)   { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Warn(f string, a ...any)   { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Info(f string, a ...any)   { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Step(f string, a ...any)   { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Detail(f string, a ...any) { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Fault(f string, a ...any)  { fmt.Println(fmt.Sprintf(f, a...)) }
+func (stdoutReporter) Println(a ...any)          { fmt.Println(a...) }
+func (stdoutReporter) Printf(f string, a ...any) { fmt.Printf(f, a...) }

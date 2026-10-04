@@ -1,4 +1,4 @@
-package cmd
+package session
 
 import (
 	"context"
@@ -46,7 +46,7 @@ func TestRunSessionStopsWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if _, exitCode := runSession(ctx, pflag.NewFlagSet("test", pflag.ContinueOnError)); exitCode != launcher.ErrCanceled {
+	if _, exitCode := Run(ctx, pflag.NewFlagSet("test", pflag.ContinueOnError)); exitCode != launcher.ErrCanceled {
 		t.Fatalf("exit code = %d, want %d for a cancelled run", exitCode, launcher.ErrCanceled)
 	}
 	// The point of checking before each phase rather than inside them: a stop
@@ -72,7 +72,7 @@ func TestRunSessionCancelledBeforeAnythingHappened(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, exitCode := runSession(ctx, pflag.NewFlagSet("test", pflag.ContinueOnError)); exitCode != launcher.ErrCanceled {
+	if _, exitCode := Run(ctx, pflag.NewFlagSet("test", pflag.ContinueOnError)); exitCode != launcher.ErrCanceled {
 		t.Fatalf("exit code = %d, want %d", exitCode, launcher.ErrCanceled)
 	}
 }
@@ -86,7 +86,7 @@ func TestRunSessionWithoutCancellationIsUnchanged(t *testing.T) {
 	})
 	defer restore()
 
-	_, exitCode := runSession(context.Background(), pflag.NewFlagSet("test", pflag.ContinueOnError))
+	_, exitCode := Run(context.Background(), pflag.NewFlagSet("test", pflag.ContinueOnError))
 	if exitCode == launcher.ErrCanceled {
 		t.Error("a run nobody cancelled reported itself cancelled")
 	}

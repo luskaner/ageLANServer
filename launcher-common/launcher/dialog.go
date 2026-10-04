@@ -54,6 +54,18 @@ type Dialog interface {
 	ConfirmStartServer(text string, stdin io.Reader) bool
 }
 
+// Resolution is the outcome of resolving the configured mode to a backend.
+type Resolution struct {
+	Dialog Dialog
+	// Name identifies the backend, for the log file and for a frontend that
+	// wants to say which one answered.
+	Name string
+	// Reason is non-empty when the configured mode could not be honoured and
+	// the fallback was used instead. It is meant to be logged: the user asked
+	// for one thing and got another, which they can see happening but not why.
+	Reason string
+}
+
 var (
 	activeDialog atomic.Pointer[Dialog]
 
