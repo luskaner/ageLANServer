@@ -1,4 +1,16 @@
-package cmdUtils
+// Package ops is what a session does to the machine, and how it remembers so it
+// can undo it.
+//
+// It is not a grab bag of command line helpers, which is what the name it used
+// to carry suggested. Everything here touches something outside the process:
+// the hosts file, the certificate stores, the game's user data, the game itself,
+// the servers it discovers and the battle server it starts. That is also why so
+// much of it needs elevation, and why Revert exists at all.
+//
+// Config is the state those operations share. One is built per run and carries
+// what has been changed so far, which is what makes a failed run reversible
+// rather than merely reported.
+package ops
 
 import (
 	"io"
@@ -16,8 +28,8 @@ import (
 	"github.com/luskaner/ageLANServer/common/process/game"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 

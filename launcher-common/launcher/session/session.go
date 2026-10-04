@@ -37,9 +37,9 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 	"github.com/spf13/pflag"
 	"slices"
@@ -178,7 +178,7 @@ func setPromptOutput(s Sinks) { promptOutput = s }
 var promptOutput Sinks
 
 var configPaths = []string{paths.ResourcesDir, "."}
-var config = &cmdUtils.Config{}
+var config = &ops.Config{}
 
 // report is how the shared logic talks to this frontend.
 
@@ -207,8 +207,8 @@ var (
 
 var (
 	gameSupportedGamesContainsOneFn = func(gameId string) bool { return game.SupportedGames.ContainsOne(gameId) }
-	parseCommandArgsFn              = cmdUtils.ParseCommandArgs
-	resolveIsolateValueFn           = cmdUtils.ResolveIsolateValue
+	parseCommandArgsFn              = ops.ParseCommandArgs
+	resolveIsolateValueFn           = ops.ResolveIsolateValue
 	configSetGameIdFn               = config.SetGameId
 	configIsolationPathFn           = config.IsolationPath
 	configGamePathToGameCertPathFn  = config.GamePathToGameCertPath
@@ -220,7 +220,7 @@ var (
 	executablesFindPathFn           = executables.FindPath
 	commonProcessProcessFn          = commonProcess.Process
 	commonProcessWaitForProcessFn   = commonProcess.WaitForProcess
-	gameRunningFn                   = func() bool { return cmdUtils.GameRunning(reportOrDiscard()) }
+	gameRunningFn                   = func() bool { return ops.GameRunning(reportOrDiscard()) }
 	configKillAgentFn               = config.KillAgent
 	launcherCommonConfigRevertFn    = launcherCommon.ConfigRevert
 	executorRunRevertFn             = executor.RunRevert
@@ -235,7 +235,7 @@ var (
 	configRunSetupCommandFn      = config.RunSetupCommand
 	netipParseAddrFn             = netip.ParseAddr
 	discoverServersFn            = func(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (uuid.UUID, net.IP) {
-		return cmdUtils.DiscoverServersAndSelectBestIpAddr(reportOrDiscard(), promptInput(), gameTitle, singleAutoSelect, multicastGroups, targetPorts)
+		return ops.DiscoverServersAndSelectBestIpAddr(reportOrDiscard(), promptInput(), gameTitle, singleAutoSelect, multicastGroups, targetPorts)
 	}
 	serverGetExecutablePathFn = server.GetExecutablePath
 	serverGenerateCertsFn     = func(serverExecutablePath string, canTrustCertificate bool) int {

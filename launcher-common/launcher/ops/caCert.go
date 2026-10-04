@@ -1,4 +1,4 @@
-package cmdUtils
+package ops
 
 import (
 	"crypto/x509"

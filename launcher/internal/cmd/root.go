@@ -12,7 +12,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/session"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"

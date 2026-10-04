@@ -3,8 +3,8 @@
 // launcher-common/launcher: every frontend asks the same questions, and only the
 // way they are asked differs.
 //
-// It must not import cmdUtils or cmdUtils/logger: cmdUtils needs dialog, and
-// cmdUtils/logger needs dialog too, so console output goes through the
+// It must not import the shared operations or their logger: those need dialog,
+// and their logger needs dialog too, so console output goes through the
 // injectable Output sinks instead.
 package dialog
 
@@ -43,7 +43,7 @@ func label(c ServerCandidate) string {
 }
 
 // Output are the sinks the console prompts write to. They mirror
-// cmdUtils/logger so prompt output keeps reaching both the log file and stdout.
+// the shared logger so prompt output keeps reaching both the log file and stdout.
 type Output struct {
 	Println func(...any)
 	Printf  func(string, ...any)

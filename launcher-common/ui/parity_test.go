@@ -50,7 +50,7 @@ func catalogue() []message {
 		{today: "Canceled starting the 'server'.", tmpl: Fail("Canceled starting the server."), render: Fail},
 		{today: "Cannot find 'server' executable path. Set it manually in Server.Executable.", tmpl: Fail("Cannot find server executable path. Set it manually in Server.Executable."), render: Fail},
 		{today: "Failed to read certificate from 192.168.1.50. Try to access it with your browser and checking the certificate.", tmpl: Fail("Failed to read certificate from 192.168.1.50. Try to access it with your browser and checking the certificate."), render: Fail},
-		// launcher-common/launcher/cmdUtils
+		// launcher-common/launcher/ops
 		{today: "Failed to trust certificate", tmpl: Fail("Failed to trust certificate"), render: Fail},
 		{today: "Saving 'server' certificate to 'C:\\Temp\\cert.pem' file...", tmpl: "Saving server certificate to 'C:\\Temp\\cert.pem' file...", render: Step},
 		{today: "Failed to save certificate to file", tmpl: Fail("Failed to save certificate to file"), render: Fail},

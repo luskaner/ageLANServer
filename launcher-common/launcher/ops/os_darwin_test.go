@@ -1,6 +1,6 @@
 //go:build darwin
 
-package cmdUtils
+package ops
 
 import (
 	"testing"
