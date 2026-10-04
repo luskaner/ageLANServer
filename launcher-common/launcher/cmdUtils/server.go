@@ -19,7 +19,6 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/spf13/pflag"
@@ -34,7 +33,7 @@ type processedServer struct {
 	label string
 }
 
-func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
+func processedServers(r launcher.Reporter, gameTitle string, servers map[uuid.UUID]*server.AnnounceMessage) []*processedServer {
 	var processed []*processedServer
 	for serverId, data := range servers {
 		_, measuredIPs, internalData := server.FilterServerIPs(serverId, "", gameTitle, data.IpAddrs)
@@ -98,7 +97,7 @@ func processedServers(gameTitle string, servers map[uuid.UUID]*server.AnnounceMe
 	return processed
 }
 
-func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
+func DiscoverServersAndSelectBestIpAddr(r launcher.Reporter, gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (id uuid.UUID, ip net.IP) {
 	id = uuid.Nil()
 	servers := make(map[uuid.UUID]*server.AnnounceMessage)
 	// The search takes a couple of seconds and prints nothing until it is over,
@@ -124,8 +123,8 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 		search.Stop()
 	}
 	if len(servers) > 0 {
-		if procServers := processedServers(gameTitle, servers); len(procServers) > 0 {
-			idx, ok := selectDiscoveredServer(procServers, singleAutoSelect, os.Stdin)
+		if procServers := processedServers(r, gameTitle, servers); len(procServers) > 0 {
+			idx, ok := selectDiscoveredServer(r, procServers, singleAutoSelect, os.Stdin)
 			if i := usableServerIndex(idx, ok, len(procServers)); i >= 0 {
 				selectedServer := procServers[i]
 				ip = selectedServer.Ip
@@ -139,7 +138,7 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 // selectDiscoveredServer resolves which of the processed servers to use. It
 // returns the 0-based index into procServers and false when the user declined
 // to pick one, in which case the caller falls back to starting its own server.
-func selectDiscoveredServer(procServers []*processedServer, singleAutoSelect bool, stdin io.Reader) (int, bool) {
+func selectDiscoveredServer(r launcher.Reporter, procServers []*processedServer, singleAutoSelect bool, stdin io.Reader) (int, bool) {
 	candidates := make([]launcher.ServerCandidate, len(procServers))
 	for i, procServer := range procServers {
 		candidates[i] = launcher.ServerCandidate{
@@ -155,7 +154,7 @@ func selectDiscoveredServer(procServers []*processedServer, singleAutoSelect boo
 		// Left undecorated on purpose: select_server_test.go pins this line byte
 		// for byte, and a marker there would buy nothing the numbered list above
 		// does not already give.
-		logger.Println("Auto-selecting the only found server.")
+		r.Println("Auto-selecting the only found server.")
 		return 0, true
 	}
 	return launcher.ActiveDialog().SelectServer(candidates, stdin)
@@ -176,7 +175,7 @@ func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cm
 	if !launcher.CanUseInternet {
 		values.CanUseInternet = false
 	}
-	logger.Step("Starting server, authorize it in firewall if needed...")
+	c.report().Step("Starting server, authorize it in firewall if needed...")
 	var stopStr string
 	if stop {
 		stopStr = "true"
@@ -185,26 +184,26 @@ func (c *Config) StartServer(executable string, flags *pflag.FlagSet, values *cm
 	}
 	var result *commonExecutor.Result
 	var serverExe string
-	result, serverExe, ip = server.StartServer(c.gameId, stopStr, executable, flags, values, func(options commonExecutor.Options) {
+	result, serverExe, ip = server.StartServer(c.report(), c.gameId, stopStr, executable, flags, values, func(options commonExecutor.Options) {
 		commonLogger.Println("start server", options.String())
 	})
 	if result.Success() {
-		logger.Ok("Server started.")
+		c.report().Ok("Server started.")
 		if stop {
 			c.serverExe = serverExe
 		}
 	} else {
-		logger.Fail("Could not start server.")
+		c.report().Fail("Could not start server.")
 		exitCode = launcher.ErrServerStart
 		if result != nil {
 			if result.Err != nil {
-				logger.Fault("Error message: %s", result.Err.Error())
+				c.report().Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Fault("Exit code: %d.", result.ExitCode)
+				c.report().Fault("Exit code: %d.", result.ExitCode)
 			}
 		} else {
-			logger.Detail("Try running the server manually.")
+			c.report().Detail("Try running the server manually.")
 		}
 	}
 	return

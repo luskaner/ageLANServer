@@ -10,19 +10,18 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 )
 
 func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool, macOsExclusiveMappings bool) (exitCode int) {
-	logger.Step("Adding CA certificate to game if needed...")
+	c.report().Step("Adding CA certificate to game if needed...")
 	caPool, err := common.ReadCertsPool(caCertPath)
 	if err != nil {
-		logger.Fail("Could not read game CA certificates: %s", err)
+		c.report().Fail("Could not read game CA certificates: %s", err)
 		return launcher.ErrConfigCACertAdd
 	}
 	var addCert bool
-	addCert, exitCode = checkCertMatch(serverId, gameId, serverCertificate, common.AllHosts(gameId, macOsExclusiveMappings), caPool, canAddCert)
+	addCert, exitCode = checkCertMatch(c.report(), serverId, gameId, serverCertificate, common.AllHosts(gameId, macOsExclusiveMappings), caPool, canAddCert)
 	if !addCert || exitCode != common.ErrSuccess {
 		return
 	}
@@ -37,17 +36,17 @@ func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertif
 		cfgSetupOpts.AddCACertData = serverCertificate.Raw
 		cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 		if result := cfgSetupOpts.RunSetUp(); !result.Success() {
-			logger.Fail("Failed to save CA certificate to game")
+			c.report().Fail("Failed to save CA certificate to game")
 			exitCode = launcher.ErrConfigCACertAdd
 			if result.Err != nil {
-				logger.Fault("Error message: %s", result.Err.Error())
+				c.report().Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Fault("Exit code: %d.", result.ExitCode)
+				c.report().Fault("Exit code: %d.", result.ExitCode)
 			}
 		}
 	}); err != nil {
-		logger.Fail("Error message: %s", err.Error())
+		c.report().Fail("Error message: %s", err.Error())
 		return common.ErrFileLog
 	}
 	return

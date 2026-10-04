@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"io"
+	"net"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -90,7 +91,7 @@ var (
 	executablesFindPathFn           = executables.FindPath
 	commonProcessProcessFn          = commonProcess.Process
 	commonProcessWaitForProcessFn   = commonProcess.WaitForProcess
-	gameRunningFn                   = cmdUtils.GameRunning
+	gameRunningFn                   = func() bool { return cmdUtils.GameRunning(report) }
 	configKillAgentFn               = config.KillAgent
 	launcherCommonConfigRevertFn    = launcherCommon.ConfigRevert
 	executorRunRevertFn             = executor.RunRevert
@@ -100,13 +101,17 @@ var (
 		}
 		return commonLogger.FileLogger.Buffer(name, fn)
 	}
-	newConfigFlushCacheOptionsFn    = executor.NewConfigFlushCacheOptions
-	executablesNativeFileNameFn     = executables.NativeFileName
-	configRunSetupCommandFn         = config.RunSetupCommand
-	netipParseAddrFn                = netip.ParseAddr
-	discoverServersFn               = cmdUtils.DiscoverServersAndSelectBestIpAddr
-	serverGetExecutablePathFn       = server.GetExecutablePath
-	serverGenerateCertsFn           = server.GenerateServerCertificates
+	newConfigFlushCacheOptionsFn = executor.NewConfigFlushCacheOptions
+	executablesNativeFileNameFn  = executables.NativeFileName
+	configRunSetupCommandFn      = config.RunSetupCommand
+	netipParseAddrFn             = netip.ParseAddr
+	discoverServersFn            = func(gameTitle string, singleAutoSelect bool, multicastGroups mapset.Set[netip.Addr], targetPorts mapset.Set[uint16]) (uuid.UUID, net.IP) {
+		return cmdUtils.DiscoverServersAndSelectBestIpAddr(report, gameTitle, singleAutoSelect, multicastGroups, targetPorts)
+	}
+	serverGetExecutablePathFn = server.GetExecutablePath
+	serverGenerateCertsFn     = func(serverExecutablePath string, canTrustCertificate bool) int {
+		return server.GenerateServerCertificates(report, serverExecutablePath, canTrustCertificate)
+	}
 	configRunBattleServerManagerFn  = config.RunBattleServerManager
 	configStartServerFn             = config.StartServer
 	serverReadCACertFn              = server.ReadCACertificateFromServer
@@ -165,6 +170,9 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		return
 	}
 	cfg := initConfigFn(fs)
+	// Everything the run does from here reports through this, so the same session
+	// could be read in a terminal or in a window by installing a different one.
+	config.Report = report
 	logger.LogEnabled = cfg.Config.Log
 	if err = openMainLogFn(gameId); err != nil {
 		logger.Fail("Failed to open file log")

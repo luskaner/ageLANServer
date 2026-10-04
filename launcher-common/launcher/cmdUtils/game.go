@@ -14,7 +14,6 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/game/battleServerBroadcast"
 )
@@ -39,12 +38,12 @@ func (c *Config) KillAgent() {
 	if _, proc, err := processFn(agent); err != nil || proc == nil {
 		return
 	}
-	logger.Step("Stopping config-admin-agent...")
+	c.report().Step("Stopping config-admin-agent...")
 	if err := commonProcess.Kill(agent); err != nil {
-		logger.Warn("Failed to kill it: %s, try using the task manager.", err)
+		c.report().Warn("Failed to kill it: %s, try using the task manager.", err)
 		return
 	}
-	logger.Ok("config-admin-agent stopped.")
+	c.report().Ok("config-admin-agent stopped.")
 }
 
 func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custom.Exec, clientExecutableArgs []string, canTrustCertificate string, canBroadcastBattleServer string, basePath string) (exitCode int) {
@@ -63,12 +62,12 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		if canBroadcastBattleServer == "true" {
 			str += ", authorize it in firewall if needed"
 		}
-		logger.Step("%s", str+"...")
+		c.report().Step("%s", str+"...")
 		steamProcess, steamMacOsNative, xboxProcess := executer.GameProcesses()
 		var err error
 		var f *os.File
 		if f, err = commonLogger.FileLogger.Open("agent"); err != nil {
-			logger.Fail("Error message: %s", err.Error())
+			c.report().Fail("Error message: %s", err.Error())
 			return common.ErrFileLog
 		}
 		// Convert explicitly: assigning a nil *os.File directly to io.Writer
@@ -97,24 +96,24 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 		// Close the parent's handle: the child inherited its own copy.
 		_ = f.Close()
 		if !result.Success() {
-			logger.Fail("Failed to start agent.")
+			c.report().Fail("Failed to start agent.")
 			exitCode = launcher.ErrAgentStart
 			if result.Err != nil {
-				logger.Fault("Error message: %s", result.Err.Error())
+				c.report().Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Fault("Exit code: %d.", result.ExitCode)
+				c.report().Fault("Exit code: %d.", result.ExitCode)
 			}
 			return
 		}
 
-		logger.Ok("Agent started.")
+		c.report().Ok("Agent started.")
 	}
 	str := "Starting game"
 	if customExecutor.Executable != "" {
 		str += ", authorize it if needed"
 	}
-	logger.Step("%s", str+"...")
+	c.report().Step("%s", str+"...")
 	var result *commonExecutor.Result
 	var values map[string]string = nil
 	if c.hostFilePath != "" {
@@ -136,7 +135,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}
 	args, err := ParseCommandArgs(clientExecutableArgs, values)
 	if err != nil {
-		logger.Fail("Failed to parse client executable arguments")
+		c.report().Fail("Failed to parse client executable arguments")
 		exitCode = launcher.ErrInvalidClientArgs
 		return
 	}
@@ -146,7 +145,7 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	}); !result.Success() && result.Err != nil {
 		if customExecutor.Executable != "" && adminError(result) {
 			if canTrustCertificate == "user" {
-				logger.Warn("Using a user certificate. If it fails to connect to the server, try setting the config setting Config.Certificate.CanTrustInPc to \"local\".")
+				c.report().Warn("Using a user certificate. If it fails to connect to the server, try setting the config setting Config.Certificate.CanTrustInPc to \"local\".")
 			}
 			result = customExecutor.DoElevated(args, func(options commonExecutor.Options) {
 				commonLogger.Println("start elevated game", options.String())
@@ -156,11 +155,11 @@ func (c *Config) LaunchAgentAndGame(executer base.Executor, customExecutor custo
 	if !result.Success() {
 		exitCode = launcher.ErrGameLauncherStart
 		if result.Err != nil {
-			logger.Fail("Game failed to start. Error message: %s", result.Err.Error())
+			c.report().Fail("Game failed to start. Error message: %s", result.Err.Error())
 		}
 		c.KillAgent()
 	} else {
-		logger.Ok("Game started.")
+		c.report().Ok("Game started.")
 	}
 	return
 }

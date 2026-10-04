@@ -15,12 +15,22 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/common/process/game"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 
 type Config struct {
+	// Report is where the run says what it is doing.
+	//
+	// It is a field rather than a package global so that two things can hold
+	// this type at once without talking over each other: a window running a
+	// session while a test runs another, or two windows side by side. A frontend
+	// installs one before the run starts; everything below reports through it,
+	// which is what lets the same run be read in a terminal and in a window.
+	Report launcher.Reporter
+
 	gameId             string
 	serverExe          string
 	setupCommandRan    bool
@@ -30,6 +40,18 @@ type Config struct {
 	battleServerExe    string
 }
 
+// report is the Reporter this config was given, or one that discards.
+//
+// The zero Config has no Reporter, and it is a legitimate value: tests build one
+// to exercise a single step, and a caller that does not care about output should
+// not have to invent a Reporter to get one. Falling back here rather than
+// panicking keeps that ordinary.
+func (c *Config) report() launcher.Reporter {
+	if c.Report == nil {
+		return launcher.Discard{}
+	}
+	return c.Report
+}
 func (c *Config) SetGameId(gameId string) {
 	c.gameId = gameId
 }
@@ -79,53 +101,53 @@ func (c *Config) Revert() {
 	logger.WriteFileLog(c.gameId, "pre-revert")
 	c.KillAgent()
 	if c.serverExe != "" {
-		logger.Step("Stopping server...")
+		c.report().Step("Stopping server...")
 		if err := serverKill.Do(c.serverExe); err == nil {
-			logger.Ok("Server stopped.")
+			c.report().Ok("Server stopped.")
 		} else {
-			logger.Fail("Failed to stop server.")
-			logger.Fault("Error message: %s", err.Error())
+			c.report().Fail("Failed to stop server.")
+			c.report().Fault("Error message: %s", err.Error())
 		}
 	}
 	if c.battleServerRegion != "" && c.battleServerExe != "" {
-		logger.Step("Stopping battle server via battle-server-manager...")
+		c.report().Step("Stopping battle server via battle-server-manager...")
 		_ = commonLogger.FileLogger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
 			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options *exec.Options) {
 				commonLogger.Println("battle-server-manager_remove", options.String())
 			}); result.Success() {
-				logger.Ok("Battle-server stopped (or was already).")
+				c.report().Ok("Battle-server stopped (or was already).")
 			} else {
-				logger.Fail("Failed to stop the battle-server.")
+				c.report().Fail("Failed to stop the battle-server.")
 				if result.Err != nil {
-					logger.Fault("Error message: %s", result.Err.Error())
+					c.report().Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Fault("Exit code: %d.", result.ExitCode)
+					c.report().Fault("Exit code: %d.", result.ExitCode)
 				}
-				logger.Fault("You may try killing it manually. Kill process %s if it is running in your task manager.", battleServer.Executable)
+				c.report().Fault("You may try killing it manually. Kill process %s if it is running in your task manager.", battleServer.Executable)
 			}
 		})
 	}
 	if c.RequiresConfigRevert() {
-		logger.Step("Cleaning up...")
+		c.report().Step("Cleaning up...")
 		_ = commonLogger.FileLogger.Buffer("config_revert", func(writer io.Writer) {
 			if ok := launcherCommon.ConfigRevert(c.gameId, commonLogger.FileLogger.Folder(), false, writer, func(options *exec.Options) {
 				commonLogger.Println("run config revert", options.String())
 			}, executor.RunRevert); !ok {
-				logger.Fail("Failed to clean up.")
+				c.report().Fail("Failed to clean up.")
 			}
 		})
 	} else if launcherCommon.ConfigAdminAgentRunning(false) {
-		logger.Step("Stopping config-admin-agent...")
+		c.report().Step("Stopping config-admin-agent...")
 		if result := c.RunStopAgent(); result.Success() {
-			logger.Ok("Config-admin-agent stopped.")
+			c.report().Ok("Config-admin-agent stopped.")
 		} else {
-			logger.Fail("Failed to stop agent.")
+			c.report().Fail("Failed to stop agent.")
 			if result.Err != nil {
-				logger.Fault("Error message: %s", result.Err.Error())
+				c.report().Fault("Error message: %s", result.Err.Error())
 			}
 			if result.ExitCode != common.ErrSuccess {
-				logger.Fault("Exit code: %s", strconv.Itoa(result.ExitCode))
+				c.report().Fault("Exit code: %s", strconv.Itoa(result.ExitCode))
 			}
 		}
 	}
@@ -135,10 +157,10 @@ func (c *Config) Revert() {
 				commonLogger.Println("run revert command", options.String())
 			})
 			if err != nil {
-				logger.Fail("Failed to run revert command.")
-				logger.Fault("Error message: %s", err.Error())
+				c.report().Fail("Failed to run revert command.")
+				c.report().Fault("Error message: %s", err.Error())
 			} else {
-				logger.Ok("Ran Revert command.")
+				c.report().Ok("Ran Revert command.")
 			}
 		})
 	}
@@ -150,7 +172,7 @@ func anyProcessExists(names []string) bool {
 	return len(processes) > 0
 }
 
-func GameRunning() bool {
+func GameRunning(r launcher.Reporter) bool {
 	xbox := runtime.GOOS == "windows"
 	steamMacOsNative := runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
 	var gameProcesses []string
@@ -163,14 +185,14 @@ func GameRunning() bool {
 	if !someProcessRunning() {
 		return false
 	}
-	logger.Step("Some Age game is already running, waiting up to 1 minute for the game to exit.")
+	r.Step("Some Age game is already running, waiting up to 1 minute for the game to exit.")
 	timeout := time.After(1 * time.Minute)
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-timeout:
-			logger.Warn("The game did not exit in time.")
+			r.Warn("The game did not exit in time.")
 			return true
 		case <-ticker.C:
 			if !someProcessRunning() {

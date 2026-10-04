@@ -8,7 +8,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 )
 
@@ -34,7 +33,7 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 		if profiles {
 			isolateItems = append(isolateItems, "profiles")
 		}
-		logger.Step("%s", "Backing up "+strings.Join(isolateItems, " and ")+".")
+		c.report().Step("%s", "Backing up "+strings.Join(isolateItems, " and ")+".")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_isolate", func(writer io.Writer) {
 			cfgSetupOpts := executor.NewConfigSetupOptions()
@@ -49,17 +48,17 @@ func (c *Config) IsolateUserData(metadata bool, profiles bool, path string) (exi
 			cfgSetupOpts.AgentEndOnError = !c.RequiresConfigRevert()
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				isolateMsg := "Failed to backup "
-				logger.Fail("%s", isolateMsg+strings.Join(isolateItems, " or ")+".")
+				c.report().Fail("%s", isolateMsg+strings.Join(isolateItems, " or ")+".")
 				exitCode = launcher.ErrMetadataProfilesSetup
 				if result.Err != nil {
-					logger.Fault("Error message: %s", result.Err.Error())
+					c.report().Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Fault("Exit code: %d.", result.ExitCode)
+					c.report().Fault("Exit code: %d.", result.ExitCode)
 				}
 			}
 		}); err != nil {
-			logger.Fail("Failed to write isolate setup log: %s", err)
+			c.report().Fail("Failed to write isolate setup log: %s", err)
 		}
 	}
 	return

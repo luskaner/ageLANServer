@@ -12,7 +12,6 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
 )
 
@@ -22,14 +21,14 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 		for _, domain := range common.AllHosts(gameId, macOsExclusiveMappings) {
 			if !common.Matches(ip, domain) {
 				if !canMap {
-					logger.Fail("%s", "serverStart is false and canAddHost is false but server does not match "+domain+". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
+					c.report().Fail("%s", "serverStart is false and canAddHost is false but server does not match "+domain+". You should have added the host ip mapping to it in the hosts file (or just set canAddHost to true).")
 					exitCode = launcher.ErrConfigIpMap
 					return
 				}
 				mapIP = true
 			} else if err := server.CheckConnectionFromServer(domain, true, nil); err != nil {
-				logger.Fail("%s", "serverStart is false and host matches. "+domain+" must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
-				logger.Fault("Error: %s", err.Error())
+				c.report().Fail("%s", "serverStart is false and host matches. "+domain+" must be reachable. Review the host is reachable via this domain to TCP port 443 (HTTPS).")
+				c.report().Fault("Error: %s", err.Error())
 				exitCode = launcher.ErrServerUnreachable
 				return
 			}
@@ -42,14 +41,14 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 		if customHostFile {
 			hostFileLock, err := hosts.CreateTemp()
 			if err != nil {
-				logger.Fail("Failed to create temp hosts file with IP %s: %s", ip, err.Error())
+				c.report().Fail("Failed to create temp hosts file with IP %s: %s", ip, err.Error())
 				return launcher.ErrConfigIpMapAdd
 			}
 			tmpName := hostFileLock.File.Name()
 			c.hostFilePath, _ = filepath.Abs(tmpName)
 			str += fmt.Sprintf("Saving hosts to '%s' file", tmpName)
 			if err = hostFileLock.Unlock(); err != nil {
-				logger.Fail("Failed to unlock temp hosts file %s: %s", tmpName, err.Error())
+				c.report().Fail("Failed to unlock temp hosts file %s: %s", tmpName, err.Error())
 				return launcher.ErrConfigIpMapAdd
 			}
 		} else {
@@ -57,7 +56,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 			// value, and quotes on top of that only add noise.
 			str += fmt.Sprintf("Adding hosts to hosts file with IP %s", ip)
 		}
-		logger.Step("%s", str+"...")
+		c.report().Step("%s", str+"...")
 		var err error
 		if err = commonLogger.FileLogger.Buffer("config_setup_hosts", func(writer io.Writer) {
 			cfgSetupOpts := executor.NewConfigSetupOptions()
@@ -73,19 +72,19 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 			if result := cfgSetupOpts.RunSetUp(); !result.Success() {
 				// The address is not repeated: the line above already named it, and a
 				// failure is about the step, not about the value that step was given.
-				logger.Fail("Failed to add hosts to hosts file.")
+				c.report().Fail("Failed to add hosts to hosts file.")
 				if result.Err != nil {
-					logger.Fault("Error message: %s", result.Err.Error())
+					c.report().Fault("Error message: %s", result.Err.Error())
 				} else {
-					logger.Fault("Error message: none (check the config_setup_hosts and config-admin_setup_hosts log files for details).")
+					c.report().Fault("Error message: none (check the config_setup_hosts and config-admin_setup_hosts log files for details).")
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Fault("Exit code: %d.", result.ExitCode)
+					c.report().Fault("Exit code: %d.", result.ExitCode)
 				} else {
-					logger.Fault("Exit code: none (process reported failure without exit code).")
+					c.report().Fault("Exit code: none (process reported failure without exit code).")
 				}
 				if logFolder := commonLogger.FileLogger.Folder(); logFolder != "" {
-					logger.Fault("Check log folder %s for config_setup_hosts* and config-admin_setup_hosts* files.", logFolder)
+					c.report().Fault("Check log folder %s for config_setup_hosts* and config-admin_setup_hosts* files.", logFolder)
 				}
 				exitCode = launcher.ErrConfigIpMapAdd
 			} else if customHostFile {
@@ -99,7 +98,7 @@ func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool,
 				}
 			}
 		}); err != nil {
-			logger.Fail("Failed to write hosts setup log: %s", err)
+			c.report().Fail("Failed to write hosts setup log: %s", err)
 		}
 	}
 	return

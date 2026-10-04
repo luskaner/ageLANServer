@@ -15,7 +15,6 @@ import (
 	"github.com/luskaner/ageLANServer/common/game"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/spf13/pflag"
 )
 
@@ -23,7 +22,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 	if executable == "auto" {
 		executable = executables.FindPath(executables.NativeFileName(true, "battle-server-manager"))
 		if executable == "" {
-			logger.Fail("Could not find battle-server-manager executable")
+			c.report().Fail("Could not find battle-server-manager executable")
 			return launcher.ErrBattleServerManagerRun
 		}
 	}
@@ -32,7 +31,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 		var err error
 		beforeConfigs, err = battleServer.Configs(c.gameId, true, true)
 		if err != nil {
-			logger.Fail("Could not get existing configurations: %s", err)
+			c.report().Fail("Could not get existing configurations: %s", err)
 			return launcher.ErrBattleServerManagerRun
 		}
 	}
@@ -49,7 +48,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 		str += "it can take a while and "
 	}
 	str += "you might need to allow it in the firewall..."
-	logger.Step("%s", str)
+	c.report().Step("%s", str)
 	options := commonExecutor.Options{File: executable, Args: startArgs, Wait: true, ExitCode: true}
 	var result *commonExecutor.Result
 	if err := commonLogger.FileLogger.Buffer("battle-server-manager_start", func(writer io.Writer) {
@@ -79,16 +78,16 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 					}
 				}
 			}
-			logger.Warn("A Battle Server already existed or could not determine which one was started, kill %s in task manager as needed.", battleServer.Executable)
+			c.report().Warn("A Battle Server already existed or could not determine which one was started, kill %s in task manager as needed.", battleServer.Executable)
 		}
 		return common.ErrSuccess
 	}
-	logger.Fail("Could not run battle-server-manager.")
+	c.report().Fail("Could not run battle-server-manager.")
 	if result.Err != nil {
-		logger.Fault("Error: %s", result.Err)
+		c.report().Fault("Error: %s", result.Err)
 	}
 	if result.ExitCode != common.ErrSuccess {
-		logger.Fault("Exit code: %d", result.ExitCode)
+		c.report().Fault("Exit code: %d", result.ExitCode)
 	}
 	return launcher.ErrBattleServerManagerRun
 }

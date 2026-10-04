@@ -69,7 +69,7 @@ func installFakeDialog(t *testing.T, d launcher.Dialog) {
 func TestSelectDiscoveredServerAutoSelectSingle(t *testing.T) {
 	launcher.ResetDialog()
 	t.Cleanup(launcher.ResetDialog)
-	if got, ok := selectDiscoveredServer(testProcessedServers(1), true, strings.NewReader("")); !ok || got != 0 {
+	if got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(1), true, strings.NewReader("")); !ok || got != 0 {
 		t.Fatalf("auto-select single = (%d, %t), want (0, true)", got, ok)
 	}
 }
@@ -77,7 +77,7 @@ func TestSelectDiscoveredServerAutoSelectSingle(t *testing.T) {
 func TestSelectDiscoveredServerAutoSelectIgnoredWhenMultiple(t *testing.T) {
 	fake := &fakeDialog{index: 1, ok: true}
 	installFakeDialog(t, fake)
-	got, ok := selectDiscoveredServer(testProcessedServers(3), true, strings.NewReader("2\n"))
+	got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(3), true, strings.NewReader("2\n"))
 	if !ok || got != 1 {
 		t.Fatalf("= (%d, %t), want (1, true)", got, ok)
 	}
@@ -93,7 +93,7 @@ func TestSelectDiscoveredServerDelegatesDescriptionsInOrder(t *testing.T) {
 	procServers[2].description = "third"
 	fake := &fakeDialog{index: 2, ok: true}
 	installFakeDialog(t, fake)
-	got, ok := selectDiscoveredServer(procServers, false, strings.NewReader(""))
+	got, ok := selectDiscoveredServer(launcher.Discard{}, procServers, false, strings.NewReader(""))
 	if !ok || got != 2 {
 		t.Fatalf("= (%d, %t), want (2, true)", got, ok)
 	}
@@ -116,7 +116,7 @@ func TestSelectDiscoveredServerPassesBothDescriptionAndLabel(t *testing.T) {
 	procServers[1].label = "10.0.0.1 - 1 ms (v1.11.0)"
 	fake := &fakeDialog{index: 0, ok: true}
 	installFakeDialog(t, fake)
-	if _, ok := selectDiscoveredServer(procServers, false, strings.NewReader("")); !ok {
+	if _, ok := selectDiscoveredServer(launcher.Discard{}, procServers, false, strings.NewReader("")); !ok {
 		t.Fatal("SelectServer was not called")
 	}
 	if got := fake.gotCandidates[0]; got.Description != procServers[0].description || got.Label != procServers[0].label {
@@ -135,7 +135,7 @@ func TestSelectDiscoveredServerPassesBothDescriptionAndLabel(t *testing.T) {
 func TestSelectDiscoveredServerAutoSelectNeedsNoPrompt(t *testing.T) {
 	fake := &fakeDialog{ok: false}
 	installFakeDialog(t, fake)
-	if got, ok := selectDiscoveredServer(testProcessedServers(1), true, strings.NewReader("")); !ok || got != 0 {
+	if got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(1), true, strings.NewReader("")); !ok || got != 0 {
 		t.Fatalf("= (%d, %t), want (0, true)", got, ok)
 	}
 	if fake.selectCalled != 0 {
@@ -151,7 +151,7 @@ func TestSelectDiscoveredServerAutoSelectListsCandidate(t *testing.T) {
 	installFakeDialog(t, fake)
 	procServers := testProcessedServers(1)
 	procServers[0].description = "only one"
-	if got, ok := selectDiscoveredServer(procServers, true, strings.NewReader("")); !ok || got != 0 {
+	if got, ok := selectDiscoveredServer(launcher.Discard{}, procServers, true, strings.NewReader("")); !ok || got != 0 {
 		t.Fatalf("= (%d, %t), want (0, true)", got, ok)
 	}
 	if fake.listCalled != 1 {
@@ -164,7 +164,7 @@ func TestSelectDiscoveredServerAutoSelectListsCandidate(t *testing.T) {
 
 func TestSelectDiscoveredServerCancelledReturnsNotOK(t *testing.T) {
 	installFakeDialog(t, &fakeDialog{ok: false})
-	if got, ok := selectDiscoveredServer(testProcessedServers(3), false, strings.NewReader("1\n")); ok {
+	if got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(3), false, strings.NewReader("1\n")); ok {
 		t.Fatalf("= (%d, true), want ok=false so the caller starts its own server", got)
 	}
 }
@@ -173,7 +173,7 @@ func TestSelectDiscoveredServerCancelledReturnsNotOK(t *testing.T) {
 // the caller guards against it.
 func TestSelectDiscoveredServerOutOfRangeIndexIsNotFatal(t *testing.T) {
 	installFakeDialog(t, &fakeDialog{index: 99, ok: true})
-	got, ok := selectDiscoveredServer(testProcessedServers(3), false, strings.NewReader("1\n"))
+	got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(3), false, strings.NewReader("1\n"))
 	if !ok || got != 99 {
 		t.Fatalf("= (%d, %t), want the backend answer passed through", got, ok)
 	}
@@ -249,7 +249,7 @@ func installStubConsole(t *testing.T) {
 // rather than assuming a window.
 func TestSelectDiscoveredServerFallsBackToDefaultDialog(t *testing.T) {
 	installStubConsole(t)
-	got, ok := selectDiscoveredServer(testProcessedServers(3), false, strings.NewReader("2\n"))
+	got, ok := selectDiscoveredServer(launcher.Discard{}, testProcessedServers(3), false, strings.NewReader("2\n"))
 	if !ok || got != 1 {
 		t.Fatalf("= (%d, %t), want (1, true)", got, ok)
 	}
@@ -263,7 +263,7 @@ func TestSelectDiscoveredServerWithNothingInstalledTakesDefaults(t *testing.T) {
 	t.Cleanup(func() { launcher.ResetDialog() })
 
 	procServers := testProcessedServers(1)
-	got, ok := selectDiscoveredServer(procServers, false, strings.NewReader(""))
+	got, ok := selectDiscoveredServer(launcher.Discard{}, procServers, false, strings.NewReader(""))
 	if ok || got != 0 {
 		t.Fatalf("= (%d, %t), want (0, false): a declined pick means start your own", got, ok)
 	}
@@ -272,22 +272,53 @@ func TestSelectDiscoveredServerWithNothingInstalledTakesDefaults(t *testing.T) {
 // Regression: the auto-select output must stay byte for byte what it was before
 // graphical dialogs existed: the numbered list first, then the auto-select
 // announcement, and no prompt.
+//
+// The two halves land in different places now, and both are checked: the list
+// through the backend, which prints, and the announcement through the Reporter,
+// which is where a window would pick it up. Before the Reporter existed the
+// second one went straight to the console logger, so this test could only ever
+// see it by capturing stdout, and a graphical frontend would have seen nothing.
 func TestSelectDiscoveredServerAutoSelectOutputUnchanged(t *testing.T) {
 	installStubConsole(t)
 	procServers := testProcessedServers(1)
 	procServers[0].description = "solo"
+	r := &recordingReporter{}
+	var idx int
+	var selected bool
 	got := captureStdout(t, func() {
-		var idx int
-		var selected bool
-		idx, selected = selectDiscoveredServer(procServers, true, strings.NewReader(""))
-		if !selected || idx != 0 {
-			t.Errorf("= (%d, %t), want (0, true)", idx, selected)
-		}
+		idx, selected = selectDiscoveredServer(r, procServers, true, strings.NewReader(""))
 	})
-	want := "Found the following servers:\n1. solo\nAuto-selecting the only found server.\n"
-	if got != want {
-		t.Fatalf("output =\n%q\nwant\n%q", got, want)
+	if !selected || idx != 0 {
+		t.Errorf("= (%d, %t), want (0, true)", idx, selected)
 	}
+	want := "Found the following servers:\n1. solo\n"
+	if got != want {
+		t.Errorf("the list =\n%q\nwant\n%q", got, want)
+	}
+	wantAnnouncement := "Auto-selecting the only found server."
+	if len(r.printed) != 1 || r.printed[0] != wantAnnouncement {
+		t.Errorf("announced %q, want [%q]", r.printed, wantAnnouncement)
+	}
+}
+
+// recordingReporter keeps what it was told, so a test can assert on what a run
+// said rather than on where it said it.
+type recordingReporter struct {
+	launcher.Discard
+	printed []string
+	failed  []string
+}
+
+func (r *recordingReporter) Println(a ...any) {
+	r.printed = append(r.printed, fmt.Sprint(a...))
+}
+
+func (r *recordingReporter) Printf(format string, a ...any) {
+	r.printed = append(r.printed, fmt.Sprintf(format, a...))
+}
+
+func (r *recordingReporter) Fail(format string, a ...any) {
+	r.failed = append(r.failed, fmt.Sprintf(format, a...))
 }
 
 func captureStdout(t *testing.T, fn func()) string {

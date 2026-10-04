@@ -15,18 +15,35 @@ import (
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/spf13/pflag"
 )
 
-type ConfigSetupOptions struct {
+type ConfigSetupOptions struct { // Report is where the run says what it is doing. A frontend installs one
+	// before starting; a nil one discards, so a caller that only wants the
+	// result does not have to invent one.
+	Report launcher.Reporter
 	*config.SetupValues
 	flags     *pflag.FlagSet
 	Out       io.Writer
 	OptionsFn func(options *exec.Options)
 }
 
+// report is the Reporter this was given, or one that discards. See Config's
+// report for why the nil case is not an error.
+func (c *ConfigSetupOptions) report() launcher.Reporter {
+	if c.Report == nil {
+		return launcher.Discard{}
+	}
+	return c.Report
+}
+
+func (c *ConfigFlushCacheOptions) report() launcher.Reporter {
+	if c.Report == nil {
+		return launcher.Discard{}
+	}
+	return c.Report
+}
 func NewConfigSetupOptions() *ConfigSetupOptions {
 	setupValues, flags := config.SetUpFlagSet()
 	return &ConfigSetupOptions{
@@ -84,10 +101,10 @@ func (c *ConfigSetupOptions) RunSetUp() (result *exec.Result) {
 	if result.Success() {
 		revertArgs := c.ConfigRevertFlagOptions().Flags()
 		if err := launcherCommon.RevertConfigStore.Store(revertArgs); err != nil {
-			logger.Warn("Failed to store revert arguments, reverting setup...")
+			c.report().Warn("Failed to store revert arguments, reverting setup...")
 			result = RunRevert(revertArgs, false, c.Out, c.OptionsFn)
 			if !result.Success() {
-				logger.Fail("Failed to revert setup.")
+				c.report().Fail("Failed to revert setup.")
 			}
 			// Join both errors: the caller needs to know about the store
 			// failure AND that the compensating revert may have also failed
@@ -113,7 +130,10 @@ func RunRevert(flags []string, bin bool, out io.Writer, optionFn func(options *e
 	return
 }
 
-type ConfigFlushCacheOptions struct {
+type ConfigFlushCacheOptions struct { // Report is where the run says what it is doing. A frontend installs one
+	// before starting; a nil one discards, so a caller that only wants the
+	// result does not have to invent one.
+	Report launcher.Reporter
 	*config.FlushCacheValues
 	flags *pflag.FlagSet
 }

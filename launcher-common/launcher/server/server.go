@@ -18,7 +18,6 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/ipv4"
@@ -29,7 +28,7 @@ type MesuredIpAddress struct {
 	Latency time.Duration
 }
 
-func StartServer(gameTitle string, stop string, executable string, flags *pflag.FlagSet, values *cmdServer.Values, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result, executablePath string, ip string) {
+func StartServer(r launcher.Reporter, gameTitle string, stop string, executable string, flags *pflag.FlagSet, values *cmdServer.Values, optionsFn func(options commonExecutor.Options)) (result *commonExecutor.Result, executablePath string, ip string) {
 	executablePath = GetExecutablePath(executable)
 	if executablePath == "" {
 		return
@@ -63,9 +62,9 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 		}
 		if _, proc, err := commonProcess.Process(executablePath); err == nil && proc != nil {
 			if err = serverKill.Do(executablePath); err != nil {
-				logger.Fail("Failed to stop server")
-				logger.Fault("Error message: %s", err.Error())
-				logger.Fault("You may try killing it manually. Kill process server in your task manager.")
+				r.Fail("Failed to stop server")
+				r.Fault("Error message: %s", err.Error())
+				r.Fault("You may try killing it manually. Kill process server in your task manager.")
 			}
 		}
 		result = nil
@@ -73,30 +72,30 @@ func StartServer(gameTitle string, stop string, executable string, flags *pflag.
 	return
 }
 
-func GenerateServerCertificates(serverExecutablePath string, canTrustCertificate bool) (exitCode int) {
+func GenerateServerCertificates(r launcher.Reporter, serverExecutablePath string, canTrustCertificate bool) (exitCode int) {
 	certificateFolder := common.CertificatePairFolder(serverExecutablePath)
 	if exists, cert, _, caCert, selfSignedCert, _ := common.CertificatePairs(certificateFolder); !exists || CertificateSoonExpired(cert) || CertificateSoonExpired(caCert) || CertificateSoonExpired(selfSignedCert) {
 		if !canTrustCertificate {
-			logger.Fail("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
+			r.Fail("serverStart is true and canTrustCertificate is false. Certificate pair is missing or soon expired. Generate your own certificates manually.")
 			exitCode = launcher.ErrServerCertMissingExpired
 			return
 		}
 		if certificateFolder == "" {
-			logger.Fail("Cannot find certificate folder of the server. Make sure the folder structure of the server is correct.")
+			r.Fail("Cannot find certificate folder of the server. Make sure the folder structure of the server is correct.")
 			exitCode = launcher.ErrServerCertDirectory
 			return
 		}
 		if result := GenerateCertificatePair(certificateFolder, func(options *commonExecutor.Options) {
 
 		}); !result.Success() {
-			logger.Fail("Failed to generate certificate pair. Check the folder and its permissions")
+			r.Fail("Failed to generate certificate pair. Check the folder and its permissions")
 			exitCode = launcher.ErrServerCertCreate
 			if result != nil {
 				if result.Err != nil {
-					logger.Fault("Error message: %s", result.Err.Error())
+					r.Fault("Error message: %s", result.Err.Error())
 				}
 				if result.ExitCode != common.ErrSuccess {
-					logger.Fault("Exit code: %d.", result.ExitCode)
+					r.Fault("Exit code: %d.", result.ExitCode)
 				}
 			}
 			return
