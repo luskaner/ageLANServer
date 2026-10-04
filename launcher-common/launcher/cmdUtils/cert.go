@@ -16,9 +16,9 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	server2 "github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 )
 
 func checkCertMatch(serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, exitCode int) {

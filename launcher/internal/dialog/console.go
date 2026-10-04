@@ -7,8 +7,14 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
 )
+
+// Nothing installed means the console: this frontend's whole point is that it
+// runs where there is no window to ask in, so asking there is always possible,
+// and it is also what the run falls back to when graphical dialogs are missing.
+func init() { launcher.DefaultDialog = consoleDialog{} }
 
 type consoleDialog struct{}
 

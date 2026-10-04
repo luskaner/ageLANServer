@@ -14,9 +14,9 @@ import (
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/game/battleServerBroadcast"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/game/battleServerBroadcast"
 )
 
 // processFn is indirected so a test can decide whether an agent is running, which

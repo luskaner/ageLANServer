@@ -13,14 +13,14 @@ const rootStoreName = "ROOT"
 // Injectable wrappers for Windows API – allows unit tests to mock the store
 // without touching the real certificate store.
 var (
-	certOpenStoreFn                = windows.CertOpenStore
-	certCloseStoreFn               = windows.CertCloseStore
-	certCreateCertificateContextFn = windows.CertCreateCertificateContext
+	certOpenStoreFn                    = windows.CertOpenStore
+	certCloseStoreFn                   = windows.CertCloseStore
+	certCreateCertificateContextFn     = windows.CertCreateCertificateContext
 	certAddCertificateContextToStoreFn = windows.CertAddCertificateContextToStore
-	certFindCertificateInStoreFn   = windows.CertFindCertificateInStore
-	certDeleteCertificateFromStoreFn = windows.CertDeleteCertificateFromStore
-	certEnumCertificatesInStoreFn  = windows.CertEnumCertificatesInStore
-	certFreeCertificateContextFn   = windows.CertFreeCertificateContext
+	certFindCertificateInStoreFn       = windows.CertFindCertificateInStore
+	certDeleteCertificateFromStoreFn   = windows.CertDeleteCertificateFromStore
+	certEnumCertificatesInStoreFn      = windows.CertEnumCertificatesInStore
+	certFreeCertificateContextFn       = windows.CertFreeCertificateContext
 )
 
 func openNamedStore(userStore bool, storeName string) (windows.Handle, error) {

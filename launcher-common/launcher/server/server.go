@@ -18,8 +18,8 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/common/server"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/ipv4"
 )

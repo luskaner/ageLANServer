@@ -42,12 +42,12 @@ import (
 	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
-	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
 const autoValue = "auto"

@@ -239,12 +239,12 @@ func TestIterateContextOpenFailure(t *testing.T) {
 // --- Fake store infrastructure ---
 
 var (
-	fakeStores       = map[windows.Handle][]*x509.Certificate{}
-	fakeHandleByName = map[string]windows.Handle{}
+	fakeStores                      = map[windows.Handle][]*x509.Certificate{}
+	fakeHandleByName                = map[string]windows.Handle{}
 	fakeNextHandle   windows.Handle = 100
-	fakeContextBytes = map[*windows.CertContext][]byte{}
-	fakeEnumCursor   = map[windows.Handle]int{}
-	fakeFindCursor   = map[windows.Handle]int{}
+	fakeContextBytes                = map[*windows.CertContext][]byte{}
+	fakeEnumCursor                  = map[windows.Handle]int{}
+	fakeFindCursor                  = map[windows.Handle]int{}
 )
 
 func installFakeStore(t *testing.T) func() {

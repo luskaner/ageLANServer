@@ -42,12 +42,12 @@ type Reporter interface {
 // instead of leaving a nil interface waiting to panic.
 type Discard struct{}
 
-func (Discard) Ok(string, ...any)          {}
-func (Discard) Fail(string, ...any)        {}
-func (Discard) Warn(string, ...any)        {}
-func (Discard) Info(string, ...any)        {}
-func (Discard) Step(string, ...any)        {}
-func (Discard) Detail(string, ...any)      {}
-func (Discard) Fault(string, ...any)       {}
-func (Discard) Println(...any)             {}
-func (Discard) Printf(string, ...any)      {}
+func (Discard) Ok(string, ...any)     {}
+func (Discard) Fail(string, ...any)   {}
+func (Discard) Warn(string, ...any)   {}
+func (Discard) Info(string, ...any)   {}
+func (Discard) Step(string, ...any)   {}
+func (Discard) Detail(string, ...any) {}
+func (Discard) Fault(string, ...any)  {}
+func (Discard) Println(...any)        {}
+func (Discard) Printf(string, ...any) {}

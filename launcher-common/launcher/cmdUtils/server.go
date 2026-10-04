@@ -19,10 +19,9 @@ import (
 	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/cmdUtils/logger"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher/internal/cmdUtils/logger"
-	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
 	"github.com/spf13/pflag"
 )
 
@@ -141,9 +140,9 @@ func DiscoverServersAndSelectBestIpAddr(gameTitle string, singleAutoSelect bool,
 // returns the 0-based index into procServers and false when the user declined
 // to pick one, in which case the caller falls back to starting its own server.
 func selectDiscoveredServer(procServers []*processedServer, singleAutoSelect bool, stdin io.Reader) (int, bool) {
-	candidates := make([]dialog.ServerCandidate, len(procServers))
+	candidates := make([]launcher.ServerCandidate, len(procServers))
 	for i, procServer := range procServers {
-		candidates[i] = dialog.ServerCandidate{
+		candidates[i] = launcher.ServerCandidate{
 			Description: procServer.description,
 			Label:       procServer.label,
 		}
@@ -152,14 +151,14 @@ func selectDiscoveredServer(procServers []*processedServer, singleAutoSelect boo
 		// Auto-selecting still lists the candidate first: that is what the
 		// console has always done before this shortcut, and the backend that
 		// would have rendered the list is not rendering anything now.
-		dialog.Active().ListCandidates(candidates)
+		launcher.ActiveDialog().ListCandidates(candidates)
 		// Left undecorated on purpose: select_server_test.go pins this line byte
 		// for byte, and a marker there would buy nothing the numbered list above
 		// does not already give.
 		logger.Println("Auto-selecting the only found server.")
 		return 0, true
 	}
-	return dialog.Active().SelectServer(candidates, stdin)
+	return launcher.ActiveDialog().SelectServer(candidates, stdin)
 }
 
 // usableServerIndex turns the dialog answer into a safe index into procServers.

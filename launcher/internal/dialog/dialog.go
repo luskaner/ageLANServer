@@ -11,7 +11,6 @@ package dialog
 import (
 	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
 )
@@ -60,8 +59,6 @@ type Resolution struct {
 }
 
 var (
-	active atomic.Pointer[Dialog]
-
 	outputMu sync.RWMutex
 	output   = defaultOutput()
 )
@@ -112,21 +109,18 @@ func consoleResolution(reason string) Resolution {
 
 // Set installs the dialog for the rest of the session. Set is safe to call
 // from tests; RunRoot resets it after teardown.
-func Set(d Dialog) {
-	active.Store(&d)
-}
+//
+// The slot itself belongs to the shared package, because the logic that asks
+// the questions lives there and must not depend on a console backend to reach
+// it. What is installed is still decided here, where the backends are.
+func Set(d Dialog) { launcher.SetDialog(d) }
 
-// Active returns the installed dialog, or a console dialog when Set has not
-// been called, so the prompts keep working on early call paths and in tests.
-func Active() Dialog {
-	if d := active.Load(); d != nil && *d != nil {
-		return *d
-	}
-	return consoleDialog{}
-}
+// Active returns the installed dialog, falling back to the console when nothing
+// is installed.
+func Active() Dialog { return launcher.ActiveDialog() }
 
 // Reset removes the installed dialog.
-func Reset() { active.Store(nil) }
+func Reset() { launcher.ResetDialog() }
 
 // SetOutput installs the sinks used by the console dialog.
 func SetOutput(o Output) {

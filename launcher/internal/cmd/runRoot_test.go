@@ -30,9 +30,9 @@ import (
 	"github.com/luskaner/ageLANServer/common/uuid"
 	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
-	"github.com/luskaner/ageLANServer/launcher/internal/executor"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
 )
 
 type fakeFileInfo struct{ isDir bool }

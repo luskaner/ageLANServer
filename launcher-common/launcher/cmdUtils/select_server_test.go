@@ -2,15 +2,17 @@ package cmdUtils
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
-	"github.com/luskaner/ageLANServer/launcher/internal/server"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
 )
 
 func testProcessedServers(count int) []*processedServer {
@@ -31,42 +33,42 @@ type fakeDialog struct {
 	index int
 	ok    bool
 
-	gotCandidates []dialog.ServerCandidate
+	gotCandidates []launcher.ServerCandidate
 	gotStdin      io.Reader
 
-	gotListed    []dialog.ServerCandidate
+	gotListed    []launcher.ServerCandidate
 	listCalled   int
 	selectCalled int
 }
 
 func (f *fakeDialog) Name() string { return "fake" }
 
-func (f *fakeDialog) SelectServer(servers []dialog.ServerCandidate, stdin io.Reader) (int, bool) {
+func (f *fakeDialog) SelectServer(servers []launcher.ServerCandidate, stdin io.Reader) (int, bool) {
 	f.selectCalled++
 	f.gotCandidates = servers
 	f.gotStdin = stdin
 	return f.index, f.ok
 }
 
-func (f *fakeDialog) ListCandidates(servers []dialog.ServerCandidate) {
+func (f *fakeDialog) ListCandidates(servers []launcher.ServerCandidate) {
 	f.listCalled++
 	f.gotListed = servers
 }
 
 func (f *fakeDialog) ConfirmStartServer(string, io.Reader) bool { return true }
 
-func installFakeDialog(t *testing.T, d dialog.Dialog) {
+func installFakeDialog(t *testing.T, d launcher.Dialog) {
 	t.Helper()
-	dialog.Reset()
-	dialog.Set(d)
-	t.Cleanup(dialog.Reset)
+	launcher.ResetDialog()
+	launcher.SetDialog(d)
+	t.Cleanup(launcher.ResetDialog)
 }
 
 // Auto-select answers on its own, but it still lists the candidate, so it needs
 // the console backend rather than whatever a previous test left installed.
 func TestSelectDiscoveredServerAutoSelectSingle(t *testing.T) {
-	dialog.Reset()
-	t.Cleanup(dialog.Reset)
+	launcher.ResetDialog()
+	t.Cleanup(launcher.ResetDialog)
 	if got, ok := selectDiscoveredServer(testProcessedServers(1), true, strings.NewReader("")); !ok || got != 0 {
 		t.Fatalf("auto-select single = (%d, %t), want (0, true)", got, ok)
 	}
@@ -199,19 +201,79 @@ func TestUsableServerIndexRejectsOutOfRangeIndex(t *testing.T) {
 	}
 }
 
-func TestSelectDiscoveredServerFallsBackToConsoleByDefault(t *testing.T) {
-	dialog.Reset()
+// stubConsole is the console backend as far as these tests are concerned: it
+// prints the same lines to the same place. The real backend is a console
+// frontend and lives in launcher/internal/dialog, where its own formatting is
+// covered; what matters here is that the run and the backend agree on the order
+// of the output, which is a promise made on both sides.
+type stubConsole struct{}
+
+func (stubConsole) Name() string { return "console" }
+
+func (stubConsole) ListCandidates(servers []launcher.ServerCandidate) {
+	fmt.Println("Found the following servers:")
+	for i, s := range servers {
+		fmt.Printf("%d. %s\n", i+1, s.Description)
+	}
+}
+
+func (stubConsole) SelectServer(servers []launcher.ServerCandidate, stdin io.Reader) (int, bool) {
+	var line string
+	if _, err := fmt.Fscanln(stdin, &line); err != nil {
+		return 0, false
+	}
+	idx, err := strconv.Atoi(line)
+	if err != nil || idx < 1 || idx > len(servers) {
+		return 0, false
+	}
+	return idx - 1, true
+}
+
+func (stubConsole) ConfirmStartServer(string, io.Reader) bool { return true }
+
+// installStubConsole makes a console backend the default for the duration of a
+// test, which is what the console launcher does at init.
+func installStubConsole(t *testing.T) {
+	t.Helper()
+	orig := launcher.DefaultDialog
+	launcher.DefaultDialog = stubConsole{}
+	launcher.ResetDialog()
+	t.Cleanup(func() {
+		launcher.DefaultDialog = orig
+		launcher.ResetDialog()
+	})
+}
+
+// With nothing installed the run still has to ask someone. The console launcher
+// makes the console the default, and the run must work with whatever is there
+// rather than assuming a window.
+func TestSelectDiscoveredServerFallsBackToDefaultDialog(t *testing.T) {
+	installStubConsole(t)
 	got, ok := selectDiscoveredServer(testProcessedServers(3), false, strings.NewReader("2\n"))
 	if !ok || got != 1 {
 		t.Fatalf("= (%d, %t), want (1, true)", got, ok)
 	}
 }
 
-// Regression: with Dialog='false' the auto-select output must stay byte for
-// byte what it was before graphical dialogs existed: the numbered list first,
-// then the auto-select announcement, and no prompt.
-func TestSelectDiscoveredServerAutoSelectConsoleOutputUnchanged(t *testing.T) {
-	dialog.Reset()
+// A frontend that answers nothing still gets a usable run: the list is shown and
+// the choice falls back to the caller's default.
+func TestSelectDiscoveredServerWithNothingInstalledTakesDefaults(t *testing.T) {
+	launcher.DefaultDialog = nil
+	launcher.ResetDialog()
+	t.Cleanup(func() { launcher.ResetDialog() })
+
+	procServers := testProcessedServers(1)
+	got, ok := selectDiscoveredServer(procServers, false, strings.NewReader(""))
+	if ok || got != 0 {
+		t.Fatalf("= (%d, %t), want (0, false): a declined pick means start your own", got, ok)
+	}
+}
+
+// Regression: the auto-select output must stay byte for byte what it was before
+// graphical dialogs existed: the numbered list first, then the auto-select
+// announcement, and no prompt.
+func TestSelectDiscoveredServerAutoSelectOutputUnchanged(t *testing.T) {
+	installStubConsole(t)
 	procServers := testProcessedServers(1)
 	procServers[0].description = "solo"
 	got := captureStdout(t, func() {

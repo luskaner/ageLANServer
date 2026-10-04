@@ -1,6 +1,9 @@
 package launcher
 
-import "io"
+import (
+	"io"
+	"sync/atomic"
+)
 
 // Mode values accepted by Config.Dialog and --dialog.
 const (
@@ -50,3 +53,53 @@ type Dialog interface {
 	// It returns false only when the user actively declined.
 	ConfirmStartServer(text string, stdin io.Reader) bool
 }
+
+var (
+	activeDialog atomic.Pointer[Dialog]
+
+	// DefaultDialog answers when nothing has been installed.
+	//
+	// A frontend sets it once at init, because what "no dialog" means depends on
+	// the frontend: for the console launcher it is the console, which is also
+	// what the run falls back to when graphical dialogs turn out to be
+	// unavailable. Until then DefaultsDialog takes every answer on its own.
+	DefaultDialog Dialog = DefaultsDialog{}
+)
+
+// SetDialog installs the dialog that answers for the rest of the session. A
+// frontend calls it once it has decided how it wants to ask.
+func SetDialog(d Dialog) { activeDialog.Store(&d) }
+
+// ActiveDialog returns the installed dialog, or DefaultDialog. It never returns
+// nil, so the prompts keep working on early call paths.
+func ActiveDialog() Dialog {
+	if d := activeDialog.Load(); d != nil && *d != nil {
+		return *d
+	}
+	if DefaultDialog != nil {
+		return DefaultDialog
+	}
+	return DefaultsDialog{}
+}
+
+// ResetDialog removes the installed dialog, so the run goes back to
+// DefaultDialog.
+func ResetDialog() { activeDialog.Store(nil) }
+
+// DefaultsDialog is a dialog that asks nothing and takes every default.
+//
+// It is what a graphical frontend falls back to when it has nothing to show, and
+// what the shared logic sees before any frontend has installed a backend. It
+// declines both questions on purpose: refusing to pick a server is the signal
+// for "start my own", which is the answer that works with no window open.
+type DefaultsDialog struct{}
+
+func (DefaultsDialog) Name() string { return "defaults" }
+
+func (DefaultsDialog) SelectServer([]ServerCandidate, io.Reader) (int, bool) {
+	return 0, false
+}
+
+func (DefaultsDialog) ListCandidates([]ServerCandidate) {}
+
+func (DefaultsDialog) ConfirmStartServer(string, io.Reader) bool { return false }
