@@ -57,31 +57,21 @@ func runSession(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int
 // asks the questions" is not known until a run has read its configuration, and
 // it is the same answer for every run of this program.
 func configure() {
+	// One reporter, shared. The window frontend wraps the same one to draw the
+	// same lines a second time somewhere else, which is only possible because
+	// this half of the dual sink is not the console's private business.
+	report := logger.Reporter{}
 	session.Configure(session.Setup{
 		Version: Version,
-		Report:  loggerReporter{},
+		Report:  report,
 		NewDialog: func(mode string) launcher.Resolution {
 			resolution := dialog.New(mode)
 			// The console backend prints its questions through the same sinks as
 			// everything else, so they reach the log file too.
-			dialog.SetOutput(dialog.Output{Println: loggerReporter{}.Println, Printf: loggerReporter{}.Printf})
+			dialog.SetOutput(dialog.Output{Println: report.Println, Printf: report.Printf})
 			return resolution
 		},
 		Stdin:     os.Stdin,
 		Presenter: ui.Presenter{},
 	})
 }
-
-// loggerReporter is the console's Reporter: the same lines, the same decoration,
-// in the same places as before the session moved out of this module.
-type loggerReporter struct{}
-
-func (loggerReporter) Ok(format string, a ...any)     { logger.Ok(format, a...) }
-func (loggerReporter) Fail(format string, a ...any)   { logger.Fail(format, a...) }
-func (loggerReporter) Warn(format string, a ...any)   { logger.Warn(format, a...) }
-func (loggerReporter) Info(format string, a ...any)   { logger.Info(format, a...) }
-func (loggerReporter) Step(format string, a ...any)   { logger.Step(format, a...) }
-func (loggerReporter) Detail(format string, a ...any) { logger.Detail(format, a...) }
-func (loggerReporter) Fault(format string, a ...any)  { logger.Fault(format, a...) }
-func (loggerReporter) Println(a ...any)               { logger.Println(a...) }
-func (loggerReporter) Printf(format string, a ...any) { logger.Printf(format, a...) }

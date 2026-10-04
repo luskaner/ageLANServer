@@ -57,8 +57,9 @@ import (
 //
 // The options live here rather than in a frontend because a session reads them
 // and nothing else does. A frontend that wants its own storage instead of
-// calling this can register the same options on a flag set of its own and hand
-// the values over through launcher.LoadConfig, which takes them explicitly.
+// calling this registers the same options with launcher.BindFlags on a flag set
+// of its own, and names that storage in Setup.Values, which is where the run then
+// reads them from.
 func BindFlags(fs *pflag.FlagSet) error {
 	return launcher.BindFlags(fs, launcher.Values{
 		ConfigFile:     &cfgFile,
@@ -77,6 +78,18 @@ func BindFlags(fs *pflag.FlagSet) error {
 type Setup struct {
 	// Version is shown in the session summary.
 	Version string
+	// Values is where the run reads the options it was given.
+	//
+	// A frontend that registered them with BindFlags leaves it nil, and the run
+	// reads the storage that call wrote into. A frontend that keeps its options
+	// somewhere else installs that storage here instead: a window, whose options
+	// are the values its controls hold rather than words on a command line.
+	//
+	// It is the same launcher.Values that launcher.LoadConfig takes, which is the
+	// point of it. A frontend can resolve the configuration before performing a
+	// run, show what the run would use, and hand the very same storage over to
+	// perform it, rather than asking twice and hoping the two answers match.
+	Values *launcher.Values
 	// Report is where the session narrates itself. A console writes it to the
 	// terminal and the log file; a window writes it to an event stream. There is
 	// no default beyond discarding, so a frontend that forgets gets silence
@@ -116,6 +129,36 @@ func Configure(s Setup) {
 func Current() Setup { return setup }
 
 var setup Setup
+
+// optionStorage returns where the current run reads its options from: the
+// frontend's own when it installed one, and the storage BindFlags wrote into
+// otherwise.
+//
+// It is a function rather than a field because the answer changes when a frontend
+// calls Configure, and a run resolves it once on its way in rather than reading
+// Setup from four layers down.
+func optionStorage() launcher.Values {
+	if setup.Values != nil {
+		return *setup.Values
+	}
+	return launcher.Values{
+		ConfigFile:     &cfgFile,
+		GameConfigFile: &gameCfgFile,
+		GameID:         &gameId,
+		Output:         &output,
+	}
+}
+
+// option reads one option from wherever this run's options live, treating an
+// absent target as the empty value rather than as a nil to dereference: a
+// frontend that installed storage of its own may have left one of them out, and a
+// run must report what it was given rather than panic reading it.
+func option(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
 
 // dialogNewFn resolves the configured dialog mode. It is a variable rather than
 // a direct call so that a test can own the whole backend: the session installs
@@ -236,13 +279,18 @@ var (
 )
 
 func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
+	// Resolved once, here, and read through for the rest of the run: the options
+	// do not move, but which storage they are in depends on the frontend, and
+	// reading the same place every time is what keeps the two from disagreeing.
+	options := optionStorage()
+	gameId := option(options.GameID)
 	// validate required flags
 	if gameId == "" {
 		return errors.New("required flag 'game' not set"), common.ErrSyntax
 	}
 	// The explicit flag gets the last word over AGE_LANSERVER_OUTPUT, and this is
 	// the first point where the parsed flags are available.
-	launcher.ActivePresenter().ApplyOutput(output)
+	launcher.ActivePresenter().ApplyOutput(option(options.Output))
 
 	lock := newPidLockFn()
 	if err = lock.Lock(); err != nil {
@@ -342,7 +390,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	// two copies of the same fact looked like a bug.
 	launcher.ActivePresenter().Section("Configuration")
 	launcher.ActivePresenter().KV(0, "main config file", orNone(usedConfigFile))
-	launcher.ActivePresenter().KV(0, "game config file", orNone(gameCfgFile))
+	launcher.ActivePresenter().KV(0, "game config file", orNone(option(options.GameConfigFile)))
 	launcher.ActivePresenter().KV(0, "game", gameId)
 	// Printed only when the console could show more than it is showing, because
 	// the fallback is a code page and not a decision: without this line the ASCII
@@ -923,11 +971,7 @@ var configErr error
 
 func initConfig(fs *pflag.FlagSet) *launcher.Configuration {
 	configErr = nil
-	cfg, loaded, err := launcher.LoadConfig(fs, launcher.Values{
-		ConfigFile:     &cfgFile,
-		GameConfigFile: &gameCfgFile,
-		GameID:         &gameId,
-	}, reportOrDiscard())
+	cfg, loaded, err := launcher.LoadConfig(fs, optionStorage(), reportOrDiscard())
 	usedConfigFile = loaded.MainFile
 	filesToPrint = loaded.FilesToPrint
 	if err == nil {
@@ -952,9 +996,9 @@ func initConfig(fs *pflag.FlagSet) *launcher.Configuration {
 	return nil
 }
 
-// loggerReporter is the console's Reporter. It exists so the shared logic can
-// say what it is doing without knowing that a console is listening: the same
-// calls the file log gets, and the same decoration.
+// orNone names an absent config file rather than leaving the summary with a
+// blank next to a label: "none" says the run used defaults on purpose, and an
+// empty cell reads as something that failed to load.
 func orNone(path string) string {
 	if path == "" {
 		return "none"

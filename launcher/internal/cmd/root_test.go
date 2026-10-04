@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageLANServer/launcher-common/launcher/session"
 )
 
@@ -16,10 +17,14 @@ import (
 // this is where a dropped line would show up: an adapter that reported into the
 // void would leave every test green and leave a user watching a terminal that
 // says nothing while the launcher works.
+//
+// It is the shared one, not a private copy. The file log half of every line has to
+// happen whichever frontend is listening, and a window that had to reimplement the
+// dual sink to get it would eventually get one of the two halves subtly wrong.
 func TestConsoleReporterStillReachesTheTerminal(t *testing.T) {
 	out := captureStdout(t, func() {
-		loggerReporter{}.Step("Setting up...")
-		loggerReporter{}.Fail("Failed to lock pid file.")
+		logger.Reporter{}.Step("Setting up...")
+		logger.Reporter{}.Fail("Failed to lock pid file.")
 	})
 	if !strings.Contains(out, "Setting up...") {
 		t.Errorf("the stage never reached the terminal, got %q", out)
@@ -44,8 +49,8 @@ func TestConsoleConfiguresItselfWithTheSession(t *testing.T) {
 	if installed.Report == nil {
 		t.Fatal("the session was left with no reporter")
 	}
-	if _, ok := installed.Report.(loggerReporter); !ok {
-		t.Errorf("the session reports through %T, want the console", installed.Report)
+	if _, ok := installed.Report.(logger.Reporter); !ok {
+		t.Errorf("the session reports through %T, want the shared dual-sink logger", installed.Report)
 	}
 	if installed.NewDialog == nil {
 		t.Error("the session was left with no way to ask anything")

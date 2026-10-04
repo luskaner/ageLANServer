@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -158,12 +159,65 @@ func deref(s *string) string {
 	return *s
 }
 
-var (
-	autoTrueFalseValues            = mapset.NewThreadUnsafeSet[string](autoValue, ModeTrue, ModeFalse)
-	canTrustCertificateValues      = mapset.NewThreadUnsafeSet[string](autoValue, ModeFalse, "user", "local")
-	canBroadcastBattleServerValues = mapset.NewThreadUnsafeSet[string](autoValue, ModeFalse)
-	requiredTrueFalseValues        = mapset.NewThreadUnsafeSet[string](ModeTrue, ModeFalse, "required")
-)
+// The values each option that is not free text accepts.
+//
+// They are spelled once, here, because two things need them and neither can work
+// them out for itself: the validators below, which reject a configuration that
+// cannot produce a run, and a frontend drawing the control for the option. A
+// window that listed them itself would drift from the run it is configuring, and
+// the drift would only show up as a run refusing a value its own form had
+// offered.
+//
+// Each accessor hands back a set of its own, because a frontend may well want to
+// take one apart, and a shared one it emptied would leave the next run rejecting
+// everything.
+func values(vs ...string) mapset.Set[string] { return mapset.NewThreadUnsafeSet[string](vs...) }
+
+// list spells a set of values in one fixed order, so that a message naming what
+// an option accepts reads the same on every run. A set has no order of its own.
+func list(vs mapset.Set[string]) string {
+	out := vs.ToSlice()
+	slices.Sort(out)
+	return strings.Join(out, "/")
+}
+
+// AutoTrueFalseValues are the values of an option that may also be left to the
+// run: auto, true or false.
+func AutoTrueFalseValues() mapset.Set[string] { return values(autoValue, ModeTrue, ModeFalse) }
+
+// CanTrustCertificateValues are the values of canTrustCertificate.
+//
+// There is no "user" on linux: the per-user trust store does not exist there, so
+// a certificate is trusted in the system one or not at all, and offering a value
+// the run would reject would be worse than not offering it.
+func CanTrustCertificateValues() mapset.Set[string] {
+	validValues := values(autoValue, ModeFalse, "user", "local")
+	if runtime.GOOS == "linux" {
+		validValues.Remove("user")
+	}
+	return validValues
+}
+
+// CanBroadcastBattleServerValues are the values of canBroadcastBattleServer,
+// which has no answer of its own beyond not doing it.
+func CanBroadcastBattleServerValues() mapset.Set[string] { return values(autoValue, ModeFalse) }
+
+// ServerStopValues are the values of serverStop.
+//
+// "false" is missing when the run is not on windows and is already
+// administrator: a server it could stop only by asking for privileges it does
+// not have is not an answer the run can act on.
+func ServerStopValues(nonWindowsAdmin bool) mapset.Set[string] {
+	validValues := values(autoValue, ModeTrue, ModeFalse)
+	if nonWindowsAdmin {
+		validValues.Remove(ModeFalse)
+	}
+	return validValues
+}
+
+// RequiredTrueFalseValues are the values of the options that are required to be
+// either true or false unless someone says they will be decided.
+func RequiredTrueFalseValues() mapset.Set[string] { return values(ModeTrue, ModeFalse, "required") }
 
 // The validators reject a configuration that cannot produce a working run, and
 // they return the exit code to end on rather than ending it: same reason as
@@ -172,50 +226,45 @@ var (
 // They share one r because they share one moment in the run: a config that came
 // off disk or a flag that was typed, checked before anything is set up, so that
 // nothing has to be torn down afterwards.
+//
+// Each one reads the same accessor its frontend read when it offered the values,
+// so the two cannot disagree about what an option accepts.
 
 func ValidateDialogValue(r Reporter, dialogMode string) (exitCode int) {
-	if !autoTrueFalseValues.Contains(dialogMode) {
-		r.Fail("Invalid value for dialog (auto/true/false): %s", dialogMode)
+	if validValues := AutoTrueFalseValues(); !validValues.Contains(dialogMode) {
+		r.Fail("Invalid value for dialog (%s): %s", list(validValues), dialogMode)
 		return ErrInvalidDialog
 	}
 	return common.ErrSuccess
 }
 
 func ValidateCanTrustCertificate(r Reporter, canTrustCertificate string) (exitCode int) {
-	validValues := mapset.NewThreadUnsafeSet[string](autoValue, ModeFalse, "user", "local")
-	if runtime.GOOS == "linux" {
-		validValues.Remove("user")
-	}
-	if !validValues.Contains(canTrustCertificate) {
-		r.Fail("Invalid value for canTrustCertificate (%s): %s", strings.Join(validValues.ToSlice(), "/"), canTrustCertificate)
+	if validValues := CanTrustCertificateValues(); !validValues.Contains(canTrustCertificate) {
+		r.Fail("Invalid value for canTrustCertificate (%s): %s", list(validValues), canTrustCertificate)
 		return ErrInvalidCanTrustCertificate
 	}
 	return common.ErrSuccess
 }
 
 func ValidateCanBroadcastBattleServer(r Reporter, canBroadcastBattleServer string) (exitCode int) {
-	if !canBroadcastBattleServerValues.Contains(canBroadcastBattleServer) {
-		r.Fail("Invalid value for canBroadcastBattleServer (auto/false): %s", canBroadcastBattleServer)
+	if validValues := CanBroadcastBattleServerValues(); !validValues.Contains(canBroadcastBattleServer) {
+		r.Fail("Invalid value for canBroadcastBattleServer (%s): %s", list(validValues), canBroadcastBattleServer)
 		return ErrInvalidCanBroadcastBattleServer
 	}
 	return common.ErrSuccess
 }
 
 func ValidateServerStartValue(r Reporter, serverStart string) (exitCode int) {
-	if !autoTrueFalseValues.Contains(serverStart) {
-		r.Fail("Invalid value for serverStart (auto/true/false): %s", serverStart)
+	if validValues := AutoTrueFalseValues(); !validValues.Contains(serverStart) {
+		r.Fail("Invalid value for serverStart (%s): %s", list(validValues), serverStart)
 		return ErrInvalidServerStart
 	}
 	return common.ErrSuccess
 }
 
 func ValidateServerStopValue(r Reporter, serverStop string, nonWindowsAdmin bool) (exitCode int) {
-	validValues := mapset.NewThreadUnsafeSet[string](autoValue, ModeTrue, ModeFalse)
-	if nonWindowsAdmin {
-		validValues.Remove(ModeFalse)
-	}
-	if !validValues.Contains(serverStop) {
-		r.Fail("Invalid value for serverStop (%s): %s", strings.Join(validValues.ToSlice(), "/"), serverStop)
+	if validValues := ServerStopValues(nonWindowsAdmin); !validValues.Contains(serverStop) {
+		r.Fail("Invalid value for serverStop (%s): %s", list(validValues), serverStop)
 		return ErrInvalidServerStop
 	}
 	return common.ErrSuccess
@@ -223,7 +272,7 @@ func ValidateServerStopValue(r Reporter, serverStop string, nonWindowsAdmin bool
 
 func ValidateRequiredTrueFalse(r Reporter, value string, name string, validValues mapset.Set[string]) (exitCode int) {
 	if !validValues.Contains(value) {
-		r.Fail("Invalid value for %s (%s): %s", name, strings.Join(validValues.ToSlice(), "/"), value)
+		r.Fail("Invalid value for %s (%s): %s", name, list(validValues), value)
 		switch name {
 		case "Server.BattleServerManager.Run":
 			return ErrInvalidServerBattleServerManagerRun
@@ -235,7 +284,3 @@ func ValidateRequiredTrueFalse(r Reporter, value string, name string, validValue
 	}
 	return common.ErrSuccess
 }
-
-// RequiredTrueFalseValues are the values accepted by the options that are
-// required to be either true or false unless someone says they will be decided.
-func RequiredTrueFalseValues() mapset.Set[string] { return requiredTrueFalseValues }
