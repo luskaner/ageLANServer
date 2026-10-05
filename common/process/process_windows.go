@@ -1,6 +1,7 @@
 package process
 
 import (
+	"context"
 	"errors"
 	"os"
 	"slices"
@@ -10,7 +11,21 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// WaitForProcess waits for proc to exit, and reports whether it did.
+//
+// A nil duration waits for as long as it takes.
 func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
+	return WaitForProcessContext(context.Background(), proc, duration)
+}
+
+// WaitForProcessContext is WaitForProcess that gives up when ctx is cancelled.
+//
+// On Windows there is no way to wait on a process and on a cancellation at the
+// same time without building an event for it, so the wait is taken in slices and
+// the context is looked at between them. The slices are short enough that a stop
+// is noticed at once and long enough that a process that exits is not noticed
+// late.
+func WaitForProcessContext(ctx context.Context, proc *os.Process, duration *time.Duration) bool {
 	handle, err := windows.OpenProcess(windows.SYNCHRONIZE, true, uint32(proc.Pid))
 	if err != nil {
 		return false
@@ -20,15 +35,37 @@ func WaitForProcess(proc *os.Process, duration *time.Duration) bool {
 		_ = windows.CloseHandle(handle)
 	}(handle)
 
-	var event uint32
-	var waitMilliseconds uint32
-	if duration == nil {
-		waitMilliseconds = windows.INFINITE
-	} else {
-		waitMilliseconds = uint32(duration.Milliseconds())
+	const slice = 100 * time.Millisecond
+	var deadline time.Time
+	if duration != nil {
+		deadline = time.Now().Add(*duration)
 	}
-	event, err = windows.WaitForSingleObject(handle, waitMilliseconds)
-	return err == nil && event == uint32(windows.WAIT_OBJECT_0)
+	for {
+		if err := ctx.Err(); err != nil {
+			return false
+		}
+		wait := slice
+		if deadline.IsZero() {
+			// Wait out the whole thing in one go when there is no deadline: a
+			// context with no deadline is the only case where waiting in slices
+			// would be pure overhead.
+			if _, ok := ctx.Deadline(); !ok {
+				event, err := windows.WaitForSingleObject(handle, windows.INFINITE)
+				return err == nil && event == uint32(windows.WAIT_OBJECT_0)
+			}
+		} else if remaining := time.Until(deadline); remaining <= 0 {
+			return false
+		} else if remaining < wait {
+			wait = remaining
+		}
+		event, err := windows.WaitForSingleObject(handle, uint32(wait.Milliseconds()))
+		if err != nil {
+			return false
+		}
+		if event == uint32(windows.WAIT_OBJECT_0) {
+			return true
+		}
+	}
 }
 
 // ProcessesByNames returns a map of process names to their procs.
@@ -134,3 +171,7 @@ func FindProcessWithStartTime(pid int, expectedStartTime int64) (proc *os.Proces
 	}
 	return
 }
+
+// Windows has no graceful signal: os.Process.Signal only accepts os.Kill, so
+// KillProc goes straight to TerminateProcess.
+const platformSupportsGracefulSignal = false

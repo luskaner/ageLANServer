@@ -87,6 +87,9 @@ func NewArchive(name string, targets *BinaryTargets, overrideOsName OverrideOsNa
 }
 
 func NewMergedArchive(name string, overrideOsName OverrideOsName, archives ...*Archive) *Archive {
+	if len(archives) == 0 {
+		return NewArchive(name, NewBinaryTargets(), overrideOsName)
+	}
 	mergedOsesArchs := archives[0].targets.Clone()
 	for _, a := range archives[1:] {
 		osesToDelete := make([]OperatingSystem, 0)
@@ -178,9 +181,10 @@ func (a *Archive) addFile(os OperatingSystem, fileMode os.FileMode, fileData Fil
 	} else {
 		sourceRendered = source.Render(fileData)
 	}
-	file := File{}
-	file.source = filepath.ToSlash(sourceRendered)
-	file.destination = sourceRendered
+	file := File{
+		source:      filepath.ToSlash(sourceRendered),
+		destination: sourceRendered,
+	}
 	for _, destFn := range destinationFn {
 		file.destination = destFn(file.destination).Render(fileData)
 	}
@@ -230,15 +234,17 @@ func defaultDest(source string) string {
 	return src
 }
 
-func (a *Archive) AddScriptFiles(destDir string, source Renders[FileData], sourceIgnoreFn SourceIgnoreFn, destinationsFn DestinationsFnMap, perGame bool) {
+func (a *Archive) AddScriptFiles(destDir string, source Renders[FileData], sourceIgnoreFn SourceIgnoreFn, destinationsFn DestinationsFnMap, perGame bool, canModDestinationsFn bool) {
 	finalDestinationsFn := destinationsFn
 	if finalDestinationsFn == nil {
 		finalDestinationsFn = make(DestinationsFnMap)
 	}
-	if _, exists := finalDestinationsFn["darwin"]; !exists {
-		finalDestinationsFn["darwin"] = []DestinationFn{}
+	if canModDestinationsFn {
+		if _, exists := finalDestinationsFn["darwin"]; !exists {
+			finalDestinationsFn["darwin"] = []DestinationFn{}
+		}
+		finalDestinationsFn["darwin"] = append([]DestinationFn{extChange("command")}, finalDestinationsFn["darwin"]...)
 	}
-	finalDestinationsFn["darwin"] = append([]DestinationFn{extChange("command")}, finalDestinationsFn["darwin"]...)
 	a.AddSrcOsDstFile(
 		source,
 		sourceIgnoreFn,
@@ -530,8 +536,6 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 						id := keyFromStrings(currentArchive.IDs)
 						if _, exists := binaryIdsArchives[id]; !exists {
 							binaryIdsArchives[id] = []config.Archive{}
-						} else {
-							fmt.Println("as")
 						}
 						binaryIdsArchives[id] = append(binaryIdsArchives[id], *currentArchive)
 					}

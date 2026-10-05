@@ -15,7 +15,7 @@ import (
 func generateRequestId() string {
 	var u [16]byte
 	internal.WithRng(func(rand *internal.RandReader) {
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			u[i] = byte(rand.UintN(256))
 		}
 	})

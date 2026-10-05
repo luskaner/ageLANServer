@@ -9,7 +9,7 @@ import (
 
 func ExistingServers(gameId string) (err error, names mapset.Set[string], regions mapset.Set[string]) {
 	var configs []battleServer.Config
-	configs, err = battleServer.Configs(gameId, true)
+	configs, err = battleServer.Configs(gameId, true, false)
 	if err != nil {
 		return
 	}

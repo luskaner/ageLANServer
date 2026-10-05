@@ -52,7 +52,12 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var itemLoadoutEncoded i.A
-	_ = u.GetItemLoadouts().WithReadWrite(func(data *models.MainItemLoadouts) error {
+	loadouts := u.GetItemLoadouts()
+	if loadouts == nil {
+		i.JSON(&w, i.A{2, i.A{}})
+		return
+	}
+	_ = loadouts.WithReadWrite(func(data *models.MainItemLoadouts) error {
 		itemLoadoutEncoded = data.NewItemLoadout(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIds...), userId)
 		return nil
 	})

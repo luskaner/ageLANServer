@@ -1,0 +1,117 @@
+package server
+
+import (
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageLANServer/common/cmd"
+	"github.com/luskaner/ageLANServer/common/cmd/genCert"
+	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageLANServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageLANServer/common/server"
+)
+
+func ReadCACertificateFromServer(host string) *x509.Certificate {
+	tr := &http.Transport{
+		TLSClientConfig: server.TlsConfig(host, true, nil),
+	}
+	ips := common.HostOrIpToIps(host)
+	var ip string
+	if len(ips) == 0 {
+		ip = host
+	} else {
+		ip = ips[0]
+	}
+	client := &http.Client{Transport: tr, Timeout: 1 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s/cacert.pem", ip), nil)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer error:", err)
+		return nil
+	}
+	req.Header.Set("User-Agent", common.UserAgent())
+	req.Host = host
+	//goland:noinspection ALL
+	resp, err := client.Do(req)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer error:", err)
+		return nil
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		commonLogger.Println("ReadCACertificateFromServer status code:", resp.StatusCode)
+		return nil
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer read error:", err)
+		return nil
+	}
+	return parseCertFromPEM(bodyBytes)
+}
+
+func GenerateCertificatePair(certificateFolder string, optionsFn func(options *exec.Options)) (result *exec.Result) {
+	baseFolder := filepath.Join(certificateFolder, "..", "..")
+	exePath := filepath.Join(baseFolder, executables.NativeFileName(false, executables.ServerGenCert))
+	if _, err := os.Stat(exePath); err != nil {
+		return nil
+	}
+	values, singleFs := genCert.SingleFlagSet("", nil)
+	values.Replace = true
+	options := exec.Options{File: exePath, Wait: true, Args: cmd.FlagSetToArgs(singleFs.Fs(), false), ExitCode: true}
+	if optionsFn != nil {
+		optionsFn(&options)
+	}
+	result = options.Exec()
+	return
+}
+
+func CertificateSoonExpired(cert string) bool {
+	if cert == "" {
+		return true
+	}
+
+	certPEM, err := os.ReadFile(cert)
+	if err != nil {
+		return true
+	}
+
+	return certSoonExpiredFromBytes(certPEM, time.Now())
+}
+
+func parseCertFromPEM(bodyBytes []byte) *x509.Certificate {
+	block, _ := pem.Decode(bodyBytes)
+	if block == nil || block.Type != "CERTIFICATE" {
+		commonLogger.Println("ReadCACertificateFromServer: no certificate found")
+		return nil
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		commonLogger.Println("ReadCACertificateFromServer parse error:", err)
+		return nil
+	}
+	return cert
+}
+
+func certSoonExpiredFromBytes(certPEM []byte, now time.Time) bool {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return true
+	}
+
+	crt, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return true
+	}
+
+	return now.Add(24 * time.Hour).After(crt.NotAfter)
+}

@@ -1,26 +1,33 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
 	"github.com/luskaner/ageLANServer/common/fileLock"
 	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/notify"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
 	"github.com/spf13/pflag"
 )
 
 var Version string
 var values *agent.Values
+
+var (
+	createLockFn   = func() fileLock.Locker { return &fileLock.PidLock{} }
+	chdirToExeFn   = common.ChdirToExe
+	initializeFn   = internal.Initialize
+	watchFn        = watch.Watch
+	signalNotifyFn = signal.Notify
+)
 
 func Execute() (err error, exitCode int) {
 	var singleFs *cmd.SingleFlagSet
@@ -30,77 +37,70 @@ func Execute() (err error, exitCode int) {
 
 func runRoot(_ *pflag.FlagSet) (err error, exitCode int) {
 	commonLogger.Initialize(os.Stdout)
-	lock := &fileLock.PidLock{}
+	lock := createLockFn()
 	if err = lock.Lock(); err != nil {
-		commonLogger.Println("Failed to lock pid file. Kill process 'agent' if it is running in your task manager.")
+		cmdlog.Fail("Failed to lock pid file. Kill process agent if it is running in your task manager.")
 		exitCode = common.ErrPidLock
 		return
 	}
-	common.ChdirToExe()
+	chdirToExeFn()
 	if values.LogRoot != "" && values.BaseDataPath != "" {
-		internal.Initialize(values.LogRoot)
+		initializeFn(values.LogRoot)
 	}
+	var cleanupOnce sync.Once
+	// Shared by the signal handler below and Watch, which run concurrently, so
+	// the exit code goes through a synchronised holder rather than a bare *int.
+	code := watch.NewExitCode()
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signalNotifyFn(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_, ok := <-sigs
 		if ok {
-			commonLogger.Println("Received terminate signal, shutting down...")
-			exitCode = common.ErrSignal
-			defer func() {
-				if err = lock.Unlock(); err != nil {
-					commonLogger.Printf("Failed to unlock: %v\n", err)
-				}
-				commonLogger.Printf("Exit code: %d\n", exitCode)
-			}()
-			_ = internal.Logger.Buffer("config_revert_end", func(writer io.Writer) {
-				if !launcherCommon.ConfigRevert(values.GameId, values.LogRoot, true, nil, func(options exec.Options) {
-					if writer != nil {
-						commonLogger.Println("run config revert", options.String())
-					}
-				}, nil) {
-					commonLogger.Println("Failed to revert configuration")
-				}
+			cmdlog.Step("Received terminate signal, shutting down...")
+			code.Set(common.ErrSignal)
+			cleanupOnce.Do(func() {
+				watch.Cleanup(values, code)
 			})
-			_ = internal.Logger.Buffer("revert_command_end", func(writer io.Writer) {
-				if err = launcherCommon.RunRevertCommand(writer, func(options exec.Options) {
-					if writer != nil {
-						commonLogger.Println("run revert command", options.String())
-					}
-				}); err != nil {
-					commonLogger.Printf("Failed to revert command: %v\n", err)
-				}
-			})
-			if values.ServerExecutable != "" {
-				commonLogger.Println("Killing server...")
-				if err = commonProcess.Kill(values.ServerExecutable); err != nil {
-					commonLogger.Printf("Failed to kill server: %v\n", values.ServerExecutable)
-				}
-				if values.BattleServerManagerExecutable != "-" && values.BattleServerRegion != "-" {
-					commonLogger.Println("Shutting down battle-server...")
-					_ = internal.Logger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
-						if result := launcherCommon.RemoveBattleServerRegion(values.BattleServerManagerExecutable, values.GameId, values.BattleServerRegion, writer, func(options exec.Options) {
-							if writer != nil {
-								commonLogger.Println("run battle-server-manager", options.String())
-							}
-						}); !result.Success() {
-							commonLogger.Println("Failed to shut down battle-server.")
-							if result.Err != nil {
-								commonLogger.Println(result.Err)
-							}
-							if result.ExitCode != common.ErrSuccess {
-								commonLogger.Printf("Exit code: %d\n", result.ExitCode)
-							}
-						}
-					})
-				}
+			if err = lock.Unlock(); err != nil {
+				cmdlog.Fail("Failed to unlock: %s", err)
 			}
+			cmdlog.Fault("Exit code: %d", code.Get())
 		}
 	}()
-	watch.Watch(
+	watchFn(
 		values,
-		&exitCode,
+		code,
+		&cleanupOnce,
 	)
+	exitCode = code.Get()
 	_ = lock.Unlock()
+	// The session is over and this is the only moment left to tell the user so. The
+	// terminal is a window nobody is looking at by now, and the answer they want is
+	// the one they cannot ask for: whether the machine is clean again. Both outcomes
+	// are announced, because "everything is back to normal" is the message that lets
+	// them stop thinking about it, and "something did not revert" is the one that
+	// makes them go and read the logs.
+	announce(*values.GameIdRef(), exitCode)
 	return
+}
+
+// announce is the notification, behind a var so a test can observe it without a
+// desktop.
+var announce = func(game string, exitCode int) {
+	var err error
+	if exitCode == common.ErrSuccess {
+		err = notify.SessionEnded(game)
+	} else {
+		err = notify.SessionFailed(game, exitCode)
+	}
+	// A notification that cannot be shown changes nothing about the run: the exit
+	// code was already decided and the file log already has the reason. It is
+	// recorded so that a user who saw no notification can find out why.
+	switch {
+	case err == nil:
+	case notify.Unsupported(err):
+		cmdlog.Detail("This system cannot show desktop notifications: %s", err)
+	default:
+		cmdlog.Detail("Could not show the desktop notification: %s", err)
+	}
 }

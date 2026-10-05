@@ -47,7 +47,7 @@ func UpdateItemAttributes(w http.ResponseWriter, r *http.Request) {
 			} else {
 				metadata := item.GetMetadata()
 				attributeValues := req.Values.Data.Data
-				for k := 0; k < len(attributeKeys); k++ {
+				for k := range len(attributeKeys) {
 					attr := attributeKeys[k]
 					value := attributeValues[k]
 					metadata.UpdateAttribute(attr, value)
