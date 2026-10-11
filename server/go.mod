@@ -9,10 +9,10 @@ require (
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
-	github.com/knadh/koanf/v2 v2.3.6
+	github.com/knadh/koanf/v2 v2.3.8
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba
-	golang.org/x/net v0.59.0
+	golang.org/x/exp v0.0.0-20261011100332-faecfb24eb49
+	golang.org/x/net v0.61.0
 )
 
 require (
@@ -27,5 +27,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	go.mongodb.org/mongo-driver v1.17.10 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 )
