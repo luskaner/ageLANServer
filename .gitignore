@@ -2,6 +2,7 @@
 .task
 .env
 .idea/
+.DS_Store
 dist/
 build/**/*
 !build/.gitkeep
