@@ -15,4 +15,5 @@ const (
 	ErrAnnounce
 	ErrInvalidId
 	ErrInvalidAuthentication
+	ErrSigningKey
 )

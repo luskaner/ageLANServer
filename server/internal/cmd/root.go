@@ -167,6 +167,17 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		exitCode = internal.ErrCertDirectory
 		return
 	}
+	// Only asked for when this run will actually sign: with Sign off the
+	// captured signatures in resources/responses go out untouched and no key
+	// is read at all, so an install without one is complete rather than broken.
+	if cfg.Sign {
+		if keyErr := signingKeyPairCheckFn(certificatePairFolder); keyErr != nil {
+			logger.Fail("Failed to load the signing key pair")
+			logger.Fault("%v", keyErr)
+			exitCode = internal.ErrSigningKey
+			return
+		}
+	}
 	announceEnabled := cfg.Announcement.Enabled
 	multicastGroups := mapset.NewThreadUnsafeSet[netip.Addr]()
 	if announceEnabled && cfg.Announcement.Multicast {
@@ -185,6 +196,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	announcePort := cfg.Announcement.Port
 	internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 	internal.GeneratePlatformUserId = cfg.GeneratePlatformUserId
+	internal.Sign = cfg.Sign
 	var servers []*http.Server
 	internal.InitializeStopSignal()
 	for gameId := range gameSet.Iter() {
@@ -330,6 +342,7 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 	defaults := map[string]any{
 		"Log":                         false,
 		"GeneratePlatformUserId":      false,
+		"Sign":                        false,
 		"Authentication":              "disabled",
 		"Internet.Enabled":            true,
 		"Internet.IP":                 "auto",

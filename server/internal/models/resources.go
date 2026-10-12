@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/paths"
 	i "github.com/luskaner/ageLANServer/server/internal"
 )
@@ -125,8 +126,35 @@ func (r *MainResources) initializeResponses(gameId string) {
 			var sig signature
 			err = json.Unmarshal(data, &sig)
 			if err == nil && sig.Value != "" {
-				r.keyedFiles[name] = data
-				r.nameToSignature[name] = sig.Value
+				if i.Sign {
+					// Re-sign instead of trusting the captured signature. The crc32
+					// is taken over the body with the dataSignature value emptied,
+					// which is exactly what the client recovers before verifying, so
+					// the two sides agree without any byte-level coupling to the
+					// capture. Needs the key in sigkey.pem plus a client that trusts
+					// it; without either, bodies must stay byte-identical.
+					//
+					// A body that cannot be signed is fatal here rather than served
+					// anyway: the client rejects anything whose signature does not
+					// verify, so the failure belongs at startup, not on the wire.
+					if !SigningKeyConfigured() {
+						panic(fmt.Errorf(
+							"cannot sign %s for game %s: %s is missing or unusable (%v); run genCert to create it",
+							name, gameId, common.SigningKey, SigningKeyError()))
+					}
+					stamped, stampedSig, err := StampSignature(data)
+					if err != nil {
+						panic(fmt.Errorf("cannot sign %s for game %s: %w", name, gameId, err))
+					}
+					r.keyedFiles[name] = stamped
+					r.nameToSignature[name] = stampedSig
+				} else {
+					// Signing is off, so the captured signature is the one the client
+					// can verify: the body goes out byte for byte as it was captured,
+					// since re-serialising it would break the very signature inside.
+					r.keyedFiles[name] = data
+					r.nameToSignature[name] = sig.Value
+				}
 			}
 		} else {
 			var result i.A
@@ -145,16 +173,40 @@ func (r *MainResources) initializeCloud(gameId string) {
 	}
 }
 
+// ReturnSignedAsset serves a response whose dataSignature the client verifies.
+//
+// An asset that was never loaded, or that carries no signature, is reported as
+// an internal error instead of an empty 200: the caller would have no way to
+// tell a broken install from an empty catalogue, and the client would just log
+// a verification failure the server never accounted for.
 func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool) {
 	var serverSignature string
 	var response any
 	if keyedResponse {
-		response = r.keyedFiles[name]
+		body, loaded := r.keyedFiles[name]
+		if !loaded || len(body) == 0 {
+			http.Error(*w, "signed asset was not loaded: "+name, http.StatusInternalServerError)
+			return
+		}
 		serverSignature = r.nameToSignature[name]
+		if serverSignature == "" {
+			http.Error(*w, "signed asset carries no signature: "+name, http.StatusInternalServerError)
+			return
+		}
+		response = body
 	} else {
-		response = r.arrayFiles[name]
-		arrayResponse := response.(i.A)
-		serverSignature = arrayResponse[len(arrayResponse)-1].(string)
+		arrayResponse, loaded := r.arrayFiles[name]
+		if !loaded || len(arrayResponse) == 0 {
+			http.Error(*w, "asset was not loaded: "+name, http.StatusInternalServerError)
+			return
+		}
+		signature, isString := arrayResponse[len(arrayResponse)-1].(string)
+		if !isString || signature == "" {
+			http.Error(*w, "asset carries no signature: "+name, http.StatusInternalServerError)
+			return
+		}
+		serverSignature = signature
+		response = arrayResponse
 	}
 	if req.URL.Query().Get("signature") != serverSignature {
 		if keyedResponse {

@@ -35,6 +35,9 @@ var (
 	resolveHostsFn           = ip.ResolveHosts
 	initializeGameFn         = initializer.InitializeGame
 	certificatePairFolderFn  = common.CertificatePairFolder
+	// Checked at startup for the same reason the TLS material is: without it the
+	// server cannot produce the signatures the client validates.
+	signingKeyPairCheckFn    = models.CheckSigningKeyPair
 	queryConnectionsFn       = ip.QueryConnections
 	listenQueryConnectionsFn = ip.ListenQueryConnections
 	newHTTPServerFn          = func(addr string, handler http.Handler) *http.Server {

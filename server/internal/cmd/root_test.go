@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"path/filepath"
 	"testing"
 
 	"github.com/luskaner/ageLANServer/common"
@@ -29,6 +31,9 @@ func resetState(t *testing.T) {
 	oldLogger := commonLogger.FileLogger
 	oldDNS := dnsConnectivityFn
 	oldCache := cacheNetworkInterfacesFn
+	oldSigningKeyPairCheck := signingKeyPairCheckFn
+	oldCertPairFolder := certificatePairFolderFn
+	oldSign := internal.Sign
 	t.Cleanup(func() {
 		fileLockNewFn = oldNewPid
 		fileLockLockFn = oldLock
@@ -43,6 +48,9 @@ func resetState(t *testing.T) {
 		commonLogger.FileLogger = oldLogger
 		dnsConnectivityFn = oldDNS
 		cacheNetworkInterfacesFn = oldCache
+		signingKeyPairCheckFn = oldSigningKeyPairCheck
+		certificatePairFolderFn = oldCertPairFolder
+		internal.Sign = oldSign
 	})
 	commonLogger.FileLogger = nil
 	values = &server.Values{
@@ -55,10 +63,13 @@ func resetState(t *testing.T) {
 	fileLockLockFn = func(*fileLock.PidLock) error { return nil }
 	fileLockUnlockFn = func(*fileLock.PidLock) error { return nil }
 	isAdminFn = func() bool { return true }
+	// Pass by default so each test keeps exercising its own failure; the signing
+	// key has its own test below.
+	signingKeyPairCheckFn = func(string) error { return nil }
 	initConfigFn = func(*pflag.FlagSet) (*internal.Configuration, string) {
 		return &internal.Configuration{
 			Log:            false,
-			Internet: internal.Internet{Enabled: true},
+			Internet:       internal.Internet{Enabled: true},
 			Authentication: "disabled",
 			Games: internal.Games{
 				Enabled: []string{"age1"},
@@ -67,6 +78,20 @@ func resetState(t *testing.T) {
 			Announcement: internal.Announcement{Enabled: false},
 		}, ""
 	}
+}
+
+// signingConfig is the default one with Sign turned on, for the tests that care
+// about what signing needs from the install.
+func signingConfig(*pflag.FlagSet) (*internal.Configuration, string) {
+	return &internal.Configuration{
+		Log: false, Sign: true, Internet: internal.Internet{Enabled: true},
+		Authentication: "disabled",
+		Games: internal.Games{
+			Enabled: []string{"age1"},
+			Age1:    internal.Game{Hosts: []string{"127.0.0.1"}},
+		},
+		Announcement: internal.Announcement{Enabled: false},
+	}, ""
 }
 
 func TestRunRootPidLockFailure(t *testing.T) {
@@ -233,5 +258,56 @@ func TestRunRootNoInternetPropagatesFlag(t *testing.T) {
 	}
 	if internal.CanUseInternet {
 		t.Fatal("CanUseInternet should be false when cfg disables it")
+	}
+}
+
+// A server that was told to sign but cannot is as broken as one without TLS
+// material, so startup has to stop rather than serve unsigned captures.
+func TestRunRootSigningKeyPairMissing(t *testing.T) {
+	resetState(t)
+	certificatePairFolderFn = func(string) string { return t.TempDir() }
+	initConfigFn = signingConfig
+	signingKeyPairCheckFn = func(folder string) error {
+		return fmt.Errorf("cannot sign without %s", filepath.Join(folder, "sigkey.pem"))
+	}
+	values.Id = "00000000-0000-0000-0000-000000000000"
+	_, code := runRoot(nil)
+	if code != internal.ErrSigningKey {
+		t.Fatalf("code=%d, want %d", code, internal.ErrSigningKey)
+	}
+}
+
+func TestRunRootSigningKeyPairPresent(t *testing.T) {
+	resetState(t)
+	certificatePairFolderFn = func(string) string { return t.TempDir() }
+	initConfigFn = signingConfig
+	called := false
+	signingKeyPairCheckFn = func(folder string) error {
+		called = true
+		if folder == "" {
+			t.Fatal("expected the resolved certificate folder to be passed through")
+		}
+		return nil
+	}
+	values.Id = "00000000-0000-0000-0000-000000000000"
+	runRoot(nil)
+	if !called {
+		t.Fatal("startup never checked the signing key pair")
+	}
+}
+
+// With Sign off nothing is signed, so demanding a key would fail installs that
+// serve perfectly fine off the captured signatures.
+func TestRunRootSigningKeyPairUncheckedWhenNotSigning(t *testing.T) {
+	resetState(t)
+	certificatePairFolderFn = func(string) string { return t.TempDir() }
+	signingKeyPairCheckFn = func(string) error {
+		t.Fatal("startup demanded a signing key while Sign is off")
+		return nil
+	}
+	values.Id = "00000000-0000-0000-0000-000000000000"
+	runRoot(nil)
+	if internal.Sign {
+		t.Fatal("Sign should stay off when the config leaves it off")
 	}
 }

@@ -41,6 +41,11 @@ type Configuration struct {
 	Internet               Internet
 	Announcement           Announcement
 	Games                  Games
+	// Sign makes the server re-sign the catalogues it serves instead of
+	// replaying the signatures captured alongside them in
+	// resources/responses. Off by default: the captured ones are what an
+	// unmodified client accepts.
+	Sign bool
 }
 
 func (cfg *Configuration) GetGameHosts(gameId string) []string {
