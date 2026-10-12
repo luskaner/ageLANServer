@@ -4,11 +4,25 @@ import (
 	"testing"
 )
 
+// isolateUserData points userDataFolder at a temporary directory for the
+// duration of the test.
+//
+// userDataFolder is relative to the working directory, which during a test is
+// the package directory, so without this the tests below create and migrate
+// saves inside the repository's own resources folder.
+func isolateUserData(t *testing.T) {
+	t.Helper()
+	original := userDataFolder
+	userDataFolder = t.TempDir()
+	t.Cleanup(func() { userDataFolder = original })
+}
+
 // Regression: when GenerateFn returned nil (e.g. due to a persistent data
 // failure), LoadOrStoreFn cached that nil permanently. Every future request
 // for the same identifier would return nil until server restart.
 // The fix removes the cached entry so subsequent calls can retry.
 func TestGetOrCreateUserNilGenerationDoesNotCachePermanently(t *testing.T) {
+	isolateUserData(t)
 	users := &MainUsers{}
 	users.Initialize()
 	users.GenerateFn = func(_ string, _ *PersistentStringJsonMap, _ Items, _ AvatarStatDefinitions, _ string, _ bool, _ uint64, _ string) User {
@@ -47,6 +61,7 @@ func TestGetOrCreateUserNilGenerationDoesNotCachePermanently(t *testing.T) {
 }
 
 func TestGetOrCreateUserCachesSuccessfulGeneration(t *testing.T) {
+	isolateUserData(t)
 	users := &MainUsers{}
 	users.Initialize()
 	callCount := 0

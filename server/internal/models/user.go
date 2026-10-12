@@ -12,6 +12,7 @@ import (
 
 	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/logger"
 )
 
 type User interface {
@@ -81,6 +82,9 @@ type Users interface {
 	GetUserIds() func(func(int32) bool)
 	EncodeProfileInfo(definitions PresenceDefinitions, matches func(user User) bool, clientLibVersion uint16) []i.A
 	GetUserByPlatformUserId(xbox bool, id uint64) (User, bool)
+	// FlushAll calls Flush on every user's persistent data. It is called at
+	// server shutdown to give pending writes a final chance to reach disk.
+	FlushAll()
 }
 
 type MainUsers struct {
@@ -95,12 +99,19 @@ type MainUsers struct {
 		platformUserId uint64,
 		alias string,
 	) User
+	// StoreFactory chooses where each user's data is kept. Replacing it is the
+	// only change needed to run the server on a real database instead of the
+	// default per-key JSON files.
+	StoreFactory UserStoreFactory
 }
 
 func (users *MainUsers) Initialize() {
 	users.store = i.NewSafeMap[string, User]()
 	if users.GenerateFn == nil {
 		users.GenerateFn = users.Generate
+	}
+	if users.StoreFactory == nil {
+		users.StoreFactory = JSONUserStoreFactory
 	}
 }
 
@@ -112,43 +123,49 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 	rng := rand.New(rand.NewPCG(seed, seed))
 	var avatarStats *PersistentJsonData[*AvatarStats]
 	if avatarStatsDefinitions != nil {
-		avatarStats, _ = NewPersistentJsonData[*AvatarStats](
+		avatarStats = OpenPersistentJsonData[*AvatarStats](
 			persistentData,
+			identifier,
 			"avatarStats",
 			NewAvatarStatsUpgradableDefaultData(gameId, avatarStatsDefinitions),
 		)
 	}
 	var profileProperties *PersistentJsonData[*map[string]string]
 	if gameId == game.AoE3 || gameId == game.AoE4 || gameId == game.AoM {
-		profileProperties, _ = NewPersistentJsonData[*map[string]string](
+		profileProperties = OpenPersistentJsonData[*map[string]string](
 			persistentData,
+			identifier,
 			"profileProperties",
 			NewProfilePropertiesUpgradableDefaultData(),
 		)
 	}
 	var items *PersistentJsonData[*map[int32]*MainItem]
 	if itemDefinitions != nil {
-		items, _ = NewPersistentJsonData[*map[int32]*MainItem](
+		items = OpenPersistentJsonData[*map[int32]*MainItem](
 			persistentData,
+			identifier,
 			"items",
 			NewItemsUpgradableDefaultData(gameId, itemDefinitions),
 		)
 	}
 	var itemLoadouts *PersistentJsonData[*MainItemLoadouts]
 	if gameId != game.AoE1 {
-		itemLoadouts, _ = NewPersistentJsonData[*MainItemLoadouts](
+		itemLoadouts = OpenPersistentJsonData[*MainItemLoadouts](
 			persistentData,
+			identifier,
 			"itemLoadouts",
 			NewItemLoadoutsUpgradableDefaultData(),
 		)
 	}
-	avatarMetadata, _ := NewPersistentJsonData[*string](
+	avatarMetadata := OpenPersistentJsonData[*string](
 		persistentData,
+		identifier,
 		"avatarMetadata",
 		NewAvatarMetadataUpgradableDefaultData(gameId),
 	)
-	auth, _ := NewPersistentJsonData[*time.Time](
+	auth := OpenPersistentJsonData[*time.Time](
 		persistentData,
+		identifier,
 		"auth",
 		NewAuthUpgradableDefaultData(),
 	)
@@ -228,10 +245,16 @@ func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, av
 	mainUser, _ := users.store.LoadOrStoreFn(
 		identifier,
 		func() User {
-			persistentData, _ := NewPersistentStringMap(
-				UserDataPath(gameId, !isXbox, strconv.FormatUint(platformUserId, 10)),
-				&InitialUpgradableData[*PersistentStringJsonMapRaw]{},
-			)
+			userStore, err := users.StoreFactory(gameId, isXbox, platformUserId)
+			if err != nil {
+				logger.Fail("Could not open the save data of %s: %s", identifier, err)
+				return nil
+			}
+			persistentData, err := NewPersistentStringMap(userStore)
+			if err != nil {
+				logger.Fail("Could not read the save data of %s: %s", identifier, err)
+				return nil
+			}
 			return users.GenerateFn(
 				gameId,
 				persistentData,
@@ -278,6 +301,18 @@ func (users *MainUsers) GetUserIds() func(func(int32) bool) {
 		for u := range users.store.Values() {
 			if !yield(u.GetId()) {
 				return
+			}
+		}
+	}
+}
+
+func (users *MainUsers) FlushAll() {
+	for u := range users.store.Values() {
+		if mu, ok := u.(*MainUser); ok {
+			if pd := mu.GetPersistentData(); pd != nil {
+				if err := pd.Flush(); err != nil {
+					logger.Fail("User %s: flush failed: %s", mu.GetPlatformPath(), err)
+				}
 			}
 		}
 	}

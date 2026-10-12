@@ -237,14 +237,15 @@ func ensureFolder(path string) {
 	}
 }
 
-func UserDataPath(gameId string, steam bool, platformUserid string) string {
-	var platform string
+// UserDataDir returns the directory holding one user's saved data, one JSON
+// document per key inside it.
+func UserDataDir(gameId string, steam bool, platformUserid string) string {
+	return filepath.Join(userDataFolder, gameId, userDataFileStem(steam, platformUserid))
+}
+
+func userDataFileStem(steam bool, platformUserid string) string {
 	if steam {
-		platform = "STEAM"
-	} else {
-		platform = "XBOX"
+		return "STEAM_" + platformUserid
 	}
-	folder := filepath.Join(userDataFolder, gameId)
-	ensureFolder(folder)
-	return filepath.Join(folder, fmt.Sprintf("%s_%s", platform, platformUserid)+".json")
+	return "XBOX_" + platformUserid
 }

@@ -31,6 +31,7 @@ import (
 	"github.com/luskaner/ageLANServer/common/paths"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/router"
@@ -334,6 +335,25 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		})
 	}
 	wg.Wait()
+
+	logger.Step("Flushing pending user data...")
+	flushCtx, flushCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer flushCancel()
+	done := make(chan struct{})
+	go func() {
+		for _, g := range initializer.Games {
+			if users := g.Users(); users != nil {
+				users.FlushAll()
+			}
+		}
+		close(done)
+	}()
+	select {
+	case <-done:
+		logger.Ok("All pending writes flushed")
+	case <-flushCtx.Done():
+		logger.Fail("Flush timed out after %v: %v", 2*time.Second, flushCtx.Err())
+	}
 	return
 }
 
