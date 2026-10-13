@@ -279,8 +279,12 @@ func initConfig(fs *pflag.FlagSet, values *bsManager.StartValues) *internal.Conf
 	if usedFile != "" {
 		cmdlog.Info("Using config file: %s", usedFile)
 		if values.LogRoot != "" {
-			data, _ := os.ReadFile(usedFile)
-			commonLogger.PrefixPrintln("config", string(data))
+			data, err := os.ReadFile(usedFile)
+			if err != nil {
+				cmdlog.Warn("Could not read config file for logging: %s", err)
+			} else {
+				commonLogger.PrefixPrintln("config", string(data))
+			}
 		}
 	}
 
