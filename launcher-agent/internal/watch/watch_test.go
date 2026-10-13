@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -44,7 +45,7 @@ func TestWaitForProcessesToExitWaitsForAll(t *testing.T) {
 	slow := spawnSleeper(t, 500)
 
 	start := time.Now()
-	if !waitForProcessesToExit([]*os.Process{fast, slow}) {
+	if !waitForProcessesToExit(context.Background(), []*os.Process{fast, slow}) {
 		t.Fatal("expected successful wait")
 	}
 	elapsed := time.Since(start)
@@ -53,12 +54,54 @@ func TestWaitForProcessesToExitWaitsForAll(t *testing.T) {
 	}
 }
 
+// The wait is for however long the game lasts, so it has to be the one thing
+// that can end it: without this the tray's Exit would take the icon away and
+// leave the agent waiting for a game the user has given up on.
+func TestWaitForProcessesToExitGivesUpWhenCancelled(t *testing.T) {
+	never := spawnSleeper(t, 60000)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	start := time.Now()
+	if waitForProcessesToExit(ctx, []*os.Process{never}) {
+		t.Error("a cancelled wait reported that the process exited")
+	}
+	if elapsed := time.Since(start); elapsed > 20*time.Second {
+		t.Errorf("the wait took %v, so it never noticed the cancellation", elapsed)
+	}
+}
+
 func TestWaitForProcessesToExitEmptyAndNil(t *testing.T) {
-	if !waitForProcessesToExit(nil) {
+	if !waitForProcessesToExit(context.Background(), nil) {
 		t.Fatal("empty list must succeed")
 	}
-	if !waitForProcessesToExit([]*os.Process{nil}) {
+	if !waitForProcessesToExit(context.Background(), []*os.Process{nil}) {
 		t.Fatal("nil entries must be skipped")
+	}
+}
+
+// The tray's second row has to name what the agent is watching, in a form that
+// can be acted on: a game on its own does not tell anybody which process to look
+// for, and a bare list of PIDs does not say whose they are.
+func TestSessionNamesTheGameAndItsProcesses(t *testing.T) {
+	got := session("age2", []string{"aoe2.exe", "helper.exe"}, []int{11, 22})
+	if got != "age2 — aoe2.exe (pid 11), helper.exe (pid 22)" {
+		t.Errorf("session = %q", got)
+	}
+}
+
+// The processes are not known until the game is found, and an unknown game is
+// still worth naming rather than dropping the row's whole content.
+func TestSessionWithoutAGameOrWithoutProcesses(t *testing.T) {
+	if got := session("", nil, nil); got != "no process" {
+		t.Errorf("session with nothing known = %q", got)
+	}
+	if got := session("athens", nil, nil); got != "athens — no process" {
+		t.Errorf("session with only a game = %q", got)
 	}
 }
 
@@ -80,6 +123,31 @@ func TestSortedProcessNames(t *testing.T) {
 	}
 }
 
+// Regression: the agent is frequently started without a log root (no
+// --logRoot/--baseDataPath), which leaves internal.Logger nil. loggerBufferFn
+// wraps the configuration revert (config_revert_end) and the battle-server
+// removal, so it must still run that work when there is no file to log to.
+// Returning early here used to skip the revert entirely and leave the hosts
+// file, the certificate and the battle server in place after a session.
+func TestLoggerBufferFnRunsWorkWhenLoggerNil(t *testing.T) {
+	orig := internal.Logger
+	internal.Logger = nil
+	t.Cleanup(func() { internal.Logger = orig })
+
+	called := false
+	if err := loggerBufferFn("config_revert_end", func(w io.Writer) {
+		called = true
+		if w != nil {
+			t.Errorf("expected a nil writer when there is no file logger, got %v", w)
+		}
+	}); err != nil {
+		t.Fatalf("loggerBufferFn returned error: %v", err)
+	}
+	if !called {
+		t.Fatal("loggerBufferFn must run the wrapped work (the config revert) even when internal.Logger is nil")
+	}
+}
+
 func testValues() *agent.Values {
 	return &agent.Values{
 		GameIdValues:  &cmd.GameIdValues{GameId: "age2"},
@@ -88,17 +156,23 @@ func testValues() *agent.Values {
 }
 
 type watchOverrides struct {
-	waitUntilAnyProcessExistFnVal func([]string) map[string]*os.Process
-	waitForProcessesToExitFnVal   func([]*os.Process) bool
+	waitUntilAnyProcessExistFnVal func(context.Context, []string, time.Duration, time.Duration) map[string]*os.Process
+	waitForProcessesToExitFnVal   func(context.Context, []*os.Process) bool
 	serverKillDoFnVal             func(string) error
 	configRevertFnVal             func(string, string, bool, io.Writer, func(*exec.Options), func([]string, bool, io.Writer, func(*exec.Options)) *exec.Result) bool
 	runRevertCommandFnVal         func(io.Writer, func(*exec.Options)) error
 	removeBattleServerRegionFnVal func(string, string, string, io.Writer, func(*exec.Options)) *exec.Result
 	loggerBufferFnVal             func(string, func(io.Writer)) error
 	gameLogsCopyFnVal             func(string, string, string)
-	rebroadcastFnVal              func(*ExitCode, int)
+	rebroadcastFnVal              func(context.Context, *ExitCode, int)
 }
 
+// watchOverrides applies a set of replacements and returns the function that puts
+// the originals back.
+//
+// The signature each one has to match grew a context when the waits became
+// cancellable, which is why there are two blocks here rather than one list: the
+// call sites read the signature, not this.
 func applyWatchOverrides(o watchOverrides) func() {
 	origProcessFn := waitUntilAnyProcessExistFn
 	origWaitFn := waitForProcessesToExitFn
@@ -163,13 +237,23 @@ func noopLoggerBuffer(name string, fn func(io.Writer)) error {
 	return nil
 }
 
+// runningLoggerBuffer is noopLoggerBuffer that does the work.
+//
+// The buffer only decides where the wrapped work is logged, so a test that wants
+// to know whether the teardown reached the revert has to let it run. The other
+// tests use the no-op because they only care about the path taken to it.
+func runningLoggerBuffer(name string, fn func(io.Writer)) error {
+	fn(nil)
+	return nil
+}
+
 func noopRemoveBSRegion(exe, gameId, region string, out io.Writer, optionsFn func(*exec.Options)) *exec.Result {
 	return &exec.Result{}
 }
 
 func TestWatchGameTimeoutStart(t *testing.T) {
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return nil
 		},
 		serverKillDoFnVal:     func(name string) error { return nil },
@@ -183,7 +267,7 @@ func TestWatchGameTimeoutStart(t *testing.T) {
 	values.ServerExecutable = ""
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if exitCode.Get() != internal.ErrGameTimeoutStart {
 		t.Errorf("expected %d for game timeout, got %d", internal.ErrGameTimeoutStart, exitCode.Get())
 	}
@@ -192,23 +276,23 @@ func TestWatchGameTimeoutStart(t *testing.T) {
 func TestWatchGameFound(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return true },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return true },
 		serverKillDoFnVal:           func(name string) error { return nil },
 		configRevertFnVal:           noopConfigRevert,
 		runRevertCommandFnVal:       noopRevertCommand,
 		loggerBufferFnVal:           noopLoggerBuffer,
 		gameLogsCopyFnVal:           func(gameId, basePath, logRoot string) {},
-		rebroadcastFnVal:            func(exitCode *ExitCode, port int) {},
+		rebroadcastFnVal:            func(_ context.Context, exitCode *ExitCode, port int) {},
 	})()
 
 	values := testValues()
 	values.ServerExecutable = ""
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if exitCode.Get() != common.ErrSuccess {
 		t.Errorf("expected success, got %d", exitCode.Get())
 	}
@@ -218,10 +302,10 @@ func TestWatchWithServerKill(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	killCalled := false
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return true },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return true },
 		serverKillDoFnVal: func(name string) error {
 			killCalled = true
 			return nil
@@ -236,7 +320,7 @@ func TestWatchWithServerKill(t *testing.T) {
 	values.ServerExecutable = "server.exe"
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if !killCalled {
 		t.Error("expected serverKill to be called")
 	}
@@ -248,10 +332,10 @@ func TestWatchWithServerKill(t *testing.T) {
 func TestWatchServerKillFailure(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return true },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return true },
 		serverKillDoFnVal: func(name string) error {
 			return os.ErrProcessDone
 		},
@@ -265,7 +349,7 @@ func TestWatchServerKillFailure(t *testing.T) {
 	values.ServerExecutable = "server.exe"
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if exitCode.Get() != internal.ErrFailedStopServer {
 		t.Errorf("expected %d for kill failure, got %d", internal.ErrFailedStopServer, exitCode.Get())
 	}
@@ -275,10 +359,10 @@ func TestWatchWithLogCopy(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	logCopied := false
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return true },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return true },
 		serverKillDoFnVal:           func(name string) error { return nil },
 		configRevertFnVal:           noopConfigRevert,
 		runRevertCommandFnVal:       noopRevertCommand,
@@ -294,7 +378,7 @@ func TestWatchWithLogCopy(t *testing.T) {
 	values.BaseDataPath = "/tmp/data"
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if !logCopied {
 		t.Error("expected game logs to be copied")
 	}
@@ -304,10 +388,10 @@ func TestWatchCleanupOncePreventsDoubleCleanup(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	killCount := 0
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return true },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return true },
 		serverKillDoFnVal: func(name string) error {
 			killCount++
 			return nil
@@ -322,7 +406,7 @@ func TestWatchCleanupOncePreventsDoubleCleanup(t *testing.T) {
 	values.ServerExecutable = "server.exe"
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if killCount != 1 {
 		t.Errorf("expected serverKill to be called exactly once, got %d", killCount)
 	}
@@ -331,10 +415,10 @@ func TestWatchCleanupOncePreventsDoubleCleanup(t *testing.T) {
 func TestWatchWaitFailure(t *testing.T) {
 	fakeProcess := &os.Process{Pid: 99999}
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool { return false },
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool { return false },
 		serverKillDoFnVal:           func(name string) error { return nil },
 		configRevertFnVal:           noopConfigRevert,
 		runRevertCommandFnVal:       noopRevertCommand,
@@ -346,7 +430,7 @@ func TestWatchWaitFailure(t *testing.T) {
 	values.ServerExecutable = ""
 	exitCode := NewExitCode()
 	var once sync.Once
-	Watch(values, exitCode, &once)
+	Watch(context.Background(), values, exitCode, &once)
 	if exitCode.Get() != internal.ErrFailedWaitForProcess {
 		t.Errorf("expected %d for wait failure, got %d", internal.ErrFailedWaitForProcess, exitCode.Get())
 	}
@@ -417,10 +501,10 @@ func TestWatchAndCleanupShareExitCodeSafely(t *testing.T) {
 	waiting := make(chan struct{})
 	resume := make(chan struct{})
 	defer applyWatchOverrides(watchOverrides{
-		waitUntilAnyProcessExistFnVal: func(names []string) map[string]*os.Process {
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
 			return map[string]*os.Process{"game.exe": fakeProcess}
 		},
-		waitForProcessesToExitFnVal: func(processes []*os.Process) bool {
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool {
 			close(waiting)
 			<-resume
 			return false
@@ -440,7 +524,7 @@ func TestWatchAndCleanupShareExitCodeSafely(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		Watch(values, exitCode, &once)
+		Watch(context.Background(), values, exitCode, &once)
 	}()
 
 	<-waiting
@@ -456,6 +540,107 @@ func TestWatchAndCleanupShareExitCodeSafely(t *testing.T) {
 	}
 }
 
+// The Exit in the tray has to be a stop, not a failure.
+//
+// Everything it relies on was decided by the user: the wait is cut short because
+// they asked, and the exit code that says so is the caller's to record. What must
+// not happen is the wait's own error surviving, because that would have somebody
+// who stopped a session deliberately read the logs of one that broke.
+func TestWatchCancelledWhileWaitingIsNotAFailure(t *testing.T) {
+	fakeProcess := &os.Process{Pid: 99999}
+	reverted := 0
+	waiting := make(chan struct{})
+	release := make(chan struct{})
+	defer applyWatchOverrides(watchOverrides{
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
+			return map[string]*os.Process{"game.exe": fakeProcess}
+		},
+		waitForProcessesToExitFnVal: func(ctx context.Context, processes []*os.Process) bool {
+			close(waiting)
+			// The real wait returns as soon as the context is cancelled; this one
+			// holds on until the test lets go of it, so that the cancellation is
+			// known to have happened before the false is returned.
+			<-release
+			return ctx.Err() != nil
+		},
+		serverKillDoFnVal: func(name string) error { return nil },
+		configRevertFnVal: func(string, string, bool, io.Writer, func(*exec.Options), func([]string, bool, io.Writer, func(*exec.Options)) *exec.Result) bool {
+			reverted++
+			return true
+		},
+		runRevertCommandFnVal: noopRevertCommand,
+		loggerBufferFnVal:     runningLoggerBuffer,
+		gameLogsCopyFnVal:     func(gameId, basePath, logRoot string) {},
+	})()
+
+	values := testValues()
+	values.ServerExecutable = "server.exe"
+	exitCode := NewExitCode()
+	var once sync.Once
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Watch(ctx, values, exitCode, &once)
+	}()
+
+	<-waiting
+	cancel()
+	close(release)
+	<-done
+
+	if exitCode.Get() != common.ErrSuccess {
+		t.Errorf("a stopped run reported %d; the wait it cut short is not a failure", exitCode.Get())
+	}
+	// The teardown is what makes stopping worth doing, so it must still have
+	// happened, once.
+	if reverted != 1 {
+		t.Errorf("the configuration was reverted %d times, want exactly 1", reverted)
+	}
+}
+
+// The same, one step earlier: the minute spent looking for a game that never
+// starts is the window where a user who launched the wrong thing reaches for the
+// tray's Exit, so it has to be interruptible there too.
+func TestWatchCancelledBeforeTheGameStartsIsNotATimeout(t *testing.T) {
+	release := make(chan struct{})
+	defer applyWatchOverrides(watchOverrides{
+		waitUntilAnyProcessExistFnVal: func(ctx context.Context, names []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
+			<-release
+			return nil
+		},
+		serverKillDoFnVal:     func(name string) error { return nil },
+		configRevertFnVal:     noopConfigRevert,
+		runRevertCommandFnVal: noopRevertCommand,
+		loggerBufferFnVal:     noopLoggerBuffer,
+		gameLogsCopyFnVal:     func(gameId, basePath, logRoot string) {},
+	})()
+
+	values := testValues()
+	values.ServerExecutable = ""
+	exitCode := NewExitCode()
+	var once sync.Once
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Watch(ctx, values, exitCode, &once)
+	}()
+
+	cancel()
+	close(release)
+	<-done
+
+	if exitCode.Get() == internal.ErrGameTimeoutStart {
+		t.Error("a run the user stopped was reported as a game that never started")
+	}
+	if exitCode.Get() != common.ErrSuccess {
+		t.Errorf("expected success, got %d", exitCode.Get())
+	}
+}
+
 func TestWaitUntilAnyProcessExistFound(t *testing.T) {
 	origFn := commonProcessProcessesByNamesFn
 	defer func() { commonProcessProcessesByNamesFn = origFn }()
@@ -465,7 +650,7 @@ func TestWaitUntilAnyProcessExistFound(t *testing.T) {
 		return map[string]*os.Process{"game.exe": fakeProcess}
 	}
 
-	processes := waitUntilAnyProcessExist([]string{"game.exe"})
+	processes := waitUntilAnyProcessExist(context.Background(), []string{"game.exe"}, time.Millisecond, time.Minute)
 	if len(processes) != 1 {
 		t.Fatalf("expected 1 process, got %d", len(processes))
 	}
@@ -476,28 +661,48 @@ func TestWaitUntilAnyProcessExistFound(t *testing.T) {
 
 func TestWaitUntilAnyProcessExistTimeout(t *testing.T) {
 	origFn := commonProcessProcessesByNamesFn
-	origInterval := processWaitInterval
-	defer func() {
-		commonProcessProcessesByNamesFn = origFn
-		processWaitInterval = origInterval
-	}()
+	defer func() { commonProcessProcessesByNamesFn = origFn }()
 
-	processWaitInterval = 50 * time.Millisecond
 	commonProcessProcessesByNamesFn = func(names []string) map[string]*os.Process {
 		return nil
 	}
 
-	origOneMinute := oneMinuteWaitTimeout
-	oneMinuteWaitTimeout = 200 * time.Millisecond
-	defer func() { oneMinuteWaitTimeout = origOneMinute }()
-
 	start := time.Now()
-	processes := waitUntilAnyProcessExist([]string{"nonexistent.exe"})
+	processes := waitUntilAnyProcessExist(context.Background(), []string{"nonexistent.exe"}, 50*time.Millisecond, 200*time.Millisecond)
 	elapsed := time.Since(start)
 	if len(processes) != 0 {
 		t.Fatalf("expected empty result, got %d processes", len(processes))
 	}
 	if elapsed < 150*time.Millisecond {
 		t.Fatalf("expected at least 150ms wait, got %v", elapsed)
+	}
+}
+
+// The up to a minute spent looking for a game that may never start is a wait
+// like any other, and stopping the agent has to be able to end it. Otherwise
+// Exit does nothing at all for the whole of the window in which the user is most
+// likely to decide they have launched the wrong thing.
+func TestWaitUntilAnyProcessExistGivesUpWhenCancelled(t *testing.T) {
+	origFn := commonProcessProcessesByNamesFn
+	defer func() { commonProcessProcessesByNamesFn = origFn }()
+
+	commonProcessProcessesByNamesFn = func(names []string) map[string]*os.Process {
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	start := time.Now()
+	processes := waitUntilAnyProcessExist(ctx, []string{"nonexistent.exe"}, 50*time.Millisecond, time.Hour)
+	elapsed := time.Since(start)
+	if len(processes) != 0 {
+		t.Fatalf("expected empty result, got %d processes", len(processes))
+	}
+	if elapsed > 20*time.Second {
+		t.Errorf("a cancelled search took %v, so it ran out the timeout instead", elapsed)
 	}
 }

@@ -1,8 +1,12 @@
 package watch
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +23,22 @@ import (
 	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
 )
 
+// What the agent says it is doing, in the tense the tray renders it in.
+//
+// These are the only strings here that are not also written to the log, and they
+// are not a second copy of it. The log is append-only and gets read afterwards,
+// by somebody who already suspects something; these are replaced as the run goes
+// on and get read while it is happening, by somebody who suspects nothing.
+const (
+	activityWaitingForGame    = "Waiting for the game to start"
+	activityWaitingForGameEnd = "Waiting for the game to end"
+	activityCopyingLogs       = "Copying the game logs"
+	activityStoppingServer    = "Stopping the server"
+	activityStoppingBattle    = "Stopping the battle server"
+	activityRevertCommand     = "Running the revert command"
+	activityReverting         = "Reverting the configuration"
+)
+
 var processWaitInterval = 1 * time.Second
 var oneMinuteWaitTimeout = 1 * time.Minute
 
@@ -32,24 +52,18 @@ var (
 	gameLogsCopyFn                  = gameLogs.CopyGameLogs
 	rebroadcastFn                   = rebroadcastBattleServer
 	commonProcessProcessesByNamesFn = commonProcess.ProcessesByNames
-	loggerBufferFn                  = func(name string, fn func(io.Writer)) error {
-		if internal.Logger == nil {
-			return nil
-		}
+	// The buffer only decides where the wrapped work is logged, never whether it
+	// runs. commonLogger.Root.Buffer is nil-safe and still calls fn(nil) on a nil
+	// logger, so delegating straight to it means a run that was started without a
+	// log root (agent started with no --logRoot/--baseDataPath) still performs the
+	// battle-server removal, the revert command and, crucially, the configuration
+	// revert. The previous "if internal.Logger == nil { return nil }" guard turned
+	// "no file to log to" into "no work to do", which left the hosts file, the
+	// certificate and the battle server in place after a session.
+	loggerBufferFn = func(name string, fn func(io.Writer)) error {
 		return internal.Logger.Buffer(name, fn)
 	}
 )
-
-func waitUntilAnyProcessExist(names []string) (processes map[string]*os.Process) {
-	for i := 0; i < int(oneMinuteWaitTimeout/processWaitInterval); i++ {
-		processes = commonProcessProcessesByNamesFn(names)
-		if len(processes) > 0 {
-			return
-		}
-		time.Sleep(processWaitInterval)
-	}
-	return
-}
 
 // ExitCode carries the agent's exit code between the goroutine that waits for
 // the game to exit and the signal handler that can interrupt it, plus the
@@ -91,15 +105,55 @@ func (e *ExitCode) SetIfSuccess(code int) {
 	e.code.CompareAndSwap(int32(common.ErrSuccess), int32(code))
 }
 
+// stopped reports whether the run was asked to stop while it waited.
+//
+// It is the difference between "the wait failed" and "the wait was cut short",
+// which is the whole difference between a session that ended badly and one that
+// ended because the user said so. Reading the context rather than being told is
+// what keeps the two apart: a wait that returns early is not necessarily a stop,
+// and only the caller knows whether anything asked it to.
+func stopped(ctx context.Context) bool { return ctx.Err() != nil }
+
+// session names the game and the processes being watched, for the tray's second
+// row.
+//
+// It is built once the PIDs are known and never changes afterwards: a run that
+// reports a different game half way through is a bug somewhere worse than this,
+// and a row that flickers between values is worse than one that is a moment late.
+func session(gameID string, names []string, pids []int) string {
+	what := "no process"
+	if len(pids) > 0 {
+		parts := make([]string, 0, len(pids))
+		for i, pid := range pids {
+			if i < len(names) {
+				parts = append(parts, fmt.Sprintf("%s (pid %d)", names[i], pid))
+			} else {
+				parts = append(parts, "pid "+strconv.Itoa(pid))
+			}
+		}
+		what = strings.Join(parts, ", ")
+	}
+	if gameID == "" {
+		return what
+	}
+	return gameID + " — " + what
+}
+
 // Cleanup is the agent's teardown: stop the server, then the battle server, the
 // revert command and finally the configuration. The order matters, stopping the
 // server before pulling the configuration leaves the game talking to a live
 // server whose certificate trust is being removed underneath it.
 //
+// Each step reports only what it is doing and not which session it belongs to:
+// the tray keeps the session it already knows, and there is no reason to throw
+// it away halfway through the one part of the run where the user is watching.
+//
 // This used to exist twice with different orders (here and in cmd.runRoot's
 // signal handler), so which one ran depended on how the agent was asked to stop.
+// Both ways in now cancel the run instead, and the teardown runs here, once.
 func Cleanup(values *agent.Values, exitCode *ExitCode) {
 	if values.ServerExecutable != "" {
+		internal.SetActivity(activityStoppingServer, "")
 		cmdlog.Step("Killing server...")
 		if err := serverKillDoFn(values.ServerExecutable); err != nil {
 			cmdlog.Fail("Failed to kill server.")
@@ -107,6 +161,7 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 			exitCode.SetIfSuccess(internal.ErrFailedStopServer)
 		}
 		if values.BattleServerManagerExecutable != "" && values.BattleServerRegion != "" {
+			internal.SetActivity(activityStoppingBattle, "")
 			cmdlog.Step("Shutting down battle-server...")
 			var result *exec.Result
 			logErr := loggerBufferFn("battle-server-manager_remove", func(writer io.Writer) {
@@ -141,6 +196,7 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 			exitCode.SetIfSuccess(newExitCode)
 		}
 	}
+	internal.SetActivity(activityRevertCommand, "")
 	_ = loggerBufferFn("revert_command_end", func(writer io.Writer) {
 		if err := runRevertCommandFn(writer, func(options *exec.Options) {
 			cmdlog.Println("run revert command", options.String())
@@ -148,6 +204,7 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 			cmdlog.Fail("Failed to revert command: %s", err)
 		}
 	})
+	internal.SetActivity(activityReverting, "")
 	_ = loggerBufferFn("config_revert_end", func(writer io.Writer) {
 		if !configRevertFn(values.GameId, values.LogRoot, true, writer, func(options *exec.Options) {
 			if writer != nil {
@@ -159,15 +216,28 @@ func Cleanup(values *agent.Values, exitCode *ExitCode) {
 	})
 }
 
-func Watch(values *agent.Values, exitCode *ExitCode, cleanupOnce *sync.Once) {
+// Watch is the session: find the game, stay out of its way until it closes, and
+// then put the machine back.
+//
+// ctx is how the run is stopped. It is cancelled by a terminate signal and by
+// the Exit in the system tray, and it is what turns "wait for the game" from a
+// wait nobody can end into one they can. Everything it unblocks still unwinds
+// through the same deferred cleanup, so a stop and a game that closes at the same
+// moment produce one teardown rather than two racing ones.
+func Watch(ctx context.Context, values *agent.Values, exitCode *ExitCode, cleanupOnce *sync.Once) {
 	defer func() {
 		cleanupOnce.Do(func() {
 			Cleanup(values, exitCode)
 		})
 	}()
+	internal.SetActivity(activityWaitingForGame, values.GameId)
 	cmdlog.Step("Waiting up to 1 minute for game to start...")
-	processes := waitUntilAnyProcessExistFn(values.ProcessNames)
+	processes := waitUntilAnyProcessExistFn(ctx, values.ProcessNames, processWaitInterval, oneMinuteWaitTimeout)
 	if len(processes) == 0 {
+		if stopped(ctx) {
+			cmdlog.Step("Stopped before the game started.")
+			return
+		}
 		cmdlog.Fail("Failed to find the game.")
 		exitCode.SetIfSuccess(internal.ErrGameTimeoutStart)
 		return
@@ -175,22 +245,35 @@ func Watch(values *agent.Values, exitCode *ExitCode, cleanupOnce *sync.Once) {
 	if values.BattleServerLANRebroadcast {
 		port := battleServer.BroadcastPort(values.GameId)
 		cmdlog.Step("Broadcasting BattleServer port to %d...", port)
-		rebroadcastFn(exitCode, int(port))
+		rebroadcastFn(ctx, exitCode, int(port))
 	}
+	names := sortedProcessNames(processes)
 	var procPids []int
 	var processesList []*os.Process
-	for _, name := range sortedProcessNames(processes) {
+	for _, name := range names {
 		p := processes[name]
 		procPids = append(procPids, p.Pid)
 		processesList = append(processesList, p)
 	}
+	// From here the tray has something to report beyond "starting": which game,
+	// and which processes are holding the configuration in place.
+	current := session(values.GameId, names, procPids)
+	internal.SetActivity(activityWaitingForGameEnd, current)
 	cmdlog.Step("Waiting for PIDs %v to end", procPids)
-	if !waitForProcessesToExitFn(processesList) {
+	if !waitForProcessesToExitFn(ctx, processesList) {
+		if stopped(ctx) {
+			// Not a failure: the user asked for this, and the exit code that
+			// says so is recorded by the caller, which is the one place that can
+			// tell a stop apart from a teardown that reported an error.
+			cmdlog.Step("Stopped waiting for the game.")
+			return
+		}
 		cmdlog.Fail("Failed to wait.")
 		exitCode.SetIfSuccess(internal.ErrFailedWaitForProcess)
 		return
 	}
 	if values.LogRoot != "" && values.BaseDataPath != "" {
+		internal.SetActivity(activityCopyingLogs, current)
 		gameLogsCopyFn(values.GameId, values.BaseDataPath, values.LogRoot)
 	}
 }

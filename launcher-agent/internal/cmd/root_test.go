@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/cmd"
 	"github.com/luskaner/ageLANServer/common/fileLock"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageLANServer/launcher-agent/internal/tray"
 	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
 	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
 )
@@ -23,9 +27,10 @@ func (fakeLocker) Unlock() error { return nil }
 // outcome instead of waiting a minute for a process that never starts.
 func overrides(t *testing.T, gameID string, exitCode int) (announced func() (string, int, int)) {
 	t.Helper()
-	origValues, origLock, origChdir := values, createLockFn, chdirToExeFn
+origValues, origLock, origChdir := values, createLockFn, chdirToExeFn
 	origInit, origWatch, origNotify := initializeFn, watchFn, signalNotifyFn
 	origAnnounce := announce
+	origTray := startTrayFn
 
 	values = &agent.Values{
 		GameIdValues:  &cmd.GameIdValues{GameId: gameID},
@@ -37,7 +42,8 @@ func overrides(t *testing.T, gameID string, exitCode int) (announced func() (str
 	// replaced anyway so a change to that condition cannot start writing files.
 	initializeFn = func(string) {}
 	signalNotifyFn = func(chan<- os.Signal, ...os.Signal) {}
-	watchFn = func(*agent.Values, *watch.ExitCode, *sync.Once) {}
+	watchFn = func(context.Context, *agent.Values, *watch.ExitCode, *sync.Once) {}
+	startTrayFn = func(string, func()) *tray.Tray { return tray.Start("age2", func() {}) }
 
 	var gotGame string
 	var gotCode, calls int
@@ -47,7 +53,7 @@ func overrides(t *testing.T, gameID string, exitCode int) (announced func() (str
 	}
 	// The exit code has to be produced by the watch, because that is where it comes
 	// from in a real run: the caller reads it back after the cleanup.
-	watchFn = func(_ *agent.Values, code *watch.ExitCode, _ *sync.Once) {
+	watchFn = func(ctx context.Context, _ *agent.Values, code *watch.ExitCode, _ *sync.Once) {
 		if exitCode != common.ErrSuccess {
 			code.Set(exitCode)
 		}
@@ -57,6 +63,7 @@ func overrides(t *testing.T, gameID string, exitCode int) (announced func() (str
 		values, createLockFn, chdirToExeFn = origValues, origLock, origChdir
 		initializeFn, watchFn, signalNotifyFn = origInit, origWatch, origNotify
 		announce = origAnnounce
+		startTrayFn = origTray
 	})
 	return func() (string, int, int) { return gotGame, gotCode, calls }
 }
@@ -91,5 +98,55 @@ func TestRunRootAnnouncesBothOutcomes(t *testing.T) {
 				t.Errorf("announced game %q, want %q", gotGame, "age2")
 			}
 		})
+	}
+}
+
+// The tray's Exit is a stop the user asked for, and it has to end up as one.
+//
+// This is the whole feature in one test: a run that is waiting for a game that is
+// still open, the user clicking Exit, and the agent leaving with a code that says
+// it was stopped. It goes through runRoot rather than through watch on purpose —
+// the code is recorded by the caller, because only the caller can tell a stop
+// apart from a teardown that reported an error.
+func TestRunRootReportsATrayExitAsStopped(t *testing.T) {
+	announced := overrides(t, "age2", common.ErrSuccess)
+	exitRequested := make(chan func(), 1)
+	var starts int
+	// The game takes a long time and the run waits it out, which is the whole
+	// reason there is anything to stop.
+	watchFn = func(ctx context.Context, _ *agent.Values, _ *watch.ExitCode, _ *sync.Once) {
+		<-ctx.Done()
+	}
+	startTrayFn = func(gameID string, onExit func()) *tray.Tray {
+		starts++
+		if gameID != "age2" {
+			t.Errorf("the tray was given game %q, want %q", gameID, "age2")
+		}
+		exitRequested <- onExit
+		return tray.Start("age2", onExit)
+	}
+
+	done := make(chan int, 1)
+	go func() {
+		_, exitCode := runRoot(nil)
+		done <- exitCode
+	}()
+
+	// The click.
+	(<-exitRequested)()
+
+	select {
+	case exitCode := <-done:
+		if exitCode != internal.ErrStopped {
+			t.Errorf("exit code = %d, want %d (ErrStopped)", exitCode, internal.ErrStopped)
+		}
+		if _, announcedCode, calls := announced(); calls != 1 || announcedCode != internal.ErrStopped {
+			t.Errorf("announced %d, %d times; want %d, once", announcedCode, calls, internal.ErrStopped)
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("the run did not end after the tray's Exit")
+	}
+	if starts != 1 {
+		t.Errorf("the tray was started %d times, want exactly 1", starts)
 	}
 }

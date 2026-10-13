@@ -30,6 +30,16 @@ const Title = "AgeLAN Server"
 // leave the machine modified.
 func SessionEnded(game string) error { return show(endedText(game), zenity.InfoIcon) }
 
+// SessionStopped says the agent was stopped on purpose and the configuration went
+// back anyway.
+//
+// It is a separate message from SessionEnded rather than the same one with
+// different wording, because the game did not close: somebody is still playing.
+// Telling them "Game closed" about a game they are looking at is worse than
+// saying nothing, and reusing the failure message would have them go and read
+// logs for a teardown that completed.
+func SessionStopped(game string) error { return show(stoppedText(game), zenity.InfoIcon) }
+
 // SessionFailed says the session ended with something wrong, and says what to do
 // about it: the revert is best effort, so the honest message names the logs rather
 // than claiming the machine is clean.
@@ -40,6 +50,12 @@ func SessionFailed(game string, exitCode int) error {
 // endedText is the body of the good news.
 func endedText(game string) string {
 	return withGame(game, "Game closed. Everything has been reverted.")
+}
+
+// stoppedText is the body of the news for a run the user ended. It says the
+// teardown happened rather than that the game closed, because the game did not.
+func stoppedText(game string) string {
+	return withGame(game, "Stopped. Everything has been reverted.")
 }
 
 // failedText is the body of the bad news. It carries the exit code because that is

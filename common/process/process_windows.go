@@ -46,10 +46,15 @@ func WaitForProcessContext(ctx context.Context, proc *os.Process, duration *time
 		}
 		wait := slice
 		if deadline.IsZero() {
-			// Wait out the whole thing in one go when there is no deadline: a
-			// context with no deadline is the only case where waiting in slices
-			// would be pure overhead.
-			if _, ok := ctx.Deadline(); !ok {
+			// Wait out the whole thing in one go only when there is nothing to
+			// wake up for. A context with no deadline can still be cancelled, and
+			// a cancellation is exactly what this wait is blocking on: the
+			// INFINITE call below returns when the process exits, and would sit
+			// there for the rest of the session if the caller gave up waiting.
+			//
+			// Only context.Background has a nil Done channel, so that, and only
+			// that, is the case where waiting in slices is pure overhead.
+			if _, ok := ctx.Deadline(); !ok && ctx.Done() == nil {
 				event, err := windows.WaitForSingleObject(handle, windows.INFINITE)
 				return err == nil && event == uint32(windows.WAIT_OBJECT_0)
 			}

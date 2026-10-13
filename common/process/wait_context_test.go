@@ -59,6 +59,33 @@ func TestWaitForProcessContextUnchangedWithoutCancellation(t *testing.T) {
 	}
 }
 
+// The same, with no timeout at all.
+//
+// This is the wait the agent's stop button is built on: there is no telling in
+// advance how long a game session lasts, so it is asked to wait "for as long as
+// it takes", and the only thing that can end that wait is the caller changing
+// its mind. Windows reached for WaitForSingleObject(INFINITE) whenever the
+// context had no deadline, which every cancellable context does not, so the
+// cancellation was never noticed and the agent sat there for the rest of the
+// game.
+func TestWaitForProcessContextCancelsAnUntimedWait(t *testing.T) {
+	proc := startSleepingChild(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	start := time.Now()
+	if WaitForProcessContext(ctx, proc, nil) {
+		t.Error("a cancelled wait reported that the process exited")
+	}
+	if elapsed := time.Since(start); elapsed > 20*time.Second {
+		t.Errorf("an untimed wait took %s, so it never noticed the cancellation", elapsed)
+	}
+}
+
 // The version without a context is the one everything else calls, and it must
 // keep behaving exactly as before.
 func TestWaitForProcessStillTimesOut(t *testing.T) {
