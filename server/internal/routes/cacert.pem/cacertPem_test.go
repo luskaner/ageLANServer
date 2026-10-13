@@ -17,16 +17,17 @@ type mockGame struct {
 	title string
 }
 
-func (m *mockGame) Title() string { return m.title }
-func (m *mockGame) Resources() models.Resources { return nil }
-func (m *mockGame) Items() models.Items { return nil }
+func (m *mockGame) Title() string                                         { return m.title }
+func (m *mockGame) Resources() models.Resources                           { return nil }
+func (m *mockGame) Items() models.Items                                   { return nil }
 func (m *mockGame) LeaderboardDefinitions() models.LeaderboardDefinitions { return nil }
-func (m *mockGame) PresenceDefinitions() models.PresenceDefinitions { return nil }
-func (m *mockGame) BattleServers() models.BattleServers { return nil }
-func (m *mockGame) Users() models.Users { return nil }
-func (m *mockGame) Advertisements() models.Advertisements { return nil }
-func (m *mockGame) ChatChannels() models.ChatChannels { return nil }
-func (m *mockGame) Sessions() models.Sessions { return nil }
+func (m *mockGame) PresenceDefinitions() models.PresenceDefinitions       { return nil }
+func (m *mockGame) BattleServers() models.BattleServers                   { return nil }
+func (m *mockGame) Users() models.Users                                   { return nil }
+func (m *mockGame) Advertisements() models.Advertisements                 { return nil }
+func (m *mockGame) ChatChannels() models.ChatChannels                     { return nil }
+func (m *mockGame) Sessions() models.Sessions                             { return nil }
+func (m *mockGame) CustomFiles() models.CustomFiles                       { return nil }
 
 func TestCacertPemNotFoundWhenNoFolder(t *testing.T) {
 	// This test will call os.Executable which returns the test binary path, and CertificatePairFolder will create a folder

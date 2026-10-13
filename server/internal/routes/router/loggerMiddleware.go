@@ -45,12 +45,25 @@ func (w *ResponseWriterWrapper) Header() http.Header {
 	return w.ResponseWriter.Header()
 }
 
+// Unwrap lets http.NewResponseController reach the underlying connection, which
+// handlers need to adjust per-request deadlines (an upload raises the read
+// deadline beyond the server-wide one). Without it the chain stops here.
+func (w *ResponseWriterWrapper) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 func (w *ResponseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if hijacker, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return hijacker.Hijack()
 	}
 	return nil, nil, fmt.Errorf("ResponseWriter does not implement http.Hijacker")
 }
+
+// maxLoggedBodyBytes caps what goes into the communication log. A savegame
+// upload is megabytes, and it was already read into memory in full to serve it:
+// writing it out base64-encoded would add a log entry an order of magnitude
+// larger than the file for no debugging value.
+const maxLoggedBodyBytes = 4 << 10
 
 func NewLoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +79,10 @@ func NewLoggingMiddleware(next http.Handler) http.Handler {
 		if r.Method != http.MethodHead && len(responseBody) > 0 {
 			hash = sha512.Sum512(responseBody)
 		}
-		if len(responseBody) > 4_096 {
+		if len(requestBody) > maxLoggedBodyBytes {
+			requestBody = nil
+		}
+		if len(responseBody) > maxLoggedBodyBytes {
 			responseBody = []byte{}
 		}
 		url := r.URL

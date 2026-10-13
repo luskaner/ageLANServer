@@ -42,7 +42,8 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 
 ### Partially proxied
 
-- `api.ageofempires.com`: except text moderation so it works normally even without internet.
+- `api.ageofempires.com`: except text moderation and the `MatchContent` endpoints (multiplayer savegame and
+  replay upload/download) so it works normally even without internet.
 - `cdn.ageofempires.com`: except server status so it always shows online.
 
 Note proxied domains only override part of the official functionality but retain the rest of it.
@@ -81,6 +82,25 @@ The configuration file sent to the client upon login is `login.json` inside the 
 Some options
 are
 easy to understand while others might require researching.
+
+### Custom files
+
+The `/api/MatchContent/` endpoints serve multiplayer savegames and replays: the host uploads the file, the
+remaining players download it to restore the match. Without them the game fails with "Failed to upload/download
+custom files".
+
+Files are stored under a per-game folder (by default `<TEMP>\ageLANServer\custom-files\<game>`), evicted least
+recently first to stay under the accumulated quota, and swept after the configured TTL. A `.part` file is used
+while uploading; it is renamed into place once the `matchId` is known, so a crash mid-upload leaves at most an
+orphan `.part` that is purged on the next startup.
+
+The TTL is what removes a file, not a clean exit: stopping the server leaves the payloads on disk, and a later
+startup removes whatever it finds older than the TTL. The index is not persisted, so after a restart those
+leftovers are no longer reachable and are only reclaimed by that later startup. Up to `MaxFileSize` the endpoints
+run outside the global body-size cap, and the upload raises the read deadline for its own request; bodies larger
+than 4 KiB are left out of the communication log rather than base64-encoded into a multi-megabyte line.
+
+See the `[CustomFiles]` section of [`config.toml`](resources/config/config.toml).
 
 ### Cloud
 

@@ -34,6 +34,18 @@ type Internet struct {
 	IP      string
 }
 
+// CustomFiles configures the /api/MatchContent/ endpoints (multiplayer
+// savegame and replay upload/download). Sizes and the TTL are kept as strings
+// and validated once at startup, so a typo fails the boot instead of the first
+// upload.
+type CustomFiles struct {
+	Enabled      bool
+	Folder       string
+	MaxFileSize  string
+	MaxTotalSize string
+	Expiry       string
+}
+
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
@@ -41,6 +53,7 @@ type Configuration struct {
 	Internet               Internet
 	Announcement           Announcement
 	Games                  Games
+	CustomFiles            CustomFiles
 	// Sign makes the server re-sign the catalogues it serves instead of
 	// replaying the signatures captured alongside them in
 	// resources/responses. Off by default: the captured ones are what an

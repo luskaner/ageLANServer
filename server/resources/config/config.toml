@@ -67,3 +67,28 @@ Port = 31978
 # Multicast group to respond to (IPv4 only).
 # If changed, the launchers will need to specify the address in Server.AnnounceMulticastGroups.
 MulticastGroup = '239.31.97.8'
+
+# CONFIGURING CUSTOM FILES
+# Serves the /api/MatchContent/ endpoints used by the game to upload and
+# download multiplayer savegames and replays. Without it, restoring a saved
+# multiplayer game fails with "Failed to upload/download custom files".
+[CustomFiles]
+
+# Whether to enable the endpoints. When disabled the routes answer 404.
+Enabled = true
+
+# Folder where the files are stored. If 'auto', uses the system temp folder:
+# <TEMP>\ageLANServer\custom-files\<game>\ (Unix: /tmp/ageLANServer/...).
+Folder = 'auto'
+
+# Maximum size of a single file. Long matches and custom content can make a
+# .aoe2mpgame several MB. Accepts B/KB/MB/GB suffixes.
+MaxFileSize = '32MB'
+
+# Maximum accumulated size per game. When exceeded, the oldest files are
+# evicted first.
+MaxTotalSize = '256MB'
+
+# How long a custom file is kept since its upload. Accepts Go durations
+# (e.g. 12h, 30m, 1h30m). Files are also purged at startup if older than this.
+Expiry = '12h'

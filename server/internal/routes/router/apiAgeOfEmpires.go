@@ -6,6 +6,7 @@ import (
 	"github.com/luskaner/ageLANServer/common"
 	"github.com/luskaner/ageLANServer/common/game"
 	"github.com/luskaner/ageLANServer/server/internal/routes/apiAgeOfEmpires/textmoderation"
+	"github.com/luskaner/ageLANServer/server/internal/routes/matchcontent"
 )
 
 type ApiAgeOfEmpires struct {
@@ -24,6 +25,8 @@ func (a *ApiAgeOfEmpires) Initialize(_ string) bool {
 func (a *ApiAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) http.Handler {
 	a.Proxy = NewProxy(a.Name(), func(_ string, _ http.Handler) http.Handler {
 		a.group.HandleFunc("POST", "/textmoderation", textmoderation.TextModeration)
+		a.group.HandleFunc("POST", "/api/MatchContent/", matchcontent.Upload)
+		a.group.HandleFunc("GET", "/api/MatchContent/{matchId}", matchcontent.Download)
 		return a.group.mux
 	})
 	return a.Proxy.InitializeRoutes(gameId, next)

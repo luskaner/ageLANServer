@@ -16,4 +16,5 @@ const (
 	ErrInvalidId
 	ErrInvalidAuthentication
 	ErrSigningKey
+	ErrCustomFiles
 )

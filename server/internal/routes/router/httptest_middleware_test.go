@@ -49,6 +49,39 @@ func TestMaxBodySizeMiddleware_httptest(t *testing.T) {
 			t.Fatalf("want 413 got %d", rr.Code)
 		}
 	})
+
+	// A path that only reaches a raised prefix before normalisation must keep
+	// the global cap: the handler it lands on is not the one that would apply
+	// its own, larger limit.
+	t.Run("TraversalKeepsGlobalLimit", func(t *testing.T) {
+		req := httptest.NewRequest("POST", "/api/MatchContent/../x", strings.NewReader("this body is longer than the ten byte limit"))
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, req)
+		if rr.Code != http.StatusRequestEntityTooLarge {
+			t.Fatalf("want 413 got %d", rr.Code)
+		}
+	})
+
+	t.Run("RaisedPrefixSkipsLimit", func(t *testing.T) {
+		for _, p := range []string{"/api/MatchContent/12", "/api/MatchContent/", "/api/MatchContent"} {
+			req := httptest.NewRequest("POST", p, strings.NewReader("this body is longer than the ten byte limit"))
+			rr := httptest.NewRecorder()
+			h.ServeHTTP(rr, req)
+			if rr.Code != http.StatusOK {
+				t.Fatalf("%s: want 200 got %d", p, rr.Code)
+			}
+		}
+	})
+
+	// A prefix that only shares its first characters is a different route.
+	t.Run("SiblingPrefixKeepsLimit", func(t *testing.T) {
+		req := httptest.NewRequest("POST", "/api/MatchContentElsewhere/", strings.NewReader("this body is longer than the ten byte limit"))
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, req)
+		if rr.Code != http.StatusRequestEntityTooLarge {
+			t.Fatalf("want 413 got %d", rr.Code)
+		}
+	})
 }
 
 // TestResponseWriterWrapper_httptest valida que el wrapper registra correctamente

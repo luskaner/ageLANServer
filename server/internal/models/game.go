@@ -17,6 +17,7 @@ type Game interface {
 	Advertisements() Advertisements
 	ChatChannels() ChatChannels
 	Sessions() Sessions
+	CustomFiles() CustomFiles
 }
 
 func G(r *http.Request) Game {
@@ -37,6 +38,7 @@ type MainGame struct {
 	leaderboardDefinitions LeaderboardDefinitions
 	items                  Items
 	presenceDefinitions    PresenceDefinitions
+	customFiles            CustomFiles
 	title                  string
 }
 
@@ -56,6 +58,8 @@ type InstanceOpts struct {
 	LeaderboardDefinitions LeaderboardDefinitions
 	PresenceDefinitions    PresenceDefinitions
 	Items                  Items
+	CustomFiles            CustomFiles
+	CustomFilesOpts        *CustomFilesOpts
 }
 
 func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
@@ -86,6 +90,9 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	if opts.Instances.Sessions == nil {
 		opts.Instances.Sessions = &MainSessions{}
 	}
+	if opts.Instances.CustomFiles == nil {
+		opts.Instances.CustomFiles = &MainCustomFiles{}
+	}
 	game := &MainGame{
 		battleServers:  opts.Instances.BattleServers,
 		resources:      opts.Instances.Resources,
@@ -93,6 +100,7 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 		advertisements: opts.Instances.Advertisements,
 		chatChannels:   opts.Instances.ChatChannels,
 		sessions:       opts.Instances.Sessions,
+		customFiles:    opts.Instances.CustomFiles,
 		title:          gameId,
 	}
 	game.battleServers.Initialize(BattleServersStore[gameId], opts.BattleServer)
@@ -101,6 +109,7 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	game.advertisements.Initialize(game.users, game.battleServers)
 	game.chatChannels.Initialize(game.resources.ChatChannels())
 	game.sessions.Initialize()
+	game.customFiles.Initialize(gameId, opts.Instances.CustomFilesOpts)
 	if itemLocations, ok := game.resources.ArrayFiles()["itemLocations.json"]; ok {
 		if opts.Instances.Items == nil {
 			opts.Instances.Items = &MainItems{}
@@ -166,4 +175,8 @@ func (g *MainGame) Items() Items {
 
 func (g *MainGame) PresenceDefinitions() PresenceDefinitions {
 	return g.presenceDefinitions
+}
+
+func (g *MainGame) CustomFiles() CustomFiles {
+	return g.customFiles
 }

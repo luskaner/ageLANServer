@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,9 +33,9 @@ import (
 	"github.com/luskaner/ageLANServer/common/paths"
 	"github.com/luskaner/ageLANServer/launcher-common/ui"
 	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
 	"github.com/luskaner/ageLANServer/server/internal/routes/router"
 )
 
@@ -132,6 +134,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		for _, f := range closables {
 			_ = f.Close()
 		}
+		// Stop the custom-file sweepers. Their payloads stay in the system temp
+		// folder until CustomFiles.Expiry removes them, so a restart within the
+		// TTL is not what discards a pending savegame.
+		for _, g := range initializer.Games {
+			if cf := g.CustomFiles(); cf != nil {
+				cf.Close()
+			}
+		}
 		_ = fileLockUnlockFn(lock)
 	}()
 	if internal.Id, err = uuidParseFn(values.Id); err != nil {
@@ -198,6 +208,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 	internal.GeneratePlatformUserId = cfg.GeneratePlatformUserId
 	internal.Sign = cfg.Sign
+	if err = applyCustomFilesConfig(cfg); err != nil {
+		logger.Fail("Invalid CustomFiles configuration: %s", err)
+		exitCode = internal.ErrCustomFiles
+		return
+	}
 	var servers []*http.Server
 	internal.InitializeStopSignal()
 	for gameId := range gameSet.Iter() {
@@ -371,6 +386,11 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"Announcement.MulticastGroup": common.AnnounceMulticastGroup,
 		"Announcement.Port":           common.AnnouncePort,
 		"Games.Enabled":               []string{},
+		"CustomFiles.Enabled":         true,
+		"CustomFiles.Folder":          "auto",
+		"CustomFiles.MaxFileSize":     "32MB",
+		"CustomFiles.MaxTotalSize":    "256MB",
+		"CustomFiles.Expiry":          "12h",
 	}
 	for g := range game.SupportedGames.Iter() {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
@@ -409,4 +429,75 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		os.Exit(common.ErrConfigParse)
 	}
 	return &c, usedFile
+}
+
+// applyCustomFilesConfig validates the CustomFiles section and publishes the
+// resolved values in the internal runtime globals. Sizes accept the usual
+// B/KB/MB/GB suffixes; the TTL is a Go duration such as 12h or 5m.
+func applyCustomFilesConfig(cfg *internal.Configuration) error {
+	internal.CustomFilesEnabled = cfg.CustomFiles.Enabled
+	internal.CustomFilesFolder = cfg.CustomFiles.Folder
+	if !cfg.CustomFiles.Enabled {
+		// Nothing reads the limits or the TTL while the endpoints are off, so a
+		// typo in them must not stop a server that does not use the feature.
+		return nil
+	}
+	maxFileSize, err := parseByteSize(cfg.CustomFiles.MaxFileSize)
+	if err != nil {
+		return fmt.Errorf("MaxFileSize: %w", err)
+	}
+	maxTotalSize, err := parseByteSize(cfg.CustomFiles.MaxTotalSize)
+	if err != nil {
+		return fmt.Errorf("MaxTotalSize: %w", err)
+	}
+	if maxFileSize <= 0 {
+		return fmt.Errorf("MaxFileSize must be greater than zero")
+	}
+	if maxTotalSize <= 0 {
+		return fmt.Errorf("MaxTotalSize must be greater than zero")
+	}
+	if maxFileSize > maxTotalSize {
+		return fmt.Errorf("MaxFileSize (%d) must not exceed MaxTotalSize (%d)", maxFileSize, maxTotalSize)
+	}
+	expiry, err := time.ParseDuration(strings.TrimSpace(cfg.CustomFiles.Expiry))
+	if err != nil {
+		return fmt.Errorf("Expiry: %w", err)
+	}
+	if expiry <= 0 {
+		return fmt.Errorf("Expiry must be greater than zero")
+	}
+	internal.CustomFilesMaxFileSize = maxFileSize
+	internal.CustomFilesMaxTotalSize = maxTotalSize
+	internal.CustomFilesExpiry = expiry
+	return nil
+}
+
+func parseByteSize(value string) (int64, error) {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if value == "" {
+		return 0, errors.New("empty size")
+	}
+	units := []struct {
+		suffix     string
+		multiplier int64
+	}{
+		{"GB", 1 << 30},
+		{"G", 1 << 30},
+		{"MB", 1 << 20},
+		{"M", 1 << 20},
+		{"KB", 1 << 10},
+		{"K", 1 << 10},
+		{"B", 1},
+	}
+	for _, unit := range units {
+		if strings.HasSuffix(value, unit.suffix) {
+			number := strings.TrimSpace(strings.TrimSuffix(value, unit.suffix))
+			n, err := strconv.ParseInt(number, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			return n * unit.multiplier, nil
+		}
+	}
+	return strconv.ParseInt(value, 10, 64)
 }

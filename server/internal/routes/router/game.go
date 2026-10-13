@@ -23,6 +23,7 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/party"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/playerreport"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
+	"github.com/luskaner/ageLANServer/server/internal/routes/matchcontent"
 	"github.com/luskaner/ageLANServer/server/internal/routes/msstore"
 	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
 )
@@ -298,5 +299,11 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE2 || gameId == game.AoE3 {
 		g.group.HandleFunc("GET", "/cloudfiles/", cloudfiles.Cloudfiles)
 	}
+
+	// Custom files (savegames/replays). Registered here and in
+	// apiAgeOfEmpires.go because each title reaches them through a different
+	// host, so no gameId condition is needed.
+	g.group.HandleFunc("POST", "/api/MatchContent/", matchcontent.Upload)
+	g.group.HandleFunc("GET", "/api/MatchContent/{matchId}", matchcontent.Download)
 	return SessionMiddleware(g.group.mux)
 }

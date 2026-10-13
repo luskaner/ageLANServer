@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
@@ -97,11 +98,11 @@ func (f *fakeResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 	i.JSON(w, resp)
 }
 
-func (f *fakeResources) LoginData() []i.A                        { return f.loginData }
+func (f *fakeResources) LoginData() []i.A                                 { return f.loginData }
 func (f *fakeResources) ChatChannels() map[string]*models.MainChatChannel { return f.chatChannels }
-func (f *fakeResources) ArrayFiles() map[string]i.A              { return f.arrayFiles }
-func (f *fakeResources) SignedAssets() map[string][]byte          { return f.signedAssets }
-func (f *fakeResources) CloudFiles() models.CloudFiles            { return f.cloudFiles }
+func (f *fakeResources) ArrayFiles() map[string]i.A                       { return f.arrayFiles }
+func (f *fakeResources) SignedAssets() map[string][]byte                  { return f.signedAssets }
+func (f *fakeResources) CloudFiles() models.CloudFiles                    { return f.cloudFiles }
 
 // -------------------------------------------------------------------
 // helpers
@@ -125,9 +126,19 @@ func newTestGame(t *testing.T, gameId string) models.Game {
 	opts := &models.CreateMainGameOpts{
 		Instances: &models.InstanceOpts{
 			Resources: fake,
+			// Enable custom files on a per-test temp folder so the
+			// /api/MatchContent/ routes are reachable (they 404 when disabled).
+			CustomFilesOpts: &models.CustomFilesOpts{
+				Enabled:      true,
+				Folder:       t.TempDir(),
+				MaxFileSize:  1 << 20,
+				MaxTotalSize: 4 << 20,
+				Expiry:       time.Hour,
+			},
 		},
 	}
 	g := models.CreateMainGame(gameId, opts)
+	t.Cleanup(g.CustomFiles().Close)
 	return g
 }
 
@@ -515,6 +526,8 @@ func buildExpectedRoutes(gameId string) []routeCase {
 	add("GET", "/game/cloud/getTempCredentials")
 
 	add("GET", "/game/msstore/getStoreTokens")
+
+	add("POST", "/api/MatchContent/")
 
 	add("GET", "/wss/")
 
