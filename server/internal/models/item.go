@@ -79,6 +79,10 @@ type Attribute struct {
 	Mtype  int    `json:"mtype,omitempty,omitzero"`
 }
 
+// isNewAttributeKey is a client side transient flag. It never belongs to the
+// persisted item metadata nor to the att representation sent to the client.
+const isNewAttributeKey = "is_new"
+
 type ReadOnlyItemMetadata struct {
 	attributes map[string]Attribute
 	other      map[string]json.RawMessage
@@ -118,7 +122,10 @@ func (r *ReadOnlyItemMetadata) UnmarshalJSON(data []byte) error {
 }
 
 type ItemMetadata struct {
-	attributes map[string]string
+	// attributes keeps the complete client side attribute shape so that the
+	// source/mtype declared by the item definitions survives being saved and
+	// loaded back. Encode() hands them to the client as the att object.
+	attributes map[string]Attribute
 	other      map[string]any
 }
 
@@ -129,10 +136,7 @@ func NewItemMetadataRaw(metadata []byte) ItemMetadata {
 		return itemMetadata
 	}
 	if len(roMetadata.attributes) > 0 {
-		itemMetadata.attributes = make(map[string]string, len(roMetadata.attributes))
-		for k, v := range roMetadata.attributes {
-			itemMetadata.attributes[k] = v.Value
-		}
+		itemMetadata.attributes = maps.Clone(roMetadata.attributes)
 	}
 	if len(roMetadata.other) > 0 {
 		itemMetadata.other = make(map[string]any, len(roMetadata.other))
@@ -152,7 +156,7 @@ func (i *ItemMetadata) MarshalJSON() ([]byte, error) {
 		all["attributes"] = i.attributes
 	}
 	if len(i.other) > 0 {
-		all["other"] = maps.Clone(i.other)
+		all["other"] = i.other
 	}
 	return json.Marshal(all)
 }
@@ -163,8 +167,20 @@ func (i *ItemMetadata) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if attributes, ok := all["attributes"]; ok {
-		if err := json.Unmarshal(attributes, &i.attributes); err != nil {
+		var raw map[string]json.RawMessage
+		if err := json.Unmarshal(attributes, &raw); err != nil {
 			return err
+		}
+		i.attributes = make(map[string]Attribute, len(raw))
+		for k, v := range raw {
+			if k == isNewAttributeKey {
+				continue
+			}
+			attr, err := unmarshalAttribute(v)
+			if err != nil {
+				return err
+			}
+			i.attributes[k] = attr
 		}
 	}
 	if other, ok := all["other"]; ok {
@@ -175,8 +191,24 @@ func (i *ItemMetadata) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// unmarshalAttribute reads an attribute saved as an att object. Documents
+// written before the attributes kept their source/mtype store the value alone,
+// those are read back with the values AoE4's item definitions declare for
+// persistent attributes.
+func unmarshalAttribute(data json.RawMessage) (Attribute, error) {
+	var attr Attribute
+	if err := json.Unmarshal(data, &attr); err == nil {
+		return attr, nil
+	}
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return Attribute{}, err
+	}
+	return Attribute{Value: value, Source: 1, Mtype: 1}, nil
+}
+
 func (i *ItemMetadata) Encode() (result string) {
-	all := make(map[string]any)
+	all := make(map[string]any, len(i.other)+1)
 	if len(i.attributes) > 0 {
 		all["att"] = i.attributes
 	}
@@ -189,15 +221,46 @@ func (i *ItemMetadata) Encode() (result string) {
 
 func (i *ItemMetadata) GetAttribute(key string) (string, bool) {
 	attr, ok := i.attributes[key]
-	return attr, ok
+	if !ok {
+		return "", false
+	}
+	return attr.Value, true
 }
 
-func (i *ItemMetadata) UpdateAttribute(key string, value string) {
-	i.attributes[key] = value
+// UpdateAttribute stores value under key and reports whether it was accepted.
+// Keys that are not valid item metadata, such as the transient is_new flag,
+// are rejected instead of being silently dropped.
+func (i *ItemMetadata) UpdateAttribute(key string, value string) bool {
+	if key == isNewAttributeKey {
+		return false
+	}
+	if i.attributes == nil {
+		i.attributes = make(map[string]Attribute)
+	}
+	attr := i.attributes[key]
+	if attr.Source == 0 {
+		attr.Source = 1
+	}
+	if attr.Mtype == 0 {
+		attr.Mtype = 1
+	}
+	attr.Value = value
+	i.attributes[key] = attr
+	return true
 }
 
 func (i *ItemMetadata) UpdateOther(key string, value any) {
+	if i.other == nil {
+		i.other = make(map[string]any)
+	}
 	i.other[key] = value
+}
+
+func (i *ItemMetadata) RemoveOther(key string) {
+	if i.other == nil {
+		return
+	}
+	delete(i.other, key)
 }
 
 type ItemDefinition interface {
@@ -594,6 +657,71 @@ func (d *ReadOnlyItemDefinitions) GetByName(name string) (ItemDefinition, bool) 
 	return itemDefinition, ok
 }
 
+// AoE IV items that the client places outside of the regular equipment slots,
+// mirroring the static location and eslots data the game ships with.
+const (
+	coatOfArmsDefinitionId int32 = 451923
+	monumentDefinitionId   int32 = 451960
+	portraitDefinitionId   int32 = 452595
+)
+
+const (
+	portraitLocationId   int32 = 3
+	coatOfArmsLocationId int32 = 4
+	monumentLocationId   int32 = 5
+)
+
+// sigilPosAttributeKey holds the sigil position the client reports through
+// updateItemAttributes, so it must never be seeded from the definition.
+const sigilPosAttributeKey = "sigil_pos"
+
+const defaultSigilPos = "001_centre_large_single"
+
+// categoryDefaultEslots maps an AoE IV item category to the eslot value the
+// client expects in the item metadata. It applies to every definition holding
+// one of these categories, not only to the Coat of Arms.
+var categoryDefaultEslots = []struct {
+	categoryID int32
+	slot       string
+}{
+	{1405716, "0"},
+	{1405715, "1"},
+	{1450297, "2"},
+	{1405717, "3"},
+	{1450298, "4"},
+	{1405720, "5"},
+	{1450299, "6"},
+	{1405718, "7"},
+	{1407415, "8"},
+	{1405719, "9"},
+	{1450300, "10"},
+}
+
+// setDefaultEslot seeds eslot from the categories of an item definition.
+func (i *ItemMetadata) setDefaultEslot(categories mapset.Set[ItemCategory]) {
+	for _, category := range categories.ToSlice() {
+		for _, defaultEslot := range categoryDefaultEslots {
+			if category.GetId() == defaultEslot.categoryID {
+				i.UpdateOther("eslot", defaultEslot.slot)
+				return
+			}
+		}
+	}
+}
+
+// defaultItemLocationId returns the location new profiles start an item at.
+func defaultItemLocationId(definitionId int32) int32 {
+	switch definitionId {
+	case portraitDefinitionId:
+		return portraitLocationId
+	case coatOfArmsDefinitionId:
+		return coatOfArmsLocationId
+	case monumentDefinitionId:
+		return monumentLocationId
+	}
+	return 0
+}
+
 type ItemsUpgradableDefaultData struct {
 	InitialUpgradableDefaultData[*map[int32]*MainItem]
 	gameId      string
@@ -631,16 +759,31 @@ func (is *ItemsUpgradableDefaultData) Default() *map[int32]*MainItem {
 		metadata := ItemMetadata{}
 		if md := itemDefinition.GetMetadata(); md != nil {
 			if attrs := md.attributes; len(attrs) > 0 {
-				metadata.attributes = make(map[string]string, len(attrs))
+				metadata.attributes = make(map[string]Attribute, len(attrs))
 				for k, v := range attrs {
-					metadata.attributes[k] = v.Value
+					// sigil_pos is written by the client through updateItemAttributes,
+					// so the position declared by the definition is not a valid
+					// starting value. is_new is a transient client flag.
+					if k == sigilPosAttributeKey || k == isNewAttributeKey {
+						continue
+					}
+					metadata.attributes[k] = v
 				}
 			}
 		}
+
+		// Starting sigil position of the Coat of Arms. updateItemAttributes
+		// overwrites it whenever the client changes the position.
+		if itemDefinition.GetId() == coatOfArmsDefinitionId {
+			metadata.UpdateAttribute(sigilPosAttributeKey, defaultSigilPos)
+		}
+		metadata.setDefaultEslot(itemDefinition.GetCategories())
+
 		items = append(items, &MainItem{
 			id:              itemId,
 			metadata:        metadata,
 			definitionId:    itemDefinition.GetId(),
+			locationId:      defaultItemLocationId(itemDefinition.GetId()),
 			durabilityCount: 1,
 			creationDate:    time.Now().UTC(),
 			// Either another item id or location id as defined in statically per game
