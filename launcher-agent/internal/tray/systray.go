@@ -1,3 +1,5 @@
+//go:build !darwin || cgo
+
 package tray
 
 import "github.com/gogpu/systray"
