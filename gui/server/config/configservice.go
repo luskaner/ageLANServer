@@ -98,6 +98,22 @@ func (s *ConfigService) SelectConfigDestination() (string, error) {
 	return path, nil
 }
 
+// SelectConfigSaveAsDestination opens a native dialog for an existing configuration's new path.
+func (s *ConfigService) SelectConfigSaveAsDestination(fileName string) (string, error) {
+	path, err := application.Get().Dialog.SaveFile().
+		SetMessage("Choose where to save the configuration copy").
+		SetFilename(filepath.Base(fileName)).
+		AddFilter("TOML files", "*.toml").
+		PromptForSingleSelection()
+	if err != nil {
+		return "", fmt.Errorf("open configuration save-as picker: %w", err)
+	}
+	if path == "" {
+		return "", errors.New("no configuration destination selected")
+	}
+	return path, nil
+}
+
 // CreateConfigFile validates a new document and creates it at the requested path.
 func (s *ConfigService) CreateConfigFile(path string, configuration Configuration, overwrite bool) (*ConfigFile, error) {
 	template, err := s.OpenTemplate()
@@ -152,6 +168,44 @@ func (s *ConfigService) SaveConfiguration(path string, configuration Configurati
 		return fmt.Errorf("validate edited configuration file %q: %w", path, err)
 	}
 	return writeConfigFile(path, updated)
+}
+
+// SaveConfigurationAs validates and saves an edited configuration to a new path.
+func (s *ConfigService) SaveConfigurationAs(sourcePath string, destination string, configuration Configuration, overwrite bool) (*ConfigFile, error) {
+	if sourcePath == "" || destination == "" {
+		return nil, errors.New("configuration source and destination are required")
+	}
+	content, err := os.ReadFile(sourcePath)
+	if err != nil {
+		return nil, fmt.Errorf("read configuration file %q: %w", sourcePath, err)
+	}
+	if _, err := parseConfiguration(content); err != nil {
+		return nil, fmt.Errorf("parse configuration file %q: %w", sourcePath, err)
+	}
+	if validationErrors := validateConfiguration(&configuration); len(validationErrors) > 0 {
+		return nil, fmt.Errorf("configuration is invalid: %s", validationErrors[0].Message)
+	}
+	updated, err := configurationDocument(content, configuration)
+	if err != nil {
+		return nil, fmt.Errorf("edit configuration file %q: %w", sourcePath, err)
+	}
+	if _, err := parseConfiguration(updated); err != nil {
+		return nil, fmt.Errorf("validate edited configuration file: %w", err)
+	}
+
+	if _, err := os.Stat(destination); err == nil && !overwrite {
+		return nil, fmt.Errorf("configuration file %q already exists; confirmation required", destination)
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("check configuration destination %q: %w", destination, err)
+	}
+	if overwrite {
+		if err := writeConfigFile(destination, updated); err != nil {
+			return nil, err
+		}
+	} else if err := writeNewConfigFile(destination, updated); err != nil {
+		return nil, err
+	}
+	return s.readConfigFile(destination)
 }
 
 // configurationDocument applies editable values without serializing the whole model.

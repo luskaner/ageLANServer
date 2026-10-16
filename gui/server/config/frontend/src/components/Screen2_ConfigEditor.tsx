@@ -101,8 +101,8 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
         }
 
         // Validate Announcement MulticastGroup (Class D Multicast 224.0.0.0 - 239.255.255.255)
-    if (config.Announcement.Enabled && config.Announcement.Multicast &&
-      !validateMulticastIPv4(config.Announcement.MulticastGroup)) {
+        if (config.Announcement.Enabled && config.Announcement.Multicast &&
+            !validateMulticastIPv4(config.Announcement.MulticastGroup)) {
             newErrors['Announcement.MulticastGroup'] = 'Valid Multicast IPv4 address required (Range: 224.0.0.0 to 239.255.255.255, e.g., 239.31.97.8)';
         }
 
@@ -247,6 +247,43 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
         }
     };
 
+    const handleSaveAs = async () => {
+        if (hasErrors) return;
+        try {
+            const destination = await ConfigService.SelectConfigSaveAsDestination(fileName);
+            if (!destination) return;
+
+            try {
+                const saved = await ConfigService.SaveConfigurationAs(
+                    fileName,
+                    destination,
+                    toServiceConfiguration(config),
+                    false,
+                );
+                if (!saved) throw new Error('The saved configuration was not returned.');
+                onSaved(saved);
+                triggerToast('Configuration saved successfully to the new location.');
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                if (!message.includes('confirmation required') || !window.confirm('The selected file already exists. Overwrite it?')) {
+                    throw error;
+                }
+                const saved = await ConfigService.SaveConfigurationAs(
+                    fileName,
+                    destination,
+                    toServiceConfiguration(config),
+                    true,
+                );
+                if (!saved) throw new Error('The overwritten configuration was not returned.');
+                onSaved(saved);
+                triggerToast('Configuration overwritten successfully.');
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            triggerToast(`Error saving configuration: ${message}`);
+        }
+    };
+
     const handleCopyToClipboard = () => {
         navigator.clipboard.writeText(originalContent);
         triggerToast('TOML content copied to clipboard.');
@@ -286,6 +323,17 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     >
                         View TOML
                     </Button>
+
+                    {!isNew && (
+                        <Button
+                            appearance="secondary"
+                            icon={<Save24Regular />}
+                            onClick={handleSaveAs}
+                            disabled={hasErrors}
+                        >
+                            Save As
+                        </Button>
+                    )}
 
                     <Button
                         appearance="primary"

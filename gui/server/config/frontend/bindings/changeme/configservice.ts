@@ -47,6 +47,13 @@ export function SaveConfiguration(path: string, configuration: $models.Configura
 }
 
 /**
+ * SaveConfigurationAs validates and saves an edited configuration to a new path.
+ */
+export function SaveConfigurationAs(sourcePath: string, destination: string, configuration: $models.Configuration, overwrite: boolean): $CancellablePromise<$models.ConfigFile | null> {
+    return $Call.ByID(1881804132, sourcePath, destination, configuration, overwrite);
+}
+
+/**
  * SelectConfigDestination opens the native dialog used for a new configuration.
  */
 export function SelectConfigDestination(): $CancellablePromise<string> {
@@ -59,4 +66,11 @@ export function SelectConfigDestination(): $CancellablePromise<string> {
  */
 export function SelectConfigFile(): $CancellablePromise<$models.ConfigFile | null> {
     return $Call.ByID(962140871);
+}
+
+/**
+ * SelectConfigSaveAsDestination opens a native dialog for an existing configuration's new path.
+ */
+export function SelectConfigSaveAsDestination(fileName: string): $CancellablePromise<string> {
+    return $Call.ByID(1296201892, fileName);
 }

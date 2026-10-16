@@ -257,6 +257,74 @@ func TestSaveConfigurationReportsMissingPath(t *testing.T) {
 	}
 }
 
+func TestSaveConfigurationAsPreservesSourceAndRequiresOverwriteConfirmation(t *testing.T) {
+	directory := t.TempDir()
+	sourcePath := filepath.Join(directory, "source.toml")
+	destinationPath := filepath.Join(directory, "destination.toml")
+	original := []byte(`# Preserve this comment.
+	Log = false
+	GeneratePlatformUserId = false
+	Authentication = 'disabled'
+
+	[Games]
+	Enabled = ['age2']
+
+	[Games.age2]
+	Hosts = ['127.0.0.1']
+
+	[Games.age1]
+	Hosts = ['127.0.0.2']
+
+	[Games.age3]
+	Hosts = ['127.0.0.3']
+
+	[Games.age4]
+	Hosts = ['127.0.0.4']
+
+	[Games.athens]
+	Hosts = ['127.0.0.5']
+
+	[Announcement]
+	Enabled = true
+	Multicast = false
+	Port = 31978
+	MulticastGroup = '239.31.97.8'
+	Unknown = 'preserve me'
+	`)
+	if err := os.WriteFile(sourcePath, original, 0600); err != nil {
+		t.Fatalf("create source configuration: %v", err)
+	}
+	if err := os.WriteFile(destinationPath, []byte("existing destination"), 0600); err != nil {
+		t.Fatalf("create destination configuration: %v", err)
+	}
+	configuration := Configuration{
+		Authentication: "disabled",
+		Games:          GamesConfiguration{Enabled: []string{"age2"}, Age2: GameConfig{Hosts: []string{"127.0.0.1"}}},
+		Announcement:   AnnouncementConfig{Port: 32000, MulticastGroup: "239.31.97.8"},
+	}
+	service := &ConfigService{}
+	if _, err := service.SaveConfigurationAs(sourcePath, destinationPath, configuration, false); err == nil || !strings.Contains(err.Error(), "confirmation required") {
+		t.Fatalf("SaveConfigurationAs error = %v, want overwrite confirmation", err)
+	}
+	file, err := service.SaveConfigurationAs(sourcePath, destinationPath, configuration, true)
+	if err != nil {
+		t.Fatalf("SaveConfigurationAs returned an error: %v", err)
+	}
+	if file.Path != destinationPath || file.Config.Announcement.Port != 32000 {
+		t.Fatalf("unexpected saved configuration: %+v", file)
+	}
+	if !strings.Contains(file.Content, "# Preserve this comment.") || !strings.Contains(file.Content, "Unknown = 'preserve me'") {
+		t.Fatalf("save-as did not preserve unedited content: %s", file.Content)
+	}
+	sourceContent, err := os.ReadFile(sourcePath)
+	if err != nil {
+		t.Fatalf("read source configuration: %v", err)
+	}
+	if string(sourceContent) != string(original) {
+		t.Fatalf("save-as changed source configuration: %s", sourceContent)
+	}
+}
+
 func TestWriteNewConfigFileDoesNotOverwrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "nested", "config.toml")
 	if err := writeNewConfigFile(path, []byte("new")); err != nil {
