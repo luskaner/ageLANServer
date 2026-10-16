@@ -11,6 +11,7 @@ export interface IPv4InputProps {
     min?: string;
     name?: string;
     placeholder?: string;
+    showValidationMessage?: boolean;
 }
 
 const emptySegments = ['', '', '', ''];
@@ -108,6 +109,7 @@ export const IPv4Input: React.FC<IPv4InputProps> = ({
     min,
     name,
     placeholder,
+    showValidationMessage = true,
 }) => {
     const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
     const segments = useMemo(() => parseSegments(value), [value]);
@@ -188,7 +190,9 @@ export const IPv4Input: React.FC<IPv4InputProps> = ({
                     </React.Fragment>
                 ))}
             </div>
-            {validationMessage && <span className="ipv4-input-error">{validationMessage}</span>}
+            {showValidationMessage && (
+                <span className="ipv4-input-error">{validationMessage ?? '\u00a0'}</span>
+            )}
         </div>
     );
 };

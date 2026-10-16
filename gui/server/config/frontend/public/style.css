@@ -576,6 +576,10 @@ body {
     }
 }
 
+.win-host-field {
+    min-height: 56px;
+}
+
 .win-host-input-area .win-input {
     width: 100%;
 }
@@ -644,6 +648,7 @@ body {
 .ipv4-input-error {
     color: var(--win-error);
     font-size: 11.5px;
+    min-height: 14px;
 }
 
 /* Buttons */

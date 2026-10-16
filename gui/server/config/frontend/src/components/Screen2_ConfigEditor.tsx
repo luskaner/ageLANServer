@@ -422,9 +422,8 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                                 />
                                             </div>
                                             {hosts.map((host, index) => {
-                                                const hostError = allErrors[`Games.${game.id}.Hosts.${index}`];
                                                 return (
-                                                    <Field key={index} validationMessage={hostError} validationState={hostError ? 'error' : 'none'}>
+                                                    <Field className="win-host-field" key={index}>
                                                         <IPv4Input
                                                             value={host}
                                                             onChange={(value) => handleGameHostChange(game.id, index, value)}
