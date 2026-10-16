@@ -40,7 +40,7 @@ function serializeSegments(segments: string[]): string {
 
 function parseAddress(value: string): number[] | undefined {
     const segments = value.trim().split('.');
-    if (segments.length !== 4 || segments.some((segment) => !/^\d{1,3}$/.test(segment))) {
+    if (segments.length !== 4 || segments.some((segment) => !/^(?:0|[1-9]\d{0,2})$/.test(segment))) {
         return undefined;
     }
 
