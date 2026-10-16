@@ -122,10 +122,10 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
         const usedHosts = new Set<string>();
         config.Games.Enabled.forEach((gameId) => {
             const hosts = config.Games[gameId]?.Hosts ?? [];
-            hosts.forEach((host) => {
+            hosts.forEach((host, index) => {
                 const normalizedHost = host.trim();
                 if (usedHosts.has(normalizedHost)) {
-                    newErrors[`Games.${gameId}.Hosts.0`] = 'A host cannot be shared by enabled games.';
+                    newErrors[`Games.${gameId}.Hosts.${index}`] = 'A host cannot be shared by enabled games.';
                 }
                 usedHosts.add(normalizedHost);
             });
@@ -301,11 +301,11 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     <MessageBarBody>
                         <MessageBarTitle>Validation Errors</MessageBarTitle>
                         There are fields with errors. Please correct them to enable saving.
-                        {backendErrors.length > 0 && (
+                        {Object.keys(allErrors).length > 0 && (
                             <ul>
-                                {backendErrors.map((error) => (
-                                    <li key={`${error.field}-${error.message}`}>
-                                        <strong>{error.field}</strong>: {error.message}
+                                {Object.entries(allErrors).map(([field, message]) => (
+                                    <li key={`${field}-${message}`}>
+                                        <strong>{field}</strong>: {message}
                                     </li>
                                 ))}
                             </ul>
@@ -399,7 +399,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             <div className="win-setting-text">
                                 <div className="win-setting-title">Games and Network Addresses</div>
                                 <div className="win-setting-subtitle">
-                                    Select the games the LAN server will accept and configure each binding IP (single IPv4).
+                                    Select the games the LAN server will accept and configure each binding IP (single IPv4). Use 0.0.0.0 to bind all interfaces; hosts must be unique across enabled games.
                                 </div>
                             </div>
                         </div>
@@ -425,6 +425,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                                 return (
                                                     <Field className="win-host-field" key={index}>
                                                         <IPv4Input
+                                                            error={allErrors[`Games.${game.id}.Hosts.${index}`]}
                                                             value={host}
                                                             onChange={(value) => handleGameHostChange(game.id, index, value)}
                                                             placeholder="0.0.0.0"
