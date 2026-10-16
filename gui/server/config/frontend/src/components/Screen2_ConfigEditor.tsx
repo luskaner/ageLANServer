@@ -275,7 +275,9 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     <h2>Configuration Editor</h2>
                     <Badge appearance="tint" color="brand">{fileName || 'New configuration'}</Badge>
                 </div>
+            </div>
 
+            <div className="win-editor-sticky-bar">
                 <div className="win-top-actions">
                     <Button
                         appearance="secondary"
@@ -294,25 +296,25 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                         Save Configuration
                     </Button>
                 </div>
-            </div>
 
-            {hasErrors && (
-                <MessageBar intent="warning" style={{ marginBottom: 24 }}>
-                    <MessageBarBody>
-                        <MessageBarTitle>Validation Errors</MessageBarTitle>
-                        There are fields with errors. Please correct them to enable saving.
-                        {Object.keys(allErrors).length > 0 && (
-                            <ul>
-                                {Object.entries(allErrors).map(([field, message]) => (
-                                    <li key={`${field}-${message}`}>
-                                        <strong>{field}</strong>: {message}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </MessageBarBody>
-                </MessageBar>
-            )}
+                {hasErrors && (
+                    <MessageBar className="win-validation-bar" intent="warning">
+                        <MessageBarBody>
+                            <MessageBarTitle>Validation Errors</MessageBarTitle>
+                            There are fields with errors. Please correct them to enable saving.
+                            {Object.keys(allErrors).length > 0 && (
+                                <ul className="win-validation-errors">
+                                    {Object.entries(allErrors).map(([field, message]) => (
+                                        <li key={`${field}-${message}`}>
+                                            <strong>{field}</strong>: {message}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </MessageBarBody>
+                    </MessageBar>
+                )}
+            </div>
 
             {/* SECTION 1: GENERAL */}
             <div className="win-card-group">

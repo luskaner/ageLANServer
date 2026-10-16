@@ -729,9 +729,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+.win-editor-sticky-bar {
+    background: rgba(20, 22, 30, 0.94);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--win-radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0 24px;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .win-top-title-group {
@@ -755,9 +769,15 @@ body {
 }
 
 .win-top-actions {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: 10px;
+    justify-content: flex-end;
+}
+
+.win-validation-errors {
+    margin-left: 24px;
+    padding-left: 12px;
 }
 
 /* Alerts */
