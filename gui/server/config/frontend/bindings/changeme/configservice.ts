@@ -40,6 +40,13 @@ export function OpenTemplate(): $CancellablePromise<$models.ConfigFile | null> {
 }
 
 /**
+ * PreviewConfiguration returns the edited TOML document without writing it.
+ */
+export function PreviewConfiguration(content: string, configuration: $models.Configuration): $CancellablePromise<string> {
+    return $Call.ByID(2493360729, content, configuration);
+}
+
+/**
  * SaveConfiguration validates and saves all editable configuration fields.
  */
 export function SaveConfiguration(path: string, configuration: $models.Configuration): $CancellablePromise<void> {

@@ -76,6 +76,30 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
     const [backendErrors, setBackendErrors] = useState(backendValidationErrors);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [showTomlModal, setShowTomlModal] = useState(false);
+    const [previewContent, setPreviewContent] = useState('');
+    const [isPreviewPending, setIsPreviewPending] = useState(true);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isCurrentPreview = true;
+        setIsPreviewPending(true);
+        ConfigService.PreviewConfiguration(originalContent, toServiceConfiguration(config))
+            .then((content) => {
+                if (!isCurrentPreview) return;
+                setPreviewContent(content);
+                setPreviewError(null);
+                setIsPreviewPending(false);
+            })
+            .catch((error: Error) => {
+                if (!isCurrentPreview) return;
+                setPreviewError(error.message);
+                setIsPreviewPending(false);
+            });
+
+        return () => {
+            isCurrentPreview = false;
+        };
+    }, [config, originalContent]);
 
     // TODO: react validations need their own files
     // Validate fields whenever config changes
@@ -284,9 +308,14 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
         }
     };
 
-    const handleCopyToClipboard = () => {
-        navigator.clipboard.writeText(originalContent);
-        triggerToast('TOML content copied to clipboard.');
+    const handleCopyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(previewContent);
+            triggerToast('TOML content copied to clipboard.');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            triggerToast(`Error copying TOML content: ${message}`);
+        }
     };
 
     const authOptions = [
@@ -605,12 +634,21 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
             <Dialog open={showTomlModal} onOpenChange={(_, data) => setShowTomlModal(data.open)}>
                 <DialogSurface>
                     <DialogBody>
-                        <DialogTitle>Original TOML document</DialogTitle>
+                        <DialogTitle>TOML preview</DialogTitle>
                         <DialogContent>
-                            <pre className="win-toml-code">{originalContent}</pre>
+                            {previewError && (
+                                <MessageBar intent="error">
+                                    <MessageBarBody>
+                                        <MessageBarTitle>Preview unavailable</MessageBarTitle>
+                                        {previewError}
+                                    </MessageBarBody>
+                                </MessageBar>
+                            )}
+                            {isPreviewPending && <p role="status">Updating preview…</p>}
+                            <pre className="win-toml-code">{previewContent}</pre>
                         </DialogContent>
                         <DialogActions>
-                            <Button appearance="secondary" onClick={handleCopyToClipboard}>
+                            <Button appearance="secondary" onClick={handleCopyToClipboard} disabled={isPreviewPending || !!previewError}>
                                 Copy to clipboard
                             </Button>
                             <Button appearance="primary" onClick={() => setShowTomlModal(false)}>

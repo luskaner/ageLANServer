@@ -170,6 +170,21 @@ func (s *ConfigService) SaveConfiguration(path string, configuration Configurati
 	return writeConfigFile(path, updated)
 }
 
+// PreviewConfiguration returns the edited TOML document without writing it.
+func (s *ConfigService) PreviewConfiguration(content string, configuration Configuration) (string, error) {
+	if _, err := parseConfiguration([]byte(content)); err != nil {
+		return "", fmt.Errorf("parse configuration document: %w", err)
+	}
+	updated, err := configurationDocument([]byte(content), configuration)
+	if err != nil {
+		return "", fmt.Errorf("preview configuration document: %w", err)
+	}
+	if _, err := parseConfiguration(updated); err != nil {
+		return "", fmt.Errorf("validate preview configuration document: %w", err)
+	}
+	return string(updated), nil
+}
+
 // SaveConfigurationAs validates and saves an edited configuration to a new path.
 func (s *ConfigService) SaveConfigurationAs(sourcePath string, destination string, configuration Configuration, overwrite bool) (*ConfigFile, error) {
 	if sourcePath == "" || destination == "" {

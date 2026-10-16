@@ -192,6 +192,66 @@ func TestReplaceAnnouncementPortPreservesDocument(t *testing.T) {
 	}
 }
 
+func TestPreviewConfigurationPreservesUntouchedDocumentContent(t *testing.T) {
+	original := []byte(`# Keep this comment.
+Log = false
+GeneratePlatformUserId = false
+Authentication = 'disabled'
+
+[Games]
+Enabled = ['age2']
+
+[Games.age1]
+Hosts = []
+
+[Games.age2]
+Hosts = ['127.0.0.1'] # Keep this inline comment.
+
+[Games.age3]
+Hosts = []
+
+[Games.age4]
+Hosts = []
+
+[Games.athens]
+Hosts = []
+
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+Unknown = 'preserve this key'
+`)
+	configuration, err := parseConfiguration(original)
+	if err != nil {
+		t.Fatalf("parse source configuration: %v", err)
+	}
+	configuration.Announcement.Port = 32000
+
+	preview, err := (&ConfigService{}).PreviewConfiguration(string(original), *configuration)
+	if err != nil {
+		t.Fatalf("PreviewConfiguration returned an error: %v", err)
+	}
+	for _, preserved := range []string{"# Keep this comment.", "# Keep this inline comment.", "Unknown = 'preserve this key'"} {
+		if !strings.Contains(preview, preserved) {
+			t.Errorf("preview did not preserve %q: %s", preserved, preview)
+		}
+	}
+	if !strings.Contains(preview, "Port = 32000") {
+		t.Fatalf("preview did not contain the updated port: %s", preview)
+	}
+	if string(original) == preview {
+		t.Fatal("PreviewConfiguration modified the source document")
+	}
+}
+
+func TestPreviewConfigurationRejectsInvalidTOML(t *testing.T) {
+	if _, err := (&ConfigService{}).PreviewConfiguration("[Announcement\nPort = 31978", Configuration{}); err == nil {
+		t.Fatal("PreviewConfiguration accepted invalid TOML")
+	}
+}
+
 func TestWriteConfigFileReplacesExistingFile(t *testing.T) {
 	directory := t.TempDir()
 	path := filepath.Join(directory, "config.toml")
