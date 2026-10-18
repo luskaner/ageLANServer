@@ -305,5 +305,6 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	// host, so no gameId condition is needed.
 	g.group.HandleFunc("POST", "/api/MatchContent/", matchcontent.Upload)
 	g.group.HandleFunc("GET", "/api/MatchContent/{matchId}", matchcontent.Download)
+	g.group.HandleFunc("GET", "/api/MatchContent/{matchId}/file/{hash}", matchcontent.DownloadFile)
 	return SessionMiddleware(g.group.mux)
 }

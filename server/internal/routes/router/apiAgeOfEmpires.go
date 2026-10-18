@@ -27,6 +27,7 @@ func (a *ApiAgeOfEmpires) InitializeRoutes(gameId string, next http.Handler) htt
 		a.group.HandleFunc("POST", "/textmoderation", textmoderation.TextModeration)
 		a.group.HandleFunc("POST", "/api/MatchContent/", matchcontent.Upload)
 		a.group.HandleFunc("GET", "/api/MatchContent/{matchId}", matchcontent.Download)
+		a.group.HandleFunc("GET", "/api/MatchContent/{matchId}/file/{hash}", matchcontent.DownloadFile)
 		return a.group.mux
 	})
 	return a.Proxy.InitializeRoutes(gameId, next)

@@ -3,11 +3,16 @@ package router
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"hash/crc32"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -93,6 +98,44 @@ func buildUploadBody(t *testing.T, filename string, content []byte, matchId stri
 	return &buf, mw.FormDataContentType()
 }
 
+type matchManifest struct {
+	IsError bool `json:"isError"`
+	Files   []struct {
+		Name string `json:"fileName"`
+		Size int    `json:"fileSize"`
+		Path string `json:"filePath"`
+		CRC  string `json:"fileCRC"`
+	} `json:"fileList"`
+}
+
+func downloadMatchFile(t *testing.T, h http.Handler, g models.Game, path string) *httptest.ResponseRecorder {
+	t.Helper()
+	metadata := doRawRequest(h, "GET", path, g, nil, nil)
+	if metadata.Code != http.StatusOK {
+		t.Fatalf("metadata status=%d body=%q", metadata.Code, metadata.Body.String())
+	}
+	var manifest matchManifest
+	if err := json.Unmarshal(metadata.Body.Bytes(), &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if manifest.IsError || len(manifest.Files) != 1 {
+		t.Fatalf("invalid manifest: %+v", manifest)
+	}
+	f := manifest.Files[0]
+	u, err := url.Parse(f.Path)
+	if err != nil || u.Host != "example.com" || u.Scheme != "http" {
+		t.Fatalf("invalid file URL: %q (%v)", f.Path, err)
+	}
+	result := doRawRequest(h, "GET", u.RequestURI(), g, nil, nil)
+	if result.Code != http.StatusOK {
+		t.Fatalf("payload status=%d body=%q", result.Code, result.Body.String())
+	}
+	if f.Size != result.Body.Len() || f.CRC != fmt.Sprintf("%08x", crc32.ChecksumIEEE(result.Body.Bytes())) {
+		t.Fatalf("metadata differs from payload: %+v", f)
+	}
+	return result
+}
+
 func TestMatchContentUploadDownload_httptest(t *testing.T) {
 	for _, gid := range []string{game.AoE1, game.AoE2, game.AoE3, game.AoE4, game.AoM} {
 		t.Run(gid, func(t *testing.T) {
@@ -105,12 +148,16 @@ func TestMatchContentUploadDownload_httptest(t *testing.T) {
 			if rr.Code != http.StatusOK {
 				t.Fatalf("upload code = %d want 200 body=%q", rr.Code, rr.Body.String())
 			}
+			var response map[string]any
+			if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil || response["isError"] != false {
+				t.Fatalf("upload response must contain boolean isError:false: %s (%v)", rr.Body.String(), err)
+			}
 			if g.CustomFiles().Len() != 1 {
 				t.Fatalf("expected one stored file, got %d", g.CustomFiles().Len())
 			}
 
 			// Download must work without a session (the game does not send one).
-			dl := doRawRequest(h, "GET", "/api/MatchContent/234876462", g, nil, nil)
+			dl := downloadMatchFile(t, h, g, "/api/MatchContent/234876462")
 			if dl.Code != http.StatusOK {
 				t.Fatalf("download code = %d want 200 body=%q", dl.Code, dl.Body.String())
 			}
@@ -201,7 +248,7 @@ func TestMatchContentUploadOverGlobalCap_httptest(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("code = %d want 200 body=%q", rr.Code, rr.Body.String())
 	}
-	dl := doRawRequest(h, "GET", "/api/MatchContent/9", g, nil, nil)
+	dl := downloadMatchFile(t, h, g, "/api/MatchContent/9")
 	if dl.Code != http.StatusOK || !bytes.Equal(dl.Body.Bytes(), content) {
 		t.Fatalf("download code=%d len=%d want %d", dl.Code, dl.Body.Len(), len(content))
 	}
@@ -233,7 +280,7 @@ func TestMatchContentOverwrite_httptest(t *testing.T) {
 	if g.CustomFiles().Len() != 1 {
 		t.Fatalf("len = %d want 1", g.CustomFiles().Len())
 	}
-	dl := doRawRequest(h, "GET", "/api/MatchContent/42", g, nil, nil)
+	dl := downloadMatchFile(t, h, g, "/api/MatchContent/42")
 	if !bytes.Equal(dl.Body.Bytes(), second) {
 		t.Fatalf("content = %q want %q", dl.Body.Bytes(), second)
 	}
@@ -265,5 +312,95 @@ func TestMatchContentApiAgeOfEmpiresRoute_httptest(t *testing.T) {
 	h.ServeHTTP(rr2, dl)
 	if rr2.Code != http.StatusOK {
 		t.Fatalf("download via api mux code = %d", rr2.Code)
+	}
+}
+
+// This exercises real TLS sockets and the same two-stage flow used by the
+// game, rather than accepting an arbitrary 200 response as success.
+func TestMatchContentTLSContract(t *testing.T) {
+	g := newMatchContentGame(t, game.AoE2, nil)
+	for _, apiHost := range []bool{false, true} {
+		t.Run(strconv.FormatBool(apiHost), func(t *testing.T) {
+			var h http.Handler = gameHandler(game.AoE2)
+			if apiHost {
+				h = NewApiAgeOfEmpires().InitializeRoutes(game.AoE2, http.NotFoundHandler())
+			}
+			h = MaxBodySizeMiddleware(1<<20, NewLoggingMiddleware(h))
+			ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "game", g)))
+			}))
+			defer ts.Close()
+			client := ts.Client()
+			content := []byte("123456789") // Independent, standard CRC-32/IEEE test vector.
+			body, ct := buildUploadBody(t, "Сохранение (Alex).aoe2mpgame", content, "123", true, true)
+			response, err := client.Post(ts.URL+"/api/MatchContent/", ct, body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var upload map[string]any
+			err = json.NewDecoder(response.Body).Decode(&upload)
+			response.Body.Close()
+			if response.StatusCode != 200 || err != nil || upload["isError"] != false {
+				t.Fatalf("upload: %d %+v %v", response.StatusCode, upload, err)
+			}
+			response, err = client.Get(ts.URL + "/api/MatchContent/123")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var metadata matchManifest
+			err = json.NewDecoder(response.Body).Decode(&metadata)
+			response.Body.Close()
+			if response.StatusCode != 200 || err != nil || metadata.IsError || len(metadata.Files) != 1 {
+				t.Fatalf("metadata: %d %+v %v", response.StatusCode, metadata, err)
+			}
+			f := metadata.Files[0]
+			if f.Name != "Сохранение (Alex).aoe2mpgame" || f.Size != 9 || f.CRC != "cbf43926" {
+				t.Fatalf("metadata: %+v", f)
+			}
+			if !strings.HasPrefix(f.Path, ts.URL+"/api/MatchContent/123/file/") {
+				t.Fatalf("URL must preserve HTTPS and port: %q", f.Path)
+			}
+			response, err = client.Get(f.Path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			downloaded, err := io.ReadAll(response.Body)
+			response.Body.Close()
+			if err != nil || response.StatusCode != 200 || !bytes.Equal(downloaded, content) {
+				t.Fatalf("payload: %d %q %v", response.StatusCode, downloaded, err)
+			}
+			if response.ContentLength != int64(len(content)) {
+				t.Fatalf("length: %d", response.ContentLength)
+			}
+			if response.Header.Get("Content-MD5") != "JfnnlDI7RTiF9RgfG2JNCw==" {
+				t.Fatalf("MD5: %s", response.Header.Get("Content-MD5"))
+			}
+			// Metadata from before an overwrite must never fetch the new bytes.
+			body, ct = buildUploadBody(t, "next.aoe2mpgame", []byte("replacement"), "123", true, true)
+			response, err = client.Post(ts.URL+"/api/MatchContent/", ct, body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response.Body.Close()
+			response, err = client.Get(f.Path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response.Body.Close()
+			if response.StatusCode != http.StatusNotFound {
+				t.Fatalf("stale URL: %d", response.StatusCode)
+			}
+		})
+	}
+}
+
+func TestMatchContentDownloadInvalid(t *testing.T) {
+	g := newMatchContentGame(t, game.AoE2, nil)
+	h := gameHandler(game.AoE2)
+	for _, path := range []string{"0", "-1", "2147483648", "abc", "123/file/../../outside"} {
+		rr := doRawRequest(h, "GET", "/api/MatchContent/"+path, g, nil, nil)
+		if rr.Code == http.StatusOK {
+			t.Fatalf("invalid path accepted: %s", path)
+		}
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"hash/crc32"
 	"io"
 	"io/fs"
 	"os"
@@ -67,12 +69,17 @@ func Folder(gameId string) string {
 // lives on disk; the index only keeps the bookkeeping needed to serve and
 // expire it.
 type CustomFile struct {
-	Id          int32
-	Filename    string
-	ContentType string
+	Id       int32
+	Filename string
+	// OriginalFilename is the basename advertised to the game. Filename and
+	// Path remain sanitized for disk storage; stripping Unicode from the
+	// advertised name would make the client look for a different savegame.
+	OriginalFilename string
+	ContentType      string
 	// Path is relative to the CustomFiles root.
 	Path    string
 	MD5     string
+	CRC32   string
 	Length  int
 	Created time.Time
 	expiry  time.Time
@@ -88,6 +95,7 @@ func (f *CustomFile) Expiry() time.Time {
 type CustomFileStage struct {
 	path   string
 	md5    string
+	crc32  string
 	length int
 	done   bool
 }
@@ -223,8 +231,9 @@ func (m *MainCustomFiles) Stage(write func(w io.Writer) error) (*CustomFileStage
 	}
 	name := filepath.Base(tmp.Name())
 	hash := md5.New()
+	crc := crc32.NewIEEE()
 	counter := &limitedWriter{limit: m.maxFileSize}
-	writeErr := write(io.MultiWriter(hash, counter, tmp))
+	writeErr := write(io.MultiWriter(hash, crc, counter, tmp))
 	if writeErr == nil {
 		writeErr = tmp.Sync()
 	}
@@ -242,6 +251,7 @@ func (m *MainCustomFiles) Stage(write func(w io.Writer) error) (*CustomFileStage
 	return &CustomFileStage{
 		path:   name,
 		md5:    hex.EncodeToString(hash.Sum(nil)),
+		crc32:  fmt.Sprintf("%08x", crc.Sum32()),
 		length: int(counter.n),
 	}, nil
 }
@@ -252,21 +262,27 @@ func (m *MainCustomFiles) Adopt(stage *CustomFileStage, id int32, filename strin
 	if !m.Enabled() || stage == nil {
 		return nil, fs.ErrNotExist
 	}
+	originalFilename := filepath.Base(strings.ReplaceAll(filename, "\\", "/"))
 	filename = sanitizeFilename(filename)
 	if filename == "" {
 		filename = strconv.FormatInt(int64(id), 10) + fallbackSuffix
+	}
+	if originalFilename == "" || originalFilename == "." || originalFilename == ".." {
+		originalFilename = filename
 	}
 	finalName := strconv.FormatInt(int64(id), 10) + "-" + filename
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 	cf := &CustomFile{
-		Id:          id,
-		Filename:    filename,
-		ContentType: contentType,
-		Path:        finalName,
-		MD5:         stage.md5,
-		Length:      stage.length,
+		Id:               id,
+		Filename:         filename,
+		OriginalFilename: originalFilename,
+		ContentType:      contentType,
+		Path:             finalName,
+		MD5:              stage.md5,
+		CRC32:            stage.crc32,
+		Length:           stage.length,
 	}
 	// The rename belongs under the same lock as the index update. Two uploads
 	// racing on one id both write the same final name, so renaming outside the
@@ -322,6 +338,10 @@ func (m *MainCustomFiles) Put(id int32, filename string, write func(w io.Writer)
 // Open returns the metadata and a streaming reader for one file. The caller
 // owns the reader and must close it.
 func (m *MainCustomFiles) Open(id int32) (*CustomFile, io.ReadCloser, bool) {
+	// Keep the metadata and opened payload from the same upload generation.
+	// Adopt can otherwise replace the path between Load and Open.
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if !m.Enabled() {
 		return nil, nil, false
 	}
