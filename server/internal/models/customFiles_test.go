@@ -453,3 +453,37 @@ func TestKnownCustomFileExtension(t *testing.T) {
 		}
 	}
 }
+
+func TestCustomFilesOpenSnapshotDuringOverwrite(t *testing.T) {
+	m, _ := newTestCustomFiles(t, "age2", nil)
+	payloads := [][]byte{[]byte("first"), bytes.Repeat([]byte("other"), 100)}
+	if _, err := m.Put(7, "same.aoe2mpgame", writeBytes(payloads[0])); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		for n := 0; n < 100; n++ {
+			if _, err := m.Put(7, "same.aoe2mpgame", writeBytes(payloads[n%2])); err != nil {
+				done <- err
+				return
+			}
+		}
+		done <- nil
+	}()
+	for n := 0; n < 100; n++ {
+		cf, rc, ok := m.Open(7)
+		if !ok {
+			t.Error("indexed file missing during overwrite")
+			continue
+		}
+		data, err := io.ReadAll(rc)
+		rc.Close()
+		sum := md5.Sum(data)
+		if err != nil || len(data) != cf.Length || hex.EncodeToString(sum[:]) != cf.MD5 {
+			t.Errorf("metadata and payload from different uploads: length=%d metadata=%+v err=%v", len(data), cf, err)
+		}
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+}

@@ -1,6 +1,7 @@
 package matchcontent
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"math"
@@ -54,9 +55,7 @@ func extendReadDeadline(w http.ResponseWriter, maxFileSize int64) {
 // "matchId" part. The payload never passes through memory: it is streamed to a
 // provisional file and only renamed into place once the matchId is known.
 //
-// The shape of a successful response has not been captured yet (the external
-// endpoint answers 401). It is isolated in respondUpload so switching it is a
-// one-function change.
+// AoE2 DE parses the response as JSON and requires the boolean isError field.
 func Upload(w http.ResponseWriter, r *http.Request) {
 	files := models.G(r).CustomFiles()
 	if files == nil || !files.Enabled() {
@@ -162,8 +161,9 @@ func tooLarge(err error) bool {
 	return errors.As(err, &maxErr)
 }
 
-// respondUpload is the only place that depends on the (still unknown) shape of
-// a successful upload response. Assumption A: 200 with an empty body.
 func respondUpload(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(struct {
+		IsError bool `json:"isError"`
+	}{})
 }
