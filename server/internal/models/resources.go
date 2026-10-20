@@ -106,7 +106,7 @@ func (r *MainResources) initializeLogin(gameId string) {
 	matches := re.FindAllStringSubmatch(string(data), -1)
 	for _, m := range matches {
 		if len(m) == 3 {
-			r.loginData = append(r.loginData, i.A{m[1], m[2]})
+			r.loginData = append(r.loginData, i.A{m[1], m[2]}) // key, value
 		}
 	}
 }
@@ -220,7 +220,7 @@ func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, r
 		i.RawJSON(w, []byte(fmt.Sprintf(`{"result":0,"dataSignature":"%s"}`, serverSignature)))
 	} else {
 		emptyArrays := make(i.A, len(response.(i.A))-2)
-		ret := i.A{0}
+		ret := i.A{0} // resultCode
 		ret = append(ret, emptyArrays...)
 		ret = append(ret, serverSignature)
 		i.JSON(w, ret)

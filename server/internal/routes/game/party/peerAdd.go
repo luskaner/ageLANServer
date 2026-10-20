@@ -46,7 +46,7 @@ func PeerAdd(w http.ResponseWriter, r *http.Request) {
 			if _, alreadyPeer := adv.GetPeers().Load(u.GetId()); alreadyPeer {
 				continue
 			}
-			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatId(), -1, raceIds[j], teamIds[j]); peer != nil {
+			if peer := advertisements.UnsafeNewPeer(advId, advIp, u.GetId(), u.GetStatGroupID(), -1, raceIds[j], teamIds[j]); peer != nil {
 				addedUserIds = append(addedUserIds, u.GetId())
 			} else {
 				break

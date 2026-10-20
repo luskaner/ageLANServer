@@ -138,7 +138,7 @@ func TestPeer(t *testing.T) {
 
 	peer.UpdateMutable(3, 4)
 	m := peer.GetMutable()
-	if m.Race != 3 || m.Team != 4 {
+	if m.RaceID != 3 || m.TeamID != 4 {
 		t.Fatalf("mutable = %v", m)
 	}
 
@@ -161,13 +161,13 @@ func TestMessage(t *testing.T) {
 		time:            123456,
 		broadcast:       true,
 		content:         "hello",
-		typ:             1,
+		messageType:     1,
 		sender:          sender,
 		receivers:       []User{&testUser{id: 77}},
 	}
 
 	if msg.GetTime() != 123456 || !msg.GetBroadcast() || msg.GetContent() != "hello" ||
-		msg.GetType() != 1 || msg.GetAdvertisementId() != 9 {
+		msg.GetMessageType() != 1 || msg.GetAdvertisementId() != 9 {
 		t.Fatalf("getters wrong")
 	}
 	if msg.GetSender().GetId() != 42 {
@@ -194,14 +194,14 @@ func TestMessage(t *testing.T) {
 
 func TestItemLoadout(t *testing.T) {
 	i.InitializeRng(42)
-	l := &MainItemLoadout{Id: 1, Name: "load", Type: 2}
+	l := &MainItemLoadout{LoadoutID: 1, LoadoutName: "load", LoadoutType: 2}
 	enc := l.Encode(50)
 	if enc[0].(int32) != 1 || enc[1].(int32) != 50 || enc[2].(string) != "load" {
 		t.Fatalf("encode = %v", enc)
 	}
 
 	l.Update("renamed", 3, mapset.NewSet[int32]())
-	if l.Name != "renamed" || l.Type != 3 {
+	if l.LoadoutName != "renamed" || l.LoadoutType != 3 {
 		t.Fatalf("update failed")
 	}
 
@@ -221,7 +221,7 @@ func TestItemLoadout(t *testing.T) {
 
 func TestAvatarStatsRoundTrip(t *testing.T) {
 	stat := NewAvatarStat(5, 10)
-	if stat.Id != 5 || stat.Value != 10 {
+	if stat.StatID != 5 || stat.Value != 10 {
 		t.Fatalf("stat = %v", stat)
 	}
 	stat.SetValue(20)
@@ -250,7 +250,7 @@ func TestAvatarStatsRoundTrip(t *testing.T) {
 		t.Fatal("unexpected stat 99")
 	}
 
-	stats.AddStat(AvatarStat{Id: 3, Value: 300})
+	stats.AddStat(AvatarStat{StatID: 3, Value: 300})
 	if len(stats.Encode(1)) != 3 {
 		t.Fatalf("encode len = %d", len(stats.Encode(1)))
 	}

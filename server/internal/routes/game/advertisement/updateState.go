@@ -65,7 +65,7 @@ func UpdateState(w http.ResponseWriter, r *http.Request) {
 			userIds[j] = i.A{userId, i.A{}}
 			userIdStr[j] = i.A{userIdSingleStr, i.A{}}
 			peerMutable := peer.GetMutable()
-			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peerMutable.Race))}
+			races[j] = i.A{userIdSingleStr, strconv.Itoa(int(peerMutable.RaceID))}
 			challengeProgress[j] = i.A{userIdSingleStr, challengeShared.GetChallengeProgressData()}
 			sessions[j] = sess
 			j++

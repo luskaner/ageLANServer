@@ -324,12 +324,12 @@ func (d *MainItemDefinition) GetLocalizedDescription() string {
 }
 
 type Item interface {
-	Encode(userId int32) i.A
+	Encode(profileID int32) i.A
 	GetId() int32
-	SetLocationId(locationId int32)
+	SetLocationID(locationID int32)
 	GetMetadata() *ItemMetadata
 	IncrementVersion()
-	SetDurabilityCount(charges int32)
+	SetDurability(durability int32)
 }
 
 type itemStorage struct {
@@ -346,47 +346,47 @@ type itemStorage struct {
 }
 
 type MainItem struct {
-	id              int32
-	metadata        ItemMetadata
-	entityVersion   int32
-	definitionId    int32
-	durabilityId    int32
-	durabilityCount int32
-	creationDate    time.Time
-	locationId      int32
-	tradeId         int32
-	permissionFlags uint32
-	maxCharges      int32
+	id                int32
+	metadata          ItemMetadata
+	entityVersion     int32
+	itemDefinitionID  int32
+	durabilityType    int32
+	durability        int32
+	creationDate      time.Time
+	locationID        int32
+	tradeID           int32
+	permission        uint32
+	maxChargesPerItem int32
 }
 
 func newMainItemFromStorage(storage *itemStorage) *MainItem {
 	return &MainItem{
-		id:              storage.Id,
-		metadata:        storage.Metadata,
-		definitionId:    storage.DefinitionId,
-		durabilityId:    storage.DurabilityId,
-		durabilityCount: storage.DurabilityCount,
-		creationDate:    storage.CreationDate,
-		locationId:      storage.LocationId,
-		tradeId:         storage.TradeId,
-		permissionFlags: storage.PermissionFlags,
-		maxCharges:      storage.MaxCharges,
+		id:                storage.Id,
+		metadata:          storage.Metadata,
+		itemDefinitionID:  storage.DefinitionId,
+		durabilityType:    storage.DurabilityId,
+		durability:        storage.DurabilityCount,
+		creationDate:      storage.CreationDate,
+		locationID:        storage.LocationId,
+		tradeID:           storage.TradeId,
+		permission:        storage.PermissionFlags,
+		maxChargesPerItem: storage.MaxCharges,
 	}
 }
 
 func NewMainItemFromRaw(itemRaw i.A) *MainItem {
 	return &MainItem{
-		id:              int32(itemRaw[0].(float64)),
-		metadata:        NewItemMetadataRaw([]byte(itemRaw[6].(string))),
-		entityVersion:   int32(itemRaw[1].(float64)),
-		definitionId:    int32(itemRaw[2].(float64)),
-		durabilityId:    int32(itemRaw[5].(float64)),
-		durabilityCount: int32(itemRaw[4].(float64)),
-		creationDate:    time.Unix(int64(itemRaw[7].(float64)), 0),
-		locationId:      int32(itemRaw[8].(float64)),
-		tradeId:         int32(itemRaw[9].(float64)),
-		permissionFlags: uint32(itemRaw[10].(float64)),
-		maxCharges:      int32(itemRaw[11].(float64)),
+		id:                int32(itemRaw[0].(float64)),
+		metadata:          NewItemMetadataRaw([]byte(itemRaw[6].(string))),
+		entityVersion:     int32(itemRaw[1].(float64)),
+		itemDefinitionID:  int32(itemRaw[2].(float64)),
+		durabilityType:    int32(itemRaw[5].(float64)),
+		durability:        int32(itemRaw[4].(float64)),
+		creationDate:      time.Unix(int64(itemRaw[7].(float64)), 0),
+		locationID:        int32(itemRaw[8].(float64)),
+		tradeID:           int32(itemRaw[9].(float64)),
+		permission:        uint32(itemRaw[10].(float64)),
+		maxChargesPerItem: int32(itemRaw[11].(float64)),
 	}
 }
 
@@ -394,14 +394,14 @@ func (item *MainItem) MarshalJSON() ([]byte, error) {
 	storage := &itemStorage{
 		Id:              item.id,
 		Metadata:        item.metadata,
-		DefinitionId:    item.definitionId,
-		DurabilityId:    item.durabilityId,
-		DurabilityCount: item.durabilityCount,
+		DefinitionId:    item.itemDefinitionID,
+		DurabilityId:    item.durabilityType,
+		DurabilityCount: item.durability,
 		CreationDate:    item.creationDate,
-		LocationId:      item.locationId,
-		TradeId:         item.tradeId,
-		PermissionFlags: item.permissionFlags,
-		MaxCharges:      item.maxCharges,
+		LocationId:      item.locationID,
+		TradeId:         item.tradeID,
+		PermissionFlags: item.permission,
+		MaxCharges:      item.maxChargesPerItem,
 	}
 	return json.Marshal(storage)
 }
@@ -419,24 +419,24 @@ func (item *MainItem) GetId() int32 {
 	return item.id
 }
 
-func (item *MainItem) SetLocationId(locationId int32) {
-	item.locationId = locationId
+func (item *MainItem) SetLocationID(locationID int32) {
+	item.locationID = locationID
 }
 
-func (item *MainItem) Encode(userId int32) i.A {
+func (item *MainItem) Encode(profileID int32) i.A {
 	return i.A{
 		item.id,
 		item.entityVersion,
-		item.definitionId,
-		userId,
-		item.durabilityCount,
-		item.durabilityId,
+		item.itemDefinitionID,
+		profileID,
+		item.durability,
+		item.durabilityType,
 		item.metadata.Encode(),
 		item.creationDate.Unix(),
-		item.locationId,
-		item.tradeId,
-		item.permissionFlags,
-		item.maxCharges,
+		item.locationID,
+		item.tradeID,           // -1 = no trade
+		item.permission,        // bit flags
+		item.maxChargesPerItem, // -1 = no charges
 	}
 }
 
@@ -444,8 +444,8 @@ func (item *MainItem) GetMetadata() *ItemMetadata {
 	return &item.metadata
 }
 
-func (item *MainItem) SetDurabilityCount(durabilityCount int32) {
-	item.durabilityCount = durabilityCount
+func (item *MainItem) SetDurability(durability int32) {
+	item.durability = durability
 }
 
 func (item *MainItem) IncrementVersion() {
@@ -453,7 +453,7 @@ func (item *MainItem) IncrementVersion() {
 }
 
 type Items interface {
-	GetLocation(id int32) (ItemLocation, bool)
+	GetLocation(locationID int32) (ItemLocation, bool)
 	EncodeLocations() i.A
 	GetCategory(id int32) (ItemCategory, bool)
 	IterCategories() iter.Seq[ItemCategory]
@@ -462,73 +462,81 @@ type Items interface {
 	Initialize(itemDefinitions []byte, itemLocations i.A)
 }
 
+// ItemLocation mirrors the client's item location object. Encode writes the
+// fields in the client's positional order: id, entityVersion, locationID,
+// categoryID, maxItems, locked, isPublic, isForMatch, tracksMoves.
 type ItemLocation interface {
-	GetUnknown1IdxAutoNumeric() int32
 	GetId() int32
-	GetCategory() ItemCategory
-	// GetMax is unverified
-	GetMax() int32
-	GetUnknown1() bool
-	GetUnknown2() bool
-	GetUnknown3() bool
-	GetUnknown4() bool
+	GetEntityVersion() int32
+	GetLocationID() int32
+	GetCategoryID() int32
+	GetMaxItems() int32
+	IsLocked() bool
+	IsPublic() bool
+	IsForMatch() bool
+	TracksMoves() bool
 	Encode() i.A
 }
 
 type MainItemLocation struct {
-	unknown1IdxAutoNumeric int32
-	id                     int32
-	category               ItemCategory
-	max                    int32
-	unknown1               *i.BoolMappedNumber[int32]
-	unknown2               *i.BoolMappedNumber[int32]
-	unknown3               *i.BoolMappedNumber[int32]
-	unknown4               *i.BoolMappedNumber[int32]
+	id            int32
+	entityVersion int32
+	locationID    int32
+	categoryID    int32
+	maxItems      int32
+	locked        *i.BoolMappedNumber[int32]
+	isPublic      *i.BoolMappedNumber[int32]
+	isForMatch    *i.BoolMappedNumber[int32]
+	tracksMoves   *i.BoolMappedNumber[int32]
 }
 
 func (loc *MainItemLocation) GetId() int32 {
 	return loc.id
 }
 
-func (loc *MainItemLocation) GetCategory() ItemCategory {
-	return loc.category
+func (loc *MainItemLocation) GetEntityVersion() int32 {
+	return loc.entityVersion
 }
 
-func (loc *MainItemLocation) GetMax() int32 {
-	return loc.max
+func (loc *MainItemLocation) GetLocationID() int32 {
+	return loc.locationID
 }
 
-func (loc *MainItemLocation) GetUnknown1IdxAutoNumeric() int32 {
-	return loc.unknown1IdxAutoNumeric
+func (loc *MainItemLocation) GetCategoryID() int32 {
+	return loc.categoryID
 }
 
-func (loc *MainItemLocation) GetUnknown1() bool {
-	return loc.unknown1.Bool()
+func (loc *MainItemLocation) GetMaxItems() int32 {
+	return loc.maxItems
 }
 
-func (loc *MainItemLocation) GetUnknown2() bool {
-	return loc.unknown2.Bool()
+func (loc *MainItemLocation) IsLocked() bool {
+	return loc.locked.Bool()
 }
 
-func (loc *MainItemLocation) GetUnknown3() bool {
-	return loc.unknown3.Bool()
+func (loc *MainItemLocation) IsPublic() bool {
+	return loc.isPublic.Bool()
 }
 
-func (loc *MainItemLocation) GetUnknown4() bool {
-	return loc.unknown4.Bool()
+func (loc *MainItemLocation) IsForMatch() bool {
+	return loc.isForMatch.Bool()
+}
+
+func (loc *MainItemLocation) TracksMoves() bool {
+	return loc.tracksMoves.Bool()
 }
 
 func (loc *MainItemLocation) Encode() i.A {
 	return i.A{
-		loc.unknown1IdxAutoNumeric,
-		0,
 		loc.id,
-		loc.category.GetId(),
-		loc.max,
-		loc.unknown1,
-		loc.unknown2,
-		loc.unknown3,
-		loc.unknown4,
+		loc.entityVersion,
+		loc.locationID,
+		loc.categoryID,
+		loc.maxItems,
+		loc.locked,      // 0/1
+		loc.isPublic,    // 0/1
+		loc.isForMatch,  // 0/1
+		loc.tracksMoves, // 0/1
 	}
 }
 
@@ -564,8 +572,8 @@ func (m *MainItems) GetDefinition(id int32) (ItemDefinition, bool) {
 	return val, ok
 }
 
-func (m *MainItems) GetLocation(id int32) (ItemLocation, bool) {
-	val, ok := m.locations[id]
+func (m *MainItems) GetLocation(locationID int32) (ItemLocation, bool) {
+	val, ok := m.locations[locationID]
 	return val, ok
 }
 
@@ -618,18 +626,17 @@ func (m *MainItems) Initialize(itemDefinitions []byte, itemLocations i.A) {
 	for _, locationRawAny := range itemLocations {
 		locationRawArr := locationRawAny.(i.A)
 		location := &MainItemLocation{
-			unknown1IdxAutoNumeric: int32(locationRawArr[0].(float64)),
-			id:                     int32(locationRawArr[2].(float64)),
-			max:                    int32(locationRawArr[4].(float64)),
-			unknown1:               i.NewBoolMappedNumber(int32(locationRawArr[5].(float64))),
-			unknown2:               i.NewBoolMappedNumber(int32(locationRawArr[6].(float64))),
-			unknown3:               i.NewBoolMappedNumber(int32(locationRawArr[7].(float64))),
-			unknown4:               i.NewBoolMappedNumber(int32(locationRawArr[8].(float64))),
+			id:            int32(locationRawArr[0].(float64)),
+			entityVersion: int32(locationRawArr[1].(float64)),
+			locationID:    int32(locationRawArr[2].(float64)),
+			categoryID:    int32(locationRawArr[3].(float64)),
+			maxItems:      int32(locationRawArr[4].(float64)),
+			locked:        i.NewBoolMappedNumber(int32(locationRawArr[5].(float64))),
+			isPublic:      i.NewBoolMappedNumber(int32(locationRawArr[6].(float64))),
+			isForMatch:    i.NewBoolMappedNumber(int32(locationRawArr[7].(float64))),
+			tracksMoves:   i.NewBoolMappedNumber(int32(locationRawArr[8].(float64))),
 		}
-		if category, ok := m.categories[int32(locationRawArr[3].(float64))]; ok {
-			location.category = category
-		}
-		m.locations[location.id] = location
+		m.locations[location.locationID] = location
 	}
 }
 
@@ -710,8 +717,8 @@ func (i *ItemMetadata) setDefaultEslot(categories mapset.Set[ItemCategory]) {
 }
 
 // defaultItemLocationId returns the location new profiles start an item at.
-func defaultItemLocationId(definitionId int32) int32 {
-	switch definitionId {
+func defaultItemLocationId(itemDefinitionID int32) int32 {
+	switch itemDefinitionID {
 	case portraitDefinitionId:
 		return portraitLocationId
 	case coatOfArmsDefinitionId:
@@ -780,17 +787,17 @@ func (is *ItemsUpgradableDefaultData) Default() *map[int32]*MainItem {
 		metadata.setDefaultEslot(itemDefinition.GetCategories())
 
 		items = append(items, &MainItem{
-			id:              itemId,
-			metadata:        metadata,
-			definitionId:    itemDefinition.GetId(),
-			locationId:      defaultItemLocationId(itemDefinition.GetId()),
-			durabilityCount: 1,
-			creationDate:    time.Now().UTC(),
+			id:               itemId,
+			metadata:         metadata,
+			itemDefinitionID: itemDefinition.GetId(),
+			locationID:       defaultItemLocationId(itemDefinition.GetId()),
+			durability:       1,
+			creationDate:     time.Now().UTC(),
 			// Either another item id or location id as defined in statically per game
-			tradeId: -1,
+			tradeID: -1,
 			// Max value seen given it's a binary flag
-			permissionFlags: 63,
-			maxCharges:      -1,
+			permission:        63,
+			maxChargesPerItem: -1,
 		})
 	}
 	itemsMap := make(map[int32]*MainItem)

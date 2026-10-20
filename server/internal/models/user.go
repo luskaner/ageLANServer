@@ -18,14 +18,14 @@ import (
 type User interface {
 	GetId() int32
 	GetXbox() bool
-	GetStatId() int32
+	GetStatGroupID() int32
 	GetProfileId() int32
 	GetReliclink() int32
 	GetAlias() string
 	GetPlatformPath() string
-	GetPlatformId() int
+	GetAccountType() int
 	GetPlatformUserID() uint64
-	EncodeExtraProfileInfo(clientLibVersion uint16) i.A
+	EncodeLeaderboardStat(clientLibVersion uint16) i.A
 	EncodeProfileInfo(clientLibVersion uint16) i.A
 	GetPresence() int32
 	SetPresence(presence int32)
@@ -40,13 +40,13 @@ type User interface {
 	GetItems() *PersistentJsonData[*map[int32]*MainItem]
 	GetItemLoadouts() *PersistentJsonData[*MainItemLoadouts]
 	GetAuth() *PersistentJsonData[*time.Time]
-	EncodeAvatarStats() i.A
+	EncodeStats() i.A
 	EncodePresence(definitions PresenceDefinitions) i.A
 }
 
 type MainUser struct {
 	id                int32
-	statId            int32
+	statGroupID       int32
 	alias             string
 	platformUserId    uint64
 	profileId         int32
@@ -65,7 +65,8 @@ type MainUser struct {
 	auth               *PersistentJsonData[*time.Time]
 }
 
-func (u *MainUser) EncodeAvatarStats() i.A {
+// EncodeStats encodes the value for the client's stats field.
+func (u *MainUser) EncodeStats() i.A {
 	var result i.A
 	_ = u.GetAvatarStats().WithReadOnly(func(data *AvatarStats) error {
 		result = data.Encode(u.GetProfileId())
@@ -77,7 +78,7 @@ func (u *MainUser) EncodeAvatarStats() i.A {
 type Users interface {
 	Initialize()
 	GetOrCreateUser(gameId string, itemDefinitions Items, avatarStatsDefinitions AvatarStatDefinitions, remoteAddr string, remoteMacAddress string, isXbox bool, platformUserId uint64, alias string) User
-	GetUserByStatId(id int32) (User, bool)
+	GetUserByStatGroupID(statGroupID int32) (User, bool)
 	GetUserById(id int32) (User, bool)
 	GetUserIds() func(func(int32) bool)
 	EncodeProfileInfo(definitions PresenceDefinitions, matches func(user User) bool, clientLibVersion uint16) []i.A
@@ -175,7 +176,7 @@ func (users *MainUsers) Generate(gameId string, persistentData *PersistentString
 	}
 	return &MainUser{
 		id:                 rng.Int32(),
-		statId:             rng.Int32(),
+		statGroupID:        rng.Int32(),
 		profileId:          rng.Int32(),
 		avatarMetadata:     avatarMetadata,
 		items:              items,
@@ -275,8 +276,8 @@ func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, av
 	return mainUser
 }
 
-func (users *MainUsers) GetUserByStatId(id int32) (User, bool) {
-	return users.getFirst(func(u User) bool { return u.GetStatId() == id })
+func (users *MainUsers) GetUserByStatGroupID(statGroupID int32) (User, bool) {
+	return users.getFirst(func(u User) bool { return u.GetStatGroupID() == statGroupID })
 }
 
 func (users *MainUsers) GetUserById(id int32) (User, bool) {
@@ -348,8 +349,8 @@ func (u *MainUser) GetXbox() bool {
 	return u.isXbox
 }
 
-func (u *MainUser) GetStatId() int32 {
-	return u.statId
+func (u *MainUser) GetStatGroupID() int32 {
+	return u.statGroupID
 }
 
 func (u *MainUser) GetProfileId() int32 {
@@ -385,7 +386,7 @@ func (u *MainUser) GetPlatformPath() string {
 	return getPlatformPath(u.isXbox, u.platformUserId)
 }
 
-func (u *MainUser) GetPlatformId() int {
+func (u *MainUser) GetAccountType() int {
 	var prefix int
 	if u.isXbox {
 		prefix = 9
@@ -399,55 +400,59 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
+// EncodeLeaderboardStat encodes the value for the client's leaderboardStat field.
+func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
+	// The client accepts these placeholder values until real stats are implemented.
 	info := i.A{
-		u.statId,
-		0,
-		0,
-		1,
-		-1,
-		0,
-		0,
-		-1,
-		-1,
-		-1,
-		-1,
-		-1,
-		1000,
+		u.statGroupID,
+		0,    // leaderboardID
+		0,    // wins
+		0,    // losses
+		-1,   // streak
+		0,    // disputes
+		0,    // drops
+		-1,   // ranking
+		-1,   // rankTotal
+		-1,   // regionRanking
+		-1,   // regionRankTotal
+		-1,   // level
+		1000, // rating
 		// Some time in the past
-		1713372625,
-		0,
-		0,
-		0,
+		1713372625, // lastMatchTime
+		0,          // highestRank
+		0,          // highestRankLevel
+		0,          // highestRating
 	}
 	if clientLibVersion >= i.V190 {
-		info = append(info, 0, 0)
+		info = append(info, 0, 0) // platformRank, platformRankTotal
 	}
 	return info
 }
 
 func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
+	entityVersion := time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix()
+	platformUserID := strconv.FormatUint(u.GetPlatformUserID(), 10)
 	profileInfo := i.A{
-		time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix(),
+		entityVersion,
 		u.GetId(),
-		u.GetPlatformPath(),
-		u.GetAvatarMetadata(),
+		u.GetPlatformPath(),   // name
+		u.GetAvatarMetadata(), // metaData
 		u.GetAlias(),
 	}
 	if clientLibVersion >= i.V190 {
-		profileInfo = append(profileInfo, u.GetAlias())
+		profileInfo = append(profileInfo, u.GetAlias()) // sanitizedAlias
 	}
 	profileInfo = append(
 		profileInfo,
-		"",
-		u.GetStatId(),
-		u.GetProfileExperience(),
+		"",                       // clanName: empty = no clan
+		u.GetStatGroupID(),       // personalStatGroupID
+		u.GetProfileExperience(), // xp
 		u.GetProfileLevel(),
-		u.GetPlatformRelated(),
-		nil,
-		strconv.FormatUint(u.GetPlatformUserID(), 10),
-		u.GetPlatformId(),
-		i.A{},
+		u.GetPlatformRelated(), // leaderboardRegionID
+		nil,                    // banInfo: not banned
+		platformUserID,
+		u.GetAccountType(), // 3 = Steam, 9 = Xbox
+		i.A{},              // linkedPlatformAccounts: empty = none
 	)
 	return profileInfo
 }
@@ -456,20 +461,20 @@ func (u *MainUser) EncodePresence(definitions PresenceDefinitions) i.A {
 	if definitions == nil || u.presenceProperties == nil {
 		return i.A{}
 	}
-	presenceId := u.GetPresence()
-	presenceDefinition := definitions.Get(presenceId)
+	presenceID := u.GetPresence()
+	presenceDefinition := definitions.Get(presenceID)
 	if presenceDefinition == nil {
 		return i.A{}
 	}
-	var presenceProperties i.A
+	var presencePropertyInfo i.A
 	for id, value := range u.presenceProperties.Iter() {
-		presenceProperties = append(presenceProperties, i.A{id, value})
+		presencePropertyInfo = append(presencePropertyInfo, i.A{id, value})
 	}
 
 	return i.A{
-		presenceId,
-		(*presenceDefinition).GetLabel(),
-		presenceProperties,
+		presenceID,
+		(*presenceDefinition).GetLabel(), // presenceLocalized
+		presencePropertyInfo,
 	}
 }
 

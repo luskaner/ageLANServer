@@ -36,7 +36,7 @@ func UpdateItemLoadout(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = loadouts.WithReadWrite(func(data *models.MainItemLoadouts) error {
 		if item := data.Get(req.Id); item != nil {
-			item.Update(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIds...))
+			item.Update(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIDs...))
 			itemLoadoutEncoded = item.Encode(userId)
 		}
 		return nil

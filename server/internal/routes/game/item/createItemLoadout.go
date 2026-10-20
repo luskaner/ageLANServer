@@ -9,7 +9,7 @@ import (
 )
 
 type createItemLoadoutRequest struct {
-	ItemOrLocIds []int32 `schema:"itemOrLocIDs"`
+	ItemOrLocIDs []int32 `schema:"itemOrLocIDs"`
 	Name         string  `schema:"name"`
 	Type         int32   `schema:"type"`
 	// TODO: Implement fields
@@ -34,7 +34,7 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 	}
 	items := game.Items()
 	itemIds := mapset.NewThreadUnsafeSet[int32]()
-	for _, id := range req.ItemOrLocIds {
+	for _, id := range req.ItemOrLocIDs {
 		if _, ok = items.GetLocation(id); !ok {
 			itemIds.Add(id)
 		}
@@ -58,7 +58,7 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = loadouts.WithReadWrite(func(data *models.MainItemLoadouts) error {
-		itemLoadoutEncoded = data.NewItemLoadout(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIds...), userId)
+		itemLoadoutEncoded = data.NewItemLoadout(req.Name, req.Type, mapset.NewThreadUnsafeSet(req.ItemOrLocIDs...), userId)
 		return nil
 	})
 	i.JSON(&w, i.A{0, itemLoadoutEncoded})

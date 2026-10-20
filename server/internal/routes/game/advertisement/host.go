@@ -119,7 +119,7 @@ func Host(w http.ResponseWriter, r *http.Request) {
 		)
 		var response i.A
 		advertisements.WithWriteLock(storedAdv.GetId(), func() {
-			if advertisements.UnsafeNewPeer(storedAdv.GetId(), storedAdv.GetIp(), u.GetId(), u.GetStatId(), adv.Party, adv.Race, adv.Team) == nil {
+			if advertisements.UnsafeNewPeer(storedAdv.GetId(), storedAdv.GetIp(), u.GetId(), u.GetStatGroupID(), adv.Party, adv.Race, adv.Team) == nil {
 				ok = false
 				return
 			}

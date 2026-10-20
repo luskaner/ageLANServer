@@ -64,7 +64,7 @@ type Advertisement interface {
 	GetIp() string
 	UnsafeGetHostId() int32
 	GetPeers() *i.SafeOrderedMap[int32, Peer]
-	MakeMessage(broadcast bool, content string, typeId uint8, metadata string, sender User, receivers []User) Message
+	MakeMessage(broadcast bool, content string, messageType uint8, metadata string, sender User, receivers []User) Message
 	StartObserving(userId int32)
 	StopObserving(userId int32)
 	EncodePeers() []i.A
@@ -120,7 +120,7 @@ type Advertisements interface {
 	WithReadLock(id int32, action func())
 	WithWriteLock(id int32, action func())
 	GetAdvertisement(id int32) (Advertisement, bool)
-	UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, party int32, race int32, team int32) Peer
+	UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, statGroupID int32, party int32, raceID int32, teamID int32) Peer
 	UnsafeRemovePeer(advertisementId int32, userId int32) bool
 	UnsafeDelete(adv Advertisement)
 	UnsafeFirstAdvertisement(matches func(adv Advertisement) bool) Advertisement
@@ -327,13 +327,13 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 	return storedAdv
 }
 
-func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, metadata string, sender User, receivers []User) Message {
+func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, messageType uint8, metadata string, sender User, receivers []User) Message {
 	return &MainMessage{
 		advertisementId: adv.GetId(),
 		time:            time.Now().UTC().Unix(),
 		broadcast:       broadcast,
 		content:         content,
-		typ:             typeId,
+		messageType:     messageType,
 		sender:          sender,
 		receivers:       receivers,
 		metadata:        metadata,
@@ -383,12 +383,12 @@ func (advs *MainAdvertisements) GetAdvertisement(id int32) (Advertisement, bool)
 }
 
 // UnsafeNewPeer requires advertisement write lock
-func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, userStatId int32, party int32, race int32, team int32) Peer {
+func (advs *MainAdvertisements) UnsafeNewPeer(advertisementId int32, advertisementIp string, userId int32, statGroupID int32, party int32, raceID int32, teamID int32) Peer {
 	adv, exists := advs.GetAdvertisement(advertisementId)
 	if !exists {
 		return nil
 	}
-	peer := NewPeer(advertisementId, advertisementIp, userId, userStatId, party, race, team)
+	peer := NewPeer(advertisementId, advertisementIp, userId, statGroupID, party, raceID, teamID)
 	_, storedPeer := adv.GetPeers().Store(peer.GetUserId(), peer, func(_ Peer) bool {
 		return false
 	})
@@ -482,8 +482,8 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, clientLibVersion uint1
 		startTime = nil
 	}
 	response := i.A{
-		adv.id,
-		adv.platformSessionId,
+		adv.id,                // advertisement ID
+		adv.platformSessionId, // platform session ID
 	}
 	if gameId == game.AoE2 || i.SinceTheBalticPowers(gameId, clientLibVersion) || gameId == game.AoM || gameId == game.AoE4 {
 		// goodolggameslobbyid (GoG lobby ID), always 0
@@ -494,47 +494,47 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, clientLibVersion uint1
 		}
 		response = append(
 			response,
-			"",
-			"",
+			"", // platform session ID (empty)
+			"", // platform match ID (empty)
 		)
 	}
 	response = append(
 		response,
-		adv.GetXboxSessionId(),
-		adv.hostId,
-		adv.state,
-		adv.description,
+		adv.GetXboxSessionId(), // xbox session ID
+		adv.hostId,             // host profile ID
+		adv.state,              // match state
+		adv.description,        // filtered description
 	)
 	if gameId == game.AoE2 || i.SinceTheBalticPowers(gameId, clientLibVersion) || gameId == game.AoM || gameId == game.AoE4 {
-		response = append(response, adv.description)
+		response = append(response, adv.description) // filtered description (repeated)
 	}
 	response = append(
 		response,
-		i.NewBoolMappedNumberFromBool(adv.visible),
-		adv.mapName,
-		adv.options,
-		i.NewBoolMappedNumberFromBool(adv.password.enabled),
-		adv.maxPlayers,
-		adv.slotInfo,
-		adv.matchType,
-		adv.EncodePeers(),
-		adv.observers.userIds.Len(),
-		0, // observermax, can it be 0 so it means without limit?
-		i.NewBoolMappedNumberFromBool(adv.observers.enabled),
-		adv.observers.delay,
+		i.NewBoolMappedNumberFromBool(adv.visible), // visible (bool as 0/1)
+		adv.mapName, // map name
+		adv.options, // encoded options
+		i.NewBoolMappedNumberFromBool(adv.password.enabled), // password enabled (bool as 0/1)
+		adv.maxPlayers,              // max player count
+		adv.slotInfo,                // encoded slots
+		adv.matchType,               // match type ID
+		adv.EncodePeers(),           // match members
+		adv.observers.userIds.Len(), // observer count
+		0,                           // observermax, can it be 0 so it means without limit?
+		i.NewBoolMappedNumberFromBool(adv.observers.enabled), // observers enabled (bool as 0/1)
+		adv.observers.delay, // observer delay
 		// TODO: Ensure if the order of password and the next is correct
-		i.NewBoolMappedNumberFromBool(adv.observers.password != ""),
-		i.NewBoolMappedNumberFromBool(adv.lan),
-		startTime,
-		adv.relayRegion,
+		i.NewBoolMappedNumberFromBool(adv.observers.password != ""), // observers password set (bool as 0/1)
+		i.NewBoolMappedNumberFromBool(adv.lan),                      // lan (bool as 0/1)
+		startTime,                                                   // match start time (nil if not started)
+		adv.relayRegion,                                             // match region
 	)
 	if adv.lan {
-		response = append(response, nil)
+		response = append(response, nil) // battle server name (nil for LAN)
 	} else {
 		if battleServer, ok := battleServers.Get(adv.relayRegion); ok && battleServer != nil {
-			battleServer.AppendName(&response)
+			battleServer.AppendName(&response) // battle server name
 		} else {
-			response = append(response, nil)
+			response = append(response, nil) // battle server name (nil if none)
 		}
 	}
 	return response

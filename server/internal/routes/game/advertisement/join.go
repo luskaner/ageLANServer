@@ -22,12 +22,12 @@ func joinReturnError(battleServers models.BattleServers, r *http.Request, w http
 
 func encodeJoinResponse(errorCode int, ip string, battleServer models.BattleServer, r *http.Request, peerEncoded i.A) i.A {
 	response := i.A{
-		errorCode,
-		ip,
-		battleServer.ResolveIPv4(r),
+		errorCode,                   // resultCode
+		ip,                          // host IP
+		battleServer.ResolveIPv4(r), // resolved IP
 	}
-	response = append(response, battleServer.EncodePorts()...)
-	response = append(response, i.A{peerEncoded})
+	response = append(response, battleServer.EncodePorts()...) // ports
+	response = append(response, i.A{peerEncoded})              // peer
 	return response
 }
 
@@ -86,7 +86,7 @@ func Join(w http.ResponseWriter, r *http.Request) {
 			matchingAdv.GetId(),
 			matchingAdv.GetIp(),
 			u.GetId(),
-			u.GetStatId(),
+			u.GetStatGroupID(),
 			q.Party,
 			q.Race,
 			q.Team,

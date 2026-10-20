@@ -8,13 +8,18 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
-func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeExtraProfileInfo bool) i.A {
+func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeLeaderboardStat bool) i.A {
 	var ids []int32
 	err := json.Unmarshal([]byte(idsQuery), &ids)
 	if err != nil {
 		return nil
 	}
-	message := i.A{0, i.A{}, i.A{}, i.A{}}
+	message := i.A{
+		0,     // resultCode: 0 = success, 2 = error
+		i.A{}, // statGroups
+		i.A{}, // profileInfos
+		i.A{}, // leaderboardStats
+	}
 	game := models.G(r)
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
@@ -24,21 +29,21 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeEx
 		if isProfileId {
 			u, ok = users.GetUserById(id)
 		} else {
-			u, ok = users.GetUserByStatId(id)
+			u, ok = users.GetUserByStatGroupID(id)
 		}
 		if !ok {
 			continue
 		}
 		message[1] = append(message[1].(i.A), i.A{
-			u.GetStatId(),
-			"",
-			"",
-			1,
-			i.A{u.GetId()},
+			u.GetStatGroupID(),
+			"",             // statGroupName: empty = no name
+			"",             // metaData: empty = none
+			1,              // type
+			i.A{u.GetId()}, // profileIDs
 		})
 		message[2] = append(message[2].(i.A), u.EncodeProfileInfo(clientLibVersion))
-		if includeExtraProfileInfo {
-			message[3] = append(message[3].(i.A), u.EncodeExtraProfileInfo(clientLibVersion))
+		if includeLeaderboardStat {
+			message[3] = append(message[3].(i.A), u.EncodeLeaderboardStat(clientLibVersion))
 		}
 		break
 	}

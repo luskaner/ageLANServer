@@ -10,8 +10,8 @@ import (
 
 func getAdvResp(errorCode int, advs i.A) i.A {
 	return i.A{
-		errorCode,
-		advs,
+		errorCode, // resultCode
+		advs,      // advertisements
 	}
 }
 
