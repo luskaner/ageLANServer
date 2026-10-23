@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -110,6 +111,8 @@ type automatchQueueEntry struct {
 	Stopped        bool
 	LocalIP        string
 	CreatedAt      time.Time
+	VetoMapKeys    []int32
+	VetoMapNames   []string
 }
 
 type automatchMatchState uint8
@@ -210,10 +213,12 @@ func (mm *MainMatchmaking) Poll(session Session, request *AutomatchPollingReques
 	}
 	entry.PartySessionID = request.PartySessionID
 	entry.RelayRegion = request.RelayRegion
+	entry.VetoMapKeys = append([]int32(nil), request.VetoMapKey.Data...)
+	entry.VetoMapNames = append([]string(nil), request.VetoMaps.Data...)
 	if !exists || wasStopped || !slices.Equal(previousMatchTypes, matchTypes) ||
 		previousPartySessionID != request.PartySessionID || previousRelayRegion != request.RelayRegion {
 		logger.Printf(
-			"automatch2: poll user=%d poll=%d call=%d matchTypes=%v party=%d relay=%q profiles=%v races=%v factions=%v vetoes=%d\n",
+			"automatch2: poll user=%d poll=%d call=%d matchTypes=%v party=%d relay=%q profiles=%v races=%v factions=%v vetoMapKey=%v vetoMaps=%v vetoes=%d\n",
 			userID,
 			entry.PollID,
 			request.CallNum,
@@ -223,6 +228,8 @@ func (mm *MainMatchmaking) Poll(session Session, request *AutomatchPollingReques
 			request.RaceInfoProfileID.Data,
 			request.RaceInfoRaceID.Data,
 			request.FactionIDs.Data,
+			request.VetoMapKey.Data,
+			request.VetoMaps.Data,
 			len(request.VetoMaps.Data),
 		)
 	}
@@ -730,7 +737,7 @@ func (mm *MainMatchmaking) entryForHostLocked(hostID int32, pollID int32) (*auto
 
 func (mm *MainMatchmaking) createMatchLocked(host, joiner *automatchQueueEntry, queue automatchQueue) []MatchNotification {
 	matchID := mm.newMatchIDLocked()
-	mapName, mapID := mm.chooseMap(queue)
+	mapName, mapID := mm.chooseMap(queue, host, joiner)
 	match := &automatchMatch{
 		ID:          matchID,
 		HostID:      host.UserID,
@@ -908,7 +915,73 @@ func (mm *MainMatchmaking) selectBattleServerLocked(region string) BattleServer 
 	return nil
 }
 
-func (mm *MainMatchmaking) chooseMap(queue automatchQueue) (string, int32) {
+type automatchMapCandidate struct {
+	ID   int32
+	Name string
+}
+
+// normalizeMapName makes the map names sent in vetoMaps comparable with the
+// names in automatchMaps.json (e.g. "Arabian Desert.rms" and
+// "Arabian Desert" are the same map for veto purposes).
+func normalizeMapName(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	name = strings.TrimSuffix(name, ".rms2")
+	name = strings.TrimSuffix(name, ".rms")
+	name = strings.ReplaceAll(name, "_", " ")
+	return strings.Join(strings.Fields(name), " ")
+}
+
+func (entry *automatchQueueEntry) vetoesMap(candidate automatchMapCandidate) bool {
+	if entry == nil {
+		return false
+	}
+	if slices.Contains(entry.VetoMapKeys, candidate.ID) {
+		return true
+	}
+	candidateName := normalizeMapName(candidate.Name)
+	for _, veto := range entry.VetoMapNames {
+		if normalizeMapName(veto) == candidateName {
+			return true
+		}
+	}
+	return false
+}
+
+// selectableMaps returns the maps neither player vetoed. If both players
+// covered the whole pool, it preserves the match by relaxing the vetoes:
+// first the host's bans, then the joiner's bans, and finally all maps.
+func selectableMaps(candidates []automatchMapCandidate, host, joiner *automatchQueueEntry) ([]automatchMapCandidate, bool) {
+	allowed := make([]automatchMapCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		if !host.vetoesMap(candidate) && !joiner.vetoesMap(candidate) {
+			allowed = append(allowed, candidate)
+		}
+	}
+	if len(allowed) > 0 {
+		return allowed, false
+	}
+
+	for _, candidate := range candidates {
+		if !host.vetoesMap(candidate) {
+			allowed = append(allowed, candidate)
+		}
+	}
+	if len(allowed) > 0 {
+		return allowed, true
+	}
+	for _, candidate := range candidates {
+		if !joiner.vetoesMap(candidate) {
+			allowed = append(allowed, candidate)
+		}
+	}
+	if len(allowed) > 0 {
+		return allowed, true
+	}
+	return append(allowed, candidates...), true
+}
+
+func (mm *MainMatchmaking) chooseMap(queue automatchQueue, host, joiner *automatchQueueEntry) (string, int32) {
+	var candidates []automatchMapCandidate
 	resources := mm.game.Resources()
 	if resources != nil {
 		if maps, ok := resources.ArrayFiles()["automatchMaps.json"]; ok && len(maps) > 1 {
@@ -933,12 +1006,42 @@ func (mm *MainMatchmaking) chooseMap(queue automatchQueue) (string, int32) {
 						continue
 					}
 					mapID, _ := numberToInt(entry[0])
-					return mapName, int32(mapID)
+					candidates = append(candidates, automatchMapCandidate{
+						ID:   int32(mapID),
+						Name: mapName,
+					})
 				}
 			}
 		}
 	}
-	return "Arabia.rms", 1
+	if len(candidates) == 0 {
+		return "Arabia.rms", 1
+	}
+
+	allowed, fallback := selectableMaps(candidates, host, joiner)
+	if fallback {
+		logger.Printf(
+			"automatch2: every map in the queue was vetoed (host=%v joiner=%v); falling back to %d map(s)\n",
+			host.VetoMapNames,
+			joiner.VetoMapNames,
+			len(allowed),
+		)
+	}
+
+	var chosen automatchMapCandidate
+	i.WithRng(func(rand *i.RandReader) {
+		chosen = allowed[rand.IntN(len(allowed))]
+	})
+	logger.Printf(
+		"automatch2: map selected map=%s id=%d allowed=%d/%d hostVetoes=%v joinerVetoes=%v\n",
+		chosen.Name,
+		chosen.ID,
+		len(allowed),
+		len(candidates),
+		host.VetoMapNames,
+		joiner.VetoMapNames,
+	)
+	return chosen.Name, chosen.ID
 }
 
 func (mm *MainMatchmaking) newPollIDLocked() int32 {
