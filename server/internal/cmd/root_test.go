@@ -33,7 +33,7 @@ func resetState(t *testing.T) {
 	oldCache := cacheNetworkInterfacesFn
 	oldSigningKeyPairCheck := signingKeyPairCheckFn
 	oldCertPairFolder := certificatePairFolderFn
-	oldSign := internal.Sign
+	oldSign := internal.SignConfigRuntime.Enabled
 	t.Cleanup(func() {
 		fileLockNewFn = oldNewPid
 		fileLockLockFn = oldLock
@@ -50,7 +50,7 @@ func resetState(t *testing.T) {
 		cacheNetworkInterfacesFn = oldCache
 		signingKeyPairCheckFn = oldSigningKeyPairCheck
 		certificatePairFolderFn = oldCertPairFolder
-		internal.Sign = oldSign
+		internal.SignConfigRuntime.Enabled = oldSign
 	})
 	commonLogger.FileLogger = nil
 	values = &server.Values{
@@ -84,7 +84,7 @@ func resetState(t *testing.T) {
 // about what signing needs from the install.
 func signingConfig(*pflag.FlagSet) (*internal.Configuration, string) {
 	return &internal.Configuration{
-		Log: false, Sign: true, Internet: internal.Internet{Enabled: true},
+		Log: false, Sign: internal.SignConfig{Enabled: true}, Internet: internal.Internet{Enabled: true},
 		Authentication: "disabled",
 		Games: internal.Games{
 			Enabled: []string{"age1"},
@@ -307,7 +307,7 @@ func TestRunRootSigningKeyPairUncheckedWhenNotSigning(t *testing.T) {
 	}
 	values.Id = "00000000-0000-0000-0000-000000000000"
 	runRoot(nil)
-	if internal.Sign {
+	if internal.SignConfigRuntime.Enabled {
 		t.Fatal("Sign should stay off when the config leaves it off")
 	}
 }

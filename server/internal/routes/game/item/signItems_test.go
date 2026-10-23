@@ -39,9 +39,9 @@ func wantRefusal(t *testing.T, arr i.A) {
 // answer is the one the official server gives. It used to answer with a
 // hardcoded blob whatever the request said, which no client can verify.
 func TestSignItems_RefusesWhenNotSigning(t *testing.T) {
-	oldSign := i.Sign
-	i.Sign = false
-	t.Cleanup(func() { i.Sign = oldSign })
+	oldSign := i.SignConfigRuntime.Enabled
+	i.SignConfigRuntime.Enabled = false
+	t.Cleanup(func() { i.SignConfigRuntime.Enabled = oldSign })
 
 	wantRefusal(t, signItems(t))
 }
@@ -53,9 +53,9 @@ func TestSignItems_RefusesWhenSigningHasNoKey(t *testing.T) {
 	if models.SigningKeyConfigured() {
 		t.Skip("a signing key sits next to the test binary, so there is a signature to give")
 	}
-	oldSign := i.Sign
-	i.Sign = true
-	t.Cleanup(func() { i.Sign = oldSign })
+	oldSign := i.SignConfigRuntime.Enabled
+	i.SignConfigRuntime.Enabled = true
+	t.Cleanup(func() { i.SignConfigRuntime.Enabled = oldSign })
 
 	wantRefusal(t, signItems(t))
 }

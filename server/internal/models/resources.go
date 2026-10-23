@@ -126,7 +126,7 @@ func (r *MainResources) initializeResponses(gameId string) {
 			var sig signature
 			err = json.Unmarshal(data, &sig)
 			if err == nil && sig.Value != "" {
-				if i.Sign {
+				if i.SignConfigRuntime.Enabled {
 					// Re-sign instead of trusting the captured signature. The crc32
 					// is taken over the body with the dataSignature value emptied,
 					// which is exactly what the client recovers before verifying, so

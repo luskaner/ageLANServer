@@ -659,7 +659,7 @@ func (mm *MainMatchmaking) gameMessageMembersLocked(match *automatchMatch, hostI
 		members = append(members, map[string]any{
 			"sessionID":   int64(user.GetId()),
 			"profileID":   int64(user.GetId()),
-			"statGroupID": int64(user.GetStatId()),
+			"statGroupID": int64(user.GetStatGroupID()),
 			"raceID":      int64(0),
 			"teamID":      team,
 			"ranking":     int32(0),
@@ -885,7 +885,7 @@ func (mm *MainMatchmaking) matchPeersLocked(match *automatchMatch, advertisement
 			advertisementID,
 			ip,
 			player.UserID,
-			user.GetStatId(),
+			user.GetStatGroupID(),
 			-1,
 			0,
 			team,

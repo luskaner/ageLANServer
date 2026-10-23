@@ -22,7 +22,7 @@ type signItemsRequest struct {
 // A list that does not parse is refused the same way: there is no item set to
 // speak of, so there is nothing to sign.
 func SignItems(w http.ResponseWriter, r *http.Request) {
-	if !i.Sign {
+	if !i.SignConfigRuntime.Enabled {
 		i.JSON(&w, i.A{2, ""})
 		return
 	}

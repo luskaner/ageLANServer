@@ -155,9 +155,9 @@ func catalogResources() *MainResources {
 // on disk at all, which is what makes it the default.
 func TestInitializeResponses_ReplaysCapturedSignatureWhenNotSigning(t *testing.T) {
 	responsesFor(t, "age2", map[string]string{"itemDefinitions.json": capturedBody})
-	oldSign := i.Sign
-	i.Sign = false
-	t.Cleanup(func() { i.Sign = oldSign })
+	oldSign := i.SignConfigRuntime.Enabled
+	i.SignConfigRuntime.Enabled = false
+	t.Cleanup(func() { i.SignConfigRuntime.Enabled = oldSign })
 
 	resources := catalogResources()
 	resources.initializeResponses("age2")
@@ -175,9 +175,9 @@ func TestInitializeResponses_ReplaysCapturedSignatureWhenNotSigning(t *testing.T
 func TestInitializeResponses_StampsWithOwnKeyWhenSigning(t *testing.T) {
 	useTestKey(t)
 	responsesFor(t, "age2", map[string]string{"itemDefinitions.json": capturedBody})
-	oldSign := i.Sign
-	i.Sign = true
-	t.Cleanup(func() { i.Sign = oldSign })
+	oldSign := i.SignConfigRuntime.Enabled
+	i.SignConfigRuntime.Enabled = true
+	t.Cleanup(func() { i.SignConfigRuntime.Enabled = oldSign })
 
 	resources := catalogResources()
 	resources.initializeResponses("age2")

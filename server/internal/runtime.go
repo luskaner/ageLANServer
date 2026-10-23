@@ -11,10 +11,19 @@ var Id uuid.UUID
 var AnnounceMessageData map[string]common.AnnounceMessageData002
 var GeneratePlatformUserId bool
 
-// Sign reports whether the server signs what it serves with its own key or
-// replays the signatures captured in resources/responses. Set once at startup
-// from the config, before any game is created.
-var Sign bool
+// SignConfigRuntime holds the signing configuration at runtime.
+var SignConfigRuntime struct {
+	// Enabled makes the server re-sign the catalogues it serves instead of
+	// replaying the signatures captured alongside them in resources/responses.
+	// Off by default: the captured ones are what an unmodified client accepts.
+	Enabled bool
+
+	// PlatformUserIdExceptions is a list of platform user IDs for which signing
+	// is disabled even when Enabled is true. This allows selective signing:
+	// when Enabled is true, all users get signed responses except those listed here.
+	PlatformUserIdExceptions []string
+}
+
 var CanUseInternet bool
 var Authentication string
 

@@ -107,7 +107,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 				// the stored value now; the joiner reads it from the ad.
 				adv.UnsafeUpdatePlatformSessionId(reservation.PlatformSessionID)
 			}
-			if advertisements.UnsafeNewPeer(adv.GetId(), adv.GetIp(), u.GetId(), u.GetStatId(), -1, 0, 0) == nil {
+			if advertisements.UnsafeNewPeer(adv.GetId(), adv.GetIp(), u.GetId(), u.GetStatGroupID(), -1, 0, 0) == nil {
 				advertisements.UnsafeDelete(adv)
 				ok = false
 				return

@@ -46,6 +46,18 @@ type CustomFiles struct {
 	Expiry       string
 }
 
+type SignConfig struct {
+	// Enabled makes the server re-sign the catalogues it serves instead of
+	// replaying the signatures captured alongside them in resources/responses.
+	// Off by default: the captured ones are what an unmodified client accepts.
+	Enabled bool
+
+	// PlatformUserIdExceptions is a list of platform user IDs for which signing
+	// is disabled even when Enabled is true. This allows selective signing:
+	// when Enabled is true, all users get signed responses except those listed here.
+	PlatformUserIdExceptions []string
+}
+
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
@@ -54,11 +66,7 @@ type Configuration struct {
 	Announcement           Announcement
 	Games                  Games
 	CustomFiles            CustomFiles
-	// Sign makes the server re-sign the catalogues it serves instead of
-	// replaying the signatures captured alongside them in
-	// resources/responses. Off by default: the captured ones are what an
-	// unmodified client accepts.
-	Sign bool
+	Sign                   SignConfig
 }
 
 func (cfg *Configuration) GetGameHosts(gameId string) []string {

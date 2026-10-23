@@ -11,7 +11,15 @@ GeneratePlatformUserId = false
 # the signatures already captured inside those files.
 # Leave it false for a stock client: the captured signatures are the ones it trusts. Turn it on only
 # together with a client that trusts this server's signing key, otherwise it rejects every catalogue.
-Sign = false
+[Sign]
+# When Enabled is true, the server signs responses with its own key.
+# When false (default), the server uses the captured signatures from resources/responses.
+Enabled = false
+
+# PlatformUserIdExceptions is a list of platform user IDs for which signing
+# is disabled even when Enabled is true. This allows selective signing:
+# when Enabled is true, all users get signed responses except those listed here.
+PlatformUserIdExceptions = []
 
 [Internet]
 # Whether to allow the server to use the Internet at all (DNS connectivity check,

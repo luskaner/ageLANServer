@@ -181,7 +181,7 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	// Only asked for when this run will actually sign: with Sign off the
 	// captured signatures in resources/responses go out untouched and no key
 	// is read at all, so an install without one is complete rather than broken.
-	if cfg.Sign {
+	if internal.SignConfigRuntime.Enabled {
 		if keyErr := signingKeyPairCheckFn(certificatePairFolder); keyErr != nil {
 			logger.Fail("Failed to load the signing key pair")
 			logger.Fault("%v", keyErr)
@@ -207,7 +207,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	announcePort := cfg.Announcement.Port
 	internal.AnnounceMessageData = make(map[string]common.AnnounceMessageData002, gameSet.Cardinality())
 	internal.GeneratePlatformUserId = cfg.GeneratePlatformUserId
-	internal.Sign = cfg.Sign
+	internal.SignConfigRuntime.Enabled = cfg.Sign.Enabled
+	internal.SignConfigRuntime.PlatformUserIdExceptions = cfg.Sign.PlatformUserIdExceptions
 	if err = applyCustomFilesConfig(cfg); err != nil {
 		logger.Fail("Invalid CustomFiles configuration: %s", err)
 		exitCode = internal.ErrCustomFiles
@@ -375,22 +376,23 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 	k := koanf.New(".")
 	defaults := map[string]any{
-		"Log":                         false,
-		"GeneratePlatformUserId":      false,
-		"Sign":                        false,
-		"Authentication":              "disabled",
-		"Internet.Enabled":            true,
-		"Internet.IP":                 "auto",
-		"Announcement.Enabled":        true,
-		"Announcement.Multicast":      true,
-		"Announcement.MulticastGroup": common.AnnounceMulticastGroup,
-		"Announcement.Port":           common.AnnouncePort,
-		"Games.Enabled":               []string{},
-		"CustomFiles.Enabled":         true,
-		"CustomFiles.Folder":          "auto",
-		"CustomFiles.MaxFileSize":     "32MB",
-		"CustomFiles.MaxTotalSize":    "256MB",
-		"CustomFiles.Expiry":          "12h",
+		"Log":                            false,
+		"GeneratePlatformUserId":         false,
+		"Sign.Enabled":                   false,
+		"Sign.PlatformUserIdExceptions":  []string{},
+		"Authentication":                 "disabled",
+		"Internet.Enabled":               true,
+		"Internet.IP":                    "auto",
+		"Announcement.Enabled":           true,
+		"Announcement.Multicast":         true,
+		"Announcement.MulticastGroup":    common.AnnounceMulticastGroup,
+		"Announcement.Port":              common.AnnouncePort,
+		"Games.Enabled":                  []string{},
+		"CustomFiles.Enabled":            true,
+		"CustomFiles.Folder":             "auto",
+		"CustomFiles.MaxFileSize":        "32MB",
+		"CustomFiles.MaxTotalSize":       "256MB",
+		"CustomFiles.Expiry":             "12h",
 	}
 	for g := range game.SupportedGames.Iter() {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
