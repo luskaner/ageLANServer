@@ -335,11 +335,20 @@ func sendMessage(sessionId string, message i.A) bool {
 	return true
 }
 
-func SendOrStoreMessage(session models.Session, action string, message i.A) {
+func SendOrStoreMessage(session models.Session, action string, message any) {
 	finalMessage := i.A{0, action, session.GetUserId(), message}
 	go func(session models.Session, finalMessage i.A) {
 		if ok := sendMessage(session.Id(), finalMessage); !ok {
 			session.AddMessage(finalMessage)
 		}
 	}(session, finalMessage)
+}
+
+func SendMatchNotifications(notifications []models.MatchNotification) {
+	for _, notification := range notifications {
+		if notification.Session == nil {
+			continue
+		}
+		SendOrStoreMessage(notification.Session, notification.Action, notification.Message)
+	}
 }

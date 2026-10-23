@@ -44,6 +44,8 @@ type Advertisement interface {
 	GetParty() int32
 	UnsafeGetVisible() bool
 	UnsafeGetJoinable() bool
+	UnsafeIsAutomatch() bool
+	UnsafeSetAutomatch(automatch bool)
 	UnsafeGetAppBinaryChecksum() int32
 	UnsafeGetDataChecksum() int32
 	UnsafeGetMatchType() uint8
@@ -60,6 +62,7 @@ type Advertisement interface {
 	UnsafeMatchesTags(integer map[string]int32, text map[string]string) bool
 	UnsafeEncode(gameId string, clientLibVersion uint16, battleServers BattleServers) i.A
 	UnsafeUpdate(advFrom *shared.AdvertisementUpdateRequest)
+	UnsafeUpdateMatchmaking(advFrom *shared.AdvertisementUpdateRequest)
 	GetId() int32
 	GetIp() string
 	UnsafeGetHostId() int32
@@ -92,6 +95,7 @@ type MainAdvertisement struct {
 	statGroup         int32
 	versionFlags      uint32
 	joinable          bool
+	automatch         bool
 	matchType         uint8
 	maxPlayers        uint8
 	options           string
@@ -117,6 +121,7 @@ func containsFilter[M ~map[K]V, K, V comparable](filter M, tags M) bool {
 type Advertisements interface {
 	Initialize(users Users, battleServers BattleServers)
 	Store(advFrom *shared.AdvertisementHostRequest, generateMetadata bool, gameId string) Advertisement
+	StoreWithId(advFrom *shared.AdvertisementHostRequest, id int32, generateMetadata bool, gameId string) (Advertisement, bool)
 	WithReadLock(id int32, action func())
 	WithWriteLock(id int32, action func())
 	GetAdvertisement(id int32) (Advertisement, bool)
@@ -189,6 +194,19 @@ func (adv *MainAdvertisement) UnsafeGetJoinable() bool {
 	return adv.joinable
 }
 
+// UnsafeIsAutomatch requires advertisement read lock. It reports whether the
+// advertisement is the server-managed lobby created for a paired automatch2
+// match. SESSION_MATCH_KEY is also used by ordinary session/party lobbies, so
+// the description alone cannot identify a matchmaking advertisement.
+func (adv *MainAdvertisement) UnsafeIsAutomatch() bool {
+	return adv.automatch
+}
+
+// UnsafeSetAutomatch requires advertisement write lock
+func (adv *MainAdvertisement) UnsafeSetAutomatch(automatch bool) {
+	adv.automatch = automatch
+}
+
 // UnsafeGetVisible requires advertisement read lock
 func (adv *MainAdvertisement) UnsafeGetVisible() bool {
 	return adv.visible
@@ -256,7 +274,7 @@ func (adv *MainAdvertisement) GetPeers() *i.SafeOrderedMap[int32, Peer] {
 	return adv.peers
 }
 
-func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateXboxSessionId bool, gameId string) Advertisement {
+func (advs *MainAdvertisements) newAdvertisement(advFrom *shared.AdvertisementHostRequest, generateXboxSessionId bool, gameId string) *MainAdvertisement {
 	adv := &MainAdvertisement{}
 	i.WithRng(func(rand *i.RandReader) {
 		adv.ip = fmt.Sprintf("/10.0.11.%d", rand.IntN(254)+1)
@@ -314,6 +332,11 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 		SlotInfo:          advFrom.SlotInfo,
 		State:             advFrom.State,
 	})
+	return adv
+}
+
+func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, generateXboxSessionId bool, gameId string) Advertisement {
+	adv := advs.newAdvertisement(advFrom, generateXboxSessionId, gameId)
 	exists := true
 	var storedAdv Advertisement
 	for exists {
@@ -325,6 +348,20 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 		})
 	}
 	return storedAdv
+}
+
+// StoreWithId stores a new advertisement using an externally allocated ID.
+// It returns false when the ID is already in use.
+func (advs *MainAdvertisements) StoreWithId(advFrom *shared.AdvertisementHostRequest, id int32, generateXboxSessionId bool, gameId string) (Advertisement, bool) {
+	adv := advs.newAdvertisement(advFrom, generateXboxSessionId, gameId)
+	adv.id = id
+	exists, storedAdv := advs.store.Store(id, adv, func(_ Advertisement) bool {
+		return false
+	})
+	if exists {
+		return nil, false
+	}
+	return storedAdv, true
 }
 
 func (adv *MainAdvertisement) MakeMessage(broadcast bool, content string, typeId uint8, metadata string, sender User, receivers []User) Message {
@@ -350,6 +387,27 @@ func (advs *MainAdvertisements) WithWriteLock(id int32, action func()) {
 	advs.locks.Lock(id)
 	defer advs.locks.Unlock(id)
 	action()
+}
+
+// UnsafeUpdateMatchmaking applies a host update without letting the dummy
+// matchmaking values (no_map, 8 players, matchtype 19) erase the settings that
+// the matchmaking server assigned to the advertisement.
+func (adv *MainAdvertisement) UnsafeUpdateMatchmaking(advFrom *shared.AdvertisementUpdateRequest) {
+	description := adv.description
+	mapName := adv.mapName
+	maxPlayers := adv.maxPlayers
+	matchType := adv.matchType
+	adv.UnsafeUpdate(advFrom)
+	adv.description = description
+	adv.mapName = mapName
+	adv.maxPlayers = maxPlayers
+	adv.matchType = matchType
+	adv.automatchPollId = -1
+	if adv.state != 1 {
+		// The join handshake must remain possible while the match is being
+		// set up, even if the client did not send joinable in this update.
+		adv.joinable = true
+	}
 }
 
 // UnsafeUpdate is safe only if adv has not been stored yet

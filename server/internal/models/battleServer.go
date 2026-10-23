@@ -75,6 +75,7 @@ type BattleServer interface {
 	EncodePorts() internal.A
 	EncodeAdvertisement(r *http.Request) internal.A
 	ResolveIPv4(r *http.Request) string
+	ResolveIPv4ForLocalIP(localIP string) string
 	String() string
 }
 
@@ -205,6 +206,17 @@ func (battleServer *MainBattleServer) ResolveIPv4(r *http.Request) (ipV4 string)
 		ipV4 = publicIp
 	}
 	return
+}
+
+func (battleServer *MainBattleServer) ResolveIPv4ForLocalIP(localIP string) string {
+	if battleServer.IPv4 != "auto" {
+		return battleServer.IPv4
+	}
+	ip := net.ParseIP(localIP)
+	if ip == nil || ip.To4() == nil {
+		return ""
+	}
+	return localIP
 }
 
 func (battleServer *MainBattleServer) String() string {

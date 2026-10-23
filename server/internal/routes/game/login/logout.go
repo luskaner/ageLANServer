@@ -27,6 +27,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 			g.Advertisements().UnsafeRemovePeer(adv.GetId(), u.GetId())
 		})
 	}
+	g.Matchmaking().RemoveUser(u.GetId())
 	sessions := g.Sessions()
 	for channelId, channel := range g.ChatChannels().Iter() {
 		if channel.RemoveUser(u) {
