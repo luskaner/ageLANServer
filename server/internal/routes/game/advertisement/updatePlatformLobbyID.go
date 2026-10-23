@@ -54,6 +54,13 @@ func updatePlatformID(w *http.ResponseWriter, r *http.Request, idKey string) {
 		ok = true
 	})
 	if !ok {
+		// The AoE2:DE matchmaking host announces the platform session for the
+		// reserved match ID before it creates the advertisement. Keep it on the
+		// pending match so the advertisement can expose it later.
+		if g.Matchmaking().SetPlatformSessionID(sess.GetUserId(), req.MatchID, idValueUint) {
+			i.JSON(w, i.A{0})
+			return
+		}
 		i.JSON(w, i.A{2})
 		return
 	}

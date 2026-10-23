@@ -224,7 +224,7 @@ func sendMessage(sessionId string, message i.A) bool {
 	return conn.WriteMessage(gws.OpcodeText, data) == nil
 }
 
-func SendOrStoreMessage(session models.Session, action string, message i.A) {
+func SendOrStoreMessage(session models.Session, action string, message any) {
 	finalMessage := i.A{0, action, session.GetUserId(), message}
 	go func(session models.Session, finalMessage i.A) {
 		if ok := sendMessage(session.Id(), finalMessage); !ok {
@@ -235,4 +235,13 @@ func SendOrStoreMessage(session models.Session, action string, message i.A) {
 
 func writeClose(socket *gws.Conn, reason string) {
 	_ = socket.WriteClose(1000, []byte(reason))
+}
+
+func SendMatchNotifications(notifications []models.MatchNotification) {
+	for _, notification := range notifications {
+		if notification.Session == nil {
+			continue
+		}
+		SendOrStoreMessage(notification.Session, notification.Action, notification.Message)
+	}
 }

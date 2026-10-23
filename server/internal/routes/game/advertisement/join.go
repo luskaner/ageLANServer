@@ -1,10 +1,12 @@
 package advertisement
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/luskaner/ageLANServer/common/game"
 	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
 )
@@ -62,24 +64,100 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		joinReturnError(battleServers, r, w)
 		return
 	}
-	if q.Party != -1 && q.Party != matchingAdv.GetParty() {
+	var automatch bool
+	advertisements.WithReadLock(matchingAdv.GetId(), func() {
+		automatch = matchingAdv.UnsafeIsAutomatch()
+	})
+	if automatch {
+		logger.Printf(
+			"automatch2: join request user=%d adv=%d party=%d race=%d team=%d\n",
+			u.GetId(),
+			q.Id,
+			q.Party,
+			q.Race,
+			q.Team,
+		)
+	}
+	if !automatch && q.Party != -1 && q.Party != matchingAdv.GetParty() {
 		joinReturnError(battleServers, r, w)
 		return
 	}
+	if automatch {
+		// The matchmaking join request can carry the player's party session
+		// and synthetic race/team values. Teams are assigned by the matched
+		// polling response; the advertisement itself is a server-managed
+		// solo lobby.
+		q.Party = -1
+		q.Race = -1
+		q.Team = -1
+	}
+	var rejectReason string
 	advertisements.WithReadLock(matchingAdv.GetId(), func() {
-		if !matchingAdv.UnsafeGetJoinable() ||
-			matchingAdv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum ||
-			matchingAdv.UnsafeGetDataChecksum() != q.DataChecksum ||
-			matchingAdv.UnsafeGetModDllFile() != q.ModDllFile ||
-			matchingAdv.UnsafeGetModDllChecksum() != q.ModDllChecksum ||
-			matchingAdv.UnsafeGetModName() != q.ModName ||
-			matchingAdv.UnsafeGetModVersion() != q.ModVersion ||
-			matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags ||
-			matchingAdv.UnsafeGetPasswordValue() != q.Password {
-			joinReturnError(battleServers, r, w)
-			return
+		switch {
+		case !automatch && !matchingAdv.UnsafeGetJoinable():
+			rejectReason = "advertisement is not joinable"
+		case matchingAdv.UnsafeGetAppBinaryChecksum() != q.AppBinaryChecksum:
+			rejectReason = fmt.Sprintf(
+				"app binary checksum mismatch (host=%d join=%d)",
+				matchingAdv.UnsafeGetAppBinaryChecksum(),
+				q.AppBinaryChecksum,
+			)
+		case matchingAdv.UnsafeGetDataChecksum() != q.DataChecksum:
+			rejectReason = fmt.Sprintf(
+				"data checksum mismatch (host=%d join=%d)",
+				matchingAdv.UnsafeGetDataChecksum(),
+				q.DataChecksum,
+			)
+		case matchingAdv.UnsafeGetModDllFile() != q.ModDllFile ||
+			matchingAdv.UnsafeGetModDllChecksum() != q.ModDllChecksum:
+			rejectReason = fmt.Sprintf(
+				"mod dll mismatch (host=%q/%d join=%q/%d)",
+				matchingAdv.UnsafeGetModDllFile(),
+				matchingAdv.UnsafeGetModDllChecksum(),
+				q.ModDllFile,
+				q.ModDllChecksum,
+			)
+		case matchingAdv.UnsafeGetModName() != q.ModName ||
+			matchingAdv.UnsafeGetModVersion() != q.ModVersion:
+			rejectReason = fmt.Sprintf(
+				"mod version mismatch (host=%q/%q join=%q/%q)",
+				matchingAdv.UnsafeGetModName(),
+				matchingAdv.UnsafeGetModVersion(),
+				q.ModName,
+				q.ModVersion,
+			)
+		case matchingAdv.UnsafeGetVersionFlags() != q.VersionFlags:
+			rejectReason = fmt.Sprintf(
+				"version flags mismatch (host=%d join=%d)",
+				matchingAdv.UnsafeGetVersionFlags(),
+				q.VersionFlags,
+			)
+		case !automatch && matchingAdv.UnsafeGetPasswordValue() != q.Password:
+			rejectReason = "password mismatch"
 		}
 	})
+	if rejectReason != "" {
+		if automatch {
+			logger.Printf(
+				"automatch2: join rejected user=%d adv=%d reason=%s\n",
+				u.GetId(),
+				q.Id,
+				rejectReason,
+			)
+		}
+		joinReturnError(battleServers, r, w)
+		return
+	}
+	if automatch {
+		logger.Printf(
+			"automatch2: join accepted user=%d adv=%d party=%d race=%d team=%d\n",
+			u.GetId(),
+			q.Id,
+			q.Party,
+			q.Race,
+			q.Team,
+		)
+	}
 	var response i.A
 	advertisements.WithWriteLock(matchingAdv.GetId(), func() {
 		peer := advertisements.UnsafeNewPeer(
@@ -93,6 +171,9 @@ func Join(w http.ResponseWriter, r *http.Request) {
 		)
 		if peer == nil {
 			ok = false
+			if automatch {
+				logger.Printf("automatch2: join failed user=%d adv=%d (could not add peer)\n", u.GetId(), q.Id)
+			}
 			return
 		}
 		battleServer, battleServerExists := battleServers.Get(matchingAdv.GetRelayRegion())
