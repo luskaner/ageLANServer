@@ -152,6 +152,13 @@ func (g *Game) InitializeRoutes(gameId string, _ http.Handler) http.Handler {
 	if gameId == game.AoE4 {
 		automatch2Group.HandleFunc("POST", "/polling", Automatch2.Polling)
 		automatch2Group.HandleFunc("POST", "/stoppolling", Automatch2.Stoppolling)
+	} else if gameId == game.AoE2 {
+		automatch2Group.HandleFunc("POST", "/polling", Automatch2.PollingAoE2)
+		automatch2Group.HandleFunc("GET", "/polling", Automatch2.PollingAoE2)
+		automatch2Group.HandleFunc("POST", "/stoppolling", Automatch2.StopPolling)
+		automatch2Group.HandleFunc("GET", "/stoppolling", Automatch2.StopPolling)
+		automatch2Group.HandleFunc("POST", "/updateStatus", Automatch2.UpdateStatus)
+		automatch2Group.HandleFunc("GET", "/updateStatus", Automatch2.UpdateStatus)
 	}
 	AchievementGroup := gameGroup.Subgroup("/Achievement")
 	AchievementGroup.HandleFunc("GET", "/getAchievements", achievement.GetAchievements)

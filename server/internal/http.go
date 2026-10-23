@@ -18,6 +18,17 @@ func (j *Json[T]) UnmarshalText(text []byte) (err error) {
 	return json.Unmarshal(text, &j.Data)
 }
 
+func (j *Json[T]) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 && data[0] == '"' {
+		var text string
+		if err := json.Unmarshal(data, &text); err != nil {
+			return err
+		}
+		return j.UnmarshalText([]byte(text))
+	}
+	return json.Unmarshal(data, &j.Data)
+}
+
 type A = []any
 type H map[string]any
 

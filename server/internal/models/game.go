@@ -18,6 +18,7 @@ type Game interface {
 	ChatChannels() ChatChannels
 	Sessions() Sessions
 	CustomFiles() CustomFiles
+	Matchmaking() Matchmaking
 }
 
 func G(r *http.Request) Game {
@@ -35,6 +36,7 @@ type MainGame struct {
 	advertisements         Advertisements
 	chatChannels           ChatChannels
 	sessions               Sessions
+	matchmaking            Matchmaking
 	leaderboardDefinitions LeaderboardDefinitions
 	items                  Items
 	presenceDefinitions    PresenceDefinitions
@@ -55,6 +57,7 @@ type InstanceOpts struct {
 	Advertisements         Advertisements
 	ChatChannels           ChatChannels
 	Sessions               Sessions
+	Matchmaking            Matchmaking
 	LeaderboardDefinitions LeaderboardDefinitions
 	PresenceDefinitions    PresenceDefinitions
 	Items                  Items
@@ -93,6 +96,9 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	if opts.Instances.CustomFiles == nil {
 		opts.Instances.CustomFiles = &MainCustomFiles{}
 	}
+	if opts.Instances.Matchmaking == nil {
+		opts.Instances.Matchmaking = &MainMatchmaking{}
+	}
 	game := &MainGame{
 		battleServers:  opts.Instances.BattleServers,
 		resources:      opts.Instances.Resources,
@@ -101,6 +107,7 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 		chatChannels:   opts.Instances.ChatChannels,
 		sessions:       opts.Instances.Sessions,
 		customFiles:    opts.Instances.CustomFiles,
+		matchmaking:    opts.Instances.Matchmaking,
 		title:          gameId,
 	}
 	game.battleServers.Initialize(BattleServersStore[gameId], opts.BattleServer)
@@ -110,6 +117,7 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	game.chatChannels.Initialize(game.resources.ChatChannels())
 	game.sessions.Initialize()
 	game.customFiles.Initialize(gameId, opts.Instances.CustomFilesOpts)
+	game.matchmaking.Initialize(game)
 	if itemLocations, ok := game.resources.ArrayFiles()["itemLocations.json"]; ok {
 		if opts.Instances.Items == nil {
 			opts.Instances.Items = &MainItems{}
@@ -163,6 +171,10 @@ func (g *MainGame) BattleServers() BattleServers {
 
 func (g *MainGame) Sessions() Sessions {
 	return g.sessions
+}
+
+func (g *MainGame) Matchmaking() Matchmaking {
+	return g.matchmaking
 }
 
 func (g *MainGame) LeaderboardDefinitions() LeaderboardDefinitions {
