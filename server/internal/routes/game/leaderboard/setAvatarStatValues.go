@@ -71,6 +71,7 @@ func SetAvatarStatValues(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 	}
+	logger.Printf("leaderboard.setAvatarStatValues: user=%d ids=%v values=%v updateTypes=%v\n", u.GetId(), req.AvatarStatIds.Data, req.Values.Data, req.UpdateTypes.Data)
 	if len(encodedAvatarStats) > 0 {
 		// TODO: Do others need to be notified?
 		// TODO: Does client support multiple AvatarStats in one message?
