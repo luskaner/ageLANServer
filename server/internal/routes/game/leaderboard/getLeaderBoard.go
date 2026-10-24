@@ -3,7 +3,6 @@ package leaderboard
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
@@ -13,15 +12,12 @@ import (
 // GetLeaderBoard returns one page of a ladder.
 //
 // The client sends leaderboard_id, start (1-based), count and sortBy. The
-// response follows the same positional layout as the other game endpoints:
+// response follows the positional layout of LeaderboardGetLeaderboardEvent:
 //
-//	[result, [leaderboardStats...], [profileInfo...], [extraProfileInfo...]]
+//	[result, [statGroup...], [profileInfo...], [leaderboardStat...]]
 //
-// Each leaderboardStat is the 1v1 ladder entry
-//
-//	[profileId, rankTotal, drops, disputes, streak, losses, wins,
-//	 communityEventID, highestRating, highestRankLevel, highestRank,
-//	 lastMatchTime, rating, regionRankTotal, regionRanking, lastUpdated, statID]
+// Each statGroup is [statGroupID, statGroupName, metaData, type, [profileID...]]
+// and each leaderboardStat is produced by MainUser.EncodeLeaderboardStat.
 func GetLeaderBoard(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	logger.Printf("leaderboard.getLeaderBoard: query=%s\n", r.URL.RawQuery)
@@ -50,41 +46,28 @@ func GetLeaderBoard(w http.ResponseWriter, r *http.Request) {
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
 
-	entries := i.A{}
+	statGroups := i.A{}
 	profiles := i.A{}
-	extras := i.A{}
-	now := time.Now().Unix()
+	stats := i.A{}
 	skipped := 0
 	for _, rating := range page {
 		user, ok := users.GetUserById(rating.ProfileID)
 		if !ok {
-			// The client pairs every leaderboard entry with a profileInfo, so an
-			// entry without one would desynchronise the two arrays.
+			// Every stat group must have its profile info, otherwise the client
+			// cannot resolve the entry.
 			skipped++
 			continue
 		}
 		user.SetRating(rating.Rating)
-		entries = append(entries, i.A{
-			rating.ProfileID, // profileId
-			rating.RankTotal, // rankTotal
-			0,                // drops
-			0,                // disputes
-			rating.Streak,    // streak
-			rating.Losses,    // losses
-			rating.Wins,      // wins
-			-1,               // communityEventID
-			rating.HighestRating,
-			0, // highestRankLevel
-			0, // highestRank
-			rating.LastMatch.Unix(),
-			rating.Rating,
-			rating.RankTotal, // regionRankTotal
-			rating.Rank,      // regionRanking
-			now,              // lastUpdated
-			rating.StatID,
+		statGroups = append(statGroups, i.A{
+			user.GetStatGroupID(), // statGroupID
+			"",               // statGroupName
+			"",               // metaData
+			1,                // type
+			i.A{user.GetId()},
 		})
 		profiles = append(profiles, user.EncodeProfileInfo(clientLibVersion))
-		extras = append(extras, user.EncodeExtraProfileInfo(clientLibVersion))
+		stats = append(stats, user.EncodeLeaderboardStat(rating))
 	}
 	logger.Printf(
 		"leaderboard.getLeaderBoard: leaderboard=%d start=%d count=%d total=%d returned=%d skipped=%d profiles=%d\n",
@@ -96,5 +79,5 @@ func GetLeaderBoard(w http.ResponseWriter, r *http.Request) {
 		skipped,
 		len(profiles),
 	)
-	i.JSON(&w, i.A{0, entries, profiles, extras})
+	i.JSON(&w, i.A{0, statGroups, profiles, stats})
 }

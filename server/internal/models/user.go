@@ -25,7 +25,8 @@ type User interface {
 	GetPlatformPath() string
 	GetAccountType() int
 	GetPlatformUserID() uint64
-	EncodeLeaderboardStat(clientLibVersion uint16) i.A
+	EncodeExtraProfileInfo(clientLibVersion uint16) i.A
+	EncodeLeaderboardStat(r *PlayerRating) i.A
 	EncodeProfileInfo(clientLibVersion uint16) i.A
 	GetPresence() int32
 	SetPresence(presence int32)
@@ -419,23 +420,24 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-// EncodeLeaderboardStat encodes the value for the client's leaderboardStat field.
-func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
-	// The client accepts these placeholder values until real stats are implemented.
+// EncodeExtraProfileInfo returns the stat summary embedded in the account and
+// profile payloads. It is a single leaderboardStat-shaped array (same order as
+// EncodeLeaderboardStat) for the default ladder of the profile.
+func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
 	info := i.A{
-		u.statGroupID,
-		0, // leaderboardID
-		0, // wins
-		0, // losses
-		-1,
-		0, // disputes
-		0, // drops
-		-1,
-		-1,
-		-1,
-		-1,
-		-1,
-		u.GetRating(),
+		u.GetStatGroupID(), // statGroupID
+		0,                  // leaderboardID
+		0,                  // wins
+		1,                  // losses
+		-1,                 // streak
+		0,                  // disputes
+		0,                  // drops
+		-1,                 // ranking
+		-1,                 // rankTotal
+		-1,                 // regionRanking
+		-1,                 // regionRankTotal
+		-1,                 // level
+		u.GetRating(),      // rating
 		// Some time in the past
 		1713372625, // lastMatchTime
 		0,          // highestRank
@@ -446,6 +448,65 @@ func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
 		info = append(info, 0, 0) // platformRank, platformRankTotal
 	}
 	return info
+}
+
+// EncodeLeaderboardStat returns one element of the leaderboardStats array that
+// the Leaderboard endpoints (getLeaderBoard, getStatsForLeaderboardByProfileName,
+// getStatGroupsByProfileIDs, getPartyStat) return. The client deserialises it
+// positionally, so the order below must not change:
+//
+//	[statGroupID, leaderboardID, wins, losses, streak, disputes, drops,
+//	 ranking, rankTotal, regionRanking, regionRankTotal, level, rating,
+//	 lastMatchTime, highestRank, highestRankLevel, highestRating,
+//	 platformRank, platformRankTotal]
+func (u *MainUser) EncodeLeaderboardStat(r *PlayerRating) i.A {
+	leaderboardID := int32(SoloRMRanked)
+	rating := u.GetRating()
+	highestRating := rating
+	var wins, losses, streak int32
+	ranking := int64(-1)
+	rankTotal := int64(-1)
+	lastMatch := int64(0)
+	if r != nil {
+		leaderboardID = r.LeaderboardID
+		rating = r.Rating
+		if r.HighestRating > 0 {
+			highestRating = r.HighestRating
+		}
+		wins = r.Wins
+		losses = r.Losses
+		streak = r.Streak
+		if r.Rank > 0 {
+			ranking = r.Rank
+		}
+		if r.RankTotal > 0 {
+			rankTotal = r.RankTotal
+		}
+		if !r.LastMatch.IsZero() {
+			lastMatch = r.LastMatch.Unix()
+		}
+	}
+	return i.A{
+		u.GetStatGroupID(), // statGroupID
+		leaderboardID, // leaderboardID
+		wins,          // wins
+		losses,        // losses
+		streak,        // streak
+		0,             // disputes
+		0,             // drops
+		ranking,       // ranking
+		rankTotal,     // rankTotal
+		-1,            // regionRanking
+		-1,            // regionRankTotal
+		0,             // level
+		rating,        // rating
+		lastMatch,     // lastMatchTime
+		ranking,       // highestRank
+		0,             // highestRankLevel
+		highestRating, // highestRating
+		-1,            // platformRank
+		-1,            // platformRankTotal
+	}
 }
 
 // GetRating returns the cached 1v1 random map rating. Profiles that have never
