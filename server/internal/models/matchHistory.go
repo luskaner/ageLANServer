@@ -2,11 +2,14 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"math"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -77,6 +80,21 @@ type PlayerRating struct {
 	Rank          int64     `json:"rank"`
 	RankTotal     int64     `json:"rankTotal"`
 	LastMatch     time.Time `json:"lastMatch"`
+}
+
+// StoredProfile is the identity of a profile as it was last seen by the
+// server. Ratings only keep IDs, so this table is what lets the ladder show
+// players that are not connected right now.
+type StoredProfile struct {
+	ProfileID      int32
+	StatGroupID    int32
+	Alias          string
+	PlatformUserID uint64
+	IsXbox         bool
+	AvatarMetadata string
+	XP             uint32
+	Level          uint16
+	Region         uint8
 }
 
 // MatchHistoryStore persists matches and ladder ratings in an SQLite database
@@ -187,6 +205,18 @@ func migrate(db *sql.DB) error {
 			PRIMARY KEY (leaderboard_id, profile_id)
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_ratings_ladder ON ratings(leaderboard_id, rating DESC)`,
+		`CREATE TABLE IF NOT EXISTS profiles (
+			profile_id       INTEGER PRIMARY KEY,
+			stat_group_id    INTEGER NOT NULL DEFAULT 0,
+			alias            TEXT    NOT NULL DEFAULT '',
+			platform_user_id INTEGER NOT NULL DEFAULT 0,
+			is_xbox          INTEGER NOT NULL DEFAULT 0,
+			avatar_metadata  TEXT    NOT NULL DEFAULT '',
+			xp               INTEGER NOT NULL DEFAULT 0,
+			level            INTEGER NOT NULL DEFAULT 1,
+			region           INTEGER NOT NULL DEFAULT 0,
+			updated_at       INTEGER NOT NULL DEFAULT 0
+		)`,
 		`CREATE INDEX IF NOT EXISTS idx_match_players_profile ON match_players(profile_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_matches_finished ON matches(finished_at DESC)`,
 	}
@@ -770,4 +800,239 @@ func (s *MatchHistoryStore) EnsureRating(profileID int32, statID int32) *PlayerR
 	}
 	ratings := s.getRatingsLocked(SoloRMRanked, []int32{profileID})
 	return ratings[profileID]
+}
+
+// UpsertProfile remembers who a profile ID belongs to. It is called whenever
+// the server builds a user, so the ladder can still render a player that is
+// offline.
+func (s *MatchHistoryStore) UpsertProfile(p StoredProfile) {
+	if p.ProfileID == 0 {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return
+	}
+	isXbox := 0
+	if p.IsXbox {
+		isXbox = 1
+	}
+	if _, err := s.db.Exec(
+		`INSERT INTO profiles (profile_id, stat_group_id, alias, platform_user_id, is_xbox, avatar_metadata, xp, level, region, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(profile_id) DO UPDATE SET
+		     stat_group_id    = CASE WHEN excluded.stat_group_id <> 0 THEN excluded.stat_group_id ELSE profiles.stat_group_id END,
+		     alias            = CASE WHEN excluded.alias <> '' THEN excluded.alias ELSE profiles.alias END,
+		     platform_user_id = CASE WHEN excluded.platform_user_id <> 0 THEN excluded.platform_user_id ELSE profiles.platform_user_id END,
+		     is_xbox          = excluded.is_xbox,
+		     avatar_metadata  = CASE WHEN excluded.avatar_metadata <> '' THEN excluded.avatar_metadata ELSE profiles.avatar_metadata END,
+		     xp               = excluded.xp,
+		     level            = CASE WHEN excluded.level <> 0 THEN excluded.level ELSE profiles.level END,
+		     region           = excluded.region,
+		     updated_at       = excluded.updated_at`,
+		p.ProfileID,
+		p.StatGroupID,
+		p.Alias,
+		int64(p.PlatformUserID),
+		isXbox,
+		p.AvatarMetadata,
+		int64(p.XP),
+		int64(p.Level),
+		int64(p.Region),
+		time.Now().Unix(),
+	); err != nil {
+		logger.Printf("matchHistory: upsert profile %d: %s\n", p.ProfileID, err)
+	}
+}
+
+// BackfillProfiles scans user data files and populates the profiles table
+// for players that have ratings but no stored profile yet.
+func (s *MatchHistoryStore) BackfillProfiles(userDataDir string) {
+	if userDataDir == "" {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return
+	}
+
+	// Find all user directories/files
+	entries, err := os.ReadDir(userDataDir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+		// Skip non-user entries
+		if strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".db-shm") || strings.HasSuffix(name, ".db-wal") || strings.HasSuffix(name, ".migrated") {
+			continue
+		}
+		if !strings.HasPrefix(name, "STEAM_") && !strings.HasPrefix(name, "XBOX_") {
+			continue
+		}
+
+		var userDir string
+		if entry.IsDir() {
+			userDir = filepath.Join(userDataDir, name)
+		} else {
+			// single file user data, skip for now
+			continue
+		}
+
+		// Try to read profile from files
+		alias := ""
+		avatarMeta := ""
+		statGroupID := int32(0)
+		profileID := int32(0)
+
+		// Try to find profile.json or read from stored data
+		// Check for profile in common files
+		if data, err := os.ReadFile(filepath.Join(userDir, "profile.json")); err == nil {
+			var p map[string]interface{}
+			if json.Unmarshal(data, &p) == nil {
+				if v, ok := p["alias"].(string); ok {
+					alias = v
+				}
+				if v, ok := p["profileId"].(float64); ok {
+					profileID = int32(v)
+				} else if v, ok := p["id"].(float64); ok {
+					profileID = int32(v)
+				}
+				if v, ok := p["statGroupId"].(float64); ok {
+					statGroupID = int32(v)
+				}
+			}
+		}
+
+		// Try avatarMetadata
+		if data, err := os.ReadFile(filepath.Join(userDir, "avatarMetadata.json")); err == nil {
+			var v struct {
+				Data string `json:"data"`
+			}
+			if json.Unmarshal(data, &v) == nil {
+				avatarMeta = v.Data
+			} else {
+				var raw string
+				if json.Unmarshal(data, &raw) == nil {
+					avatarMeta = raw
+				}
+			}
+		}
+
+		// Try to extract profile ID from directory name or from files
+		if profileID == 0 {
+			// Try to find in any json file
+			files, _ := os.ReadDir(userDir)
+			for _, f := range files {
+				if strings.HasSuffix(f.Name(), ".json") {
+					data, err := os.ReadFile(filepath.Join(userDir, f.Name()))
+					if err != nil {
+						continue
+					}
+					var obj map[string]interface{}
+					if json.Unmarshal(data, &obj) == nil {
+						if v, ok := obj["profileId"].(float64); ok && profileID == 0 {
+							profileID = int32(v)
+						}
+						if v, ok := obj["id"].(float64); ok && profileID == 0 {
+							profileID = int32(v)
+						}
+						if v, ok := obj["statGroupId"].(float64); ok && statGroupID == 0 {
+							statGroupID = int32(v)
+						}
+						if v, ok := obj["alias"].(string); ok && alias == "" {
+							alias = v
+						}
+					}
+				}
+			}
+		}
+
+		if profileID == 0 || alias == "" {
+			continue
+		}
+
+		platformUserID := uint64(0)
+		isXbox := 0
+		if strings.HasPrefix(name, "XBOX_") {
+			isXbox = 1
+		} else if strings.HasPrefix(name, "STEAM_") {
+			// extract steam id
+			if idStr := strings.TrimPrefix(name, "STEAM_"); idStr != "" {
+				if id, err := strconv.ParseUint(idStr, 10, 64); err == nil {
+					platformUserID = id
+				}
+			}
+		}
+
+		if _, err := s.db.Exec(
+			`INSERT INTO profiles (profile_id, stat_group_id, alias, platform_user_id, is_xbox, avatar_metadata, xp, level, region, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(profile_id) DO UPDATE SET
+			     alias = CASE WHEN excluded.alias <> '' THEN excluded.alias ELSE profiles.alias END,
+			     stat_group_id = CASE WHEN excluded.stat_group_id <> 0 THEN excluded.stat_group_id ELSE profiles.stat_group_id END,
+			     avatar_metadata = CASE WHEN excluded.avatar_metadata <> '' THEN excluded.avatar_metadata ELSE profiles.avatar_metadata END,
+			     platform_user_id = CASE WHEN excluded.platform_user_id <> 0 THEN excluded.platform_user_id ELSE profiles.platform_user_id END,
+			     is_xbox = excluded.is_xbox,
+			     updated_at = excluded.updated_at`,
+			profileID,
+			statGroupID,
+			alias,
+			int64(platformUserID),
+			isXbox,
+			avatarMeta,
+			0, 1, 0,
+			time.Now().Unix(),
+		); err != nil {
+			logger.Printf("matchHistory: backfill profile %d: %s\n", profileID, err)
+		}
+	}
+	logger.Printf("matchHistory: backfilled profiles from %s\n", userDataDir)
+}
+
+// GetProfiles returns the stored identity of the requested profiles. Profiles
+// that were never seen are absent from the map.
+func (s *MatchHistoryStore) GetProfiles(profileIDs []int32) map[int32]*StoredProfile {
+	out := make(map[int32]*StoredProfile, len(profileIDs))
+	if len(profileIDs) == 0 {
+		return out
+	}
+	wanted := make(map[int32]struct{}, len(profileIDs))
+	for _, id := range profileIDs {
+		wanted[id] = struct{}{}
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return out
+	}
+	rows, err := s.db.Query(
+		`SELECT profile_id, stat_group_id, alias, platform_user_id, is_xbox, avatar_metadata, xp, level, region
+		 FROM profiles`,
+	)
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		p := &StoredProfile{}
+		var platformUserID, xp, level, region int64
+		var isXbox int
+		if err = rows.Scan(&p.ProfileID, &p.StatGroupID, &p.Alias, &platformUserID, &isXbox, &p.AvatarMetadata, &xp, &level, &region); err != nil {
+			continue
+		}
+		if _, ok := wanted[p.ProfileID]; !ok {
+			continue
+		}
+		p.PlatformUserID = uint64(platformUserID)
+		p.IsXbox = isXbox != 0
+		p.XP = uint32(xp)
+		p.Level = uint16(level)
+		p.Region = uint8(region)
+		out[p.ProfileID] = p
+	}
+	return out
 }

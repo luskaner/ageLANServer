@@ -34,6 +34,11 @@ type MatchHistory interface {
 	GetLeaderboardPage(leaderboardID int32, start, count int) ([]*PlayerRating, int64)
 	EnsureRating(profileID int32, statID int32) *PlayerRating
 	GetDefaultRating() int32
+	// UpsertProfile stores the identity of a profile (alias, platform user id,
+	// stat group id...) so the ladder can render players that are offline.
+	UpsertProfile(p StoredProfile)
+	// GetProfiles returns the stored identity of the requested profiles.
+	GetProfiles(profileIDs []int32) map[int32]*StoredProfile
 	// RecordPendingMatch stores the pairing (map, queue, players) as soon as the
 	// match is created, so the result can still be attributed after the
 	// matchmaking entry has been removed.
@@ -149,6 +154,41 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 			}
 			return 0
 		})
+		mainUsers.SetProfileSink(func(u User) {
+			profile := StoredProfile{
+				ProfileID:      u.GetId(),
+				StatGroupID:    u.GetStatGroupID(),
+				Alias:          u.GetAlias(),
+				PlatformUserID: u.GetPlatformUserID(),
+				IsXbox:         u.GetXbox(),
+				XP:             u.GetProfileExperience(),
+				Level:          u.GetProfileLevel(),
+				Region:         u.GetPlatformRelated(),
+			}
+			if metadata := u.GetAvatarMetadata(); metadata != nil {
+				_ = metadata.WithReadOnly(func(value *string) error {
+					if value != nil {
+						profile.AvatarMetadata = *value
+					}
+					return nil
+				})
+			}
+			history.UpsertProfile(profile)
+		})
+	}
+	// Backfill profiles from existing user data files
+	if game.matchHistory != nil {
+			userDataDir := ""
+		if game.resources != nil {
+			if rd, ok := interface{}(game.resources).(interface{ ResourcesFolder() string }); ok {
+				if r := rd.ResourcesFolder(); r != "" {
+					userDataDir = r + "\\userData\\" + gameId
+				}
+			}
+		}
+		if store, ok := game.matchHistory.(*MatchHistoryStore); ok {
+			store.BackfillProfiles(userDataDir)
+		}
 	}
 	game.matchmaking.Initialize(game)
 	if itemLocations, ok := game.resources.ArrayFiles()["itemLocations.json"]; ok {

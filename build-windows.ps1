@@ -49,7 +49,11 @@ param(
     # Leave GOPROXY as configured (needed only if the module cache is incomplete).
     [switch]$AllowNetwork,
     # Do not write docs/ (only binaries, resources and configs).
-    [switch]$SkipDocs
+    [switch]$SkipDocs,
+    # Rebuild/install only the matching binaries. Each value is matched against
+    # the package (server, launcher, ...) or the install path prefix
+    # (server\server.exe). The rest of the target is left untouched.
+    [string[]]$Only = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -119,6 +123,7 @@ Write-Host "repo          : $root"
 Write-Host "target        : $Target"
 Write-Host "preserve from : $(if ($PreserveFrom) { $PreserveFrom } else { '<none>' })"
 Write-Host "version       : $Version"
+Write-Host "binaries      : $(if ($Only.Count -gt 0) { $Only -join ', ' } else { 'all' })"
 Write-Host "go            : $go"
 
 if (-not $AllowNetwork) {
@@ -156,6 +161,18 @@ $builds = @(
     @{ Pkg = './launcher-config-admin-agent';Out = 'launcher\bin\config-admin-agent.exe' },
     @{ Pkg = './battle-server-manager';      Out = 'battle-server-manager\battle-server-manager.exe' }
 )
+
+if ($Only.Count -gt 0) {
+    $builds = $builds | Where-Object {
+        $b = $_
+        $Only | Where-Object {
+            $b.Out.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) -or $b.Pkg -eq "./$_"
+        }
+    }
+    if (-not $builds) {
+        throw "-Only did not match any known binary: $($Only -join ', ')"
+    }
+}
 
 $ldflags = "-s -w -X main.version=$Version"
 
@@ -201,7 +218,7 @@ foreach ($b in $builds) {
 }
 # Older full installs also shipped server\ageLANServer.exe; keep it in sync.
 $altServer = Join-Path $Target 'server\ageLANServer.exe'
-if (Test-Path $altServer) {
+if ((Test-Path $altServer) -and (Test-Path (Join-Path $stage 'server\server.exe'))) {
     Backup-And-Copy (Join-Path $stage 'server\server.exe') $altServer
     Write-Host '  server\ageLANServer.exe (updated in place)'
 }

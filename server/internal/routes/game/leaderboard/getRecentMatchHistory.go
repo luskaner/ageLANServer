@@ -43,6 +43,7 @@ func GetRecentMatchHistory(w http.ResponseWriter, r *http.Request) {
 			profiles = append(profiles, player.ProfileID)
 		}
 		ratings := store.GetRatingsForLeaderboard(match.LeaderboardID, profiles)
+		storedProfiles := store.GetProfiles(profiles)
 
 		reportResults := make(i.A, 0, len(match.PlayerStats))
 		memberStats := make(i.A, 0, len(match.PlayerStats))
@@ -63,9 +64,11 @@ func GetRecentMatchHistory(w http.ResponseWriter, r *http.Request) {
 			var wins, losses, streak int32
 			if user, ok := users.GetUserById(player.ProfileID); ok {
 				statGroupID = user.GetStatGroupID()
+			} else if stored, ok := storedProfiles[player.ProfileID]; ok {
+				statGroupID = stored.StatGroupID
 			}
 			if rating, ok := ratings[player.ProfileID]; ok && rating != nil {
-				if rating.StatID != 0 {
+				if rating.StatID != 0 && statGroupID == 0 {
 					statGroupID = rating.StatID
 				}
 				wins = rating.Wins
