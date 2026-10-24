@@ -3,6 +3,7 @@ package shared
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/models"
@@ -23,6 +24,13 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeLe
 	game := models.G(r)
 	users := game.Users()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
+	leaderboardID := models.SoloRMRanked
+	if raw := r.URL.Query().Get("leaderboard_id"); raw != "" {
+		if parsed, parseErr := strconv.ParseInt(raw, 10, 32); parseErr == nil && parsed > 0 {
+			leaderboardID = int32(parsed)
+		}
+	}
+	ratings := game.MatchHistory().GetRatingsForLeaderboard(leaderboardID, ids)
 	for _, id := range ids {
 		var u models.User
 		var ok bool
@@ -33,6 +41,9 @@ func GetStatGroups(r *http.Request, idsQuery string, isProfileId bool, includeLe
 		}
 		if !ok {
 			continue
+		}
+		if rating, found := ratings[u.GetId()]; found {
+			u.SetRating(rating.Rating)
 		}
 		message[1] = append(message[1].(i.A), i.A{
 			u.GetStatGroupID(),

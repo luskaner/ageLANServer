@@ -19,6 +19,28 @@ type Game interface {
 	Sessions() Sessions
 	CustomFiles() CustomFiles
 	Matchmaking() Matchmaking
+	MatchHistory() MatchHistory
+}
+
+type MatchHistory interface {
+	RecordMatch(MatchResult)
+	UpdateRatings(MatchResult)
+	HasMatch(matchID int64) bool
+	GetRatings(profileIDs []int32) map[int32]*PlayerRating
+	GetRatingsForLeaderboard(leaderboardID int32, profileIDs []int32) map[int32]*PlayerRating
+	GetRecentForProfile(profileID int32, limit int) []MatchResult
+	GetRecentForProfiles(profileIDs []int32, limit int) []MatchResult
+	GetLeaderboard(limit int) []*PlayerRating
+	GetLeaderboardPage(leaderboardID int32, start, count int) ([]*PlayerRating, int64)
+	EnsureRating(profileID int32, statID int32) *PlayerRating
+	GetDefaultRating() int32
+	// RecordPendingMatch stores the pairing (map, queue, players) as soon as the
+	// match is created, so the result can still be attributed after the
+	// matchmaking entry has been removed.
+	RecordPendingMatch(m MatchResult)
+	// ApplyResult stores a reported result and returns the updated ratings and
+	// whether this call moved them.
+	ApplyResult(m MatchResult) (map[int32]*PlayerRating, bool)
 }
 
 func G(r *http.Request) Game {
@@ -41,6 +63,7 @@ type MainGame struct {
 	items                  Items
 	presenceDefinitions    PresenceDefinitions
 	customFiles            CustomFiles
+	matchHistory           MatchHistory
 	title                  string
 }
 
@@ -117,6 +140,16 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	game.chatChannels.Initialize(game.resources.ChatChannels())
 	game.sessions.Initialize()
 	game.customFiles.Initialize(gameId, opts.Instances.CustomFilesOpts)
+	game.matchHistory = NewMatchHistoryStoreForGame(gameId)
+	if mainUsers, ok := game.users.(*MainUsers); ok && mainUsers != nil {
+		history := game.matchHistory
+		mainUsers.SetRatingSource(func(profileID int32) int32 {
+			if rating, found := history.GetRatings([]int32{profileID})[profileID]; found && rating != nil {
+				return rating.Rating
+			}
+			return 0
+		})
+	}
 	game.matchmaking.Initialize(game)
 	if itemLocations, ok := game.resources.ArrayFiles()["itemLocations.json"]; ok {
 		if opts.Instances.Items == nil {
@@ -175,6 +208,10 @@ func (g *MainGame) Sessions() Sessions {
 
 func (g *MainGame) Matchmaking() Matchmaking {
 	return g.matchmaking
+}
+
+func (g *MainGame) MatchHistory() MatchHistory {
+	return g.matchHistory
 }
 
 func (g *MainGame) LeaderboardDefinitions() LeaderboardDefinitions {

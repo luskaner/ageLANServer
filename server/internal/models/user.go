@@ -42,6 +42,10 @@ type User interface {
 	GetAuth() *PersistentJsonData[*time.Time]
 	EncodeStats() i.A
 	EncodePresence(definitions PresenceDefinitions) i.A
+	// GetRating/SetRating expose the cached 1v1 random map rating that is
+	// embedded in the extra profile info sent to the game client.
+	GetRating() int32
+	SetRating(rating int32)
 }
 
 type MainUser struct {
@@ -63,6 +67,7 @@ type MainUser struct {
 	items              *PersistentJsonData[*map[int32]*MainItem]
 	itemLoadouts       *PersistentJsonData[*MainItemLoadouts]
 	auth               *PersistentJsonData[*time.Time]
+	rating             atomic.Int32
 }
 
 // EncodeStats encodes the value for the client's stats field.
@@ -104,6 +109,16 @@ type MainUsers struct {
 	// only change needed to run the server on a real database instead of the
 	// default per-key JSON files.
 	StoreFactory UserStoreFactory
+	// ratingSource, when set, loads the persisted 1v1 rating of a profile. It
+	// is called once per account load so the rating survives a server restart
+	// even before the client asks for the ladder.
+	ratingSource func(profileID int32) int32
+}
+
+// SetRatingSource installs the callback used to hydrate ratings on account
+// load. It is wired by the game once the match history store exists.
+func (users *MainUsers) SetRatingSource(source func(profileID int32) int32) {
+	users.ratingSource = source
 }
 
 func (users *MainUsers) Initialize() {
@@ -272,6 +287,10 @@ func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, av
 		// Generation failed; remove the cached entry so the next attempt
 		// can retry instead of permanently serving a nil user.
 		users.store.Delete(identifier)
+	} else if users.ratingSource != nil {
+		if rating := users.ratingSource(mainUser.GetId()); rating > 0 {
+			mainUser.SetRating(rating)
+		}
 	}
 	return mainUser
 }
@@ -405,18 +424,18 @@ func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
 	// The client accepts these placeholder values until real stats are implemented.
 	info := i.A{
 		u.statGroupID,
-		0,    // leaderboardID
-		0,    // wins
-		0,    // losses
-		-1,   // streak
-		0,    // disputes
-		0,    // drops
-		-1,   // ranking
-		-1,   // rankTotal
-		-1,   // regionRanking
-		-1,   // regionRankTotal
-		-1,   // level
-		1000, // rating
+		0, // leaderboardID
+		0, // wins
+		0, // losses
+		-1,
+		0, // disputes
+		0, // drops
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		u.GetRating(),
 		// Some time in the past
 		1713372625, // lastMatchTime
 		0,          // highestRank
@@ -427,6 +446,23 @@ func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
 		info = append(info, 0, 0) // platformRank, platformRankTotal
 	}
 	return info
+}
+
+// GetRating returns the cached 1v1 random map rating. Profiles that have never
+// been rated get DefaultRating.
+func (u *MainUser) GetRating() int32 {
+	if rating := u.rating.Load(); rating > 0 {
+		return rating
+	}
+	return DefaultRating
+}
+
+// SetRating caches the rating that will be embedded in the next
+// EncodeExtraProfileInfo call.
+func (u *MainUser) SetRating(rating int32) {
+	if rating > 0 {
+		u.rating.Store(rating)
+	}
 }
 
 func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {

@@ -1,262 +1,773 @@
 package models
 
 import (
-	"encoding/json"
+	"database/sql"
+	"errors"
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageLANServer/server/internal/logger"
+
+	_ "modernc.org/sqlite"
 )
 
+const (
+	// DefaultRating is the rating assigned to a profile that has never played
+	// a rated match.
+	DefaultRating int32 = 1000
+
+	// SoloRMRanked is the AoE2:DE 1v1 random map ranked ladder. The automatch
+	// queue id (6) is not the ladder id; the client queries the ladder with
+	// leaderboard_id=3.
+	SoloRMRanked int32 = 3
+
+	// eloK controls how much a single result can move a rating.
+	eloK = 32.0
+)
+
+// MatchResult is one reported game. Only the fields that the server can
+// derive from the client payload are filled in; everything else stays at its
+// zero value.
 type MatchResult struct {
-	MatchID     int64     `json:"matchId"`
-	MapID       int32     `json:"mapId"`
-	MapName     string    `json:"mapName"`
-	Leaderboard int32     `json:"leaderboard"`
-	Players     []int32   `json:"players"`
-	Teams       []int32   `json:"teams"`
-	Results     []int32   `json:"results"`
-	WinnerTeam  int32     `json:"winnerTeam"`
-	FinishedAt  time.Time `json:"finishedAt"`
-	QueueType   string    `json:"queueType"`
+	MatchID       int64         `json:"matchId"`
+	MapID         int32         `json:"mapId"`
+	MapName       string        `json:"mapName"`
+	LeaderboardID int32         `json:"leaderboard"`
+	QueueType     string        `json:"queueType"`
+	Players       []int32       `json:"players"`
+	Teams         []int32       `json:"teams"`
+	Results       []int32       `json:"results"`
+	Races         []int32       `json:"races"`
+	XPGained      []int32       `json:"xpGained"`
+	WinnerTeam    int32         `json:"winnerTeam"`
+	StartedAt     time.Time     `json:"startedAt"`
+	FinishedAt    time.Time     `json:"finishedAt"`
+	Rated         bool          `json:"rated"`
+	PlayerStats   []MatchPlayer `json:"playerStats,omitempty"`
 }
 
+// MatchPlayer is the per-profile part of a reported match.
+type MatchPlayer struct {
+	ProfileID    int32 `json:"profileId"`
+	TeamID       int32 `json:"teamId"`
+	Result       int32 `json:"result"`
+	RaceID       int32 `json:"raceId"`
+	XPGained     int32 `json:"xpGained"`
+	RatingBefore int32 `json:"ratingBefore"`
+	RatingAfter  int32 `json:"ratingAfter"`
+	RatingDelta  int32 `json:"ratingDelta"`
+}
+
+// PlayerRating is a profile's standing on one ladder.
 type PlayerRating struct {
-	ProfileID int32     `json:"profileId"`
-	StatID    int32     `json:"statId"`
-	Rating    int32     `json:"rating"`
-	Games     int32     `json:"games"`
-	Wins      int32     `json:"wins"`
-	Losses    int32     `json:"losses"`
-	LastMatch time.Time `json:"lastMatch"`
+	ProfileID     int32     `json:"profileId"`
+	LeaderboardID int32     `json:"leaderboardId"`
+	StatID        int32     `json:"statId"`
+	Rating        int32     `json:"rating"`
+	HighestRating int32     `json:"highestRating"`
+	RatingDelta   int32     `json:"ratingDelta"`
+	Games         int32     `json:"games"`
+	Wins          int32     `json:"wins"`
+	Losses        int32     `json:"losses"`
+	Streak        int32     `json:"streak"`
+	Rank          int64     `json:"rank"`
+	RankTotal     int64     `json:"rankTotal"`
+	LastMatch     time.Time `json:"lastMatch"`
 }
 
+// MatchHistoryStore persists matches and ladder ratings in an SQLite database
+// that lives next to the per-profile JSON files
+// (resources/userData/<gameId>/automatch2.db). The database and its schema are
+// created on first use and reused on every later start.
 type MatchHistoryStore struct {
-	mu      sync.RWMutex
-	matches []MatchResult
-	ratings map[int32]*PlayerRating // keyed by profileId
-	path    string
+	mu   sync.RWMutex
+	db   *sql.DB
+	path string
 }
 
+// NewMatchHistoryStore opens (and creates when missing) the database in
+// dataDir.
 func NewMatchHistoryStore(dataDir string) *MatchHistoryStore {
 	s := &MatchHistoryStore{
-		matches: make([]MatchResult, 0, 1024),
-		ratings: make(map[int32]*PlayerRating),
-		path:    filepath.Join(dataDir, "matchHistory.json"),
+		path: filepath.Join(dataDir, "automatch2.db"),
 	}
-	s.load()
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		logger.Printf("matchHistory: cannot create data dir %s: %s\n", dataDir, err)
+		return s
+	}
+	db, err := sql.Open("sqlite", s.path)
+	if err != nil {
+		logger.Printf("matchHistory: cannot open %s: %s\n", s.path, err)
+		return s
+	}
+	// The server does very little concurrent database work. A single
+	// connection keeps the connection-local pragmas effective and avoids
+	// SQLITE_BUSY between pooled connections.
+	db.SetMaxOpenConns(1)
+	for _, pragma := range []string{
+		"PRAGMA journal_mode=WAL",
+		"PRAGMA synchronous=NORMAL",
+		"PRAGMA busy_timeout=5000",
+		"PRAGMA foreign_keys=ON",
+	} {
+		if _, err = db.Exec(pragma); err != nil {
+			logger.Printf("matchHistory: %s failed: %s\n", pragma, err)
+		}
+	}
+	if err = migrate(db); err != nil {
+		logger.Printf("matchHistory: schema migration failed: %s\n", err)
+		_ = db.Close()
+		return s
+	}
+	s.db = db
 	return s
+}
+
+// NewMatchHistoryStoreForGame keeps the match history next to the rest of the
+// server's per-game user data.
+func NewMatchHistoryStoreForGame(gameId string) *MatchHistoryStore {
+	return NewMatchHistoryStore(filepath.Join(userDataFolder, gameId))
 }
 
 func (s *MatchHistoryStore) GetStorePath() string { return s.path }
 
-func (s *MatchHistoryStore) load() {
-	if s.path == "" {
-		return
-	}
-	b, err := os.ReadFile(s.path)
-	if err != nil {
-		return
-	}
-	var data struct {
-		Matches []MatchResult   `json:"matches"`
-		Ratings map[int32]*PlayerRating `json:"ratings"`
-	}
-	if json.Unmarshal(b, &data) == nil {
-		s.matches = data.Matches
-		if data.Ratings != nil {
-			s.ratings = data.Ratings
-		}
-	}
-}
-
-func (s *MatchHistoryStore) save() {
-	if s.path == "" {
-		return
-	}
-	data := struct {
-		Matches []MatchResult   `json:"matches"`
-		Ratings map[int32]*PlayerRating `json:"ratings"`
-	}{Matches: s.matches, Ratings: s.ratings}
-	b, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return
-	}
-	_ = os.WriteFile(s.path, b, 0644)
-}
-
-func (s *MatchHistoryStore) RecordMatch(m MatchResult) {
+func (s *MatchHistoryStore) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.matches = append(s.matches, m)
-	if len(s.matches) > 10000 {
-		s.matches = s.matches[len(s.matches)-5000:]
+	if s.db == nil {
+		return nil
 	}
-	s.save()
+	err := s.db.Close()
+	s.db = nil
+	return err
+}
+
+func migrate(db *sql.DB) error {
+	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS matches (
+			match_id       INTEGER PRIMARY KEY,
+			map_id         INTEGER NOT NULL DEFAULT 0,
+			map_name       TEXT    NOT NULL DEFAULT '',
+			leaderboard_id INTEGER NOT NULL DEFAULT 0,
+			queue_type     TEXT    NOT NULL DEFAULT '',
+			winner_team    INTEGER NOT NULL DEFAULT -1,
+			reported       INTEGER NOT NULL DEFAULT 0,
+			rated          INTEGER NOT NULL DEFAULT 0,
+			started_at     INTEGER NOT NULL DEFAULT 0,
+			finished_at    INTEGER NOT NULL DEFAULT 0
+		)`,
+		`CREATE TABLE IF NOT EXISTS match_players (
+			match_id      INTEGER NOT NULL,
+			profile_id    INTEGER NOT NULL,
+			team_id       INTEGER NOT NULL DEFAULT 0,
+			result        INTEGER NOT NULL DEFAULT -1,
+			race_id       INTEGER NOT NULL DEFAULT 0,
+			xp_gained     INTEGER NOT NULL DEFAULT 0,
+			rating_before INTEGER NOT NULL DEFAULT 0,
+			rating_after  INTEGER NOT NULL DEFAULT 0,
+			rating_delta  INTEGER NOT NULL DEFAULT 0,
+			PRIMARY KEY (match_id, profile_id),
+			FOREIGN KEY (match_id) REFERENCES matches(match_id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS ratings (
+			leaderboard_id INTEGER NOT NULL,
+			profile_id     INTEGER NOT NULL,
+			stat_id        INTEGER NOT NULL DEFAULT 0,
+			rating         INTEGER NOT NULL DEFAULT 1000,
+			highest_rating INTEGER NOT NULL DEFAULT 1000,
+			games          INTEGER NOT NULL DEFAULT 0,
+			wins           INTEGER NOT NULL DEFAULT 0,
+			losses         INTEGER NOT NULL DEFAULT 0,
+			streak         INTEGER NOT NULL DEFAULT 0,
+			last_match     INTEGER NOT NULL DEFAULT 0,
+			PRIMARY KEY (leaderboard_id, profile_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_ratings_ladder ON ratings(leaderboard_id, rating DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_match_players_profile ON match_players(profile_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_matches_finished ON matches(finished_at DESC)`,
+	}
+	for _, stmt := range stmts {
+		if _, err := db.Exec(stmt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RecordPendingMatch stores the pairing information as soon as the map has
+// been chosen, so the map/queue are still known when the clients report the
+// result after the matchmaking entry has already been dropped.
+func (s *MatchHistoryStore) RecordPendingMatch(m MatchResult) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil || m.MatchID == 0 {
+		return
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		logger.Printf("matchHistory: pending match %d: %s\n", m.MatchID, err)
+		return
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	started := m.StartedAt
+	if started.IsZero() {
+		started = time.Now()
+	}
+	if _, err = tx.Exec(
+		`INSERT INTO matches (match_id, map_id, map_name, leaderboard_id, queue_type, started_at)
+		 VALUES (?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(match_id) DO NOTHING`,
+		m.MatchID, m.MapID, m.MapName, m.LeaderboardID, m.QueueType, started.Unix(),
+	); err != nil {
+		logger.Printf("matchHistory: pending match %d: %s\n", m.MatchID, err)
+		return
+	}
+	for i, profile := range m.Players {
+		team, result := int32(0), int32(-1)
+		if i < len(m.Teams) {
+			team = m.Teams[i]
+		}
+		if i < len(m.Results) {
+			result = m.Results[i]
+		}
+		if _, err = tx.Exec(
+			`INSERT INTO match_players (match_id, profile_id, team_id, result)
+			 VALUES (?, ?, ?, ?)
+			 ON CONFLICT(match_id, profile_id) DO NOTHING`,
+			m.MatchID, profile, team, result,
+		); err != nil {
+			logger.Printf("matchHistory: pending player %d/%d: %s\n", m.MatchID, profile, err)
+			return
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		logger.Printf("matchHistory: pending match %d commit: %s\n", m.MatchID, err)
+	}
+}
+
+// ApplyResult stores a reported result and, the first time it is seen, moves
+// the ladder ratings. It returns the final per-profile ratings and whether the
+// result changed the ratings.
+func (s *MatchHistoryStore) ApplyResult(m MatchResult) (map[int32]*PlayerRating, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return map[int32]*PlayerRating{}, false
+	}
+	if m.MatchID == 0 || len(m.Players) == 0 {
+		return map[int32]*PlayerRating{}, false
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		logger.Printf("matchHistory: apply %d: %s\n", m.MatchID, err)
+		return map[int32]*PlayerRating{}, false
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var (
+		existingLeaderboard int32
+		existingRated       bool
+		existingReached     bool
+	)
+	if err = tx.QueryRow(
+		`SELECT leaderboard_id, rated FROM matches WHERE match_id = ?`, m.MatchID,
+	).Scan(&existingLeaderboard, &existingRated); err == nil {
+		existingReached = true
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		logger.Printf("matchHistory: lookup %d: %s\n", m.MatchID, err)
+		return map[int32]*PlayerRating{}, false
+	}
+
+	leaderboard := m.LeaderboardID
+	if existingReached && existingLeaderboard != 0 {
+		leaderboard = existingLeaderboard
+	}
+	winner, ok := winnerTeam(m)
+	finished := m.FinishedAt
+	if finished.IsZero() {
+		finished = time.Now()
+	}
+	if _, err = tx.Exec(
+		`INSERT INTO matches (match_id, map_id, map_name, leaderboard_id, queue_type, winner_team,
+		                      reported, rated, started_at, finished_at)
+		 VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+		 ON CONFLICT(match_id) DO UPDATE SET
+		   map_id         = CASE WHEN excluded.map_id <> 0 THEN excluded.map_id ELSE matches.map_id END,
+		   map_name       = CASE WHEN excluded.map_name <> '' THEN excluded.map_name ELSE matches.map_name END,
+		   leaderboard_id = CASE WHEN excluded.leaderboard_id <> 0 THEN excluded.leaderboard_id ELSE matches.leaderboard_id END,
+		   queue_type     = CASE WHEN excluded.queue_type <> '' THEN excluded.queue_type ELSE matches.queue_type END,
+		   winner_team    = CASE WHEN excluded.winner_team >= 0 THEN excluded.winner_team ELSE matches.winner_team END,
+		   reported       = 1,
+		   finished_at    = CASE WHEN excluded.finished_at <> 0 THEN excluded.finished_at ELSE matches.finished_at END`,
+		m.MatchID, m.MapID, m.MapName, leaderboard, m.QueueType, winner,
+		finished.Unix(), finished.Unix(),
+	); err != nil {
+		logger.Printf("matchHistory: store %d: %s\n", m.MatchID, err)
+		return map[int32]*PlayerRating{}, false
+	}
+
+	for i, profile := range m.Players {
+		team, result, race, xp := int32(0), int32(-1), int32(0), int32(0)
+		if i < len(m.Teams) {
+			team = m.Teams[i]
+		}
+		if i < len(m.Results) {
+			result = m.Results[i]
+		}
+		if i < len(m.Races) {
+			race = m.Races[i]
+		}
+		if i < len(m.XPGained) {
+			xp = m.XPGained[i]
+		}
+		if _, err = tx.Exec(
+			`INSERT INTO match_players (match_id, profile_id, team_id, result, race_id, xp_gained)
+			 VALUES (?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(match_id, profile_id) DO UPDATE SET
+			   team_id   = excluded.team_id,
+			   result    = excluded.result,
+			   race_id   = excluded.race_id,
+			   xp_gained = excluded.xp_gained`,
+			m.MatchID, profile, team, result, race, xp,
+		); err != nil {
+			logger.Printf("matchHistory: player %d/%d: %s\n", m.MatchID, profile, err)
+			return map[int32]*PlayerRating{}, false
+		}
+	}
+
+	resultRatings := map[int32]*PlayerRating{}
+	rated := false
+	if !existingRated && ok && leaderboard > 0 && len(m.Players) == len(m.Teams) && len(m.Players) == len(m.Results) {
+		if updated, applied := s.applyEloTx(tx, leaderboard, m, winner); applied {
+			for id, r := range updated {
+				resultRatings[id] = r
+			}
+			rated = true
+			if _, err = tx.Exec(`UPDATE matches SET rated = 1 WHERE match_id = ?`, m.MatchID); err != nil {
+				logger.Printf("matchHistory: mark rated %d: %s\n", m.MatchID, err)
+			}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		logger.Printf("matchHistory: commit %d: %s\n", m.MatchID, err)
+		return map[int32]*PlayerRating{}, false
+	}
+	if len(resultRatings) == 0 {
+		resultRatings = s.getRatingsLocked(leaderboard, m.Players)
+	}
+	return resultRatings, rated
+}
+
+func winnerTeam(m MatchResult) (int32, bool) {
+	if len(m.Teams) == len(m.Results) && len(m.Results) > 0 {
+		winner := int32(-1)
+		for i, result := range m.Results {
+			if result != 1 {
+				continue
+			}
+			if winner >= 0 && m.Teams[i] != winner {
+				return -1, false
+			}
+			winner = m.Teams[i]
+		}
+		if winner >= 0 {
+			return winner, true
+		}
+	}
+	if m.WinnerTeam >= 0 {
+		return m.WinnerTeam, true
+	}
+	return -1, false
+}
+
+// applyEloTx must be called with s.mu held and inside tx.
+func (s *MatchHistoryStore) applyEloTx(tx *sql.Tx, leaderboard int32, m MatchResult, winner int32) (map[int32]*PlayerRating, bool) {
+	teams := map[int32][]int32{}
+	for i, profile := range m.Players {
+		team := m.Teams[i]
+		teams[team] = append(teams[team], profile)
+	}
+	if len(teams) != 2 {
+		return nil, false
+	}
+	teamIDs := make([]int32, 0, 2)
+	for team := range teams {
+		teamIDs = append(teamIDs, team)
+	}
+	sort.Slice(teamIDs, func(i, j int) bool { return teamIDs[i] < teamIDs[j] })
+	teamA, teamB := teamIDs[0], teamIDs[1]
+	if winner != teamA && winner != teamB {
+		return nil, false
+	}
+
+	ratingOf := func(profile int32) (int32, error) {
+		var rating int32
+		err := tx.QueryRow(
+			`SELECT rating FROM ratings WHERE leaderboard_id = ? AND profile_id = ?`,
+			leaderboard, profile,
+		).Scan(&rating)
+		if errors.Is(err, sql.ErrNoRows) {
+			if _, err = tx.Exec(
+				`INSERT INTO ratings (leaderboard_id, profile_id, rating, highest_rating)
+				 VALUES (?, ?, ?, ?) ON CONFLICT(leaderboard_id, profile_id) DO NOTHING`,
+				leaderboard, profile, DefaultRating, DefaultRating,
+			); err != nil {
+				return 0, err
+			}
+			return DefaultRating, nil
+		}
+		return rating, err
+	}
+	average := func(team int32) (float64, error) {
+		var total float64
+		for _, profile := range teams[team] {
+			rating, err := ratingOf(profile)
+			if err != nil {
+				return 0, err
+			}
+			total += float64(rating)
+		}
+		return total / float64(len(teams[team])), nil
+	}
+	ratingA, err := average(teamA)
+	if err != nil {
+		return nil, false
+	}
+	ratingB, err := average(teamB)
+	if err != nil {
+		return nil, false
+	}
+	expectedA := 1.0 / (1.0 + math.Pow(10, (ratingB-ratingA)/400.0))
+	expectedB := 1.0 - expectedA
+	scoreA, scoreB := 0.0, 1.0
+	if winner == teamA {
+		scoreA, scoreB = 1.0, 0.0
+	}
+	deltaA := int32(math.Round(eloK * (scoreA - expectedA)))
+	deltaB := int32(math.Round(eloK * (scoreB - expectedB)))
+
+	updated := make(map[int32]*PlayerRating, len(m.Players))
+	apply := func(team int32, delta int32, won bool) error {
+		for _, profile := range teams[team] {
+			r := &PlayerRating{
+				ProfileID:     profile,
+				LeaderboardID: leaderboard,
+				RatingDelta:   delta,
+			}
+			var lastMatch int64
+			if err := tx.QueryRow(
+				`SELECT rating, highest_rating, games, wins, losses, streak, stat_id, last_match
+				 FROM ratings WHERE leaderboard_id = ? AND profile_id = ?`,
+				leaderboard, profile,
+			).Scan(&r.Rating, &r.HighestRating, &r.Games, &r.Wins, &r.Losses, &r.Streak, &r.StatID, &lastMatch); err != nil {
+				return err
+			}
+			r.LastMatch = time.Unix(lastMatch, 0)
+			before := r.Rating
+			r.Rating += delta
+			if r.Rating < 1 {
+				r.Rating = 1
+			}
+			r.Games++
+			if won {
+				r.Wins++
+				if r.Streak >= 0 {
+					r.Streak++
+				} else {
+					r.Streak = 1
+				}
+			} else {
+				r.Losses++
+				if r.Streak <= 0 {
+					r.Streak--
+				} else {
+					r.Streak = -1
+				}
+			}
+			if r.Rating > r.HighestRating {
+				r.HighestRating = r.Rating
+			}
+			r.RatingDelta = r.Rating - before
+			r.LastMatch = time.Now()
+			if _, err := tx.Exec(
+				`UPDATE ratings SET rating = ?, highest_rating = ?, games = ?, wins = ?, losses = ?,
+				        streak = ?, last_match = ? WHERE leaderboard_id = ? AND profile_id = ?`,
+				r.Rating, r.HighestRating, r.Games, r.Wins, r.Losses, r.Streak, r.LastMatch.Unix(),
+				leaderboard, profile,
+			); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(
+				`UPDATE match_players SET rating_before = ?, rating_after = ?, rating_delta = ?
+				 WHERE match_id = ? AND profile_id = ?`,
+				before, r.Rating, r.RatingDelta, m.MatchID, profile,
+			); err != nil {
+				return err
+			}
+			updated[profile] = r
+		}
+		return nil
+	}
+	if err := apply(teamA, deltaA, winner == teamA); err != nil {
+		logger.Printf("matchHistory: elo team A %d: %s\n", m.MatchID, err)
+		return nil, false
+	}
+	if err := apply(teamB, deltaB, winner == teamB); err != nil {
+		logger.Printf("matchHistory: elo team B %d: %s\n", m.MatchID, err)
+		return nil, false
+	}
+	return updated, true
+}
+
+func (s *MatchHistoryStore) HasMatch(matchID int64) bool {
+	if matchID == 0 {
+		return false
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return false
+	}
+	var reported int
+	if err := s.db.QueryRow(`SELECT reported FROM matches WHERE match_id = ?`, matchID).Scan(&reported); err != nil {
+		return false
+	}
+	return reported == 1
+}
+
+// RecordMatch keeps the old interface: store a reported match without moving
+// ratings. Prefer ApplyResult when the result has just been received.
+func (s *MatchHistoryStore) RecordMatch(m MatchResult) {
+	if s.HasMatch(m.MatchID) {
+		return
+	}
+	s.ApplyResult(m)
+}
+
+// UpdateRatings is kept for callers that only want the ladder update.
+func (s *MatchHistoryStore) UpdateRatings(m MatchResult) {
+	s.ApplyResult(m)
 }
 
 func (s *MatchHistoryStore) GetRatings(profiles []int32) map[int32]*PlayerRating {
+	return s.GetRatingsForLeaderboard(SoloRMRanked, profiles)
+}
+
+func (s *MatchHistoryStore) GetRatingsForLeaderboard(leaderboardID int32, profiles []int32) map[int32]*PlayerRating {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make(map[int32]*PlayerRating)
-	for _, p := range profiles {
-		if r, ok := s.ratings[p]; ok {
-			cp := *r
-			out[p] = &cp
-		} else {
-			out[p] = &PlayerRating{ProfileID: p, Rating: 1000}
+	return s.getRatingsLocked(leaderboardID, profiles)
+}
+
+// getRatingsLocked is the lock-free body of GetRatingsForLeaderboard. Callers
+// must hold at least the read lock.
+func (s *MatchHistoryStore) getRatingsLocked(leaderboardID int32, profiles []int32) map[int32]*PlayerRating {
+	out := make(map[int32]*PlayerRating, len(profiles))
+	if leaderboardID <= 0 {
+		leaderboardID = SoloRMRanked
+	}
+	for _, profile := range profiles {
+		out[profile] = &PlayerRating{
+			ProfileID:     profile,
+			LeaderboardID: leaderboardID,
+			Rating:        DefaultRating,
+			HighestRating: DefaultRating,
+		}
+	}
+	if s.db == nil {
+		return out
+	}
+	rows, err := s.db.Query(
+		`SELECT profile_id, rating, highest_rating, games, wins, losses, streak, stat_id, last_match
+		 FROM ratings WHERE leaderboard_id = ?`, leaderboardID,
+	)
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		r := &PlayerRating{LeaderboardID: leaderboardID}
+		var lastMatch int64
+		if err = rows.Scan(&r.ProfileID, &r.Rating, &r.HighestRating, &r.Games, &r.Wins, &r.Losses, &r.Streak, &r.StatID, &lastMatch); err != nil {
+			continue
+		}
+		r.LastMatch = time.Unix(lastMatch, 0)
+		if _, wanted := out[r.ProfileID]; wanted {
+			out[r.ProfileID] = r
 		}
 	}
 	return out
+}
+
+// GetRecentForProfiles returns the newest reported matches that include any of
+// the requested profiles, newest first.
+func (s *MatchHistoryStore) GetRecentForProfiles(profiles []int32, limit int) []MatchResult {
+	if len(profiles) == 0 {
+		return nil
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return nil
+	}
+	placeholders := make([]byte, 0, len(profiles)*2)
+	args := make([]any, 0, len(profiles)+1)
+	for i, profile := range profiles {
+		if i > 0 {
+			placeholders = append(placeholders, ',')
+		}
+		placeholders = append(placeholders, '?')
+		args = append(args, profile)
+	}
+	args = append(args, limit)
+	query := `SELECT DISTINCT m.match_id, m.map_id, m.map_name, m.leaderboard_id, m.queue_type,
+	                 m.winner_team, m.started_at, m.finished_at
+	          FROM matches m
+	          JOIN match_players p ON p.match_id = m.match_id
+	          WHERE m.reported = 1 AND p.profile_id IN (` + string(placeholders) + `)
+	          ORDER BY m.finished_at DESC, m.match_id DESC
+	          LIMIT ?`
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil
+	}
+	var matches []MatchResult
+	for rows.Next() {
+		m, err := scanMatch(rows)
+		if err != nil {
+			continue
+		}
+		matches = append(matches, m)
+	}
+	// Close the cursor before loading the per-match players: the pool has a
+	// single connection, so a nested query would wait for this cursor forever.
+	_ = rows.Close()
+	for i := range matches {
+		matches[i] = s.loadPlayersLocked(matches[i])
+	}
+	return matches
 }
 
 func (s *MatchHistoryStore) GetRecentForProfile(profileID int32, limit int) []MatchResult {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	var out []MatchResult
-	for i := len(s.matches) - 1; i >= 0 && len(out) < limit; i-- {
-		m := s.matches[i]
-		for _, p := range m.Players {
-			if p == profileID {
-				out = append(out, m)
-				break
-			}
-		}
+	return s.GetRecentForProfiles([]int32{profileID}, limit)
+}
+
+func scanMatch(rows *sql.Rows) (MatchResult, error) {
+	var (
+		m                     MatchResult
+		startedAt, finishedAt int64
+	)
+	err := rows.Scan(&m.MatchID, &m.MapID, &m.MapName, &m.LeaderboardID, &m.QueueType,
+		&m.WinnerTeam, &startedAt, &finishedAt)
+	if err != nil {
+		return m, err
 	}
-	return out
+	m.StartedAt = time.Unix(startedAt, 0)
+	m.FinishedAt = time.Unix(finishedAt, 0)
+	return m, nil
+}
+
+func (s *MatchHistoryStore) loadPlayersLocked(m MatchResult) MatchResult {
+	rows, err := s.db.Query(
+		`SELECT profile_id, team_id, result, race_id, xp_gained, rating_before, rating_after, rating_delta
+		 FROM match_players WHERE match_id = ? ORDER BY team_id, profile_id`, m.MatchID,
+	)
+	if err != nil {
+		return m
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p MatchPlayer
+		if err = rows.Scan(&p.ProfileID, &p.TeamID, &p.Result, &p.RaceID, &p.XPGained,
+			&p.RatingBefore, &p.RatingAfter, &p.RatingDelta); err != nil {
+			continue
+		}
+		m.Players = append(m.Players, p.ProfileID)
+		m.Teams = append(m.Teams, p.TeamID)
+		m.Results = append(m.Results, p.Result)
+		m.Races = append(m.Races, p.RaceID)
+		m.XPGained = append(m.XPGained, p.XPGained)
+		m.PlayerStats = append(m.PlayerStats, p)
+	}
+	return m
 }
 
 func (s *MatchHistoryStore) GetLeaderboard(limit int) []*PlayerRating {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	list := make([]*PlayerRating, 0, len(s.ratings))
-	for _, r := range s.ratings {
-		cp := *r
-		list = append(list, &cp)
-	}
-	if len(list) == 0 {
-		return list
-	}
-	// simple sort by rating desc
-	for i := 0; i < len(list); i++ {
-		for j := i + 1; j < len(list); j++ {
-			if list[j].Rating > list[i].Rating {
-				list[i], list[j] = list[j], list[i]
-			}
-		}
-	}
-	if limit > 0 && len(list) > limit {
-		list = list[:limit]
-	}
+	list, _ := s.GetLeaderboardPage(SoloRMRanked, 0, limit)
 	return list
 }
 
-// Default rating for new players
-func (s *MatchHistoryStore) GetDefaultRating() int32 { return 1000 }
+// GetLeaderboardPage returns one page of a ladder ordered exactly like the
+// client's sortBy=1 query (rating descending) and the total number of ranked
+// profiles.
+func (s *MatchHistoryStore) GetLeaderboardPage(leaderboardID int32, start, count int) ([]*PlayerRating, int64) {
+	if leaderboardID <= 0 {
+		leaderboardID = SoloRMRanked
+	}
+	if start < 0 {
+		start = 0
+	}
+	if count <= 0 {
+		count = 100
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return nil, 0
+	}
+	var total int64
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM ratings WHERE leaderboard_id = ?`, leaderboardID).Scan(&total); err != nil {
+		return nil, 0
+	}
+	rows, err := s.db.Query(
+		`SELECT profile_id, rating, highest_rating, games, wins, losses, streak, stat_id, last_match
+		 FROM ratings WHERE leaderboard_id = ?
+		 ORDER BY rating DESC, profile_id ASC LIMIT ? OFFSET ?`,
+		leaderboardID, count, start,
+	)
+	if err != nil {
+		return nil, total
+	}
+	defer rows.Close()
+	list := make([]*PlayerRating, 0, count)
+	for rows.Next() {
+		r := &PlayerRating{LeaderboardID: leaderboardID, RankTotal: total}
+		var lastMatch int64
+		if err = rows.Scan(&r.ProfileID, &r.Rating, &r.HighestRating, &r.Games, &r.Wins, &r.Losses, &r.Streak, &r.StatID, &lastMatch); err != nil {
+			continue
+		}
+		r.LastMatch = time.Unix(lastMatch, 0)
+		r.Rank = int64(start + len(list) + 1)
+		list = append(list, r)
+	}
+	return list, total
+}
 
-// Ensure rating exists
+func (s *MatchHistoryStore) GetDefaultRating() int32 { return DefaultRating }
+
 func (s *MatchHistoryStore) EnsureRating(profileID int32, statID int32) *PlayerRating {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if r, ok := s.ratings[profileID]; ok {
-		return r
+	if s.db == nil {
+		return &PlayerRating{ProfileID: profileID, LeaderboardID: SoloRMRanked, StatID: statID, Rating: DefaultRating, HighestRating: DefaultRating}
 	}
-	r := &PlayerRating{ProfileID: profileID, StatID: statID, Rating: 1000}
-	s.ratings[profileID] = r
-	s.save()
-	return r
+	if _, err := s.db.Exec(
+		`INSERT INTO ratings (leaderboard_id, profile_id, stat_id, rating, highest_rating)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(leaderboard_id, profile_id) DO UPDATE SET stat_id = CASE WHEN excluded.stat_id <> 0 THEN excluded.stat_id ELSE ratings.stat_id END`,
+		SoloRMRanked, profileID, statID, DefaultRating, DefaultRating,
+	); err != nil {
+		logger.Printf("matchHistory: ensure rating %d: %s\n", profileID, err)
+	}
+	ratings := s.getRatingsLocked(SoloRMRanked, []int32{profileID})
+	return ratings[profileID]
 }
-
-// Apply Elo update
-func (s *MatchHistoryStore) UpdateRatings(m MatchResult) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if len(m.Players) == 0 {
-		return
-	}
-	// Find winner
-	winnerTeam := m.WinnerTeam
-	if winnerTeam == -1 {
-		// try from results
-		for i, res := range m.Results {
-			if res == 1 && i < len(m.Teams) {
-				winnerTeam = m.Teams[i]
-				break
-			}
-		}
-	}
-	// collect teams
-	teamRatings := map[int32][]int32{}
-	for i, p := range m.Players {
-		if i >= len(m.Teams) {
-			continue
-		}
-		t := m.Teams[i]
-		if _, ok := s.ratings[p]; !ok {
-			s.ratings[p] = &PlayerRating{ProfileID: p, Rating: 1000}
-		}
-		teamRatings[t] = append(teamRatings[t], p)
-	}
-	if len(teamRatings) < 2 {
-		return
-	}
-	// simple average
-	avg := func(team int32) float64 {
-		sum := 0.0
-		cnt := 0
-		for _, p := range teamRatings[team] {
-			if r, ok := s.ratings[p]; ok {
-				sum += float64(r.Rating)
-				cnt++
-			}
-		}
-		if cnt == 0 { return 1000 }
-		return sum / float64(cnt)
-	}
-	// get all teams
-	teams := []int32{}
-	for t := range teamRatings {
-		teams = append(teams, t)
-	}
-	if len(teams) != 2 {
-		return
-	}
-	t1, t2 := teams[0], teams[1]
-	r1, r2 := avg(t1), avg(t2)
-	K := float64(32)
-	// expected
-	e1 := 1.0 / (1.0 + math.Pow(10, (r2-r1)/400.0))
-	e2 := 1.0 - e1
-	var s1, s2 float64
-	if winnerTeam == t1 {
-		s1, s2 = 1.0, 0.0
-	} else if winnerTeam == t2 {
-		s1, s2 = 0.0, 1.0
-	} else {
-		s1, s2 = 0.5, 0.5
-	}
-	dr1 := int32(K * (s1 - e1))
-	dr2 := int32(K * (s2 - e2))
-	for _, p := range teamRatings[t1] {
-		if r, ok := s.ratings[p]; ok {
-			r.Rating += dr1
-			r.Games++
-			if s1 == 1.0 { r.Wins++ } else if s1 == 0.0 { r.Losses++ }
-			r.LastMatch = time.Now()
-		}
-	}
-	for _, p := range teamRatings[t2] {
-		if r, ok := s.ratings[p]; ok {
-			r.Rating += dr2
-			r.Games++
-			if s2 == 1.0 { r.Wins++ } else if s2 == 0.0 { r.Losses++ }
-			r.LastMatch = time.Now()
-		}
-	}
-	s.save()
-}
-
-

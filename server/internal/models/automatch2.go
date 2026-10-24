@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -29,6 +30,16 @@ const (
 	automatchQueueMaxPlayers          = 2
 	automatchQueueTeamSize            = 1
 )
+
+// LeaderboardForQueue maps an automatch queue to the ladder that the client
+// queries for it. Queue id 6 is the 1v1 random map automatch queue, whose
+// ladder is SOLO_RM_RANKED (3).
+func LeaderboardForQueue(queueID int32) int32 {
+	if queueID == automatchQueueID {
+		return SoloRMRanked
+	}
+	return 0
+}
 
 // AutomatchPollingRequest is the form body sent by the client to
 // /game/automatch2/polling.
@@ -755,6 +766,22 @@ func (mm *MainMatchmaking) createMatchLocked(host, joiner *automatchQueueEntry, 
 	delete(mm.queue, host.UserID)
 	delete(mm.queue, joiner.UserID)
 	mm.matches[matchID] = match
+
+	if mm.game != nil && mm.game.MatchHistory() != nil {
+		// Remember map/queue now: the matchmaking entry is deleted as soon as
+		// the players leave the match, which happens before they report the
+		// result.
+		mm.game.MatchHistory().RecordPendingMatch(MatchResult{
+			MatchID:       int64(matchID),
+			MapID:         mapID,
+			MapName:       mapName,
+			LeaderboardID: LeaderboardForQueue(queue.ID),
+			QueueType:     fmt.Sprintf("automatch2-%d", queue.ID),
+			Players:       []int32{host.UserID, joiner.UserID},
+			Teams:         []int32{0, 1},
+			StartedAt:     time.Now(),
+		})
+	}
 
 	logger.Printf(
 		"automatch2: matched users %d (host poll=%d) and %d (joiner poll=%d) with match %d queue=%d map=%s relay=%q\n",
