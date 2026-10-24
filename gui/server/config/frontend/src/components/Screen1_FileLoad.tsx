@@ -1,15 +1,14 @@
 import React from 'react';
+import { Alert, Button, Center, Code, List, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import {
-    Button,
-    MessageBar,
-    MessageBarBody,
-    MessageBarTitle,
-} from '@fluentui/react-components';
-import {
-    Folder24Regular,
-    DocumentText24Regular,
-} from '@fluentui/react-icons';
+    IconAlertCircle,
+    IconFilePlus,
+    IconFileText,
+    IconFileUpload,
+    IconFolderOpen,
+} from '@tabler/icons-react';
 import { ValidationError } from '../../bindings/changeme';
+import { fieldLabel, humanMessage } from '../types';
 
 interface Screen1Props {
     onSelectConfig?: () => void;
@@ -19,79 +18,82 @@ interface Screen1Props {
 }
 
 export const Screen1_FileLoad: React.FC<Screen1Props> = ({ onSelectConfig, onCreateConfig, errorMsg, validationErrors = [] }) => {
+    // Warnings do not block anything, so they are not listed as errors here.
+    const blockingErrors = validationErrors.filter((issue) => issue.severity !== 'warning');
     return (
-        <div className="win-screen-container">
-            {/* Header Banner */}
-            <header className="win-header">
-                <div className="win-header-badge">
-                    <DocumentText24Regular />
-                    <span>ageLANServer Configurator • Fluent UI v9</span>
-                </div>
-                <h1 className="win-title">Load Configuration File</h1>
-                <p className="win-subtitle">
-                    Select the server's .toml configuration file to inspect its path and raw contents.
-                </p>
-            </header>
+        <Center mih="100vh" p="xl">
+            <Stack w="100%" maw={520} gap="lg">
+                <Stack gap={6} align="center">
+                    <ThemeIcon size={64} radius="xl" variant="light">
+                        <IconFileText size={34} stroke={1.5} />
+                    </ThemeIcon>
+                    <Title order={2} ta="center">
+                        Load configuration file
+                    </Title>
+                    <Text size="sm" c="dimmed" ta="center">
+                        Select the server's <Code>config.toml</Code> file to see and edit
+                    </Text>
+                </Stack>
 
-            {/* Dropzone Card */}
-            <div
-                id="config-dropzone"
-                data-file-drop-target
-                className="win-dropzone"
-                onClick={() => onSelectConfig?.()}
-            >
-                <div className="win-dropzone-content">
-                    <div className="win-dropzone-icon-wrapper">
-                        <Folder24Regular style={{ fontSize: 36 }} />
-                    </div>
-
-                    <div className="win-dropzone-text">
-                        <h3>Select your <span>config.toml</span> file</h3>
-                         <p>or drag a TOML file here, or click to browse</p>
-                    </div>
-
-                    <div className="win-dropzone-actions" onClick={(e) => e.stopPropagation()}>
+                <Paper
+                    id="config-dropzone"
+                    data-file-drop-target
+                    withBorder
+                    radius="lg"
+                    p="xl"
+                    className="dropzone"
+                    onClick={() => onSelectConfig?.()}
+                >
+                    <Stack align="center" gap="sm">
+                        <IconFileUpload size={34} stroke={1.4} className="dropzone-icon" />
+                        <Text fw={600}>Drag your config.toml file here</Text>
+                        <Text size="sm" c="dimmed">
+                            or browse your files to select it
+                        </Text>
                         <Button
-                            appearance="secondary"
-                            icon={<Folder24Regular />}
-                            onClick={() => onSelectConfig?.()}
+                            variant="default"
+                            leftSection={<IconFolderOpen size={16} />}
+                            mt="xs"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onSelectConfig?.();
+                            }}
                         >
-                            Browse File
+                            Browse file
                         </Button>
-                    </div>
-                </div>
-            </div>
+                    </Stack>
+                </Paper>
 
-            <div className="win-dropzone-actions" style={{ justifyContent: 'center', marginBottom: 20 }}>
-                <Button appearance="primary" icon={<DocumentText24Regular />} onClick={() => onCreateConfig?.()}>
-                    Create New Configuration
+                <Button size="md" leftSection={<IconFilePlus size={16} />} onClick={() => onCreateConfig?.()}>
+                    Create new configuration
                 </Button>
-            </div>
 
-            {errorMsg && (
-                <MessageBar intent="error" style={{ marginBottom: 20 }}>
-                    <MessageBarBody>
-                        <MessageBarTitle>Error Loading TOML</MessageBarTitle>
+                {errorMsg && (
+                    <Alert color="red" variant="light" icon={<IconAlertCircle size={20} />} title="Error loading TOML">
                         {errorMsg}
-                    </MessageBarBody>
-                </MessageBar>
-            )}
+                    </Alert>
+                )}
 
-            {validationErrors.length > 0 && (
-                <MessageBar intent="error" style={{ marginBottom: 20 }}>
-                    <MessageBarBody>
-                        <MessageBarTitle>Configuration validation errors</MessageBarTitle>
-                        <ul>
-                            {validationErrors.map((error) => (
-                                <li key={`${error.field}-${error.message}`}>
-                                    <strong>{error.field}</strong>: {error.message}
-                                </li>
+                {blockingErrors.length > 0 && (
+                    <Alert
+                        color="red"
+                        variant="light"
+                        icon={<IconAlertCircle size={20} />}
+                        title="Configuration validation errors"
+                    >
+                        <List size="sm" spacing={2}>
+                            {blockingErrors.map((error) => (
+                                <List.Item key={`${error.field}-${error.message}`}>
+                                    <Text span size="sm" fw={600}>
+                                        {fieldLabel(error.field)}
+                                    </Text>
+                                    : {humanMessage(error.message)}
+                                </List.Item>
                             ))}
-                        </ul>
-                    </MessageBarBody>
-                </MessageBar>
-            )}
-
-        </div>
+                        </List>
+                    </Alert>
+                )}
+            </Stack>
+        </Center>
     );
 };

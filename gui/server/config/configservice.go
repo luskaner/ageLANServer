@@ -9,8 +9,10 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/pelletier/go-toml/v2/unstable"
@@ -114,6 +116,21 @@ func (s *ConfigService) SelectConfigSaveAsDestination(fileName string) (string, 
 	return path, nil
 }
 
+// SelectCustomFilesFolder opens the native directory picker used for the
+// custom files storage folder. Closing the picker is a normal answer: the empty
+// path it returns leaves the setting as it is.
+func (s *ConfigService) SelectCustomFilesFolder() (string, error) {
+	path, err := application.Get().Dialog.OpenFile().
+		SetTitle("Select custom files folder").
+		CanChooseFiles(false).
+		CanChooseDirectories(true).
+		PromptForSingleSelection()
+	if err != nil {
+		return "", nil
+	}
+	return path, nil
+}
+
 // CreateConfigFile validates a new document and creates it at the requested path.
 func (s *ConfigService) CreateConfigFile(path string, configuration Configuration, overwrite bool) (*ConfigFile, error) {
 	template, err := s.OpenTemplate()
@@ -128,10 +145,7 @@ func (s *ConfigService) CreateConfigFile(path string, configuration Configuratio
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("check configuration destination %q: %w", path, err)
 	}
-	if validationErrors := validateConfiguration(&configuration); len(validationErrors) > 0 {
-		return nil, fmt.Errorf("configuration is invalid: %s", validationErrors[0].Message)
-	}
-	updated, err := configurationDocument([]byte(template.Content), configuration)
+	updated, err := prepareConfigurationDocument([]byte(template.Content), configuration)
 	if err != nil {
 		return nil, fmt.Errorf("create configuration file %q: %w", path, err)
 	}
@@ -151,38 +165,15 @@ func (s *ConfigService) SaveConfiguration(path string, configuration Configurati
 	if err != nil {
 		return fmt.Errorf("read configuration file %q: %w", path, err)
 	}
-	config, err := parseConfiguration(content)
-	if err != nil {
+	if _, err := parseConfiguration(content); err != nil {
 		return fmt.Errorf("parse configuration file %q: %w", path, err)
 	}
-	config = &configuration
-	if validationErrors := validateConfiguration(config); len(validationErrors) > 0 {
-		return fmt.Errorf("configuration is invalid: %s", validationErrors[0].Message)
-	}
 
-	updated, err := configurationDocument(content, configuration)
+	updated, err := prepareConfigurationDocument(content, configuration)
 	if err != nil {
 		return fmt.Errorf("edit configuration file %q: %w", path, err)
 	}
-	if _, err := parseConfiguration(updated); err != nil {
-		return fmt.Errorf("validate edited configuration file %q: %w", path, err)
-	}
 	return writeConfigFile(path, updated)
-}
-
-// PreviewConfiguration returns the edited TOML document without writing it.
-func (s *ConfigService) PreviewConfiguration(content string, configuration Configuration) (string, error) {
-	if _, err := parseConfiguration([]byte(content)); err != nil {
-		return "", fmt.Errorf("parse configuration document: %w", err)
-	}
-	updated, err := configurationDocument([]byte(content), configuration)
-	if err != nil {
-		return "", fmt.Errorf("preview configuration document: %w", err)
-	}
-	if _, err := parseConfiguration(updated); err != nil {
-		return "", fmt.Errorf("validate preview configuration document: %w", err)
-	}
-	return string(updated), nil
 }
 
 // SaveConfigurationAs validates and saves an edited configuration to a new path.
@@ -197,15 +188,9 @@ func (s *ConfigService) SaveConfigurationAs(sourcePath string, destination strin
 	if _, err := parseConfiguration(content); err != nil {
 		return nil, fmt.Errorf("parse configuration file %q: %w", sourcePath, err)
 	}
-	if validationErrors := validateConfiguration(&configuration); len(validationErrors) > 0 {
-		return nil, fmt.Errorf("configuration is invalid: %s", validationErrors[0].Message)
-	}
-	updated, err := configurationDocument(content, configuration)
+	updated, err := prepareConfigurationDocument(content, configuration)
 	if err != nil {
 		return nil, fmt.Errorf("edit configuration file %q: %w", sourcePath, err)
-	}
-	if _, err := parseConfiguration(updated); err != nil {
-		return nil, fmt.Errorf("validate edited configuration file: %w", err)
 	}
 
 	if _, err := os.Stat(destination); err == nil && !overwrite {
@@ -223,6 +208,22 @@ func (s *ConfigService) SaveConfigurationAs(sourcePath string, destination strin
 	return s.readConfigFile(destination)
 }
 
+// prepareConfigurationDocument validates and transforms a configuration document
+// into its final form, centralising the logic shared by every save/preview path.
+func prepareConfigurationDocument(content []byte, configuration Configuration) ([]byte, error) {
+	if validationErrors := errorValidationIssues(validateConfiguration(&configuration)); len(validationErrors) > 0 {
+		return nil, fmt.Errorf("configuration is invalid: %s", validationErrors[0].Message)
+	}
+	updated, err := configurationDocument(content, configuration)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := parseConfiguration(updated); err != nil {
+		return nil, fmt.Errorf("validate configuration document: %w", err)
+	}
+	return updated, nil
+}
+
 // configurationDocument applies editable values without serializing the whole model.
 func configurationDocument(content []byte, configuration Configuration) ([]byte, error) {
 	updated := content
@@ -233,7 +234,10 @@ func configurationDocument(content []byte, configuration Configuration) ([]byte,
 	}{
 		{"", "Log", strconv.FormatBool(configuration.Log)},
 		{"", "GeneratePlatformUserId", strconv.FormatBool(configuration.GeneratePlatformUserID)},
-		{"", "Authentication", "'" + configuration.Authentication + "'"},
+		{"Sign", "Enabled", strconv.FormatBool(configuration.Sign.Enabled)},
+		{"Sign", "PlatformUserIdExceptions", tomlArray(configuration.Sign.PlatformUserIdExceptions)},
+		{"Internet", "Enabled", strconv.FormatBool(configuration.Internet.Enabled)},
+		{"Internet", "IP", tomlString(configuration.Internet.IP)},
 		{"Games", "Enabled", tomlArray(configuration.Games.Enabled)},
 		{"Games.age1", "Hosts", tomlArray(configuration.Games.Age1.Hosts)},
 		{"Games.age2", "Hosts", tomlArray(configuration.Games.Age2.Hosts)},
@@ -243,16 +247,51 @@ func configurationDocument(content []byte, configuration Configuration) ([]byte,
 		{"Announcement", "Enabled", strconv.FormatBool(configuration.Announcement.Enabled)},
 		{"Announcement", "Multicast", strconv.FormatBool(configuration.Announcement.Multicast)},
 		{"Announcement", "Port", strconv.Itoa(configuration.Announcement.Port)},
-		{"Announcement", "MulticastGroup", "'" + configuration.Announcement.MulticastGroup + "'"},
+		{"Announcement", "MulticastGroup", tomlString(configuration.Announcement.MulticastGroup)},
+		{"CustomFiles", "Enabled", strconv.FormatBool(configuration.CustomFiles.Enabled)},
+		{"CustomFiles", "Folder", tomlString(configuration.CustomFiles.Folder)},
+		{"CustomFiles", "MaxFileSize", tomlString(configuration.CustomFiles.MaxFileSize)},
+		{"CustomFiles", "MaxTotalSize", tomlString(configuration.CustomFiles.MaxTotalSize)},
+		{"CustomFiles", "Expiry", tomlString(configuration.CustomFiles.Expiry)},
+	}
+	// Authentication lives under [Internet] in the current server contract, but
+	// older documents keep it at the root level. Replace whichever location the
+	// document actually uses so both layouts are supported, and add it to
+	// [Internet] when the document has neither.
+	authValue := tomlString(configuration.Authentication)
+	authPlaced := false
+	if updated2, err := replaceDocumentValue(updated, "Internet", "Authentication", authValue); err == nil {
+		updated = updated2
+		authPlaced = true
+	}
+	if updated2, err := replaceDocumentValue(updated, "", "Authentication", authValue); err == nil {
+		updated = updated2
+		authPlaced = true
+	}
+	if !authPlaced {
+		var err error
+		updated, err = ensureDocumentValue(updated, "Internet", "Authentication", authValue)
+		if err != nil {
+			return nil, fmt.Errorf("add Internet.Authentication: %w", err)
+		}
 	}
 	for _, replacement := range replacements {
 		var err error
-		updated, err = replaceDocumentValue(updated, replacement.section, replacement.key, replacement.value)
+		updated, err = ensureDocumentValue(updated, replacement.section, replacement.key, replacement.value)
 		if err != nil {
-			return nil, fmt.Errorf("replace %s.%s: %w", replacement.section, replacement.key, err)
+			return nil, fmt.Errorf("edit %s.%s: %w", replacement.section, replacement.key, err)
 		}
 	}
 	return updated, nil
+}
+
+// tomlString formats a value as a TOML string, preferring the literal form the
+// official template uses for paths and addresses.
+func tomlString(value string) string {
+	if !strings.Contains(value, "'") {
+		return "'" + value + "'"
+	}
+	return strconv.Quote(value)
 }
 
 // tomlArray formats string values as a TOML array.
@@ -320,6 +359,18 @@ func isConfigurationField(section string, key string) bool {
 			return true
 		}
 	}
+	if section == "Sign" {
+		switch key {
+		case "Enabled", "PlatformUserIdExceptions":
+			return true
+		}
+	}
+	if section == "Internet" {
+		switch key {
+		case "Enabled", "IP", "Authentication":
+			return true
+		}
+	}
 	if section == "Games" && key == "Enabled" {
 		return true
 	}
@@ -329,17 +380,64 @@ func isConfigurationField(section string, key string) bool {
 			return true
 		}
 	}
+	if section == "CustomFiles" {
+		switch key {
+		case "Enabled", "Folder", "MaxFileSize", "MaxTotalSize", "Expiry":
+			return true
+		}
+	}
 	if strings.HasPrefix(section, "Games.") && key == "Hosts" {
 		return true
 	}
 	return false
 }
 
+// serverDefaults mirrors the defaults the server applies before reading a
+// configuration file, so the editor shows the values the server would use for
+// settings an older document does not have yet.
+func serverDefaults() Configuration {
+	return Configuration{
+		Authentication: "disabled",
+		Sign: SignConfig{
+			Enabled:                  false,
+			PlatformUserIdExceptions: []string{},
+		},
+		Internet: InternetConfiguration{
+			Enabled: true,
+			IP:      "auto",
+		},
+		Games: GamesConfiguration{
+			Enabled: []string{},
+			Age1:    GameConfig{Hosts: []string{"0.0.0.0"}},
+			Age2:    GameConfig{Hosts: []string{"0.0.0.0"}},
+			Age3:    GameConfig{Hosts: []string{"0.0.0.0"}},
+			Age4:    GameConfig{Hosts: []string{"0.0.0.0"}},
+			Athens:  GameConfig{Hosts: []string{"0.0.0.0"}},
+		},
+		Announcement: AnnouncementConfig{
+			Enabled:        true,
+			Multicast:      true,
+			Port:           31978,
+			MulticastGroup: "239.31.97.8",
+		},
+		CustomFiles: CustomFilesConfiguration{
+			Enabled:      true,
+			Folder:       "auto",
+			MaxFileSize:  "32MB",
+			MaxTotalSize: "256MB",
+			Expiry:       "12h",
+		},
+	}
+}
+
 // parseConfiguration decodes TOML into the public configuration model.
 func parseConfiguration(content []byte) (*Configuration, error) {
-	var config Configuration
+	config := serverDefaults()
 	if err := toml.Unmarshal(content, &config); err != nil {
 		return nil, fmt.Errorf("invalid TOML or configuration type: %w", err)
+	}
+	if config.Authentication == "" && config.Internet.Authentication != "" {
+		config.Authentication = config.Internet.Authentication
 	}
 	if config.Games.Enabled == nil {
 		config.Games.Enabled = []string{}
@@ -385,7 +483,99 @@ func replaceDocumentValue(content []byte, targetSection string, key string, repl
 	if err := parser.Error(); err != nil {
 		return nil, fmt.Errorf("invalid TOML: %w", err)
 	}
-	return nil, fmt.Errorf("Announcement.%s was not found", key)
+	notFoundSection := targetSection
+	if notFoundSection == "" {
+		notFoundSection = "root"
+	}
+	return nil, fmt.Errorf("%s.%s was not found", notFoundSection, key)
+}
+
+// documentTable is a table header of a TOML document and the byte offset where
+// it starts.
+type documentTable struct {
+	path   string
+	offset int
+}
+
+// documentTables lists the table headers of a TOML document in order.
+func documentTables(content []byte) ([]documentTable, error) {
+	parser := &unstable.Parser{KeepComments: true}
+	parser.Reset(content)
+	var tables []documentTable
+	for parser.NextExpression() {
+		expression := parser.Expression()
+		if expression.Kind != unstable.Table && expression.Kind != unstable.ArrayTable {
+			continue
+		}
+		tables = append(tables, documentTable{path: nodePath(expression), offset: int(expression.Raw.Offset)})
+	}
+	if err := parser.Error(); err != nil {
+		return nil, fmt.Errorf("invalid TOML: %w", err)
+	}
+	return tables, nil
+}
+
+// ensureDocumentValue replaces an editable value, adding the key (and the
+// table that holds it) when an older document does not have it yet: documents
+// written before a setting existed would otherwise fail to save.
+func ensureDocumentValue(content []byte, targetSection string, key string, replacement string) ([]byte, error) {
+	if updated, err := replaceDocumentValue(content, targetSection, key, replacement); err == nil {
+		return updated, nil
+	}
+	tables, err := documentTables(content)
+	if err != nil {
+		return nil, err
+	}
+	line := key + " = " + replacement + "\n"
+	if targetSection == "" {
+		// Root keys have to stay above the first table.
+		insertAt := len(content)
+		if len(tables) > 0 {
+			insertAt = tables[0].offset
+		}
+		return insertDocumentLine(content, insertAt, line), nil
+	}
+	sectionIndex := -1
+	for index, table := range tables {
+		if table.path == targetSection {
+			sectionIndex = index
+			break
+		}
+	}
+	if sectionIndex == -1 {
+		// The table is missing too: append it with its first key.
+		if len(content) > 0 && content[len(content)-1] != '\n' {
+			content = append(content, '\n')
+		}
+		return append(content, []byte("\n["+targetSection+"]\n"+line)...), nil
+	}
+	// Insert the key at the end of its table, before the next header.
+	insertAt := len(content)
+	if sectionIndex+1 < len(tables) {
+		insertAt = tables[sectionIndex+1].offset
+	}
+	return insertDocumentLine(content, insertAt, line), nil
+}
+
+// insertDocumentLine inserts a complete TOML line at the given offset, keeping
+// it on a line of its own and away from the line that follows it.
+func insertDocumentLine(content []byte, offset int, line string) []byte {
+	prefix := ""
+	if offset > 0 && content[offset-1] != '\n' {
+		prefix = "\n"
+	}
+	suffix := ""
+	if offset < len(content) {
+		// A blank line separates the new key from the table header that follows.
+		suffix = "\n"
+	}
+	updated := make([]byte, 0, len(content)+len(prefix)+len(line)+len(suffix))
+	updated = append(updated, content[:offset]...)
+	updated = append(updated, prefix...)
+	updated = append(updated, line...)
+	updated = append(updated, suffix...)
+	updated = append(updated, content[offset:]...)
+	return updated
 }
 
 // nodeKey returns the first key component from an AST node.
@@ -510,13 +700,21 @@ func validateConfiguration(config *Configuration) []ValidationError {
 	if !supportedAuthentication[config.Authentication] {
 		validationErrors = append(validationErrors, ValidationError{
 			Field:   "Authentication",
-			Message: "must be one of required, cached, adaptive or disabled",
+			Message: "Must be one of required, cached, adaptive or disabled",
 		})
 	}
 	if config.GeneratePlatformUserID && config.Authentication != "disabled" {
 		validationErrors = append(validationErrors, ValidationError{
 			Field:   "GeneratePlatformUserId",
-			Message: "requires Authentication to be disabled",
+			Message: "Requires Authentication to be disabled",
+		})
+	}
+	// The server refuses to start when authentication is required without
+	// Internet access, because it cannot reach the official servers.
+	if config.Authentication == "required" && !config.Internet.Enabled {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "Authentication",
+			Message: "Requires Internet access",
 		})
 	}
 
@@ -527,26 +725,38 @@ func validateConfiguration(config *Configuration) []ValidationError {
 		"age4":   true,
 		"athens": true,
 	}
-	if len(config.Games.Enabled) == 0 {
-		validationErrors = append(validationErrors, ValidationError{
-			Field:   "Games.Enabled",
-			Message: "must contain at least one game",
-		})
-	}
 	for index, game := range config.Games.Enabled {
 		if !supportedGames[game] {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   fmt.Sprintf("Games.Enabled.%d", index),
-				Message: fmt.Sprintf("unsupported game %q", game),
+				Message: fmt.Sprintf("Unsupported game %q", game),
 			})
 		}
+	}
+	// Without a game the server has nothing to serve: it has to be told which
+	// one to run, so the value is accepted but it warns about it.
+	if len(config.Games.Enabled) == 0 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:    "Games.Enabled",
+			Message:  "No game enabled: the game will have to be passed as a parameter",
+			Severity: severityWarning,
+		})
 	}
 	validationErrors = append(validationErrors, validateGameHosts(config)...)
 
 	if config.Announcement.Port < 1 || config.Announcement.Port > 65535 {
 		validationErrors = append(validationErrors, ValidationError{
 			Field:   "Announcement.Port",
-			Message: "must be an integer between 1 and 65535",
+			Message: "Must be an integer between 1 and 65535",
+		})
+	}
+	// Ports under 1024 are only privileged on Unix-like systems: the value is
+	// accepted everywhere, saving included, but it may need elevated rights.
+	if config.Announcement.Enabled && config.Announcement.Port >= 1 && config.Announcement.Port < 1024 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:    "Announcement.Port",
+			Message:  "Privileged port: may require elevated rights on Linux and macOS",
+			Severity: severityWarning,
 		})
 	}
 	if config.Announcement.Enabled && config.Announcement.Multicast {
@@ -554,50 +764,253 @@ func validateConfiguration(config *Configuration) []ValidationError {
 		if err != nil || !address.Is4() || !address.IsMulticast() {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   "Announcement.MulticastGroup",
-				Message: "must be an IPv4 multicast address",
+				Message: "Must be an IPv4 multicast address",
 			})
+		}
+	}
+
+	// The address is only used to reach the Internet, so it is out of play
+	// while Internet access is disabled.
+	if config.Internet.Enabled {
+		if address := strings.TrimSpace(config.Internet.IP); address != "auto" {
+			if parsed, err := netip.ParseAddr(address); err != nil || !parsed.Is4() {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   "Internet.IP",
+					Message: "Must be 'auto' or an IPv4 address",
+				})
+			}
+		}
+	}
+	validationErrors = append(validationErrors, validateCustomFiles(config)...)
+
+	for index := range validationErrors {
+		if validationErrors[index].Severity == "" {
+			validationErrors[index].Severity = severityError
 		}
 	}
 
 	return validationErrors
 }
 
-// validateGameHosts checks that enabled games have unique resolvable IPv4 hosts.
+// errorValidationIssues drops the warnings: only errors block saving.
+func errorValidationIssues(issues []ValidationError) []ValidationError {
+	var blocking []ValidationError
+	for _, issue := range issues {
+		if issue.Severity != severityWarning {
+			blocking = append(blocking, issue)
+		}
+	}
+	return blocking
+}
+
+// ValidateConfiguration exposes the authoritative configuration validation to the
+// frontend so that all validation rules live in Go rather than TypeScript.
+func (s *ConfigService) ValidateConfiguration(configuration Configuration) []ValidationError {
+	return validateConfiguration(&configuration)
+}
+
+// validateCustomFiles checks the storage limits only while the endpoints are
+// enabled: disabled, the server never uses those values.
+func validateCustomFiles(config *Configuration) []ValidationError {
+	if !config.CustomFiles.Enabled {
+		return nil
+	}
+	var validationErrors []ValidationError
+	if strings.TrimSpace(config.CustomFiles.Folder) == "" {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.Folder",
+			Message: "Must not be empty",
+		})
+	}
+
+	maxFileSize, fileSizeErr := parseByteSize(config.CustomFiles.MaxFileSize)
+	maxTotalSize, totalSizeErr := parseByteSize(config.CustomFiles.MaxTotalSize)
+	fileSizeValid := true
+	totalSizeValid := true
+	if fileSizeErr != nil {
+		fileSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.MaxFileSize",
+			Message: "Must be a size such as 32MB",
+		})
+	} else if maxFileSize <= 0 {
+		fileSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.MaxFileSize",
+			Message: "Must be greater than zero",
+		})
+	}
+	if totalSizeErr != nil {
+		totalSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.MaxTotalSize",
+			Message: "Must be a size such as 256MB",
+		})
+	} else if maxTotalSize <= 0 {
+		totalSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.MaxTotalSize",
+			Message: "Must be greater than zero",
+		})
+	}
+	if fileSizeValid && totalSizeValid && maxFileSize > maxTotalSize {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.MaxFileSize",
+			Message: "Must not exceed the total size limit",
+		})
+	}
+
+	if expiry, err := time.ParseDuration(strings.TrimSpace(config.CustomFiles.Expiry)); err != nil {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.Expiry",
+			Message: "Must be a duration such as 12h or 30m",
+		})
+	} else if expiry <= 0 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "CustomFiles.Expiry",
+			Message: "Must be greater than zero",
+		})
+	}
+	return validationErrors
+}
+
+// parseByteSize mirrors the server's size parser: a plain byte count or an
+// integer followed by B, KB, MB or GB.
+func parseByteSize(value string) (int64, error) {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if value == "" {
+		return 0, errors.New("empty size")
+	}
+	units := []struct {
+		suffix     string
+		multiplier int64
+	}{
+		{"GB", 1 << 30},
+		{"G", 1 << 30},
+		{"MB", 1 << 20},
+		{"M", 1 << 20},
+		{"KB", 1 << 10},
+		{"K", 1 << 10},
+		{"B", 1},
+	}
+	for _, unit := range units {
+		if strings.HasSuffix(value, unit.suffix) {
+			number := strings.TrimSpace(strings.TrimSuffix(value, unit.suffix))
+			n, err := strconv.ParseInt(number, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			return n * unit.multiplier, nil
+		}
+	}
+	return strconv.ParseInt(value, 10, 64)
+}
+
+// hostOwner is a host of a game, with the position it holds in its list.
+type hostOwner struct {
+	game  string
+	index int
+}
+
+// validateGameHosts checks the hosts of every game. An enabled game must
+// have hosts that resolve to IPv4 and cannot share an address with another
+// enabled game, as the server would not be able to bind it twice. A disabled
+// game is not bound at all, so a shared address only warns about it.
 func validateGameHosts(config *Configuration) []ValidationError {
 	var validationErrors []ValidationError
-	usedHosts := make(map[string]string)
+	enabled := make(map[string]bool, len(config.Games.Enabled))
 	for _, gameID := range config.Games.Enabled {
+		enabled[gameID] = true
+	}
+
+	// The games using each address, so a conflict can be told on both sides.
+	owners := make(map[string][]hostOwner)
+
+	for _, gameID := range supportedGameIDs() {
 		hosts, supported := gameHosts(config, gameID)
 		if !supported {
 			continue
 		}
-		if len(hosts) == 0 {
+		if enabled[gameID] && len(hosts) == 0 {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   fmt.Sprintf("Games.%s.Hosts", gameID),
-				Message: "must contain at least one host",
+				Message: "Must contain at least one host",
 			})
 		}
 		for index, host := range hosts {
 			addresses := resolveIPv4(host)
 			if len(addresses) == 0 {
-				validationErrors = append(validationErrors, ValidationError{
-					Field:   fmt.Sprintf("Games.%s.Hosts.%d", gameID, index),
-					Message: "must resolve to an IPv4 address",
-				})
+				if enabled[gameID] {
+					validationErrors = append(validationErrors, ValidationError{
+						Field:   fmt.Sprintf("Games.%s.Hosts.%d", gameID, index),
+						Message: "Must resolve to an IPv4 address",
+					})
+				}
 				continue
 			}
 			for _, address := range addresses {
-				if previousGame, exists := usedHosts[address]; exists && previousGame != gameID {
-					validationErrors = append(validationErrors, ValidationError{
-						Field:   fmt.Sprintf("Games.%s.Hosts.%d", gameID, index),
-						Message: fmt.Sprintf("host is already used by %s", previousGame),
-					})
-				}
-				usedHosts[address] = gameID
+				owners[address] = append(owners[address], hostOwner{game: gameID, index: index})
 			}
 		}
 	}
+
+	addresses := make([]string, 0, len(owners))
+	for address := range owners {
+		addresses = append(addresses, address)
+	}
+	sort.Strings(addresses)
+	for _, address := range addresses {
+		addressOwners := owners[address]
+		if len(addressOwners) < 2 {
+			continue
+		}
+		// The enabled games are the ones the server binds: two of them cannot
+		// share an address, as it could not be bound twice.
+		var bound, unbound []hostOwner
+		for _, owner := range addressOwners {
+			if enabled[owner.game] {
+				bound = append(bound, owner)
+			} else {
+				unbound = append(unbound, owner)
+			}
+		}
+		if len(bound) > 1 {
+			for _, owner := range bound {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   fmt.Sprintf("Games.%s.Hosts.%d", owner.game, owner.index),
+					Message: fmt.Sprintf("Already used by %s", strings.Join(otherGameIDs(bound, owner.game), ", ")),
+				})
+			}
+		}
+		// A game that is not enabled is not bound, so it does not take the
+		// address away: it is only told about the conflict.
+		for _, owner := range unbound {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:    fmt.Sprintf("Games.%s.Hosts.%d", owner.game, owner.index),
+				Message:  fmt.Sprintf("Also used by %s", strings.Join(otherGameIDs(addressOwners, owner.game), ", ")),
+				Severity: severityWarning,
+			})
+		}
+	}
 	return validationErrors
+}
+
+// otherGameIDs returns the identifiers of the owners of an address, except the
+// given game.
+func otherGameIDs(owners []hostOwner, game string) []string {
+	var others []string
+	for _, owner := range owners {
+		if owner.game != game {
+			others = append(others, owner.game)
+		}
+	}
+	return others
+}
+
+// supportedGameIDs returns the game identifiers the configuration knows about,
+// in the order they are shown.
+func supportedGameIDs() []string {
+	return []string{"age1", "age2", "age3", "age4", "athens"}
 }
 
 // gameHosts returns the host list belonging to a supported game identifier.
@@ -636,27 +1049,36 @@ func resolveIPv4(host string) []string {
 	return ipv4
 }
 
+// firstExistingPath returns the first candidate that exists on disk.
+func firstExistingPath(candidates []string, description string) (string, error) {
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		} else if !os.IsNotExist(err) {
+			return "", fmt.Errorf("check %s %q: %w", description, candidate, err)
+		}
+	}
+	return "", os.ErrNotExist
+}
+
 // defaultConfigPath finds config.toml in the server's standard candidate paths.
 func defaultConfigPath() (string, error) {
 	executable, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("find executable: %w", err)
 	}
-
+	executableDirectory := filepath.Dir(executable)
 	candidates := []string{
-		filepath.Join(filepath.Dir(executable), "resources", "config", configFileName),
-		filepath.Join(filepath.Dir(executable), configFileName),
+		filepath.Join(executableDirectory, "resources", "config", configFileName),
+		filepath.Join(executableDirectory, configFileName),
 		filepath.Join("resources", "config", configFileName),
 		configFileName,
 	}
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		} else if !os.IsNotExist(err) {
-			return "", fmt.Errorf("check configuration file %q: %w", candidate, err)
-		}
+	path, err := firstExistingPath(candidates, "configuration file")
+	if err != nil {
+		return "", err
 	}
-	return "", os.ErrNotExist
+	return path, nil
 }
 
 // templateConfigPath finds the official template in installed and development layouts.
@@ -672,12 +1094,12 @@ func templateConfigPath() (string, error) {
 		filepath.Join("..", "..", "..", "server", "resources", "config", configFileName),
 		filepath.Join("server", "resources", "config", configFileName),
 	}
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		} else if !os.IsNotExist(err) {
-			return "", fmt.Errorf("check configuration template %q: %w", candidate, err)
+	path, err := firstExistingPath(candidates, "configuration template")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("configuration template %q was not found", configFileName)
 		}
+		return "", err
 	}
-	return "", fmt.Errorf("configuration template %q was not found", configFileName)
+	return path, nil
 }

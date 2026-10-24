@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { FluentProvider, webDarkTheme } from '@fluentui/react-components';
 import { Events } from '@wailsio/runtime';
 import { ConfigFile, ConfigService, Configuration } from '../bindings/changeme';
 import { AppConfig } from './types';
@@ -11,7 +10,9 @@ function toEditorConfig(config: Configuration): AppConfig {
     return {
         Log: config.Log,
         GeneratePlatformUserId: config.GeneratePlatformUserId,
+        Sign: config.Sign,
         Authentication: config.Authentication as AppConfig['Authentication'],
+        Internet: config.Internet,
         Games: {
             Enabled: config.Games.Enabled ?? [],
             age1: game(config.Games.age1.Hosts),
@@ -21,7 +22,20 @@ function toEditorConfig(config: Configuration): AppConfig {
             athens: game(config.Games.athens.Hosts),
         },
         Announcement: config.Announcement,
+        CustomFiles: {
+            ...config.CustomFiles,
+            MaxFileSize: toEditorSize(config.CustomFiles.MaxFileSize),
+            MaxTotalSize: toEditorSize(config.CustomFiles.MaxTotalSize),
+        },
     };
+}
+
+/**
+ * The server also reads single-letter sizes (32M, 256G): the editor offers MB
+ * and GB only, so those spellings are taken as their full unit.
+ */
+function toEditorSize(size: string): string {
+    return size.replace(/^(\d+)\s*M$/i, '$1MB').replace(/^(\d+)\s*G$/i, '$1GB');
 }
 
 export function App() {
@@ -83,56 +97,22 @@ export function App() {
         });
     }, []);
 
-    // Custom transparent background theme override so Wails 3 backdrop effect is visible
-    const customFluentTheme = {
-        ...webDarkTheme,
-        colorNeutralBackground1: 'transparent',
-        colorNeutralBackground2: 'rgba(255, 255, 255, 0.035)',
-        colorNeutralBackground3: 'rgba(255, 255, 255, 0.06)',
-        colorBrandBackground: '#60cdff',
-        colorBrandBackgroundHover: '#4cc2ff',
-        colorBrandForeground1: '#60cdff',
-    };
-
-    return (
-        <FluentProvider theme={customFluentTheme} style={{ background: 'transparent', minHeight: '100vh' }}>
-            <div className="win-app-root">
-                {/* Wails 3 Backdrop Layer */}
-                <div className="win-bg-backdrop" />
-
-                <main className="win-main-content">
-                    {loadedFile ? (
-                        <Screen2_ConfigEditor
-                            initialConfig={toEditorConfig(loadedFile.config!)}
-                            originalContent={loadedFile.content}
-                            backendValidationErrors={loadedFile.validationErrors ?? []}
-                            fileName={loadedFile.path}
-                            isNew={!loadedFile.path}
-                            onSaved={setLoadedFile}
-                            onBack={() => setLoadedFile(null)}
-                        />
-                    ) : (
-                        <Screen1_FileLoad
-                            onSelectConfig={selectConfigFile}
-                            onCreateConfig={createConfigFile}
-                            errorMsg={errorMsg || undefined}
-                            validationErrors={[]}
-                        />
-                    )}
-                </main>
-
-                {/* WinUI 3 Footer bar */}
-                <footer className="win-footer">
-                    <div className="win-footer-brand">
-                        <span className="win-footer-dot" />
-                        <span>ageLANServer Configurator • Fluent UI React v9</span>
-                    </div>
-                    <div className="win-footer-info">
-                        <span>{loadedFile ? 'Phase 2 • Configuration loaded' : 'Phase 2 • Load configuration'}</span>
-                    </div>
-                </footer>
-            </div>
-        </FluentProvider>
+    return loadedFile ? (
+        <Screen2_ConfigEditor
+            initialConfig={toEditorConfig(loadedFile.config!)}
+            backendValidationErrors={loadedFile.validationErrors ?? []}
+            fileName={loadedFile.path}
+            isNew={!loadedFile.path}
+            onSaved={setLoadedFile}
+            onBack={() => setLoadedFile(null)}
+        />
+    ) : (
+        <Screen1_FileLoad
+            onSelectConfig={selectConfigFile}
+            onCreateConfig={createConfigFile}
+            errorMsg={errorMsg || undefined}
+            validationErrors={[]}
+        />
     );
 }
 

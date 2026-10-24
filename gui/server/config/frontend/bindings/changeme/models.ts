@@ -21,9 +21,25 @@ export interface ConfigFile {
 export interface Configuration {
     "Log": boolean;
     "GeneratePlatformUserId": boolean;
+    "Sign": boolean;
     "Authentication": string;
+    "Internet": InternetConfiguration;
     "Games": GamesConfiguration;
     "Announcement": AnnouncementConfig;
+    "CustomFiles": CustomFilesConfiguration;
+}
+
+/**
+ * CustomFilesConfiguration configures the /api/MatchContent/ endpoints
+ * (multiplayer savegame and replay upload/download). Sizes and the expiry are
+ * kept as strings and validated here, the same way the server does at startup.
+ */
+export interface CustomFilesConfiguration {
+    "Enabled": boolean;
+    "Folder": string;
+    "MaxFileSize": string;
+    "MaxTotalSize": string;
+    "Expiry": string;
 }
 
 export interface GameConfig {
@@ -39,7 +55,13 @@ export interface GamesConfiguration {
     "athens": GameConfig;
 }
 
+export interface InternetConfiguration {
+    "Enabled": boolean;
+    "IP": string;
+}
+
 export interface ValidationError {
     "field": string;
     "message": string;
+    "severity": string;
 }

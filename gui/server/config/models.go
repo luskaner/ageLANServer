@@ -8,12 +8,26 @@ type ConfigFile struct {
 	ValidationErrors []ValidationError `json:"validationErrors"`
 }
 
+type InternetConfiguration struct {
+	Enabled        bool   `toml:"Enabled" json:"Enabled"`
+	IP             string `toml:"IP" json:"IP"`
+	Authentication string `toml:"Authentication" json:"-"`
+}
+
+type SignConfig struct {
+	Enabled                   bool     `toml:"Enabled" json:"Enabled"`
+	PlatformUserIdExceptions  []string `toml:"PlatformUserIdExceptions" json:"PlatformUserIdExceptions"`
+}
+
 type Configuration struct {
-	Log                    bool               `toml:"Log" json:"Log"`
-	GeneratePlatformUserID bool               `toml:"GeneratePlatformUserId" json:"GeneratePlatformUserId"`
-	Authentication         string             `toml:"Authentication" json:"Authentication"`
-	Games                  GamesConfiguration `toml:"Games" json:"Games"`
-	Announcement           AnnouncementConfig `toml:"Announcement" json:"Announcement"`
+	Log                    bool                     `toml:"Log" json:"Log"`
+	GeneratePlatformUserID bool                     `toml:"GeneratePlatformUserId" json:"GeneratePlatformUserId"`
+	Sign                   SignConfig               `toml:"Sign" json:"Sign"`
+	Authentication         string                   `toml:"Authentication" json:"Authentication"`
+	Internet               InternetConfiguration    `toml:"Internet" json:"Internet"`
+	Games                  GamesConfiguration       `toml:"Games" json:"Games"`
+	Announcement           AnnouncementConfig       `toml:"Announcement" json:"Announcement"`
+	CustomFiles            CustomFilesConfiguration `toml:"CustomFiles" json:"CustomFiles"`
 }
 
 type GamesConfiguration struct {
@@ -36,7 +50,26 @@ type AnnouncementConfig struct {
 	MulticastGroup string `toml:"MulticastGroup" json:"MulticastGroup"`
 }
 
+// CustomFilesConfiguration configures the /api/MatchContent/ endpoints
+// (multiplayer savegame and replay upload/download). Sizes and the expiry are
+// kept as strings and validated here, the same way the server does at startup.
+type CustomFilesConfiguration struct {
+	Enabled      bool   `toml:"Enabled" json:"Enabled"`
+	Folder       string `toml:"Folder" json:"Folder"`
+	MaxFileSize  string `toml:"MaxFileSize" json:"MaxFileSize"`
+	MaxTotalSize string `toml:"MaxTotalSize" json:"MaxTotalSize"`
+	Expiry       string `toml:"Expiry" json:"Expiry"`
+}
+
+// Severities carried by a ValidationError: an error blocks saving, a warning
+// informs about a value that is valid but may not work as expected.
+const (
+	severityError   = "error"
+	severityWarning = "warning"
+)
+
 type ValidationError struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+	Field    string `json:"field"`
+	Message  string `json:"message"`
+	Severity string `json:"severity"`
 }

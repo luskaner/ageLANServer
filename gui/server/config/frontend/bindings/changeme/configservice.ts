@@ -40,13 +40,6 @@ export function OpenTemplate(): $CancellablePromise<$models.ConfigFile | null> {
 }
 
 /**
- * PreviewConfiguration returns the edited TOML document without writing it.
- */
-export function PreviewConfiguration(content: string, configuration: $models.Configuration): $CancellablePromise<string> {
-    return $Call.ByID(2493360729, content, configuration);
-}
-
-/**
  * SaveConfiguration validates and saves all editable configuration fields.
  */
 export function SaveConfiguration(path: string, configuration: $models.Configuration): $CancellablePromise<void> {
@@ -80,4 +73,21 @@ export function SelectConfigFile(): $CancellablePromise<$models.ConfigFile | nul
  */
 export function SelectConfigSaveAsDestination(fileName: string): $CancellablePromise<string> {
     return $Call.ByID(1296201892, fileName);
+}
+
+/**
+ * SelectCustomFilesFolder opens the native directory picker used for the
+ * custom files storage folder. Closing the picker is a normal answer: the empty
+ * path it returns leaves the setting as it is.
+ */
+export function SelectCustomFilesFolder(): $CancellablePromise<string> {
+    return $Call.ByID(1358461915);
+}
+
+/**
+ * ValidateConfiguration exposes the authoritative configuration validation to the
+ * frontend so that all validation rules live in Go rather than TypeScript.
+ */
+export function ValidateConfiguration(configuration: $models.Configuration): $CancellablePromise<$models.ValidationError[] | null> {
+    return $Call.ByID(3456438545, configuration);
 }

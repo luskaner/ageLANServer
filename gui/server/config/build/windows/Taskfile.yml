@@ -52,7 +52,7 @@ tasks:
         vars:
           ARCH: '{{.ARCH}}'
       - '{{if eq .OBFUSCATED "true"}}garble {{.GARBLE_ARGS}} build{{else}}go build{{end}} {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}.exe"'
-      - cmd: powershell Remove-item *.syso
+      - cmd: powershell -Command "Remove-Item -Path *.syso -ErrorAction SilentlyContinue"
         platforms: [windows]
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
