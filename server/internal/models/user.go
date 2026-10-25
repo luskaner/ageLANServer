@@ -443,7 +443,7 @@ func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
 		u.GetStatGroupID(), // statGroupID
 		0,                  // leaderboardID
 		0,                  // wins
-		1,                  // losses
+		0,                  // losses
 		-1,                 // streak
 		0,                  // disputes
 		0,                  // drops

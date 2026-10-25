@@ -1,7 +1,6 @@
 package party
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +11,17 @@ import (
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
 
+// reportMatchRequest mirrors the form the client posts. The list fields travel
+// as JSON arrays, which i.Json decodes transparently.
+type reportMatchRequest struct {
+	MatchID    int64           `schema:"match_id"`
+	ProfileIDs i.Json[[]int32] `schema:"profile_ids"`
+	Results    i.Json[[]int32] `schema:"results"`
+	TeamIDs    i.Json[[]int32] `schema:"teamIDs"`
+	RaceIDs    i.Json[[]int32] `schema:"race_ids"`
+	XPGained   i.Json[[]int32] `schema:"xpGained"`
+}
+
 // reportMatchResponse is the payload the AoE2:DE client expects from
 // /game/party/reportMatch. It has been verified against a real 1.16.0 match, so
 // keep it byte-for-byte compatible.
@@ -20,44 +30,37 @@ func reportMatchResponse() i.A {
 }
 
 func ReportMatch(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		logger.Printf("party.reportMatch: failed to parse form: %s\n", err)
+	var req reportMatchRequest
+	if err := i.Bind(r, &req); err != nil {
+		logger.Printf("party.reportMatch: could not bind form: %s\n", err)
 		i.JSON(&w, reportMatchResponse())
 		return
 	}
-	if len(r.PostForm) == 0 {
-		logger.Printf("party.reportMatch: no form data\n")
-		i.JSON(&w, reportMatchResponse())
-		return
-	}
-
-	form := r.PostForm
-	matchID, err := strconv.ParseInt(strings.TrimSpace(form.Get("match_id")), 10, 64)
-	if err != nil || matchID == 0 {
-		logger.Printf("party.reportMatch: invalid match_id %q\n", form.Get("match_id"))
+	if req.MatchID == 0 {
+		logger.Printf("party.reportMatch: missing or invalid match_id\n")
 		i.JSON(&w, reportMatchResponse())
 		return
 	}
 
 	result := models.MatchResult{
-		MatchID:    matchID,
-		Players:    parseInt32List(form.Get("profile_ids")),
-		Results:    parseInt32List(form.Get("results")),
-		Teams:      parseInt32List(form.Get("teamIDs")),
-		Races:      parseInt32List(form.Get("race_ids")),
-		XPGained:   parseInt32List(form.Get("xpGained")),
+		MatchID:    req.MatchID,
+		Players:    req.ProfileIDs.Data,
+		Results:    req.Results.Data,
+		Teams:      req.TeamIDs.Data,
+		Races:      req.RaceIDs.Data,
+		XPGained:   req.XPGained.Data,
 		WinnerTeam: -1,
 		FinishedAt: time.Now(),
 	}
 	if len(result.Players) == 0 {
-		logger.Printf("party.reportMatch: match=%d has no profile_ids (%q)\n", matchID, form.Get("profile_ids"))
+		logger.Printf("party.reportMatch: match=%d has no profile_ids\n", req.MatchID)
 		i.JSON(&w, reportMatchResponse())
 		return
 	}
 
 	history := models.G(r).MatchHistory()
 	if history == nil {
-		logger.Printf("party.reportMatch: match=%d no match history store\n", matchID)
+		logger.Printf("party.reportMatch: match=%d no match history store\n", req.MatchID)
 		i.JSON(&w, reportMatchResponse())
 		return
 	}
@@ -77,7 +80,7 @@ func ReportMatch(w http.ResponseWriter, r *http.Request) {
 	}
 	logger.Printf(
 		"party.reportMatch: stored match=%d profiles=%v results=%v teams=%v races=%v rated=%t ratings=[%s]\n",
-		matchID,
+		req.MatchID,
 		result.Players,
 		result.Results,
 		result.Teams,
@@ -86,31 +89,4 @@ func ReportMatch(w http.ResponseWriter, r *http.Request) {
 		strings.Join(updates, " "),
 	)
 	i.JSON(&w, reportMatchResponse())
-}
-
-// parseInt32List accepts the JSON arrays used by the client
-// ("[1,2]") and, defensively, comma separated lists.
-func parseInt32List(raw string) []int32 {
-	raw = strings.TrimSpace(raw)
-	if raw == "" || raw == "null" {
-		return nil
-	}
-	var values []int32
-	if err := json.Unmarshal([]byte(raw), &values); err == nil {
-		return values
-	}
-	raw = strings.Trim(raw, "[]")
-	if raw == "" {
-		return nil
-	}
-	parts := strings.Split(raw, ",")
-	values = make([]int32, 0, len(parts))
-	for _, part := range parts {
-		value, err := strconv.ParseInt(strings.TrimSpace(part), 10, 32)
-		if err != nil {
-			return nil
-		}
-		values = append(values, int32(value))
-	}
-	return values
 }

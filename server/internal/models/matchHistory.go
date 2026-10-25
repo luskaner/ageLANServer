@@ -644,29 +644,26 @@ func (s *MatchHistoryStore) GetRecentForProfiles(profiles []int32, limit int) []
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
+	// The profile list travels as a single JSON parameter and is expanded by
+	// json_each, so the SQL text stays constant for any number of profiles.
+	wanted, err := json.Marshal(profiles)
+	if err != nil {
+		return nil
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.db == nil {
 		return nil
 	}
-	placeholders := make([]byte, 0, len(profiles)*2)
-	args := make([]any, 0, len(profiles)+1)
-	for i, profile := range profiles {
-		if i > 0 {
-			placeholders = append(placeholders, ',')
-		}
-		placeholders = append(placeholders, '?')
-		args = append(args, profile)
-	}
-	args = append(args, limit)
 	query := `SELECT DISTINCT m.match_id, m.map_id, m.map_name, m.leaderboard_id, m.queue_type,
 	                 m.winner_team, m.started_at, m.finished_at
 	          FROM matches m
 	          JOIN match_players p ON p.match_id = m.match_id
-	          WHERE m.reported = 1 AND p.profile_id IN (` + string(placeholders) + `)
+	          WHERE m.reported = 1
+	            AND p.profile_id IN (SELECT value FROM json_each(?))
 	          ORDER BY m.finished_at DESC, m.match_id DESC
 	          LIMIT ?`
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(query, string(wanted), limit)
 	if err != nil {
 		return nil
 	}

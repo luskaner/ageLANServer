@@ -2,12 +2,19 @@ package leaderboard
 
 import (
 	"net/http"
-	"strconv"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
+
+// getLeaderBoardRequest mirrors the query string the client sends. Binding is
+// done through the shared decoder, so unknown parameters are ignored.
+type getLeaderBoardRequest struct {
+	LeaderboardID int32 `schema:"leaderboard_id"`
+	Start         int   `schema:"start"`
+	Count         int   `schema:"count"`
+}
 
 // GetLeaderBoard returns one page of a ladder.
 //
@@ -22,30 +29,33 @@ import (
 // The three arrays are matched by index, so an entry is only emitted when all
 // three positions can be filled.
 func GetLeaderBoard(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
 	logger.Printf("leaderboard.getLeaderBoard: query=%s\n", r.URL.RawQuery)
 
-	leaderboardID := models.SoloRMRanked
-	if raw := query.Get("leaderboard_id"); raw != "" {
-		if parsed, err := strconv.ParseInt(raw, 10, 32); err == nil && parsed > 0 {
-			leaderboardID = int32(parsed)
-		}
+	// Defaults are assigned before binding so a missing parameter keeps the
+	// value the client expects: the 1v1 RM ranked ladder, first page, 100
+	// entries per page.
+	q := getLeaderBoardRequest{
+		LeaderboardID: models.SoloRMRanked,
+		Start:         1,
+		Count:         100,
 	}
-	start := 1
-	if raw := query.Get("start"); raw != "" {
-		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
-			start = parsed
-		}
+	if err := i.Bind(r, &q); err != nil {
+		logger.Printf("leaderboard.getLeaderBoard: could not bind query: %s\n", err)
+		i.JSON(&w, i.A{2, i.A{}, i.A{}, i.A{}})
+		return
 	}
-	count := 100
-	if raw := query.Get("count"); raw != "" {
-		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
-			count = parsed
-		}
+	if q.LeaderboardID <= 0 {
+		q.LeaderboardID = models.SoloRMRanked
+	}
+	if q.Start <= 0 {
+		q.Start = 1
+	}
+	if q.Count <= 0 {
+		q.Count = 100
 	}
 
 	game := models.G(r)
-	page, total := game.MatchHistory().GetLeaderboardPage(leaderboardID, start-1, count)
+	page, total := game.MatchHistory().GetLeaderboardPage(q.LeaderboardID, q.Start-1, q.Count)
 	users := game.Users()
 	history := game.MatchHistory()
 	clientLibVersion := models.SessionOrPanic(r).GetClientLibVersion()
@@ -113,9 +123,9 @@ func GetLeaderBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	logger.Printf(
 		"leaderboard.getLeaderBoard: leaderboard=%d start=%d count=%d total=%d returned=%d live=%d offline=%d placeholder=%d\n",
-		leaderboardID,
-		start,
-		count,
+		q.LeaderboardID,
+		q.Start,
+		q.Count,
 		total,
 		len(page),
 		live,

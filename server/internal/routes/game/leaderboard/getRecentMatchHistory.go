@@ -1,13 +1,18 @@
 package leaderboard
 
 import (
-	"encoding/json"
 	"net/http"
 
 	i "github.com/luskaner/ageLANServer/server/internal"
 	"github.com/luskaner/ageLANServer/server/internal/logger"
 	"github.com/luskaner/ageLANServer/server/internal/models"
 )
+
+// getRecentMatchHistoryRequest mirrors the query string the client sends.
+// profile_ids is a JSON array, which i.Json decodes transparently.
+type getRecentMatchHistoryRequest struct {
+	ProfileIDs i.Json[[]int32] `schema:"profile_ids"`
+}
 
 // GetRecentMatchHistory returns the latest reported games of the requested
 // profiles.
@@ -20,16 +25,13 @@ import (
 //	 observerTotal, matchHistoryReportResults, matchHistoryItems, matchUrls,
 //	 matchVersionInfo, matchHistoryMemberStats]
 func GetRecentMatchHistory(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
 	logger.Printf("leaderboard.getRecentMatchHistory: query=%s\n", r.URL.RawQuery)
 
-	var requested []int32
-	if raw := query.Get("profile_ids"); raw != "" {
-		if err := json.Unmarshal([]byte(raw), &requested); err != nil {
-			logger.Printf("leaderboard.getRecentMatchHistory: invalid profile_ids %q: %s\n", raw, err)
-		}
+	var req getRecentMatchHistoryRequest
+	if err := i.Bind(r, &req); err != nil {
+		logger.Printf("leaderboard.getRecentMatchHistory: could not bind query: %s\n", err)
 	}
-	requested = normalizeProfileIDs(requested)
+	requested := normalizeProfileIDs(req.ProfileIDs.Data)
 
 	game := models.G(r)
 	store := game.MatchHistory()
