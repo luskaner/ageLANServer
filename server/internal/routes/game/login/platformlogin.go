@@ -77,7 +77,11 @@ func Platformlogin(w http.ResponseWriter, r *http.Request) {
 	profileId := u.GetProfileId()
 	leaderboardStat := i.A{}
 	if title == game.AoE2 || i.SinceTheBalticPowers(title, req.ClientLibVersion) {
-		leaderboardStat = append(leaderboardStat, u.EncodeLeaderboardStat(req.ClientLibVersion))
+		var rating *models.PlayerRating
+		if rows := g.MatchHistory().GetRatingsForLeaderboard(models.SoloRMRanked, []int32{u.GetId()}); rows != nil {
+			rating = rows[u.GetId()]
+		}
+		leaderboardStat = append(leaderboardStat, u.EncodeLeaderboardStat(rating))
 	}
 	battleServers := g.BattleServers()
 	relayServers := battleServers.Encode(r)

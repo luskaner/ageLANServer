@@ -25,7 +25,8 @@ type User interface {
 	GetPlatformPath() string
 	GetAccountType() int
 	GetPlatformUserID() uint64
-	EncodeLeaderboardStat(clientLibVersion uint16) i.A
+	EncodeExtraProfileInfo(clientLibVersion uint16) i.A
+	EncodeLeaderboardStat(r *PlayerRating) i.A
 	EncodeProfileInfo(clientLibVersion uint16) i.A
 	GetPresence() int32
 	SetPresence(presence int32)
@@ -42,6 +43,10 @@ type User interface {
 	GetAuth() *PersistentJsonData[*time.Time]
 	EncodeStats() i.A
 	EncodePresence(definitions PresenceDefinitions) i.A
+	// GetRating/SetRating expose the cached 1v1 random map rating that is
+	// embedded in the extra profile info sent to the game client.
+	GetRating() int32
+	SetRating(rating int32)
 }
 
 type MainUser struct {
@@ -63,6 +68,7 @@ type MainUser struct {
 	items              *PersistentJsonData[*map[int32]*MainItem]
 	itemLoadouts       *PersistentJsonData[*MainItemLoadouts]
 	auth               *PersistentJsonData[*time.Time]
+	rating             atomic.Int32
 }
 
 // EncodeStats encodes the value for the client's stats field.
@@ -104,6 +110,26 @@ type MainUsers struct {
 	// only change needed to run the server on a real database instead of the
 	// default per-key JSON files.
 	StoreFactory UserStoreFactory
+	// ratingSource, when set, loads the persisted 1v1 rating of a profile. It
+	// is called once per account load so the rating survives a server restart
+	// even before the client asks for the ladder.
+	ratingSource func(profileID int32) int32
+	// profileSink, when set, persists the identity of every user the server
+	// builds, so the ladder can still render players that are offline.
+	profileSink func(User)
+}
+
+// SetRatingSource installs the callback used to hydrate ratings on account
+// load. It is wired by the game once the match history store exists.
+func (users *MainUsers) SetRatingSource(source func(profileID int32) int32) {
+	users.ratingSource = source
+}
+
+// SetProfileSink installs the callback used to remember the identity of every
+// user the server builds. It is wired by the game once the match history store
+// exists, and it is what keeps the ladder usable for offline players.
+func (users *MainUsers) SetProfileSink(sink func(User)) {
+	users.profileSink = sink
 }
 
 func (users *MainUsers) Initialize() {
@@ -272,6 +298,15 @@ func (users *MainUsers) GetOrCreateUser(gameId string, itemDefinitions Items, av
 		// Generation failed; remove the cached entry so the next attempt
 		// can retry instead of permanently serving a nil user.
 		users.store.Delete(identifier)
+	} else {
+		if users.ratingSource != nil {
+			if rating := users.ratingSource(mainUser.GetId()); rating > 0 {
+				mainUser.SetRating(rating)
+			}
+		}
+		if users.profileSink != nil {
+			users.profileSink(mainUser)
+		}
 	}
 	return mainUser
 }
@@ -400,23 +435,24 @@ func (u *MainUser) GetPlatformUserID() uint64 {
 	return u.platformUserId
 }
 
-// EncodeLeaderboardStat encodes the value for the client's leaderboardStat field.
-func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
-	// The client accepts these placeholder values until real stats are implemented.
+// EncodeExtraProfileInfo returns the stat summary embedded in the account and
+// profile payloads. It is a single leaderboardStat-shaped array (same order as
+// EncodeLeaderboardStat) for the default ladder of the profile.
+func (u *MainUser) EncodeExtraProfileInfo(clientLibVersion uint16) i.A {
 	info := i.A{
-		u.statGroupID,
-		0,    // leaderboardID
-		0,    // wins
-		0,    // losses
-		-1,   // streak
-		0,    // disputes
-		0,    // drops
-		-1,   // ranking
-		-1,   // rankTotal
-		-1,   // regionRanking
-		-1,   // regionRankTotal
-		-1,   // level
-		1000, // rating
+		u.GetStatGroupID(), // statGroupID
+		0,                  // leaderboardID
+		0,                  // wins
+		0,                  // losses
+		-1,                 // streak
+		0,                  // disputes
+		0,                  // drops
+		-1,                 // ranking
+		-1,                 // rankTotal
+		-1,                 // regionRanking
+		-1,                 // regionRankTotal
+		-1,                 // level
+		u.GetRating(),      // rating
 		// Some time in the past
 		1713372625, // lastMatchTime
 		0,          // highestRank
@@ -429,11 +465,100 @@ func (u *MainUser) EncodeLeaderboardStat(clientLibVersion uint16) i.A {
 	return info
 }
 
+// EncodeLeaderboardStat returns one element of the leaderboardStats array that
+// the Leaderboard endpoints (getLeaderBoard, getStatsForLeaderboardByProfileName,
+// getStatGroupsByProfileIDs, getPartyStat) return. The client deserialises it
+// positionally, so the order below must not change:
+//
+//	[statGroupID, leaderboardID, wins, losses, streak, disputes, drops,
+//	 ranking, rankTotal, regionRanking, regionRankTotal, level, rating,
+//	 lastMatchTime, highestRank, highestRankLevel, highestRating,
+//	 platformRank, platformRankTotal]
+func (u *MainUser) EncodeLeaderboardStat(r *PlayerRating) i.A {
+	return EncodeLeaderboardStatFor(u.GetStatGroupID(), u.GetRating(), r)
+}
+
+// EncodeLeaderboardStatFor builds the same leaderboardStat for a profile that
+// is not loaded in memory. statGroupID and fallbackRating come from the stored
+// profile.
+func EncodeLeaderboardStatFor(statGroupID int32, fallbackRating int32, r *PlayerRating) i.A {
+	leaderboardID := int32(SoloRMRanked)
+	rating := fallbackRating
+	if rating <= 0 {
+		rating = DefaultRating
+	}
+	highestRating := rating
+	var wins, losses, streak int32
+	ranking := int64(-1)
+	rankTotal := int64(-1)
+	lastMatch := int64(0)
+	if r != nil {
+		leaderboardID = r.LeaderboardID
+		rating = r.Rating
+		if r.HighestRating > 0 {
+			highestRating = r.HighestRating
+		}
+		wins = r.Wins
+		losses = r.Losses
+		streak = r.Streak
+		if r.Rank > 0 {
+			ranking = r.Rank
+		}
+		if r.RankTotal > 0 {
+			rankTotal = r.RankTotal
+		}
+		if !r.LastMatch.IsZero() {
+			lastMatch = r.LastMatch.Unix()
+		}
+	}
+	return i.A{
+		statGroupID,   // statGroupID
+		leaderboardID, // leaderboardID
+		wins,          // wins
+		losses,        // losses
+		streak,        // streak
+		0,             // disputes
+		0,             // drops
+		ranking,       // ranking
+		rankTotal,     // rankTotal
+		-1,            // regionRanking
+		-1,            // regionRankTotal
+		0,             // level
+		rating,        // rating
+		lastMatch,     // lastMatchTime
+		ranking,       // highestRank
+		0,             // highestRankLevel
+		highestRating, // highestRating
+		-1,            // platformRank
+		-1,            // platformRankTotal
+	}
+}
+
+// GetRating returns the cached 1v1 random map rating. Profiles that have never
+// been rated get DefaultRating.
+func (u *MainUser) GetRating() int32 {
+	if rating := u.rating.Load(); rating > 0 {
+		return rating
+	}
+	return DefaultRating
+}
+
+// SetRating caches the rating that will be embedded in the next
+// EncodeExtraProfileInfo call.
+func (u *MainUser) SetRating(rating int32) {
+	if rating > 0 {
+		u.rating.Store(rating)
+	}
+}
+
+// profileEntityVersion is the fixed "last modified" timestamp sent with every
+// profile. The client only needs it to be stable, so a constant is enough.
+var profileEntityVersion = time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix()
+
 func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
-	entityVersion := time.Date(2024, 5, 2, 3, 34, 0, 0, time.UTC).Unix()
 	platformUserID := strconv.FormatUint(u.GetPlatformUserID(), 10)
 	profileInfo := i.A{
-		entityVersion,
+		profileEntityVersion,
 		u.GetId(),
 		u.GetPlatformPath(),   // name
 		u.GetAvatarMetadata(), // metaData
@@ -453,6 +578,55 @@ func (u *MainUser) EncodeProfileInfo(clientLibVersion uint16) i.A {
 		platformUserID,
 		u.GetAccountType(), // 3 = Steam, 9 = Xbox
 		i.A{},              // linkedPlatformAccounts: empty = none
+	)
+	return profileInfo
+}
+
+// PlaceholderProfile is the identity used for a rating whose profile was never
+// stored. It keeps the entry visible in the ladder without borrowing another
+// player's alias; the real identity replaces it when the player connects.
+func PlaceholderProfile(profileID int32, statGroupID int32) *StoredProfile {
+	if statGroupID == 0 {
+		statGroupID = profileID
+	}
+	return &StoredProfile{
+		ProfileID:      profileID,
+		StatGroupID:    statGroupID,
+		Alias:          "Player " + strconv.FormatInt(int64(profileID), 10),
+		PlatformUserID: uint64(profileID),
+		Level:          1,
+	}
+}
+
+// EncodeStoredProfileInfo builds the same profileInfo for a player that is not
+// connected, using the identity stored in the match history database.
+func EncodeStoredProfileInfo(p *StoredProfile, clientLibVersion uint16) i.A {
+	accountType := 3
+	if p.IsXbox {
+		accountType = 9
+	}
+	platformUserID := strconv.FormatUint(p.PlatformUserID, 10)
+	profileInfo := i.A{
+		profileEntityVersion,
+		p.ProfileID,
+		getPlatformPath(p.IsXbox, p.PlatformUserID), // name
+		p.AvatarMetadata, // metaData
+		p.Alias,
+	}
+	if clientLibVersion >= i.V190 {
+		profileInfo = append(profileInfo, p.Alias) // sanitizedAlias
+	}
+	profileInfo = append(
+		profileInfo,
+		"",              // clanName: empty = no clan
+		p.StatGroupID,   // personalStatGroupID
+		p.XP,            // xp
+		p.Level,         // level
+		p.Region,        // leaderboardRegionID
+		nil,             // banInfo: not banned
+		platformUserID,  // platformUserID
+		accountType,     // 3 = Steam, 9 = Xbox
+		i.A{},           // linkedPlatformAccounts: empty = none
 	)
 	return profileInfo
 }
