@@ -3,7 +3,7 @@ import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from 
 // The interface follows the desktop it runs on: `main.tsx` reads the accent
 // colour the system highlights controls with and hands it to `createAppTheme`.
 // This is the colour that is kept when the desktop offers none (the
-// ageLANServer brand colour).
+// ageServer brand colour).
 const DEFAULT_ACCENT = '#60cdff';
 
 // WinUI-style font stack used across the configurator (kept from the Fluent era).

@@ -17,9 +17,11 @@ export function CreateConfigFile(path: string, configuration: $models.Configurat
 }
 
 /**
- * OpenConfigFile finds the default file or asks the user to select one, then
- * returns its path and raw contents. Parsing and editing are deliberately not
- * part of this first loading step.
+ * OpenConfigFile tries the default configuration paths and returns the file's
+ * path and raw contents. When there is no default file it returns no file and
+ * the load screen stays in place: the native picker only opens when the user
+ * asks for it. Parsing and editing are deliberately not part of this first
+ * loading step.
  */
 export function OpenConfigFile(): $CancellablePromise<$models.ConfigFile | null> {
     return $Call.ByID(1176887371);
@@ -61,8 +63,9 @@ export function SelectConfigDestination(): $CancellablePromise<string> {
 }
 
 /**
- * SelectConfigFile always opens the native picker, even when a default file
- * exists. It is used when the user explicitly wants another configuration.
+ * SelectConfigFile always opens the native picker. It is used when the user
+ * explicitly wants a configuration. Closing the picker is a normal answer: the
+ * load screen stays as it is.
  */
 export function SelectConfigFile(): $CancellablePromise<$models.ConfigFile | null> {
     return $Call.ByID(962140871);

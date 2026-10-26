@@ -147,6 +147,19 @@ func TestReadConfigFileRejectsUnrelatedTOML(t *testing.T) {
 	}
 }
 
+func TestOpenConfigFileWithoutDefaultKeepsTheLoadScreen(t *testing.T) {
+	// No default configuration next to the test binary or in the working
+	// directory: OpenConfigFile must not fall back to the native picker.
+	t.Chdir(t.TempDir())
+	file, err := (&ConfigService{}).OpenConfigFile()
+	if err != nil {
+		t.Fatalf("OpenConfigFile returned an error: %v", err)
+	}
+	if file != nil {
+		t.Fatalf("OpenConfigFile returned a file without a default configuration")
+	}
+}
+
 func TestValidateConfiguration(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -307,6 +320,30 @@ func TestValidateConfigurationDuplicateHosts(t *testing.T) {
 		}
 	}
 }
+func TestValidateConfigurationDuplicateHostsWithinGame(t *testing.T) {
+	config := Configuration{
+		Authentication: "disabled",
+		Games: GamesConfiguration{
+			Enabled: []string{"age2"},
+			Age2:    GameConfig{Hosts: []string{"192.0.2.10", "192.0.2.10"}},
+		},
+		Announcement: AnnouncementConfig{Port: 31978},
+	}
+	issues := validateConfiguration(&config)
+	errors := errorValidationIssues(issues)
+	if len(errors) != 2 {
+		t.Fatalf("the duplicated host was not reported on both rows: %#v", issues)
+	}
+	for _, issue := range errors {
+		if !strings.Contains(issue.Message, "age2") {
+			t.Fatalf("a duplicated host did not name its game: %#v", issue)
+		}
+		if strings.HasSuffix(issue.Message, "by ") {
+			t.Fatalf("a duplicated host produced an empty owner list: %#v", issue)
+		}
+	}
+}
+
 func TestValidateConfigurationPrivilegedPortWarnsWithoutBlocking(t *testing.T) {
 	config := Configuration{
 		Authentication: "disabled",
@@ -456,7 +493,7 @@ func TestConfigurationDocumentAddsMissingSettings(t *testing.T) {
 	if strings.Count(string(updated), "[CustomFiles]") != 1 || strings.Count(string(updated), "[Internet]") != 1 {
 		t.Fatalf("tables were duplicated or not added:\n%s", updated)
 	}
-	if strings.Index(string(updated), "Sign = false") > strings.Index(string(updated), "[Announcement]") {
+	if strings.Index(string(updated), "Authentication = 'disabled'") > strings.Index(string(updated), "[Announcement]") {
 		t.Fatalf("a root key was written inside a table:\n%s", updated)
 	}
 	parsed, err := parseConfiguration(updated)
@@ -520,6 +557,207 @@ func TestConfigurationDocumentRoundTripsTheOfficialTemplate(t *testing.T) {
 	}
 	if !reflect.DeepEqual(*roundTripped, *original) {
 		t.Fatalf("round trip changed the configuration:\noriginal: %#v\nupdated:  %#v", *original, *roundTripped)
+	}
+}
+
+func TestConfigurationDocumentWritesBattleServersAsTables(t *testing.T) {
+	original := []byte("Authentication = 'disabled'\n\n[Games]\nEnabled = []\n")
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+	configuration.Games.Age2.BattleServers = []BattleServerConfig{
+		{Region: "local", Name: "Local", IPv4: "auto", BsPort: 30003, WebSocketPort: 30004, OutOfBandPort: 30005},
+		{Region: "other", IPv4: "192.168.1.2", BsPort: 30013, WebSocketPort: 30014, OutOfBandPort: 30015},
+	}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "BattleServers =") {
+		t.Fatalf("battle servers were written as an inline array:\n%s", updated)
+	}
+	if count := strings.Count(string(updated), "[[Games.age2.BattleServers]]"); count != 2 {
+		t.Fatalf("battle server tables = %d, want 2:\n%s", count, updated)
+	}
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if !reflect.DeepEqual(parsed.Games.Age2.BattleServers, configuration.Games.Age2.BattleServers) {
+		t.Fatalf("battle servers did not round-trip: %#v", parsed.Games.Age2.BattleServers)
+	}
+
+	// Saving again must not append a second copy of the same tables.
+	twice, err := configurationDocument(updated, configuration)
+	if err != nil {
+		t.Fatalf("second configurationDocument returned an error: %v", err)
+	}
+	if string(twice) != string(updated) {
+		t.Fatalf("a second save changed the document:\nfirst:\n%s\nsecond:\n%s", updated, twice)
+	}
+}
+
+func TestConfigurationDocumentReplacesInlineBattleServers(t *testing.T) {
+	original := []byte(`Authentication = 'disabled'
+
+[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+BattleServers = [{Region = 'old', IPv4 = 'auto', BsPort = 1, WebSocketPort = 2}]
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+	configuration.Games.Age2.BattleServers = []BattleServerConfig{
+		{Region: "local", Name: "Local", IPv4: "auto", BsPort: 30003, WebSocketPort: 30004, OutOfBandPort: 30005},
+	}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "BattleServers = [") {
+		t.Fatalf("the inline BattleServers key was kept:\n%s", updated)
+	}
+	if !strings.Contains(string(updated), "[[Games.age2.BattleServers]]") {
+		t.Fatalf("battle servers were not written as tables:\n%s", updated)
+	}
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if !reflect.DeepEqual(parsed.Games.Age2.BattleServers, configuration.Games.Age2.BattleServers) {
+		t.Fatalf("battle servers did not round-trip: %#v", parsed.Games.Age2.BattleServers)
+	}
+}
+
+func TestConfigurationDocumentRemovesEmptyBattleServers(t *testing.T) {
+	original := []byte(`Authentication = 'disabled'
+
+[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[[Games.age2.BattleServers]]
+Region = 'local'
+IPv4 = 'auto'
+BsPort = 30003
+WebSocketPort = 30004
+OutOfBandPort = 30005
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "BattleServers") {
+		t.Fatalf("an empty battle server list was kept:\n%s", updated)
+	}
+	if _, err := parseConfiguration(updated); err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+}
+
+func TestConfigurationDocumentHandlesInterleavedBattleServerTables(t *testing.T) {
+	original := []byte(`Authentication = 'disabled'
+
+[Games]
+Enabled = ['age2', 'age3']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[[Games.age2.BattleServers]]
+Region = 'old-age2'
+IPv4 = 'auto'
+BsPort = 1
+WebSocketPort = 2
+
+[Games.age3]
+Hosts = ['0.0.0.0']
+
+[[Games.age3.BattleServers]]
+Region = 'age3'
+IPv4 = 'auto'
+BsPort = 3
+WebSocketPort = 4
+
+[[Games.age2.BattleServers]]
+Region = 'old-age2-2'
+IPv4 = 'auto'
+BsPort = 5
+WebSocketPort = 6
+
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2", "age3"}
+	configuration.Games.Age2.BattleServers = []BattleServerConfig{
+		{Region: "new-age2", IPv4: "auto", BsPort: 30003, WebSocketPort: 30004, OutOfBandPort: 30005},
+	}
+	configuration.Games.Age3.BattleServers = []BattleServerConfig{
+		{Region: "age3", IPv4: "auto", BsPort: 30006, WebSocketPort: 30007, OutOfBandPort: 30008},
+	}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "old-age2") {
+		t.Fatalf("a stale battle server table was kept:\n%s", updated)
+	}
+	if count := strings.Count(string(updated), "[[Games.age2.BattleServers]]"); count != 1 {
+		t.Fatalf("age2 battle server tables = %d, want 1:\n%s", count, updated)
+	}
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if !reflect.DeepEqual(parsed.Games.Age2.BattleServers, configuration.Games.Age2.BattleServers) {
+		t.Fatalf("unexpected age2 battle servers: %#v", parsed.Games.Age2.BattleServers)
+	}
+	if !reflect.DeepEqual(parsed.Games.Age3.BattleServers, configuration.Games.Age3.BattleServers) {
+		t.Fatalf("unexpected age3 battle servers: %#v", parsed.Games.Age3.BattleServers)
+	}
+}
+
+func TestValidateConfigurationBattleServers(t *testing.T) {
+	config := serverDefaults()
+	config.Games.Enabled = []string{"age4"}
+	config.Games.Age4.Hosts = []string{"127.0.0.1"}
+	issues := errorValidationIssues(validateConfiguration(&config))
+	if len(issues) != 1 || issues[0].Field != "Games.age4.BattleServers" {
+		t.Fatalf("an enabled game without battle servers was not reported: %#v", issues)
+	}
+
+	config.Games.Age4.BattleServers = []BattleServerConfig{
+		{Region: "local", IPv4: "auto", BsPort: 30009, WebSocketPort: 30010, OutOfBandPort: 30011},
+		{Region: "local", IPv4: "not-an-address", BsPort: 0, WebSocketPort: 70000, OutOfBandPort: -1},
+	}
+	issues = errorValidationIssues(validateConfiguration(&config))
+	fields := make(map[string]bool, len(issues))
+	for _, issue := range issues {
+		fields[issue.Field] = true
+	}
+	for _, field := range []string{
+		"Games.age4.BattleServers.1.Region",
+		"Games.age4.BattleServers.1.IPv4",
+		"Games.age4.BattleServers.1.BsPort",
+		"Games.age4.BattleServers.1.WebSocketPort",
+		"Games.age4.BattleServers.1.OutOfBandPort",
+	} {
+		if !fields[field] {
+			t.Fatalf("%s was not reported: %#v", field, issues)
+		}
 	}
 }
 

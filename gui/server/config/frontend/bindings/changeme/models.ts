@@ -8,6 +8,15 @@ export interface AnnouncementConfig {
     "MulticastGroup": string;
 }
 
+export interface BattleServerConfig {
+    "Region": string;
+    "Name": string;
+    "IPv4": string;
+    "BsPort": number;
+    "WebSocketPort": number;
+    "OutOfBandPort": number;
+}
+
 /**
  * ConfigFile is the bridge between Go and the React editor.
  */
@@ -21,7 +30,7 @@ export interface ConfigFile {
 export interface Configuration {
     "Log": boolean;
     "GeneratePlatformUserId": boolean;
-    "Sign": boolean;
+    "Sign": SignConfig;
     "Authentication": string;
     "Internet": InternetConfiguration;
     "Games": GamesConfiguration;
@@ -44,6 +53,7 @@ export interface CustomFilesConfiguration {
 
 export interface GameConfig {
     "Hosts": string[] | null;
+    "BattleServers": BattleServerConfig[] | null;
 }
 
 export interface GamesConfiguration {
@@ -58,6 +68,11 @@ export interface GamesConfiguration {
 export interface InternetConfiguration {
     "Enabled": boolean;
     "IP": string;
+}
+
+export interface SignConfig {
+    "Enabled": boolean;
+    "PlatformUserIdExceptions": string[] | null;
 }
 
 export interface ValidationError {

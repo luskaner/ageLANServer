@@ -14,8 +14,8 @@ import {
     NumberInput,
     Radio,
     ScrollArea,
-    SimpleGrid,
     Stack,
+    Switch,
     Text,
     Title,
     Tooltip,
@@ -51,17 +51,21 @@ import {
 import { AppConfig, AVAILABLE_GAMES, ValidationErrors, fieldLabel, humanMessage } from '../types';
 import { AutoManualCard } from './AutoManualCard';
 import { FolderPickerInput } from './FolderPickerInput';
+import { GameSection } from './GameSection';
 import { IPv4Input } from './IPv4Input';
 import { SettingCard } from './SettingCard';
 import { SwitchSettingCard } from './SwitchSettingCard';
 import { UnitInput, UnitInputUnit } from './UnitInput';
 import { ConfigFile, ConfigService, Configuration, ValidationError } from '../../bindings/changeme';
 function toServiceConfiguration(config: AppConfig): Configuration {
-    const game = (gameId: string) => ({ Hosts: config.Games[gameId]?.Hosts ?? [] });
+    const game = (gameId: string) => ({
+        Hosts: config.Games[gameId]?.Hosts ?? [],
+        BattleServers: config.Games[gameId]?.BattleServers ?? [],
+    });
     return {
         Log: config.Log,
         GeneratePlatformUserId: config.GeneratePlatformUserId,
-        Sign: config.Sign,
+        Sign: { Enabled: config.Sign.Enabled, PlatformUserIdExceptions: config.Sign.PlatformUserIdExceptions },
         Authentication: config.Authentication,
         Internet: { Enabled: config.Internet.Enabled, IP: config.Internet.IP },
         Games: {
@@ -76,14 +80,29 @@ function toServiceConfiguration(config: AppConfig): Configuration {
         CustomFiles: config.CustomFiles,
     };
 }
-type SectionKey = 'general' | 'internet' | 'games' | 'announcement' | 'customFiles';
-const SECTION_LABELS: Record<SectionKey, { title: string; subtitle: string }> = {
+type GameSectionKey = `game:${string}`;
+type StaticSectionKey = 'general' | 'internet' | 'announcement' | 'customFiles' | 'sign';
+type SectionKey = StaticSectionKey | GameSectionKey;
+const SECTION_LABELS: Record<StaticSectionKey, { title: string; subtitle: string }> = {
     general: { title: 'General', subtitle: 'Basic server configuration options.' },
     internet: { title: 'Internet', subtitle: 'Internet access and the address the server announces.' },
-    games: { title: 'Games', subtitle: 'Configure which games the server accepts and their binding addresses.' },
     announcement: { title: 'Announcement', subtitle: 'Configure LAN discovery and announcement settings.' },
     customFiles: { title: 'Custom files', subtitle: 'Storage of the savegames and replays uploaded by the game.' },
+    sign: { title: 'Sign', subtitle: 'Configure catalogue signing and platform user exceptions.' },
 };
+function isGameSection(section: SectionKey): section is GameSectionKey {
+    return section.startsWith('game:');
+}
+function sectionInfo(section: SectionKey): { title: string; subtitle: string } {
+    if (isGameSection(section)) {
+        const game = AVAILABLE_GAMES.find((candidate) => `game:${candidate.id}` === section);
+        return {
+            title: game?.name ?? 'Game',
+            subtitle: 'Hosts and battle servers for this game.',
+        };
+    }
+    return SECTION_LABELS[section];
+}
 const AUTH_OPTIONS = [
     { value: 'disabled', label: 'Disabled', description: 'No authentication as it worked before.' },
     { value: 'required', label: 'Required', description: 'Authenticate the user with the official servers.' },
@@ -110,10 +129,15 @@ const AUTH_OPTIONS = [
 /** Section that owns a validation error, so the summary can jump to it. */ function sectionForField(
     field: string,
 ): SectionKey {
+    if (field.startsWith('Games.')) {
+        const gameId = field.split('.')[1];
+        if (AVAILABLE_GAMES.some((game) => game.id === gameId)) return `game:${gameId}`;
+        return 'general';
+    }
     if (field.startsWith('Internet.')) return 'internet';
-    if (field.startsWith('Games.')) return 'games';
     if (field.startsWith('Announcement.')) return 'announcement';
     if (field.startsWith('CustomFiles.')) return 'customFiles';
+    if (field.startsWith('Sign.')) return 'sign';
     return 'general';
 }
 /** Splits the result of the Go validation into blocking errors and warnings. */ function splitIssues(
@@ -159,7 +183,8 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
     const form = useForm<AppConfig>({ mode: 'controlled', initialValues: initialConfig });
     const config = form.values;
     const [authExpanded, authExpandedHandlers] = useDisclosure(false);
-    const [multicastExpanded, multicastExpandedHandlers] = useDisclosure(false); // Multicast sits under the LAN announcement: switching the announcement off
+    const [multicastExpanded, multicastExpandedHandlers] = useDisclosure(false);
+    const [exceptionsExpanded, exceptionsExpandedHandlers] = useDisclosure(false); // Multicast sits under the LAN announcement: switching the announcement off
     // takes the whole card away, so its details close instead of staying open
     // behind a row that can no longer be clicked.
     const closeMulticastDetails = multicastExpandedHandlers.close;
@@ -176,7 +201,15 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
     const sidebarOpened = isNarrowWindow ? overlayNavbarOpened : navbarOpened;
     const toggleSidebar = isNarrowWindow ? overlayNavbarHandlers.toggle : navbarHandlers.toggle;
     const sidebarWidth = 240;
-    const [activeSection, setActiveSection] = useState<SectionKey>('general'); // The file's own validation result seeds the messages shown when it opens;
+    const [activeSection, setActiveSection] = useState<SectionKey>('general');
+    const [gamesOpened, gamesHandlers] = useDisclosure(true);
+    const activeGame = isGameSection(activeSection)
+        ? AVAILABLE_GAMES.find((game) => `game:${game.id}` === activeSection)
+        : undefined;
+    const selectSection = (section: SectionKey) => {
+        if (isGameSection(section)) gamesHandlers.open();
+        setActiveSection(section);
+    }; // The file's own validation result seeds the messages shown when it opens;
     // every blur (or committed control) replaces them with the fresh result.
     const [backendIssues] = useState(() => splitIssues(backendValidationErrors));
     const [errors, setErrors] = useState<ValidationErrors>(backendIssues.errors);
@@ -378,18 +411,40 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
         }
     };
     const authLabel = AUTH_OPTIONS.find((option) => option.value === config.Authentication)?.label ?? 'Disabled';
-    const navItems: Array<{ key: SectionKey; label: string; icon: React.ReactNode }> = [
+    const section = sectionInfo(activeSection);
+    const navItems: Array<{ key: StaticSectionKey; label: string; icon: React.ReactNode }> = [
         { key: 'general', label: 'General', icon: <IconSettings size={18} stroke={1.6} /> },
         { key: 'internet', label: 'Internet', icon: <IconWorld size={18} stroke={1.6} /> },
-        { key: 'games', label: 'Games', icon: <IconDeviceGamepad2 size={18} stroke={1.6} /> },
         { key: 'announcement', label: 'Announcement', icon: <IconSpeakerphone size={18} stroke={1.6} /> },
         { key: 'customFiles', label: 'Custom files', icon: <IconFiles size={18} stroke={1.6} /> },
+        { key: 'sign', label: 'Sign', icon: <IconSignature size={18} stroke={1.6} /> },
     ]; // WinUI 3 navigation items: rounded rows inset from the pane edges, with
     // a subtle highlight on hover and when selected instead of an accent
     // fill. The states cannot go through the styles prop (it only supports
     // flat properties), so they live in this small stylesheet.
     const winuiNavItemClass = 'winui-nav-item';
     const winuiNavItemCss = `        .${winuiNavItemClass} [data-position='left'] {            color: var(--mantine-color-dimmed);        }        @media (hover: hover) {            .${winuiNavItemClass}:hover {                background-color: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);            }        }        .${winuiNavItemClass}[data-active] {            background-color: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);            color: var(--mantine-color-text);        }        .${winuiNavItemClass}[data-active] [data-position='left'] {            color: var(--mantine-color-text);        }    `;
+    const renderStaticNavItem = (item: { key: StaticSectionKey; label: string; icon: React.ReactNode }) => (
+        <NavLink
+            key={item.key}
+            label={item.label}
+            leftSection={item.icon}
+            active={activeSection === item.key}
+            onClick={() => selectSection(item.key)}
+            className={winuiNavItemClass}
+            styles={{
+                root: {
+                    // WinUI 3 navigation item: rounded. The inset comes from the
+                    // section padding (the items are width: 100%, so a margin
+                    // would overflow the pane and bring up a horizontal
+                    // scrollbar).
+                    borderRadius: 4,
+                    paddingBlock: 8,
+                    paddingInline: 8,
+                },
+            }}
+        />
+    );
     return (
         <AppShell
             header={{ height: 64 }}
@@ -414,18 +469,24 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             aria-label={sidebarOpened ? 'Hide sidebar' : 'Show sidebar'}
                         />
                         <Box style={{ minWidth: 0 }}>
-                            <Title order={4}>{SECTION_LABELS[activeSection].title}</Title>
+                            <Title order={4}>{section.title}</Title>
                             <Text size="xs" c="dimmed" truncate>
-                                {SECTION_LABELS[activeSection].subtitle}
+                                {section.subtitle}
                             </Text>
                         </Box>
                     </Group>
-                    {isNew ? (
-                        <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSave} disabled={hasErrors}>
-                            Save
-                        </Button>
-                    ) : (
-                        <Button.Group>
+                    <Group gap="md" wrap="nowrap">
+                        {activeGame && (
+                            <Switch
+                                checked={config.Games.Enabled.includes(activeGame.id)}
+                                onChange={() => handleGameToggle(activeGame.id)}
+                                label={config.Games.Enabled.includes(activeGame.id) ? 'Enabled' : 'Disabled'}
+                                labelPosition="left"
+                                aria-label={`Enable ${activeGame.name}`}
+                                withThumbIndicator={false}
+                            />
+                        )}
+                        {isNew ? (
                             <Button
                                 leftSection={<IconDeviceFloppy size={16} />}
                                 onClick={handleSave}
@@ -433,20 +494,30 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             >
                                 Save
                             </Button>
-                            <Menu position="bottom-end" width={190}>
-                                <Menu.Target>
-                                    <Button px={8} aria-label="More save options" disabled={hasErrors}>
-                                        <IconChevronDown size={16} />
-                                    </Button>
-                                </Menu.Target>
-                                <Menu.Dropdown>
-                                    <Menu.Item leftSection={<IconDeviceFloppy size={16} />} onClick={handleSaveAs}>
-                                        Save as├ö├ç┬¬
-                                    </Menu.Item>
-                                </Menu.Dropdown>
-                            </Menu>
-                        </Button.Group>
-                    )}
+                        ) : (
+                            <Button.Group>
+                                <Button
+                                    leftSection={<IconDeviceFloppy size={16} />}
+                                    onClick={handleSave}
+                                    disabled={hasErrors}
+                                >
+                                    Save
+                                </Button>
+                                <Menu position="bottom-end" width={190}>
+                                    <Menu.Target>
+                                        <Button px={8} aria-label="More save options" disabled={hasErrors}>
+                                            <IconChevronDown size={16} />
+                                        </Button>
+                                    </Menu.Target>
+                                    <Menu.Dropdown>
+                                        <Menu.Item leftSection={<IconDeviceFloppy size={16} />} onClick={handleSaveAs}>
+                                            Save as├ö├ç┬¬
+                                        </Menu.Item>
+                                    </Menu.Dropdown>
+                                </Menu>
+                            </Button.Group>
+                        )}
+                    </Group>
                 </Group>
             </AppShell.Header>
             <AppShell.Navbar
@@ -469,28 +540,40 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
             >
                 <style>{winuiNavItemCss}</style>
                 <AppShell.Section grow component={ScrollArea} px={12} py="sm">
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.key}
-                            label={item.label}
-                            leftSection={item.icon}
-                            active={activeSection === item.key}
-                            onClick={() => setActiveSection(item.key)}
-                            className={winuiNavItemClass}
-                            styles={{
-                                root: {
-                                    // WinUI 3 navigation item: rounded. The
-                                    // inset comes from the section padding
-                                    // (the items are width: 100%, so a margin
-                                    // would overflow the pane and bring up a
-                                    // horizontal scrollbar).
-                                    borderRadius: 4,
-                                    paddingBlock: 8,
-                                    paddingInline: 8,
-                                },
-                            }}
-                        />
-                    ))}
+                    {navItems.slice(0, 2).map(renderStaticNavItem)}
+                    <NavLink
+                        label="Games"
+                        leftSection={<IconDeviceGamepad2 size={18} stroke={1.6} />}
+                        active={Boolean(activeGame)}
+                        opened={gamesOpened}
+                        onClick={gamesHandlers.toggle}
+                        className={winuiNavItemClass}
+                        styles={{
+                            root: {
+                                borderRadius: 4,
+                                paddingBlock: 8,
+                                paddingInline: 8,
+                            },
+                        }}
+                    >
+                        {AVAILABLE_GAMES.map((game) => (
+                            <NavLink
+                                key={game.id}
+                                label={game.name}
+                                active={activeSection === `game:${game.id}`}
+                                onClick={() => selectSection(`game:${game.id}`)}
+                                className={winuiNavItemClass}
+                                styles={{
+                                    root: {
+                                        borderRadius: 4,
+                                        paddingBlock: 6,
+                                        paddingInline: 8,
+                                    },
+                                }}
+                            />
+                        ))}
+                    </NavLink>
+                    {navItems.slice(2).map(renderStaticNavItem)}
                 </AppShell.Section>
                 <AppShell.Section px={12} py="xs">
                     <Group gap={8} wrap="nowrap">
@@ -541,7 +624,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 {errorEntries.map(([field, message]) => (
                                     <List.Item key={`${field}-${message}`}>
                                         <UnstyledButton
-                                            onClick={() => setActiveSection(sectionForField(field))}
+                                            onClick={() => selectSection(sectionForField(field))}
                                             style={{ textAlign: 'left' }}
                                         >
                                             <Text size="sm">
@@ -563,6 +646,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 icon={<IconLogs size={20} stroke={1.6} />}
                                 title="Log information"
                                 description="Enables logging to terminal and saves data to a file for debugging."
+                                ariaLabel="Log information"
                                 {...switchProps('Log')}
                             />
                             <SwitchSettingCard
@@ -570,14 +654,8 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Generate platform user ID"
                                 description="Generate a unique ID. Only if multiple users share a launcher. Incompatible with active authentication."
                                 error={allErrors.GeneratePlatformUserId}
+                                ariaLabel="Generate platform user ID"
                                 {...switchProps('GeneratePlatformUserId')}
-                            />
-                            <SwitchSettingCard
-                                icon={<IconSignature size={20} stroke={1.6} />}
-                                title="Re-sign catalogues"
-                                description="Sign the catalogues with this server's key instead of the captured signatures. Only for clients that trust this server's signing key."
-                                error={allErrors.Sign}
-                                {...switchProps('Sign')}
                             />
                             <SettingCard
                                 icon={<IconShield size={20} stroke={1.6} />}
@@ -612,6 +690,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Internet access"
                                 description="Allow the server to use the Internet: connectivity check, authentication and public IP detection."
                                 error={allErrors['Internet.Enabled']}
+                                ariaLabel="Internet access"
                                 {...switchProps('Internet.Enabled')}
                             />
                             <AutoManualCard
@@ -628,108 +707,22 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             </AutoManualCard>
                         </Stack>
                     )}
-                    {/* SECTION 3: GAMES & HOSTS */}
-                    {activeSection === 'games' && (
-                        <Stack gap="sm">
-                            {allWarnings['Games.Enabled'] && (
-                                <Group gap={6} wrap="nowrap" align="flex-start">
-                                    <IconAlertTriangle
-                                        size={16}
-                                        stroke={1.8}
-                                        style={{ color: 'var(--mantine-color-warning)', flexShrink: 0, marginTop: 2 }}
-                                    />
-                                    <Text size="sm" style={{ color: 'var(--mantine-color-warning)' }}>
-                                        {allWarnings['Games.Enabled']}
-                                    </Text>
-                                </Group>
-                            )}
-                            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
-                                {AVAILABLE_GAMES.map((game) => {
-                                    const isEnabled = config.Games.Enabled.includes(game.id);
-                                    const gameConf = config.Games[game.id];
-                                    const hosts = gameConf && Array.isArray(gameConf.Hosts) ? gameConf.Hosts : []; // A game holds as many hosts as it needs: each row
-                                    // carries the message of its own address, and the card
-                                    // paints its border for any of them.
-                                    const rowErrors = hosts.map(
-                                        (_, index) => allErrors[`Games.${game.id}.Hosts.${index}`],
-                                    );
-                                    // A game that is not enabled only warns about a shared
-                                    // address, which does not paint the card.
-                                    const rowWarnings = hosts.map(
-                                        (_, index) => allWarnings[`Games.${game.id}.Hosts.${index}`],
-                                    );
-                                    const hostsError = allErrors[`Games.${game.id}.Hosts`];
-                                    return (
-                                        <SwitchSettingCard
-                                            key={game.id}
-                                            title={game.name}
-                                            description="IPv4 addresses the server binds to for this game."
-                                            error={hostsError}
-                                            invalid={rowErrors.some((message) => Boolean(message))}
-                                            checked={isEnabled}
-                                            onChange={() => handleGameToggle(game.id)}
-                                            ariaLabel={`Enable ${game.name}`}
-                                        >
-                                            <Stack gap="xs">
-                                                {hosts.map((host, index) => (
-                                                    <Stack key={index} gap={4}>
-                                                        <Group gap="xs" wrap="nowrap" justify="space-between">
-                                                            <IPv4Input
-                                                                value={host}
-                                                                onChange={(value) =>
-                                                                    handleGameHostChange(game.id, index, value)
-                                                                }
-                                                                disabled={!isEnabled}
-                                                            />
-                                                            <ActionIcon
-                                                                variant="subtle"
-                                                                color="gray"
-                                                                size="sm" // A game needs a host to bind to, so the
-                                                                // last remaining row cannot be removed.
-                                                                disabled={!isEnabled || hosts.length <= 1}
-                                                                aria-label={`Remove host ${index + 1} of ${game.name}`}
-                                                                onClick={() => handleRemoveGameHost(game.id, index)}
-                                                            >
-                                                                <IconTrash size={16} stroke={1.6} />
-                                                            </ActionIcon>
-                                                        </Group>
-                                                        {rowErrors[index] && (
-                                                            <Input.Error>{rowErrors[index]}</Input.Error>
-                                                        )}
-                                                        {!rowErrors[index] && rowWarnings[index] && (
-                                                            <Group gap={6} wrap="nowrap" align="flex-start">
-                                                                <IconAlertTriangle
-                                                                    size={13}
-                                                                    stroke={1.8}
-                                                                    style={{
-                                                                        color: 'var(--mantine-color-warning)',
-                                                                        flexShrink: 0,
-                                                                        marginTop: 2,
-                                                                    }}
-                                                                />
-                                                                <Text size="xs" style={{ color: 'var(--mantine-color-warning)' }}>
-                                                                    {rowWarnings[index]}
-                                                                </Text>
-                                                            </Group>
-                                                        )}
-                                                    </Stack>
-                                                ))}
-                                                <Button
-                                                    variant="subtle"
-                                                    size="compact-sm"
-                                                    w="fit-content"
-                                                    leftSection={<IconPlus size={15} stroke={1.8} />}
-                                                    disabled={!isEnabled}
-                                                    onClick={() => handleAddGameHost(game.id)}
-                                                >
-                                                    Add host
-                                                </Button>
-                                            </Stack>
-                                        </SwitchSettingCard>
-                                    );
-                                })}
-                            </SimpleGrid>
-                        </Stack>
+                    {/* SECTION 3: ONE GAME AT A TIME */}
+                    {activeGame && (
+                        <GameSection
+                            key={activeGame.id}
+                            game={activeGame}
+                            config={config}
+                            errors={allErrors}
+                            warnings={allWarnings}
+                            onHostChange={handleGameHostChange}
+                            onAddHost={handleAddGameHost}
+                            onRemoveHost={handleRemoveGameHost}
+                            onChangeBattleServers={(gameId, servers) =>
+                                form.setFieldValue(`Games.${gameId}.BattleServers`, servers)
+                            }
+                            onCommit={requestValidation}
+                        />
                     )}
                     {/* SECTION 4: ANNOUNCEMENT */}
                     {activeSection === 'announcement' && (
@@ -739,6 +732,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="LAN announcement"
                                 description="Respond to automatic discovery queries on the local LAN."
                                 error={allErrors['Announcement.Enabled']}
+                                ariaLabel="LAN announcement"
                                 {...switchProps('Announcement.Enabled')}
                             />
                             <SettingCard
@@ -769,6 +763,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Multicast"
                                 description="Respond to discovery queries at the multicast address."
                                 error={allErrors['Announcement.MulticastGroup']}
+                                ariaLabel="Multicast"
                                 {...switchProps('Announcement.Multicast')} // Multicast announcements are one way of announcing:
                                 // without the plain announcement there is nothing to
                                 // send over multicast.
@@ -807,6 +802,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Custom files"
                                 description="Serve the endpoints the game uses to upload and download multiplayer savegames and replays."
                                 error={allErrors['CustomFiles.Enabled']}
+                                ariaLabel="Custom files"
                                 {...switchProps('CustomFiles.Enabled')}
                             />
                             <AutoManualCard
@@ -867,6 +863,79 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                         onCommit={requestValidation}
                                         disabled={!config.CustomFiles.Enabled}
                                     />
+                                }
+                            />
+                        </Stack>
+                    )}
+                    {/* SECTION 6: SIGN */}
+                    {activeSection === 'sign' && (
+                        <Stack gap="sm">
+                            <SwitchSettingCard
+                                icon={<IconSignature size={20} stroke={1.6} />}
+                                title="Re-sign catalogues"
+                                description="Sign the catalogues with this server's key instead of the captured signatures. Only for clients that trust this server's signing key."
+                                error={allErrors['Sign.Enabled']}
+                                ariaLabel="Re-sign catalogues"
+                                {...switchProps('Sign.Enabled')}
+                            />
+                            <SettingCard
+                                icon={<IconId size={20} stroke={1.6} />}
+                                title="Platform user ID exceptions"
+                                description="Platform user IDs for which signing is disabled even when enabled. One ID per line."
+                                error={allErrors['Sign.PlatformUserIdExceptions']}
+                                expanded={exceptionsExpanded}
+                                onToggle={exceptionsExpandedHandlers.toggle}
+                                details={
+                                    <div style={{ width: '100%' }}>
+                                        <Stack gap="xs" style={{ width: '100%' }}>
+                                            {(config.Sign.PlatformUserIdExceptions ?? []).map((id, index) => (
+                                                <Stack key={index} gap={4}>
+                                                    <Group gap="xs" wrap="nowrap" justify="space-between">
+                                                        <Input
+                                                            value={id}
+                                                            onChange={(e) => {
+                                                                const arr = [...(config.Sign.PlatformUserIdExceptions ?? [])];
+                                                                arr[index] = e.target.value;
+                                                                form.setFieldValue('Sign.PlatformUserIdExceptions', arr);
+                                                            }}
+                                                            onBlur={requestValidation}
+                                                            placeholder="Platform user ID"
+                                                            style={{ flex: 1 }}
+                                                        />
+                                                        <ActionIcon
+                                                            variant="subtle"
+                                                            color="gray"
+                                                            size="sm"
+                                                            aria-label={`Remove exception ${index + 1}`}
+                                                            disabled={(config.Sign.PlatformUserIdExceptions ?? []).length <= 1}
+                                                            onClick={() => {
+                                                                const arr = [...(config.Sign.PlatformUserIdExceptions ?? [])];
+                                                                arr.splice(index, 1);
+                                                                form.setFieldValue('Sign.PlatformUserIdExceptions', arr);
+                                                                requestValidation();
+                                                            }}
+                                                        >
+                                                            <IconTrash size={16} stroke={1.6} />
+                                                        </ActionIcon>
+                                                    </Group>
+                                                </Stack>
+                                            ))}
+                                            <Button
+                                                variant="subtle"
+                                                size="compact-sm"
+                                                w="fit-content"
+                                                leftSection={<IconPlus size={15} stroke={1.8} />}
+                                                disabled={(config.Sign.PlatformUserIdExceptions ?? []).some((id) => id === '')}
+                                                onClick={() => {
+                                                    const arr = [...(config.Sign.PlatformUserIdExceptions ?? [])];
+                                                    arr.push('');
+                                                    form.setFieldValue('Sign.PlatformUserIdExceptions', arr);
+                                                }}
+                                            >
+                                                Add exception
+                                            </Button>
+                                        </Stack>
+                                    </div>
                                 }
                             />
                         </Stack>

@@ -1,5 +1,15 @@
 export interface GameHostsConfig {
   Hosts: string[];
+  BattleServers: BattleServerConfig[];
+}
+
+export interface BattleServerConfig {
+  Region: string;
+  Name: string;
+  IPv4: string;
+  BsPort: number;
+  WebSocketPort: number;
+  OutOfBandPort: number;
 }
 
 export interface GamesConfig {
@@ -24,6 +34,11 @@ export interface InternetConfig {
   IP: string;
 }
 
+export interface SignConfig {
+  Enabled: boolean;
+  PlatformUserIdExceptions: string[];
+}
+
 export interface CustomFilesConfig {
   Enabled: boolean;
   Folder: string;
@@ -35,7 +50,7 @@ export interface CustomFilesConfig {
 export interface AppConfig {
   Log: boolean;
   GeneratePlatformUserId: boolean;
-  Sign: boolean;
+  Sign: SignConfig;
   Authentication: 'required' | 'cached' | 'adaptive' | 'disabled';
   Internet: InternetConfig;
   Games: GamesConfig;
@@ -67,7 +82,8 @@ const GAME_ID_PATTERN = new RegExp(`\\b(?:${AVAILABLE_GAMES.map((game) => game.i
 export function fieldLabel(field: string): string {
   if (field === 'Authentication') return 'Authentication method';
   if (field === 'GeneratePlatformUserId') return 'Generate platform user ID';
-  if (field === 'Sign') return 'Re-sign catalogues';
+  if (field === 'Sign.Enabled') return 'Re-sign catalogues';
+  if (field === 'Sign.PlatformUserIdExceptions') return 'Platform user ID exceptions';
   if (field === 'Internet.Enabled') return 'Internet access';
   if (field === 'Internet.IP') return 'Public IP address';
   if (field === 'Announcement.Port') return 'Announcement port';
@@ -78,9 +94,29 @@ export function fieldLabel(field: string): string {
   if (field === 'CustomFiles.MaxTotalSize') return 'Total size limit';
   if (field === 'CustomFiles.Expiry') return 'File expiry';
   if (field.startsWith('Games.Enabled')) return 'Enabled games';
+  if (field.startsWith('Sign.PlatformUserIdExceptions')) return 'Platform user ID exceptions';
 
   const hosts = /^Games\.([^.]+)\.Hosts(?:\.\d+)?$/.exec(field);
   if (hosts) return `Hosts of ${GAME_NAMES.get(hosts[1]) ?? hosts[1]}`;
+
+  const battleServers = /^Games\.([^.]+)\.BattleServers$/.exec(field);
+  if (battleServers) return `Battle servers of ${GAME_NAMES.get(battleServers[1]) ?? battleServers[1]}`;
+
+  const battleServer = /^Games\.([^.]+)\.BattleServers\.(\d+)\.(.+)$/.exec(field);
+  if (battleServer) {
+    const gameName = GAME_NAMES.get(battleServer[1]) ?? battleServer[1];
+    const idx = parseInt(battleServer[2], 10) + 1;
+    const fieldName = battleServer[3];
+    const labelMap: Record<string, string> = {
+      Region: 'Region',
+      Name: 'Name',
+      IPv4: 'IPv4 address',
+      BsPort: 'Battle server port',
+      WebSocketPort: 'WebSocket port',
+      OutOfBandPort: 'Out-of-band port',
+    };
+    return `Battle server ${idx} ${labelMap[fieldName] ?? fieldName} of ${gameName}`;
+  }
 
   // A rule pointing at something this map does not know yet: the name of its
   // last step, spread out into words, so nothing technical reaches the user.

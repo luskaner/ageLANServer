@@ -10,11 +10,13 @@ export {
 
 export type {
     AnnouncementConfig,
+    BattleServerConfig,
     ConfigFile,
     Configuration,
     CustomFilesConfiguration,
     GameConfig,
     GamesConfiguration,
     InternetConfiguration,
+    SignConfig,
     ValidationError
 } from "./models.js";

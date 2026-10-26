@@ -1,23 +1,41 @@
-# ageLANServer Configurator
+# ageServer Configurator
 
 The GUI loads and edits the official `config.toml` contract. It can also create a new configuration from the server template without maintaining a second template copy.
 
-The load screen accepts files dragged from the operating system. Wails supplies the native path to Go, where the file is parsed and validated before it reaches the editor.
+The load screen accepts files dragged from the operating system. Wails supplies the native path to Go, where the file is parsed and validated before it reaches the editor. On startup the app tries the default configuration paths; when none exists it stays on the load screen and does not open the picker automatically.
+
+Each game has its own page in the sidebar, with collapsible **Hosts** and **Battle servers** cards.
+
+The server is the source of truth for every key and default. See [AGENTS.md](./AGENTS.md) for the full contract, the battle server table shape (`[[Games.<game>.BattleServers]]`), the validation rules and the live-testing workflow.
 
 ## Development
 
-Run from this directory:
+Set `NODE_ENV=development` before starting: with `NODE_ENV=production`, the `npm install` run by Wails omits devDependencies and the dev build cannot find `tsc`.
 
-```text
+```powershell
+$env:NODE_ENV='development'
 wails3 dev -config ./build/config.yml -port 9245
 ```
 
-Build the frontend and run the Go tests with:
+To test the running application through the built-in MCP server:
+
+```powershell
+$env:NODE_ENV='development'
+$env:WAILS_MCP='1'
+$env:WAILS_MCP_PORT='9099'
+wails3 dev -config ./build/config.yml -port 9245
+```
+
+The endpoint is `http://127.0.0.1:9099/mcp`. The app exposes DOM inspection, mouse/keyboard input and JavaScript evaluation tools; AGENTS.md describes an end-to-end check.
+
+Typecheck and run the Go tests with:
 
 ```text
-npm run build
+npx tsc --noEmit
 go test ./...
 ```
+
+`npm run build` remains the production frontend build. Avoid it while a `wails3 dev` session is open: writing `frontend/dist` can trigger a full reload.
 
 ## Release
 

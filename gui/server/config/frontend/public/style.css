@@ -52,6 +52,41 @@ textarea {
     background-color: var(--app-card-row-hover, rgba(255, 255, 255, 0.05));
 }
 
+/* ===== Opaque dialog surface (Windows 11 style) =====
+   --mantine-color-body is transparent so the native Mica backdrop shows
+   through, which would also make a dialog see-through. The panel gets its own
+   solid fill; only the overlay behind it stays translucent. */
+:root,
+[data-mantine-color-scheme='dark'] {
+    --app-modal-bg: #202020;
+    --app-modal-border: rgba(255, 255, 255, 0.08);
+    --app-modal-header-border: rgba(255, 255, 255, 0.06);
+}
+
+[data-mantine-color-scheme='light'] {
+    --app-modal-bg: #f3f3f3;
+    --app-modal-border: rgba(0, 0, 0, 0.08);
+    --app-modal-header-border: rgba(0, 0, 0, 0.06);
+}
+
+.app-modal-content {
+    background-color: var(--app-modal-bg) !important;
+    border: 1px solid var(--app-modal-border);
+    box-shadow: var(--mantine-shadow-xl);
+    border-radius: var(--mantine-radius-lg);
+}
+
+.app-modal-header {
+    background-color: var(--app-modal-bg);
+    border-bottom: 1px solid var(--app-modal-header-border);
+    padding-bottom: var(--mantine-spacing-sm);
+    margin-bottom: var(--mantine-spacing-md);
+}
+
+.app-modal-title {
+    font-weight: 600;
+}
+
 /* ===== File drop zone (screen 1) ===== */
 .dropzone {
     border-style: dashed !important;

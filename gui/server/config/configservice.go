@@ -23,22 +23,25 @@ const configFileName = "config.toml"
 
 type ConfigService struct{}
 
-// OpenConfigFile finds the default file or asks the user to select one, then
-// returns its path and raw contents. Parsing and editing are deliberately not
-// part of this first loading step.
+// OpenConfigFile tries the default configuration paths and returns the file's
+// path and raw contents. When there is no default file it returns no file and
+// the load screen stays in place: the native picker only opens when the user
+// asks for it. Parsing and editing are deliberately not part of this first
+// loading step.
 func (s *ConfigService) OpenConfigFile() (*ConfigFile, error) {
 	path, err := defaultConfigPath()
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return nil, err
 		}
-		return s.SelectConfigFile()
+		return nil, nil
 	}
 	return s.readConfigFile(path)
 }
 
-// SelectConfigFile always opens the native picker, even when a default file
-// exists. It is used when the user explicitly wants another configuration.
+// SelectConfigFile always opens the native picker. It is used when the user
+// explicitly wants a configuration. Closing the picker is a normal answer: the
+// load screen stays as it is.
 func (s *ConfigService) SelectConfigFile() (*ConfigFile, error) {
 	path, err := application.Get().Dialog.OpenFile().
 		SetTitle("Select configuration file").
@@ -50,7 +53,7 @@ func (s *ConfigService) SelectConfigFile() (*ConfigFile, error) {
 		return nil, fmt.Errorf("open configuration picker: %w", err)
 	}
 	if path == "" {
-		return nil, errors.New("no configuration file selected")
+		return nil, nil
 	}
 	return s.readConfigFile(path)
 }
@@ -254,32 +257,29 @@ func configurationDocument(content []byte, configuration Configuration) ([]byte,
 		{"CustomFiles", "MaxTotalSize", tomlString(configuration.CustomFiles.MaxTotalSize)},
 		{"CustomFiles", "Expiry", tomlString(configuration.CustomFiles.Expiry)},
 	}
-	// Authentication lives under [Internet] in the current server contract, but
-	// older documents keep it at the root level. Replace whichever location the
-	// document actually uses so both layouts are supported, and add it to
-	// [Internet] when the document has neither.
+	// The server reads Authentication at the root level. The shipped template
+	// used to keep it under [Internet], so an existing copy there is kept in
+	// sync for documents written before the contract was clarified, while the
+	// root key is always written: that is the one the server actually uses.
 	authValue := tomlString(configuration.Authentication)
-	authPlaced := false
 	if updated2, err := replaceDocumentValue(updated, "Internet", "Authentication", authValue); err == nil {
 		updated = updated2
-		authPlaced = true
 	}
-	if updated2, err := replaceDocumentValue(updated, "", "Authentication", authValue); err == nil {
-		updated = updated2
-		authPlaced = true
-	}
-	if !authPlaced {
-		var err error
-		updated, err = ensureDocumentValue(updated, "Internet", "Authentication", authValue)
-		if err != nil {
-			return nil, fmt.Errorf("add Internet.Authentication: %w", err)
-		}
+	var err error
+	updated, err = ensureDocumentValue(updated, "", "Authentication", authValue)
+	if err != nil {
+		return nil, fmt.Errorf("edit Authentication: %w", err)
 	}
 	for _, replacement := range replacements {
-		var err error
 		updated, err = ensureDocumentValue(updated, replacement.section, replacement.key, replacement.value)
 		if err != nil {
 			return nil, fmt.Errorf("edit %s.%s: %w", replacement.section, replacement.key, err)
+		}
+	}
+	for _, gameID := range supportedGameIDs() {
+		updated, err = rewriteBattleServers(updated, gameID, gameBattleServers(&configuration, gameID))
+		if err != nil {
+			return nil, fmt.Errorf("edit Games.%s.BattleServers: %w", gameID, err)
 		}
 	}
 	return updated, nil
@@ -298,7 +298,7 @@ func tomlString(value string) string {
 func tomlArray(values []string) string {
 	quoted := make([]string, len(values))
 	for index, value := range values {
-		quoted[index] = strconv.Quote(value)
+		quoted[index] = tomlString(value)
 	}
 	return "[" + strings.Join(quoted, ", ") + "]"
 }
@@ -386,8 +386,16 @@ func isConfigurationField(section string, key string) bool {
 			return true
 		}
 	}
-	if strings.HasPrefix(section, "Games.") && key == "Hosts" {
-		return true
+	if strings.HasPrefix(section, "Games.") {
+		if key == "Hosts" {
+			return true
+		}
+		if strings.HasSuffix(section, ".BattleServers") {
+			switch key {
+			case "Region", "Name", "IPv4", "BsPort", "WebSocketPort", "OutOfBandPort":
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -435,9 +443,6 @@ func parseConfiguration(content []byte) (*Configuration, error) {
 	config := serverDefaults()
 	if err := toml.Unmarshal(content, &config); err != nil {
 		return nil, fmt.Errorf("invalid TOML or configuration type: %w", err)
-	}
-	if config.Authentication == "" && config.Internet.Authentication != "" {
-		config.Authentication = config.Internet.Authentication
 	}
 	if config.Games.Enabled == nil {
 		config.Games.Enabled = []string{}
@@ -493,8 +498,9 @@ func replaceDocumentValue(content []byte, targetSection string, key string, repl
 // documentTable is a table header of a TOML document and the byte offset where
 // it starts.
 type documentTable struct {
-	path   string
-	offset int
+	path       string
+	offset     int
+	arrayTable bool
 }
 
 // documentTables lists the table headers of a TOML document in order.
@@ -502,17 +508,68 @@ func documentTables(content []byte) ([]documentTable, error) {
 	parser := &unstable.Parser{KeepComments: true}
 	parser.Reset(content)
 	var tables []documentTable
+	// A path can start several tables (`[[Games.age2.BattleServers]]` repeats
+	// once per server), so each header is matched to its own occurrence.
+	seen := make(map[string]int)
 	for parser.NextExpression() {
 		expression := parser.Expression()
 		if expression.Kind != unstable.Table && expression.Kind != unstable.ArrayTable {
 			continue
 		}
-		tables = append(tables, documentTable{path: nodePath(expression), offset: int(expression.Raw.Offset)})
+		path := nodePath(expression)
+		arrayTable := expression.Kind == unstable.ArrayTable
+		key := fmt.Sprintf("%t:%s", arrayTable, path)
+		occurrence := seen[key]
+		seen[key]++
+		// The unstable parser does not fill Raw for table headers, so the
+		// offset is taken from the header line itself.
+		offset, err := tableHeaderOffset(content, path, arrayTable, occurrence)
+		if err != nil {
+			return nil, err
+		}
+		tables = append(tables, documentTable{path: path, offset: offset, arrayTable: arrayTable})
 	}
 	if err := parser.Error(); err != nil {
 		return nil, fmt.Errorf("invalid TOML: %w", err)
 	}
 	return tables, nil
+}
+
+// tableHeaderOffset finds the byte offset of the `[path]` (or `[[path]]`) line
+// that starts a table. Matching whole lines, and not the first occurrence of
+// the header text, keeps headers quoted inside comments from being taken for
+// the table itself.
+func tableHeaderOffset(content []byte, path string, arrayTable bool, occurrence int) (int, error) {
+	header := "[" + path + "]"
+	if arrayTable {
+		header = "[[" + path + "]]"
+	}
+	found := 0
+	offset := 0
+	for offset < len(content) {
+		next := bytes.IndexByte(content[offset:], '\n')
+		var line []byte
+		if next < 0 {
+			line = content[offset:]
+			next = len(content)
+		} else {
+			line = content[offset : offset+next]
+			next = offset + next + 1
+		}
+		trimmed := strings.TrimSpace(string(line))
+		if strings.HasPrefix(trimmed, header) {
+			// A table header may be followed by a comment on the same line.
+			rest := strings.TrimSpace(trimmed[len(header):])
+			if rest == "" || strings.HasPrefix(rest, "#") {
+				if found == occurrence {
+					return offset, nil
+				}
+				found++
+			}
+		}
+		offset = next
+	}
+	return 0, fmt.Errorf("table %s occurrence %d was not found", header, occurrence)
 }
 
 // ensureDocumentValue replaces an editable value, adding the key (and the
@@ -743,6 +800,7 @@ func validateConfiguration(config *Configuration) []ValidationError {
 		})
 	}
 	validationErrors = append(validationErrors, validateGameHosts(config)...)
+	validationErrors = append(validationErrors, validateGameBattleServers(config)...)
 
 	if config.Announcement.Port < 1 || config.Announcement.Port > 65535 {
 		validationErrors = append(validationErrors, ValidationError{
@@ -978,7 +1036,7 @@ func validateGameHosts(config *Configuration) []ValidationError {
 			for _, owner := range bound {
 				validationErrors = append(validationErrors, ValidationError{
 					Field:   fmt.Sprintf("Games.%s.Hosts.%d", owner.game, owner.index),
-					Message: fmt.Sprintf("Already used by %s", strings.Join(otherGameIDs(bound, owner.game), ", ")),
+					Message: fmt.Sprintf("Already used by %s", strings.Join(otherHostOwners(bound, owner), ", ")),
 				})
 			}
 		}
@@ -987,7 +1045,7 @@ func validateGameHosts(config *Configuration) []ValidationError {
 		for _, owner := range unbound {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:    fmt.Sprintf("Games.%s.Hosts.%d", owner.game, owner.index),
-				Message:  fmt.Sprintf("Also used by %s", strings.Join(otherGameIDs(addressOwners, owner.game), ", ")),
+				Message:  fmt.Sprintf("Also used by %s", strings.Join(otherHostOwners(addressOwners, owner), ", ")),
 				Severity: severityWarning,
 			})
 		}
@@ -995,14 +1053,93 @@ func validateGameHosts(config *Configuration) []ValidationError {
 	return validationErrors
 }
 
-// otherGameIDs returns the identifiers of the owners of an address, except the
-// given game.
-func otherGameIDs(owners []hostOwner, game string) []string {
+// validateGameBattleServers checks the battle servers of every enabled game.
+// The server refuses to start an enabled AoE IV or AoM: RT without one, so it
+// is an error there; the other games fall back to a LAN battle server.
+func validateGameBattleServers(config *Configuration) []ValidationError {
+	var validationErrors []ValidationError
+	enabled := make(map[string]bool, len(config.Games.Enabled))
+	for _, gameID := range config.Games.Enabled {
+		enabled[gameID] = true
+	}
+	for _, gameID := range supportedGameIDs() {
+		if !enabled[gameID] {
+			continue
+		}
+		servers := gameBattleServers(config, gameID)
+		if len(servers) == 0 {
+			if gameID == "age4" || gameID == "athens" {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   fmt.Sprintf("Games.%s.BattleServers", gameID),
+					Message: "Requires at least one battle server",
+				})
+			}
+			continue
+		}
+		regions := make(map[string]int, len(servers))
+		for index, server := range servers {
+			field := fmt.Sprintf("Games.%s.BattleServers.%d", gameID, index)
+			region := strings.TrimSpace(server.Region)
+			if region == "" {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".Region",
+					Message: "Must not be empty",
+				})
+			} else if previous, found := regions[region]; found {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".Region",
+					Message: fmt.Sprintf("Already used by battle server %d", previous+1),
+				})
+			} else {
+				regions[region] = index
+			}
+			address := strings.TrimSpace(server.IPv4)
+			if address == "" {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".IPv4",
+					Message: "Must not be empty",
+				})
+			} else if address != "auto" {
+				if parsed, err := netip.ParseAddr(address); err != nil || !parsed.Is4() {
+					validationErrors = append(validationErrors, ValidationError{
+						Field:   field + ".IPv4",
+						Message: "Must be 'auto' or an IPv4 address",
+					})
+				}
+			}
+			if server.BsPort < 1 || server.BsPort > 65535 {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".BsPort",
+					Message: "Must be an integer between 1 and 65535",
+				})
+			}
+			if server.WebSocketPort < 1 || server.WebSocketPort > 65535 {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".WebSocketPort",
+					Message: "Must be an integer between 1 and 65535",
+				})
+			}
+			if server.OutOfBandPort < 0 || server.OutOfBandPort > 65535 {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   field + ".OutOfBandPort",
+					Message: "Must be an integer between 0 and 65535",
+				})
+			}
+		}
+	}
+	return validationErrors
+}
+
+// otherHostOwners returns the games of the other owners of an address. Two
+// hosts of the same game resolving to the same address count as owners of each
+// other, so a duplicated host names its own game instead of an empty message.
+func otherHostOwners(owners []hostOwner, subject hostOwner) []string {
 	var others []string
 	for _, owner := range owners {
-		if owner.game != game {
-			others = append(others, owner.game)
+		if owner.game == subject.game && owner.index == subject.index {
+			continue
 		}
+		others = append(others, owner.game)
 	}
 	return others
 }
@@ -1029,6 +1166,190 @@ func gameHosts(config *Configuration, gameID string) ([]string, bool) {
 	default:
 		return nil, false
 	}
+}
+
+// gameBattleServers returns the battle server list belonging to a supported game identifier.
+func gameBattleServers(config *Configuration, gameID string) []BattleServerConfig {
+	switch gameID {
+	case "age1":
+		return config.Games.Age1.BattleServers
+	case "age2":
+		return config.Games.Age2.BattleServers
+	case "age3":
+		return config.Games.Age3.BattleServers
+	case "age4":
+		return config.Games.Age4.BattleServers
+	case "athens":
+		return config.Games.Athens.BattleServers
+	default:
+		return nil
+	}
+}
+
+// rewriteBattleServers rewrites the battle servers of one game in the
+// documented shape, an array of tables ([[Games.<game>.BattleServers]]). Older
+// documents holding the inline `BattleServers = [...]` key are migrated.
+// With no servers, every definition of that game is removed.
+func rewriteBattleServers(content []byte, gameID string, servers []BattleServerConfig) ([]byte, error) {
+	section := "Games." + gameID
+	updated, _, err := removeDocumentValue(content, section, "BattleServers")
+	if err != nil {
+		return nil, err
+	}
+	updated, err = removeArrayTableBlocks(updated, section+".BattleServers")
+	if err != nil {
+		return nil, err
+	}
+	if len(servers) == 0 {
+		return updated, nil
+	}
+	return insertArrayTables(updated, section, battleServersDocumentValue(gameID, servers))
+}
+
+// removeDocumentValue removes a key assigned inside a named table, together
+// with the rest of its line. It reports whether the key was there.
+func removeDocumentValue(content []byte, targetSection string, key string) ([]byte, bool, error) {
+	parser := &unstable.Parser{KeepComments: true}
+	parser.Reset(content)
+	section := ""
+	for parser.NextExpression() {
+		expression := parser.Expression()
+		switch expression.Kind {
+		case unstable.Table, unstable.ArrayTable:
+			section = nodePath(expression)
+		case unstable.KeyValue:
+			if section != targetSection || nodeKey(expression) != key {
+				continue
+			}
+			start := int(expression.Raw.Offset)
+			end := start + int(expression.Raw.Length)
+			for end < len(content) && content[end] != '\n' {
+				end++
+			}
+			if end < len(content) {
+				end++
+			}
+			updated := make([]byte, 0, len(content)-(end-start))
+			updated = append(updated, content[:start]...)
+			updated = append(updated, content[end:]...)
+			return updated, true, nil
+		}
+	}
+	if err := parser.Error(); err != nil {
+		return nil, false, fmt.Errorf("invalid TOML: %w", err)
+	}
+	return content, false, nil
+}
+
+// removeArrayTableBlocks removes every [[path]] block of a document. A block
+// runs from its header to the next table header (or the end of the document),
+// so its keys and comments go with it.
+func removeArrayTableBlocks(content []byte, path string) ([]byte, error) {
+	tables, err := documentTables(content)
+	if err != nil {
+		return nil, err
+	}
+	type span struct {
+		start int
+		end   int
+	}
+	var spans []span
+	for index, table := range tables {
+		if table.path != path || !table.arrayTable {
+			continue
+		}
+		end := len(content)
+		if index+1 < len(tables) {
+			end = tables[index+1].offset
+		}
+		spans = append(spans, span{start: table.offset, end: end})
+	}
+	for index := len(spans) - 1; index >= 0; index-- {
+		start, end := spans[index].start, spans[index].end
+		updated := make([]byte, 0, len(content)-(end-start))
+		updated = append(updated, content[:start]...)
+		updated = append(updated, content[end:]...)
+		content = updated
+	}
+	return content, nil
+}
+
+// insertArrayTables adds array-of-tables blocks at the end of a named table,
+// before the table header that follows it.
+func insertArrayTables(content []byte, section string, block string) ([]byte, error) {
+	tables, err := documentTables(content)
+	if err != nil {
+		return nil, err
+	}
+	sectionIndex := -1
+	for index, table := range tables {
+		if table.path == section && !table.arrayTable {
+			sectionIndex = index
+			break
+		}
+	}
+	if sectionIndex == -1 {
+		return nil, fmt.Errorf("table [%s] was not found", section)
+	}
+	insertAt := len(content)
+	if sectionIndex+1 < len(tables) {
+		insertAt = tables[sectionIndex+1].offset
+	}
+	prefix := ""
+	if insertAt > 0 && content[insertAt-1] != '\n' {
+		prefix = "\n"
+	}
+	updated := make([]byte, 0, len(content)+len(prefix)+len(block)+1)
+	updated = append(updated, content[:insertAt]...)
+	updated = append(updated, prefix...)
+	updated = append(updated, block...)
+	updated = append(updated, '\n')
+	updated = append(updated, content[insertAt:]...)
+	return updated, nil
+}
+
+// battleServersDocumentValue formats the battle servers of a game as the TOML
+// array of tables the server documents.
+func battleServersDocumentValue(gameID string, servers []BattleServerConfig) string {
+	var builder strings.Builder
+	for index, server := range servers {
+		if index > 0 {
+			builder.WriteByte('\n')
+		}
+		builder.WriteString("[[Games.")
+		builder.WriteString(gameID)
+		builder.WriteString(".BattleServers]]\n")
+		builder.WriteString("Region = ")
+		builder.WriteString(tomlString(server.Region))
+		builder.WriteByte('\n')
+		if server.Name != "" {
+			builder.WriteString("Name = ")
+			builder.WriteString(tomlString(server.Name))
+			builder.WriteByte('\n')
+		}
+		builder.WriteString("IPv4 = ")
+		builder.WriteString(tomlString(server.IPv4))
+		builder.WriteByte('\n')
+		builder.WriteString("BsPort = ")
+		builder.WriteString(strconv.Itoa(server.BsPort))
+		builder.WriteByte('\n')
+		builder.WriteString("WebSocketPort = ")
+		builder.WriteString(strconv.Itoa(server.WebSocketPort))
+		builder.WriteByte('\n')
+		// AoE: DE has no out-of-band port, so the key is not written for it.
+		if gameSupportsOutOfBandPort(gameID) {
+			builder.WriteString("OutOfBandPort = ")
+			builder.WriteString(strconv.Itoa(server.OutOfBandPort))
+			builder.WriteByte('\n')
+		}
+	}
+	return builder.String()
+}
+
+// gameSupportsOutOfBandPort reports whether a game's battle server uses an
+// out-of-band (observer) port.
+func gameSupportsOutOfBandPort(gameID string) bool {
+	return gameID != "age1"
 }
 
 // resolveIPv4 returns the IPv4 addresses resolved from a host value.

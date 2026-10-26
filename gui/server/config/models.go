@@ -9,14 +9,13 @@ type ConfigFile struct {
 }
 
 type InternetConfiguration struct {
-	Enabled        bool   `toml:"Enabled" json:"Enabled"`
-	IP             string `toml:"IP" json:"IP"`
-	Authentication string `toml:"Authentication" json:"-"`
+	Enabled bool   `toml:"Enabled" json:"Enabled"`
+	IP      string `toml:"IP" json:"IP"`
 }
 
 type SignConfig struct {
-	Enabled                   bool     `toml:"Enabled" json:"Enabled"`
-	PlatformUserIdExceptions  []string `toml:"PlatformUserIdExceptions" json:"PlatformUserIdExceptions"`
+	Enabled                  bool     `toml:"Enabled" json:"Enabled"`
+	PlatformUserIdExceptions []string `toml:"PlatformUserIdExceptions" json:"PlatformUserIdExceptions"`
 }
 
 type Configuration struct {
@@ -40,7 +39,17 @@ type GamesConfiguration struct {
 }
 
 type GameConfig struct {
-	Hosts []string `toml:"Hosts" json:"Hosts"`
+	Hosts         []string             `toml:"Hosts" json:"Hosts"`
+	BattleServers []BattleServerConfig `toml:"BattleServers" json:"BattleServers"`
+}
+
+type BattleServerConfig struct {
+	Region        string `toml:"Region" json:"Region"`
+	Name          string `toml:"Name" json:"Name"`
+	IPv4          string `toml:"IPv4" json:"IPv4"`
+	BsPort        int    `toml:"BsPort" json:"BsPort"`
+	WebSocketPort int    `toml:"WebSocketPort" json:"WebSocketPort"`
+	OutOfBandPort int    `toml:"OutOfBandPort" json:"OutOfBandPort"`
 }
 
 type AnnouncementConfig struct {

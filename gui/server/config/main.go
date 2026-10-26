@@ -27,7 +27,7 @@ func main() {
 	// 'Mac' options tailor the application when running an macOS.
 	app := application.New(application.Options{
 		Name:        "config",
-		Description: "ageLANServer configuration editor",
+		Description: "ageServer configuration editor",
 		Services: []application.Service{
 			application.NewService(&ConfigService{}),
 			application.NewService(&SystemService{}),
@@ -51,7 +51,7 @@ func main() {
 	// backdrop_windows.go for the older Windows fallback), the vibrancy
 	// material on macOS and a compositor-transparent window on Linux.
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "ageLANServer Server Configurator",
+		Title: "ageServer Server Configurator",
 		// Window sized to the golden ratio (1000 / 618 ≈ 1.618).
 		Width:  1000,
 		Height: 618,
