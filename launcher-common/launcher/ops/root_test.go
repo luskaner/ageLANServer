@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // tempStores reemplaza los ArgsStore globales por ficheros temporales para que

@@ -6,11 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config/admin"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func trustCertificates(certificates []*x509.Certificate) bool {

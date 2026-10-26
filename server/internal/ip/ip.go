@@ -4,7 +4,7 @@ import (
 	"net/netip"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func ResolveHosts(hosts mapset.Set[string]) mapset.Set[netip.Addr] {

@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/login"
+	"github.com/luskaner/ageServer/common"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/routes/game/login"
 )
 
 const authCacheValidity = 30 * 24 * time.Hour

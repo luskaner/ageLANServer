@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func main() {

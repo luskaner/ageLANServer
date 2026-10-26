@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/server-genCert/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/server-genCert/internal"
 )
 
 var (

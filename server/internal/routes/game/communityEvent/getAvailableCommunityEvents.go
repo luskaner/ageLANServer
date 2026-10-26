@@ -3,10 +3,10 @@ package communityEvent
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/models/athens"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/models/athens"
 )
 
 func GetAvailableCommunityEvents(w http.ResponseWriter, r *http.Request) {

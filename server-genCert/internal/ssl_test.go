@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func generateIntoTemp(t *testing.T) string {

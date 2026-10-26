@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 func generateRequestId() string {

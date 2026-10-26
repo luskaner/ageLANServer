@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/Microsoft/go-winio"
-	"github.com/luskaner/ageLANServer/common/logger"
-	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/common/logger"
+	commonIpc "github.com/luskaner/ageServer/launcher-common/ipc"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
 	"golang.org/x/sys/windows"
 )
 

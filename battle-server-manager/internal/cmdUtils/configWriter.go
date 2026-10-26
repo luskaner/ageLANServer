@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/pelletier/go-toml/v2"
 )
 

@@ -3,7 +3,7 @@ package launcher_common
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config"
 )
 
 func TestNewConfigRevertFlagOptions(t *testing.T) {

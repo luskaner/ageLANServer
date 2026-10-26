@@ -3,11 +3,11 @@ package executor
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonGame "github.com/luskaner/ageLANServer/common/process/game"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/executables"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonGame "github.com/luskaner/ageServer/common/process/game"
+	"github.com/luskaner/ageServer/launcher-common/cmd/agent"
 )
 
 func StartAgent(game string, steamProcess bool, steamMacOsProcess bool, xboxProcess bool, serverExe string, broadcastBattleServer bool,

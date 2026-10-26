@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 const PidFileSize = 16 // uint64 PID + uint64 StartTime

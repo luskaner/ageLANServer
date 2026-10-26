@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/paths"
-	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/paths"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")

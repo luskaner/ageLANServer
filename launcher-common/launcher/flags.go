@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/paths"
+	"github.com/luskaner/ageServer/common"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/executables"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/paths"
 	"github.com/spf13/pflag"
 )
 

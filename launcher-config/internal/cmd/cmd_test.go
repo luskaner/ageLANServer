@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func resetCmdState(t *testing.T) {

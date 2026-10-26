@@ -96,7 +96,7 @@ var componentNames = []string{
 	"config-admin-agent",
 	"config-admin",
 	"launcher-agent",
-	"AgeLANServer",
+	"AgeServer",
 	"launcher",
 	"agent",
 	"server",
@@ -302,7 +302,7 @@ func matchIPv4(line string, i int) int {
 // "and/or" in prose must not turn into a path.
 func matchPath(line string, i int) int {
 	// A continuation of a path the previous line started, such as the
-	// "Files\AgeLANServer\config.toml" half of a wrapped "C:\Program Files\...".
+	// "Files\AgeServer\config.toml" half of a wrapped "C:\Program Files\...".
 	if line[i] == '\\' || line[i] == '/' {
 		n := 1
 		for i+n < len(line) && isPathByte(line[i+n]) {

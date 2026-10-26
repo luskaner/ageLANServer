@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/wss"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/models"
 	"github.com/lxzan/gws"
 )
 

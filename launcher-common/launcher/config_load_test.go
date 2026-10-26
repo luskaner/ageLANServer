@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 // The validators now report through a Reporter instead of printing, so these

@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 	"testing"
 
-	battleServerBroadcast "github.com/luskaner/ageLANServer/battle-server-broadcast"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/uuid"
+	battleServerBroadcast "github.com/luskaner/ageServer/battle-server-broadcast"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/uuid"
 )
 
 func buildBroadcast(t *testing.T, id uuid.UUID, name string, public, ws, oob uint16, declaredNameLength *uint16) []byte {

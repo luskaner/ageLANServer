@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 var RevertCommandStore = NewArgsStore(filepath.Join(os.TempDir(), common.Name+"_command_revert.txt"))

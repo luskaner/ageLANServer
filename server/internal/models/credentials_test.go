@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 func TestGenerateSignature(t *testing.T) {

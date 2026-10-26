@@ -5,17 +5,17 @@ import (
 	"net"
 	"os"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/hosts"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
-	"github.com/luskaner/ageLANServer/launcher-config/internal/admin"
-	"github.com/luskaner/ageLANServer/launcher-config/internal/cmd/wrapper"
-	"github.com/luskaner/ageLANServer/launcher-config/internal/userData"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/hosts"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/launcher-config/internal/admin"
+	"github.com/luskaner/ageServer/launcher-config/internal/cmd/wrapper"
+	"github.com/luskaner/ageServer/launcher-config/internal/userData"
 )
 
 type caCertifier interface {

@@ -3,7 +3,7 @@ package wss
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/wss"
 )
 
 func mkData(expected string, actual string) *Data {

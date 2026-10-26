@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication"
 )
 
 func TestNewWrite(t *testing.T) {

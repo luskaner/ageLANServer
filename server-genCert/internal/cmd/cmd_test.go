@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd/genCert"
-	"github.com/luskaner/ageLANServer/server-genCert/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/cmd/genCert"
+	"github.com/luskaner/ageServer/server-genCert/internal"
 )
 
 func resetState(t *testing.T) {

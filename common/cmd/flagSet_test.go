@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 	"github.com/spf13/pflag"
 )
 

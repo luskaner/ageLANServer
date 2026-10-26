@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	commonGame "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageServer/common/game"
 )
 
 const Tld = "com"

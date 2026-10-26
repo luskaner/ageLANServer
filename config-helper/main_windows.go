@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/game/steam"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/game/steam"
 )
 
 var (

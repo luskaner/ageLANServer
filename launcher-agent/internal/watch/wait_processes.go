@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
+	commonProcess "github.com/luskaner/ageServer/common/process"
 )
 
 // sortedProcessNames returns the map keys in a deterministic order so log

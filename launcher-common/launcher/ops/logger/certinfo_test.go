@@ -5,7 +5,7 @@ import (
 	"crypto/x509/pkix"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func TestFilterMatchingCertsByCN(t *testing.T) {

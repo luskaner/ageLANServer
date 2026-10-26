@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 const marking = common.Name

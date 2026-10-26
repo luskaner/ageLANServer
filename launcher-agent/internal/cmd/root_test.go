@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal/tray"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal/watch"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/fileLock"
+	"github.com/luskaner/ageServer/launcher-agent/internal"
+	"github.com/luskaner/ageServer/launcher-agent/internal/tray"
+	"github.com/luskaner/ageServer/launcher-agent/internal/watch"
+	"github.com/luskaner/ageServer/launcher-common/cmd/agent"
 )
 
 // fakeLocker stands in for the pid lock: the test is about what the run announces,

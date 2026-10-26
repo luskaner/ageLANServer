@@ -25,8 +25,8 @@ github.com/knadh/koanf/providers/posflag v1.0.2 h1:ky9Yqmoz0EHGfby6/gB6SUXmLs5kj
 github.com/knadh/koanf/providers/posflag v1.0.2/go.mod h1:3Wn3+YG3f4ljzRyCUgIwH7G0sZ1pMjCOsNBovrbKmAk=
 github.com/knadh/koanf/v2 v2.3.6 h1:JoQPSJmvS4aP0xNc8xMDr5tcrkSEInL23/Il7pITAKo=
 github.com/knadh/koanf/v2 v2.3.6/go.mod h1:gRb40VRAbd4iJMYYD5IxZ6hfuopFcXBpc9bbQpZwo28=
-github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2 h1:wCq7EAAyF2xRFW6F+57vjHP5/yaFGr9Jihr3gM9njo0=
-github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
+github.com/luskaner/ageServer/battle-server-broadcast v1.3.2 h1:wCq7EAAyF2xRFW6F+57vjHP5/yaFGr9Jihr3gM9njo0=
+github.com/luskaner/ageServer/battle-server-broadcast v1.3.2/go.mod h1:USeNRD3Mdc+K6EMtZaexx+ngXZz7kTCCMbuz8dt/vDo=
 github.com/miekg/dns v1.1.73 h1:uhT8nJxmTrPJYClxVxTCX+CVn6qnzSiybRk72Z6DgrE=
 github.com/miekg/dns v1.1.73/go.mod h1:RW2Obtfd5NZHvOFe3zYG0W8koWOQtAzyHaLo8vASBuQ=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=

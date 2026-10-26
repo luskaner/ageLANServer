@@ -5,9 +5,9 @@ package executor
 import (
 	"fmt"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game/executor/steam/wine/crossover"
-	wineExec "github.com/luskaner/ageLANServer/common/game/executor/wine"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game/executor/steam/wine/crossover"
+	wineExec "github.com/luskaner/ageServer/common/game/executor/wine"
 )
 
 var execWithOptions = func(gameId string, options *exec.Options) exec.Result {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	commonGame "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageServer/common/game"
 	"github.com/spf13/pflag"
 )
 

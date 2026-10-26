@@ -3,11 +3,11 @@ package cmd
 import (
 	"runtime"
 
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
-	"github.com/luskaner/ageLANServer/launcher-common/cert"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
+	"github.com/luskaner/ageServer/common"
+	launcherCommonHosts "github.com/luskaner/ageServer/common/hosts"
+	"github.com/luskaner/ageServer/launcher-common/cert"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal/hosts"
 )
 
 var (

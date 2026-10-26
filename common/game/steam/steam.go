@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/andygrunwald/vdf"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 type ConfigPathFn func() string

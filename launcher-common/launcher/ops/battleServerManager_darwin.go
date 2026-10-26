@@ -1,7 +1,7 @@
 package ops
 
 import (
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/game/executor/base"
 )
 
 func (c *Config) BattleServerRequired(executer base.Executor) bool {

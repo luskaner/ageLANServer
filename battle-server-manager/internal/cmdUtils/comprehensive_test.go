@@ -11,7 +11,7 @@ import (
 
 	"battle-server-manager/internal"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 // TestGeneratePortsAsNeeded_OrderPreserved verifies fix for reversed assignment bug.

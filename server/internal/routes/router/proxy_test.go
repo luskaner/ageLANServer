@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 // stubResolver implements common.Resolver without touching the network so the

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 // gameSpecificRoute describe rutas registradas únicamente para juegos concretos,

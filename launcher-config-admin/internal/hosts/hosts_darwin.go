@@ -3,11 +3,11 @@ package hosts
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func FlushDns() (result *exec.Result) {

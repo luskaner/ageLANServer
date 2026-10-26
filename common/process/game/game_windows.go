@@ -2,7 +2,7 @@ package game
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 var gameToXboxProcess map[string]string

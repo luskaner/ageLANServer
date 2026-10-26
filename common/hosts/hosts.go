@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	"github.com/luskaner/ageLANServer/common/hosts/text"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/fileLock"
+	"github.com/luskaner/ageServer/common/hosts/text"
 )
 
 var pathFn = Path

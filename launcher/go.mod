@@ -1,4 +1,4 @@
-module github.com/luskaner/ageLANServer/launcher
+module github.com/luskaner/ageServer/launcher
 
 go 1.27.0
 
@@ -6,7 +6,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
 	github.com/knadh/koanf/v2 v2.3.6
-	github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2
+	github.com/luskaner/ageServer/battle-server-broadcast v1.3.2
 	github.com/ncruces/zenity v0.10.15
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.59.0

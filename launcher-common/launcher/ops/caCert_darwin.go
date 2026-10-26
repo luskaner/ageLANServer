@@ -3,7 +3,7 @@ package ops
 import (
 	"os"
 
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/game/executor/base"
 )
 
 func (c *Config) GamePathToGameCertPath(executer base.Executor, path string) string {

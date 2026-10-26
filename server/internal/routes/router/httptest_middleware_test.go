@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/models/initializer"
-	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/models/initializer"
+	"github.com/luskaner/ageServer/server/internal/models/playfab"
 )
 
 // TestMaxBodySizeMiddleware_httptest valida que el middleware envuelve el body con

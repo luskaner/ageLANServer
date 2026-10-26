@@ -3,7 +3,7 @@ package launcher_common
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 func TestRemoveBattleServerRegion_Forwards(t *testing.T) {

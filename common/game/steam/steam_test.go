@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestAppIdAoE1(t *testing.T) {

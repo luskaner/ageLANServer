@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // prefix is the section name the file log files these messages under. It is set

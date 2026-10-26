@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/fileLock"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var Version string

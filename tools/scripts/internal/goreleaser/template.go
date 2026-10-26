@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common/uuid"
 )
 
 type Renders[D any] interface {

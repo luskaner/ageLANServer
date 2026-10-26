@@ -6,8 +6,8 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/server/internal/models/athens/routes/playfab"
-	"github.com/luskaner/ageLANServer/server/internal/models/athens/user"
+	"github.com/luskaner/ageServer/server/internal/models/athens/routes/playfab"
+	"github.com/luskaner/ageServer/server/internal/models/athens/user"
 )
 
 import (

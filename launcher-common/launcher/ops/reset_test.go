@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
 )
 
 // A second session in the same process must not inherit what the first one

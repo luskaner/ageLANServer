@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/uuid"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/uuid"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/routes/game/advertisement/shared"
 )
 
 type ModDll struct {

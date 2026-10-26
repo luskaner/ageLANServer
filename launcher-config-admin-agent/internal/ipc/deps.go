@@ -4,8 +4,8 @@ import (
 	"crypto/x509"
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/executor"
+	"github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/executor"
 )
 
 // Injectable vars for testing

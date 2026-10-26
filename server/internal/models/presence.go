@@ -1,7 +1,7 @@
 package models
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 type PresenceDefinitions interface {

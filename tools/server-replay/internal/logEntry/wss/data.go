@@ -6,8 +6,8 @@ import (
 	"net"
 
 	"github.com/gorilla/websocket"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
-	"github.com/luskaner/ageLANServer/server-replay/internal/logEntry"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/wss"
+	"github.com/luskaner/ageServer/server-replay/internal/logEntry"
 )
 
 type Data struct {

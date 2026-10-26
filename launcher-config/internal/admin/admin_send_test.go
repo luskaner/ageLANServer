@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
+	"github.com/luskaner/ageServer/common"
+	commonIpc "github.com/luskaner/ageServer/launcher-common/ipc"
 )
 
 // failingWriter fails on every Write.

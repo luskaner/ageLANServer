@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 func formatDurationWithDays(d time.Duration) string {

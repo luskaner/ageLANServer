@@ -44,28 +44,28 @@ allow incoming connections to these ports.
 
 ### Examples
 
-The examples assume the server is installed in `C:\AgeLANServer`, the server certificate and key are already
+The examples assume the server is installed in `C:\AgeServer`, the server certificate and key are already
 generated and that you are located in the battle server directory using the `Powershell` interpreter.
 
 #### AoE: DE
 
-`& ".\BattleServer.exe" -simulationPeriod 25 -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 25 -relayBroadcastPort 0 -region local -bsPort 30001 webSocketPort 30002 -sslKey C:\AgeServer\resources\certificates\key.pem -sslCert C:\AgeServer\resources\certificates\cert.pem`
 
 #### AoE II: DE
 
-`& ".\BattleServer.exe" -simulationPeriod 125 -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 125 -relayBroadcastPort 0 -region local -name Local -bsPort 30003 webSocketPort 30004 -outOfBandPort 30005 -sslKey C:\AgeServer\resources\certificates\key.pem -sslCert C:\AgeServer\resources\certificates\cert.pem`
 
 #### AoE III: DE
 
-`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30006 webSocketPort 30007 -outOfBandPort 30008 -sslKey C:\AgeServer\resources\certificates\key.pem -sslCert C:\AgeServer\resources\certificates\cert.pem`
 
 #### AoE IV: AE
 
-`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30009 webSocketPort 30010 -outOfBandPort 30011 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30009 webSocketPort 30010 -outOfBandPort 30011 -sslKey C:\AgeServer\resources\certificates\key.pem -sslCert C:\AgeServer\resources\certificates\cert.pem`
 
 #### AoM: RT
 
-`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30012 webSocketPort 30013 -outOfBandPort 30014 -sslKey C:\AgeLANServer\resources\certificates\key.pem -sslCert C:\AgeLANServer\resources\certificates\cert.pem`
+`& ".\BattleServer.exe" -simulationPeriod 50 -relayBroadcastPort 0 -region local -bsPort 30012 webSocketPort 30013 -outOfBandPort 30014 -sslKey C:\AgeServer\resources\certificates\key.pem -sslCert C:\AgeServer\resources\certificates\cert.pem`
 
 ## Configuring the Server
 
@@ -150,7 +150,7 @@ OutOfBandPort = 30014
 ### Assumptions
 
 * You will only run a single Battle Server instance per game at most.
-* The server is installed in `<server>`. E.g., `C:\AgeLANServer`.
+* The server is installed in `<server>`. E.g., `C:\AgeServer`.
 * The game is installed in `<game>`. E.g. `C:\Program Files (x86)\Steam\steamapps\common\AoE2DE`.
 
 Replace the placeholders with the actual paths.

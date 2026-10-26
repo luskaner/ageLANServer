@@ -15,16 +15,16 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 	"golang.org/x/sys/windows"
 )
 
 // TestWindowsCertStoreRoundTrip exercises the Windows certificate store round-trip.
-// When AGELANSERVER_CERT_STORE_INTEGRATION=1 it touches the real CURRENT_USER "CA"
+// When AGESERVER_CERT_STORE_INTEGRATION=1 it touches the real CURRENT_USER "CA"
 // store (integration). Otherwise it runs against an in-memory fake store so the
 // test never skips and still guards the iterateContext ownership contract.
 func TestWindowsCertStoreRoundTrip(t *testing.T) {
-	if os.Getenv("AGELANSERVER_CERT_STORE_INTEGRATION") == "1" {
+	if os.Getenv("AGESERVER_CERT_STORE_INTEGRATION") == "1" {
 		testWindowsCertStoreRoundTripReal(t, "CA")
 		return
 	}
@@ -79,7 +79,7 @@ func generateUniqueTestCert() ([]byte, error) {
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
 		Subject: pkix.Name{
-			CommonName:   "ageLANServer store integration test",
+			CommonName:   "ageServer store integration test",
 			Organization: []string{common.CertSubjectOrganization},
 		},
 		NotBefore:             time.Now().Add(-time.Minute),

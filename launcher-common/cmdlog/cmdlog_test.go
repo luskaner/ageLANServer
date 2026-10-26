@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/colorprofile"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // newSinks points the file log at one buffer and the console at another, so a test

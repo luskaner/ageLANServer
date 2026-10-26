@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 // reportMatchRequest mirrors the form the client posts. The list fields travel

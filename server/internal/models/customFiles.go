@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/common"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 // ErrFileTooLarge is returned by CustomFiles.Put / Stage when the stream
@@ -60,7 +60,7 @@ var customFileExtensions = map[string]bool{
 }
 
 // Folder is the default per-game base used when CustomFiles.Folder is 'auto':
-// <system temp>/ageLANServer/custom-files/<gameId>.
+// <system temp>/ageServer/custom-files/<gameId>.
 func Folder(gameId string) string {
 	return filepath.Join(os.TempDir(), common.Name, customFilesSubfolder, gameId)
 }

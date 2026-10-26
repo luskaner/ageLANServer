@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/luskaner/ageLANServer/server/internal/logger"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 type fileMetadata struct {

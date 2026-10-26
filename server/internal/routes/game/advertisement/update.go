@@ -3,12 +3,12 @@ package advertisement
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/advertisement/shared"
-	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/routes/game/advertisement/shared"
+	"github.com/luskaner/ageServer/server/internal/routes/wss"
 )
 
 func updateReturnError(gameId string, w *http.ResponseWriter) {

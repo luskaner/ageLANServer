@@ -6,16 +6,16 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
-	"github.com/luskaner/ageLANServer/common/game/executor/custom"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/game/battleServerBroadcast"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executables"
+	commonExecutor "github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/game/executor/custom"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	commonProcess "github.com/luskaner/ageServer/common/process"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageServer/launcher-common/launcher/game/battleServerBroadcast"
 )
 
 // processFn is indirected so a test can decide whether an agent is running, which

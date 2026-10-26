@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 // RelicLink verifies catalogue bodies with an RSA-2048 signature carried in

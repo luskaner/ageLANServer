@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/relationship"
-	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/routes/game/relationship"
+	"github.com/luskaner/ageServer/server/internal/routes/wss"
 )
 
 type PlatformLoginRequest struct {

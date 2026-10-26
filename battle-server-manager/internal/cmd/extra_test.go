@@ -7,8 +7,8 @@ import (
 	"battle-server-manager/internal"
 	"battle-server-manager/internal/cmdUtils"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 func TestRunClean_SyntaxError(t *testing.T) {

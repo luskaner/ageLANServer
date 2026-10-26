@@ -6,12 +6,12 @@ import (
 	"net"
 	"runtime"
 
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executables"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/executables"
+	commonExecutor "github.com/luskaner/ageServer/common/executor"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config/admin"
 	"github.com/spf13/pflag"
 )
 

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/session"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/ops/logger"
+	"github.com/luskaner/ageServer/launcher-common/launcher/session"
 )
 
 // The console's Reporter still reaches the terminal.

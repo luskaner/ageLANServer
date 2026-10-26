@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"time"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 const credentialsExpiry = time.Minute * 5

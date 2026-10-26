@@ -7,8 +7,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // Nothing installed means the console: this frontend's whole point is that it

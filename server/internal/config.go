@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 type Announcement struct {

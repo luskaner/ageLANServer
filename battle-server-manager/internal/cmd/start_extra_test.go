@@ -8,9 +8,9 @@ import (
 
 	"battle-server-manager/internal"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func setupStartMocks(t *testing.T) func() {

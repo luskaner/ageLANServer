@@ -3,7 +3,7 @@ package bsManager
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestStartFlagSetDefaults(t *testing.T) {

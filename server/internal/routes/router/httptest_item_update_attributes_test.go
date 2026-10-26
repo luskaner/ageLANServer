@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 func TestUpdateItemAttributes_NestedArrays(t *testing.T) {

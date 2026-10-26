@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 type mapStore struct {

@@ -7,19 +7,19 @@ import (
 
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/v2"
-	"github.com/luskaner/ageLANServer/common"
-	bsManager "github.com/luskaner/ageLANServer/common/cmd/bsManager"
-	"github.com/luskaner/ageLANServer/common/executables"
+	"github.com/luskaner/ageServer/common"
+	bsManager "github.com/luskaner/ageServer/common/cmd/bsManager"
+	"github.com/luskaner/ageServer/common/executables"
 	"github.com/spf13/pflag"
 )
 
-// Regression: the Docker image ships AGELANSERVER_BATTLE_SERVER_MANAGER_*
+// Regression: the Docker image ships AGESERVER_BATTLE_SERVER_MANAGER_*
 // environment variables written with the same case as the configuration keys
 // (e.g. ..._Ports_Bs -> Ports.Bs). The env provider preserves that case, so
 // these overrides must reach the capitalized koanf keys.
 func TestStartConfigEnvOverridesCapitalizedKeys(t *testing.T) {
-	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_Ports_Bs", "27012")
-	t.Setenv("AGELANSERVER_BATTLE_SERVER_MANAGER_CertsPath", "/app/server/resources/certificates")
+	t.Setenv("AGESERVER_BATTLE_SERVER_MANAGER_Ports_Bs", "27012")
+	t.Setenv("AGESERVER_BATTLE_SERVER_MANAGER_CertsPath", "/app/server/resources/certificates")
 
 	k := koanf.New(".")
 	defaults := map[string]any{

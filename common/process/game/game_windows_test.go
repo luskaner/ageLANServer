@@ -5,7 +5,7 @@ package game
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestXboxProcess(t *testing.T) {

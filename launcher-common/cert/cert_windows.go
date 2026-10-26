@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 	"unsafe"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 	"golang.org/x/sys/windows"
 )
 

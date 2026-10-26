@@ -3,10 +3,10 @@ package router
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/server/internal/routes/apiAgeOfEmpires/textmoderation"
-	"github.com/luskaner/ageLANServer/server/internal/routes/matchcontent"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/server/internal/routes/apiAgeOfEmpires/textmoderation"
+	"github.com/luskaner/ageServer/server/internal/routes/matchcontent"
 )
 
 type ApiAgeOfEmpires struct {

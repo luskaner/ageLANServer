@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 type Session interface {

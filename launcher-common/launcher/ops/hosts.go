@@ -6,13 +6,13 @@ import (
 	"net"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/hosts"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/server"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/hosts"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/common/server"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/executor"
 )
 
 func (c *Config) MapHosts(gameId string, ip string, macOsExclusiveMappings bool, canMap bool, customHostFile bool) (exitCode int) {

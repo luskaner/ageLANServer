@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	challengeShared "github.com/luskaner/ageLANServer/server/internal/routes/game/challenge/shared"
-	"github.com/luskaner/ageLANServer/server/internal/routes/wss"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	challengeShared "github.com/luskaner/ageServer/server/internal/routes/game/challenge/shared"
+	"github.com/luskaner/ageServer/server/internal/routes/wss"
 )
 
 type updateStateRequest struct {

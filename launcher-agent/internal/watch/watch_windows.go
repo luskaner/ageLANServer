@@ -3,9 +3,9 @@ package watch
 import (
 	"context"
 
-	"github.com/luskaner/ageLANServer/battle-server-broadcast"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageServer/battle-server-broadcast"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/launcher-agent/internal"
 )
 
 // rebroadcastBattleServer starts mirroring the battle server's announcements

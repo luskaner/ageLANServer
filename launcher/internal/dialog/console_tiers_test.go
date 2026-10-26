@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/colorprofile"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // Regression: the numbered listing must stay byte for byte what it was, because

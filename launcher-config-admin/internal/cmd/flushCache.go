@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"github.com/luskaner/ageLANServer/common"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func runFlushCache(args []string) (err error, exitCode int) {

@@ -3,10 +3,10 @@ package models
 import (
 	"fmt"
 
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 var BattleServersStore = make(map[string][]BattleServer)

@@ -1,4 +1,4 @@
-module github.com/luskaner/ageLANServer/server
+module github.com/luskaner/ageServer/server
 
 go 1.27.0
 

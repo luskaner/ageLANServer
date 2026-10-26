@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/request"
-	clientHttp "github.com/luskaner/ageLANServer/server-replay/internal/client/http"
-	"github.com/luskaner/ageLANServer/server-replay/internal/logEntry"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/request"
+	clientHttp "github.com/luskaner/ageServer/server-replay/internal/client/http"
+	"github.com/luskaner/ageServer/server-replay/internal/logEntry"
 	"github.com/r3labs/diff/v3"
 )
 

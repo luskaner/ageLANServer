@@ -25,7 +25,7 @@ EXPOSE 443/tcp
 EXPOSE 31978/udp
 VOLUME /app/server/resources/config
 VOLUME /app/server/resources/certificates
-VOLUME /tmp/ageLANServer/battle-servers
+VOLUME /tmp/ageServer/battle-servers
 WORKDIR /app/server
 COPY --from=compiler /app/build/resources resources
 COPY --from=compressor /app/server .

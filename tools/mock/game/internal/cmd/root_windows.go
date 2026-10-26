@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/game"
-	processGame "github.com/luskaner/ageLANServer/common/process/game"
-	"github.com/luskaner/ageLANServer/common/server"
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/game"
+	processGame "github.com/luskaner/ageServer/common/process/game"
+	"github.com/luskaner/ageServer/common/server"
+	"github.com/luskaner/ageServer/common/uuid"
 )
 
 var dataPath string

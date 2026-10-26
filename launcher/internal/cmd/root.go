@@ -9,13 +9,13 @@ package cmd
 import (
 	"context"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/ops/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/session"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher/internal/dialog"
+	"github.com/luskaner/ageServer/common"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/ops/logger"
+	"github.com/luskaner/ageServer/launcher-common/launcher/session"
+	"github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher/internal/dialog"
 	"github.com/spf13/pflag"
 	"os"
 )

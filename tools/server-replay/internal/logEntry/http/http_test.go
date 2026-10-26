@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/request"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/request"
 )
 
 func newFixture(t *testing.T, host string, port string) *Request {

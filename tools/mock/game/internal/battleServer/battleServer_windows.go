@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/process"
 	"golang.org/x/sys/windows"
 )
 

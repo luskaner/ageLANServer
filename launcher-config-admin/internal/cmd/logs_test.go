@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func resetLogState(t *testing.T) {

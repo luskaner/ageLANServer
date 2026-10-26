@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestNewPathJoinsPerGame(t *testing.T) {

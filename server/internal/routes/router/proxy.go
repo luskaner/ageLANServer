@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 type Proxy struct {

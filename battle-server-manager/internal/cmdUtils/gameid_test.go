@@ -3,7 +3,7 @@ package cmdUtils
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 // Regression: ParsedGameIds used to return the exported game.SupportedGames

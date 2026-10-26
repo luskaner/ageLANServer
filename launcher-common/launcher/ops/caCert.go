@@ -4,13 +4,13 @@ import (
 	"crypto/x509"
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common/uuid"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/executor"
 )
 
 func (c *Config) AddCACertToGame(gameId string, serverId uuid.UUID, serverCertificate *x509.Certificate, gamePath string, caCertPath string, canAddCert bool, macOsExclusiveMappings bool) (exitCode int) {

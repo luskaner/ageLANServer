@@ -3,7 +3,7 @@ package models
 import (
 	"sync/atomic"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 type MainPeerMutable struct {

@@ -89,7 +89,7 @@ The `/api/MatchContent/` endpoints serve multiplayer savegames and replays: the 
 remaining players download it to restore the match. Without them the game fails with "Failed to upload/download
 custom files".
 
-Files are stored under a per-game folder (by default `<TEMP>\ageLANServer\custom-files\<game>`), evicted least
+Files are stored under a per-game folder (by default `<TEMP>\ageServer\custom-files\<game>`), evicted least
 recently first to stay under the accumulated quota, and swept after the configured TTL. A `.part` file is used
 while uploading; it is renamed into place once the `matchId` is known, so a crash mid-upload leaves at most an
 orphan `.part` that is purged on the next startup.

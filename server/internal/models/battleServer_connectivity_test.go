@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 func resetNetworkState(t *testing.T) {

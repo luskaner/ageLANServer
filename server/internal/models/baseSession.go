@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 func newExpiry(duration time.Duration) time.Time {

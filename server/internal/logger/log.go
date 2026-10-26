@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var StartTime time.Time

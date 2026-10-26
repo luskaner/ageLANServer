@@ -1,6 +1,6 @@
 package common
 
-const Name = "ageLANServer"
+const Name = "ageServer"
 const Cert = "cert.pem"
 const Key = "key.pem"
 const CACert = "cacert.pem"

@@ -1,4 +1,4 @@
-module github.com/luskaner/ageLANServer/launcher-common
+module github.com/luskaner/ageServer/launcher-common
 
 go 1.27.0
 

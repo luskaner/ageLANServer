@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 var waitBeforeRunning time.Duration

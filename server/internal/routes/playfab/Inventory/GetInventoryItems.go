@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/models/athens"
-	"github.com/luskaner/ageLANServer/server/internal/models/playfab"
-	"github.com/luskaner/ageLANServer/server/internal/routes/playfab/Client/shared"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/models/athens"
+	"github.com/luskaner/ageServer/server/internal/models/playfab"
+	"github.com/luskaner/ageServer/server/internal/routes/playfab/Client/shared"
 )
 
 type getInventoryItemsRequest struct {

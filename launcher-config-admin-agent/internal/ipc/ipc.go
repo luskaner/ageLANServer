@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
-	"github.com/luskaner/ageLANServer/launcher-common/ipc"
-	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/launcher-common/ipc"
+	"github.com/luskaner/ageServer/launcher-config-admin-agent/internal"
 	"golang.org/x/net/idna"
 )
 

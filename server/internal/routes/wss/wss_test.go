@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
 	"github.com/lxzan/gws"
 )
 

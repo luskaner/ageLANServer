@@ -6,14 +6,14 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageServer/common"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/fileLock"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config"
+	"github.com/luskaner/ageServer/launcher-config-admin-agent/internal"
 )
 
 func resetState(t *testing.T) {

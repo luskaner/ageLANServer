@@ -5,11 +5,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/common"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	launcherCommonCmd "github.com/luskaner/ageServer/launcher-common/cmd/config"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config/internal"
 )
 
 func runFlushCache(args []string) (err error, exitCode int) {

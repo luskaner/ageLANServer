@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func TestErrorConstantsAreSequential(t *testing.T) {

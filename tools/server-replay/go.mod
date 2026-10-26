@@ -1,4 +1,4 @@
-module github.com/luskaner/ageLANServer/server-replay
+module github.com/luskaner/ageServer/server-replay
 
 go 1.27.0
 

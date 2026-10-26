@@ -30,4 +30,4 @@ use (
 	gui/server/config
 )
 
-replace github.com/luskaner/ageLANServer/battle-server-broadcast v1.3.2 => ./battle-server-broadcast
+replace github.com/luskaner/ageServer/battle-server-broadcast v1.3.2 => ./battle-server-broadcast

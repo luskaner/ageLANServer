@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func setupHostsEnv(t *testing.T) (hostsPath, bakPath string) {
@@ -41,7 +41,7 @@ func TestRemoveHostsNoFiles(t *testing.T) {
 func TestRemoveHostsOnlyHostsNoBackup(t *testing.T) {
 	hostsPath, _ := setupHostsEnv(t)
 	// Create hosts with an owned line
-	content := "127.0.0.1 mygame.example.com #ageLANServer\r\n127.0.0.1 other.com\r\n"
+	content := "127.0.0.1 mygame.example.com #ageServer\r\n127.0.0.1 other.com\r\n"
 	if err := os.WriteFile(hostsPath, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestRemoveHostsWithBackupNewerRestoresBackup(t *testing.T) {
 	}
 	// Ensure backup is newer than hosts
 	time.Sleep(1100 * time.Millisecond)
-	hostsContent := "127.0.0.1 owned.com #ageLANServer\r\n127.0.0.1 other.com\r\n"
+	hostsContent := "127.0.0.1 owned.com #ageServer\r\n127.0.0.1 other.com\r\n"
 	if err := os.WriteFile(hostsPath, []byte(hostsContent), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestRemoveHostsWithBackupNewerRestoresBackup(t *testing.T) {
 
 func TestRemoveHostsWithBackupOlderDoesInPlace(t *testing.T) {
 	hostsPath, bakPath := setupHostsEnv(t)
-	hostsContent := "127.0.0.1 owned2.com #ageLANServer\r\n127.0.0.1 keep.com\r\n"
+	hostsContent := "127.0.0.1 owned2.com #ageServer\r\n127.0.0.1 keep.com\r\n"
 	if err := os.WriteFile(hostsPath, []byte(hostsContent), 0644); err != nil {
 		t.Fatal(err)
 	}

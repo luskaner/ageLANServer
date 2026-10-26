@@ -3,9 +3,9 @@ package party
 import (
 	"net/http"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	"github.com/luskaner/ageLANServer/server/internal/routes/game/party/shared"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/routes/game/party/shared"
 )
 
 func PeerUpdate(w http.ResponseWriter, r *http.Request) {

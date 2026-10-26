@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/cmd/server"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/cmd/server"
+	"github.com/luskaner/ageServer/common/fileLock"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/server/internal"
 	"github.com/spf13/pflag"
 )
 

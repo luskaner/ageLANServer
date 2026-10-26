@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonCmd "github.com/luskaner/ageLANServer/common/cmd"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/common"
+	commonCmd "github.com/luskaner/ageServer/common/cmd"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	launcherCommonCmd "github.com/luskaner/ageServer/launcher-common/cmd/config"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/launcher-config/internal"
 )
 
 // Test helpers in setUp.go

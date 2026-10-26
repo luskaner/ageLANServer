@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/server"
 )
 
 func testProcessedServers(count int) []*processedServer {

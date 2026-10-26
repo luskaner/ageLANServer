@@ -3,10 +3,10 @@ package ops
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/executables"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
 	"github.com/spf13/pflag"
 )
 

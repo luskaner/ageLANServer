@@ -8,9 +8,9 @@ import (
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	i "github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/common"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	i "github.com/luskaner/ageServer/server/internal"
 	"golang.org/x/net/ipv4"
 )
 

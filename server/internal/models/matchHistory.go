@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/logger"
 
 	_ "modernc.org/sqlite"
 )

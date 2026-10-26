@@ -3,9 +3,9 @@ package leaderboard
 import (
 	"net/http"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 // getRecentMatchHistoryRequest mirrors the query string the client sends.

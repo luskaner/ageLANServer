@@ -3,8 +3,8 @@ package steam
 import (
 	"testing"
 
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game/steam"
+	commonExecutor "github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game/steam"
 	"golang.org/x/sys/windows"
 )
 

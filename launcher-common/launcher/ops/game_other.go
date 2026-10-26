@@ -5,7 +5,7 @@ package ops
 import (
 	"os"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 func adminError(result *exec.Result) bool {

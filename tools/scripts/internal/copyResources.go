@@ -9,8 +9,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	p "github.com/luskaner/ageLANServer/common/paths"
+	"github.com/luskaner/ageServer/common/game"
+	p "github.com/luskaner/ageServer/common/paths"
 )
 
 func BuildResourcePath(module string) string {

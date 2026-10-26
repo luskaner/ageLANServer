@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 // "not_valid" contains underscores which are invalid in IDNA/DNS.

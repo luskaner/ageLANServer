@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
 	"github.com/spf13/pflag"
 )
 

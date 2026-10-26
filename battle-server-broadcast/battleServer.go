@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
+	"github.com/luskaner/ageServer/battle-server-broadcast/internal"
 )
 
 var Header = []byte{0x21, 0x24, 0x00}

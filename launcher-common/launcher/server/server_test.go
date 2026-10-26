@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/uuid"
 )
 
 // Starts a UDP server that responds to announce queries with a valid reply.

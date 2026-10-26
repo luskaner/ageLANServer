@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/launcher-config/internal"
 )
 
 // mockCACert implements caCertifier for tests.

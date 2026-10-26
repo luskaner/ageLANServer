@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 func TestRootCmdExecSuccess(t *testing.T) {

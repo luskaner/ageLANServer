@@ -6,7 +6,7 @@ import (
 	"scripts/internal"
 	"scripts/internal/constants"
 
-	"github.com/luskaner/ageLANServer/common/game/cert"
+	"github.com/luskaner/ageServer/common/game/cert"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 package logger
 
-import "github.com/luskaner/ageLANServer/launcher-common/launcher"
+import "github.com/luskaner/ageServer/launcher-common/launcher"
 
 // Reporter is this log seen as the Reporter a session narrates itself through.
 //

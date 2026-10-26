@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 // UpgradableData migrates a stored document to the version the server expects.

@@ -3,8 +3,8 @@ package internal
 import (
 	"os"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	"github.com/luskaner/ageServer/common"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
 )
 
 var (

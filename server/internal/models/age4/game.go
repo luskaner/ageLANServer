@@ -2,9 +2,9 @@ package age4
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/server/internal/models"
-	commonPlayfab "github.com/luskaner/ageLANServer/server/internal/models/playfab"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/server/internal/models"
+	commonPlayfab "github.com/luskaner/ageServer/server/internal/models/playfab"
 )
 
 func CreateGame() models.Game {

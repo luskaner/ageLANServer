@@ -3,10 +3,10 @@ package ops
 import (
 	"runtime"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
-	"github.com/luskaner/ageLANServer/common/game/executor/custom"
-	"github.com/luskaner/ageLANServer/common/game/executor/steam"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/game/executor/custom"
+	"github.com/luskaner/ageServer/common/game/executor/steam"
 )
 
 func (c *Config) NativeMacOsGame(executer base.Executor, considerCustomLauncher bool) bool {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 // -------------------------------------------------------------------

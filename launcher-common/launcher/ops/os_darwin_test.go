@@ -5,10 +5,10 @@ package ops
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
-	"github.com/luskaner/ageLANServer/common/game/executor/custom"
-	"github.com/luskaner/ageLANServer/common/game/executor/steam"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/game/executor/custom"
+	"github.com/luskaner/ageServer/common/game/executor/steam"
 )
 
 // Regression: the type assertion used steam.Exec (value) instead of

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 var logger *log.Logger

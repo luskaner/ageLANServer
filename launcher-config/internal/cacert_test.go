@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 func genCertDER(t *testing.T, name string) ([]byte, *x509.Certificate) {

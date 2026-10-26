@@ -3,8 +3,8 @@ package leaderboard
 import (
 	"net/http"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 func ApplyOfflineUpdates(w http.ResponseWriter, r *http.Request) {

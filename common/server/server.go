@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common/uuid"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/certStore"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/certStore"
 )
 
 type AnnounceMessageDataSupportedLatest = common.AnnounceMessageData002

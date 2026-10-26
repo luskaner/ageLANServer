@@ -3,7 +3,7 @@ package steam
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game/steam"
+	"github.com/luskaner/ageServer/common/game/steam"
 )
 
 func TestString(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommonCert "github.com/luskaner/ageLANServer/common/game/cert"
-	"github.com/luskaner/ageLANServer/common/logger"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/common"
+	launcherCommonCert "github.com/luskaner/ageServer/common/game/cert"
+	"github.com/luskaner/ageServer/common/logger"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 type CACert struct {

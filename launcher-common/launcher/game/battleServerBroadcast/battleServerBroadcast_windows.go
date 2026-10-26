@@ -1,6 +1,6 @@
 package battleServerBroadcast
 
-import "github.com/luskaner/ageLANServer/battle-server-broadcast"
+import "github.com/luskaner/ageServer/battle-server-broadcast"
 
 func Required() bool {
 	mostPriority, restInterfaces, err := battle_server_broadcast.RetrieveBsInterfaceAddresses()

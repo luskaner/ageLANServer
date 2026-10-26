@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
 )
 
 func TestOpenMainFileLogDisabled(t *testing.T) {

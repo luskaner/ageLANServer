@@ -5,7 +5,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageServer/common/process"
 )
 
 // Locker is the seam used by launcher to make PidLock testable without touching filesystem.

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 func TestAddMessageNonBlockingWhenFull(t *testing.T) {

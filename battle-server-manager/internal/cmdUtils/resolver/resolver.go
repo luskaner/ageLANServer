@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var (

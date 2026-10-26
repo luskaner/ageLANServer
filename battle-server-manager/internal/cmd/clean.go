@@ -3,9 +3,9 @@ package cmd
 import (
 	"battle-server-manager/internal/cmdUtils"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 	"github.com/spf13/pflag"
 )
 

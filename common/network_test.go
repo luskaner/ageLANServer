@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	commonGame "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageServer/common/game"
 )
 
 func TestNetIPToNetIPAddrIPv4(t *testing.T) {

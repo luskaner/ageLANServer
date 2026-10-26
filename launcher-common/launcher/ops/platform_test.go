@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/game/executor/base"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/game/executor/base"
 )
 
 func TestAdminErrorWithOtherError(t *testing.T) {

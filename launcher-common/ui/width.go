@@ -13,7 +13,7 @@ const minWrapWidth = 16
 
 // breakPoints are the characters a wrapped line may break after. The path
 // separators matter as much as the spaces: this output is full of Windows paths,
-// and breaking "C:\Program" away from "Files\AgeLANServer" reads far worse than
+// and breaking "C:\Program" away from "Files\AgeServer" reads far worse than
 // leaving the line a little long. The hyphen is there for the same reason: it is
 // what joins the parts of a program name.
 const breakPoints = " \t\\_/─-·,"

@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 type createItemLoadoutRequest struct {

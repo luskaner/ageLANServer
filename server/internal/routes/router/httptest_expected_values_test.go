@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	i "github.com/luskaner/ageLANServer/server/internal"
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/common/game"
+	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 // TestRouteExpectedValues_Httptest valida RUTA POR RUTA con httptest que cada endpoint

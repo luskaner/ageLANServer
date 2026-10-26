@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	battleServerBroadcast "github.com/luskaner/ageLANServer/battle-server-broadcast"
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	battleServerBroadcast "github.com/luskaner/ageServer/battle-server-broadcast"
+	"github.com/luskaner/ageServer/common/battleServer"
 	"golang.org/x/sys/windows"
 )
 

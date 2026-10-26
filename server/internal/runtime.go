@@ -3,8 +3,8 @@ package internal
 import (
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/uuid"
 )
 
 var Id uuid.UUID

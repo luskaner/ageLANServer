@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestHasCA(t *testing.T) {

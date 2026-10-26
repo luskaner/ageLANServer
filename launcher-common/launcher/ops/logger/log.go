@@ -11,17 +11,17 @@ import (
 	"sync"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/game"
-	gameCert "github.com/luskaner/ageLANServer/common/game/cert"
-	"github.com/luskaner/ageLANServer/common/hosts"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/common/process"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/cert"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executables"
+	"github.com/luskaner/ageServer/common/game"
+	gameCert "github.com/luskaner/ageServer/common/game/cert"
+	"github.com/luskaner/ageServer/common/hosts"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/common/process"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/cert"
+	"github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 var processesLog = []string{executables.LauncherAgent, executables.LauncherConfigAdminAgent}

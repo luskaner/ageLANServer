@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 // Regression: matchPattern used == (case-sensitive), but DNS names are

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/server/internal/models"
+	"github.com/luskaner/ageServer/server/internal/models"
 )
 
 var sessAnonymousPaths = map[string]bool{

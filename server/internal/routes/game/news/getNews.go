@@ -3,7 +3,7 @@ package news
 import (
 	"net/http"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 func GetNews(w http.ResponseWriter, _ *http.Request) {

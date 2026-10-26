@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 func ExistingServers(gameId string) (err error, names mapset.Set[string], regions mapset.Set[string]) {

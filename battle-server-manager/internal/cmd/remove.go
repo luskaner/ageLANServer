@@ -6,10 +6,10 @@ import (
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/cmd/bsManager"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var (

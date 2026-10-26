@@ -5,7 +5,7 @@ import (
 
 	i "scripts/internal"
 
-	e "github.com/luskaner/ageLANServer/common/executables"
+	e "github.com/luskaner/ageServer/common/executables"
 )
 
 func main() {

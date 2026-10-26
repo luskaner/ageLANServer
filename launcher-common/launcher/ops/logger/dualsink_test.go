@@ -8,8 +8,8 @@ import (
 
 	"github.com/charmbracelet/colorprofile"
 
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 // newTestSinks points commonLogger at one buffer and the console at another, so

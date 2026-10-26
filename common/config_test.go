@@ -26,8 +26,8 @@ func (jsonParser) Marshal(m map[string]any) ([]byte, error) {
 // The env provider strips the uppercase prefix, converts '_' to '.' and
 // PRESERVES the case of the rest, so 'PREFIX_Ports_Bs' maps to 'Ports.Bs'.
 func TestEnvProviderPreservesKeyCase(t *testing.T) {
-	t.Setenv("AGELANSERVER_UNITTEST_Foo_Bar", "baz")
-	t.Setenv("AGELANSERVER_UNITTEST_List", "a b c")
+	t.Setenv("AGESERVER_UNITTEST_Foo_Bar", "baz")
+	t.Setenv("AGESERVER_UNITTEST_List", "a b c")
 
 	k := koanf.New(".")
 	if err := k.Load(koanfEnvProvider(Name+"_unittest"), nil); err != nil {
@@ -47,8 +47,8 @@ func TestLoadKoanfLayersPrecedence(t *testing.T) {
 	if err := os.WriteFile(file, []byte(`{"Key":"from-file","onlyFile":"F"}`), 0644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("AGELANSERVER_UNITTEST_Key", "from-env")
-	t.Setenv("AGELANSERVER_UNITTEST_OnlyEnv", "E")
+	t.Setenv("AGESERVER_UNITTEST_Key", "from-env")
+	t.Setenv("AGESERVER_UNITTEST_OnlyEnv", "E")
 
 	newKoanf := func() *koanf.Koanf { return koanf.New(".") }
 	defaults := map[string]any{"Key": "from-defaults", "onlyDefault": "D"}

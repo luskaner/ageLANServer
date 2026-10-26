@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luskaner/ageLANServer/common/paths"
+	"github.com/luskaner/ageServer/common/paths"
 )
 
 func ReadCertsPool(path string) (pool *x509.CertPool, err error) {

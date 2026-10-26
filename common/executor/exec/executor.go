@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor"
 )
 
 // Injectable functions for testing

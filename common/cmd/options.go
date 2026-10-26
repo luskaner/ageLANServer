@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 	"github.com/spf13/pflag"
 )
 

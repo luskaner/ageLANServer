@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestMappings_NilIP(t *testing.T) {

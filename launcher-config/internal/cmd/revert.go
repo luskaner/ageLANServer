@@ -8,14 +8,14 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	launcherCommonCmd "github.com/luskaner/ageLANServer/launcher-common/cmd/config"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/common/logger"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	launcherCommonCmd "github.com/luskaner/ageServer/launcher-common/cmd/config"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/launcher-config/internal"
 	"github.com/spf13/pflag"
 )
 

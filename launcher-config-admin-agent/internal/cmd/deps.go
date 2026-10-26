@@ -3,12 +3,12 @@ package cmd
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/fileLock"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	launcherCommonExecutor "github.com/luskaner/ageLANServer/launcher-common/executor"
-	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
-	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal/ipc"
+	"github.com/luskaner/ageServer/common/executor"
+	"github.com/luskaner/ageServer/common/fileLock"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	launcherCommonExecutor "github.com/luskaner/ageServer/launcher-common/executor"
+	"github.com/luskaner/ageServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageServer/launcher-config-admin-agent/internal/ipc"
 )
 
 var (

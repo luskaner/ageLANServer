@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
-	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executables"
+	"github.com/luskaner/ageServer/common/process"
 	"github.com/pelletier/go-toml/v2"
 )
 

@@ -11,16 +11,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	"github.com/luskaner/ageLANServer/launcher-agent/internal/gameLogs"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/agent"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
-	"github.com/luskaner/ageLANServer/launcher-common/serverKill"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonProcess "github.com/luskaner/ageServer/common/process"
+	"github.com/luskaner/ageServer/launcher-agent/internal"
+	"github.com/luskaner/ageServer/launcher-agent/internal/gameLogs"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/cmd/agent"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/launcher-common/serverKill"
 )
 
 // What the agent says it is doing, in the tense the tray renders it in.

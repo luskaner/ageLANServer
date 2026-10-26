@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/process"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/process"
 )
 
 // Regression: openFile used to return (nil, nil) when another instance was

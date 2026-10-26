@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/battle-server-broadcast/internal"
+	"github.com/luskaner/ageServer/battle-server-broadcast/internal"
 )
 
 // Helpers for mocking net

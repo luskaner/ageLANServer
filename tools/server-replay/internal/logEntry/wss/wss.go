@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
-	clientWss "github.com/luskaner/ageLANServer/server-replay/internal/client/wss"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/wss"
+	clientWss "github.com/luskaner/ageServer/server-replay/internal/client/wss"
 )
 
 type messageResponse struct {

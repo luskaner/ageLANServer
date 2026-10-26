@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher-config-admin-agent/internal"
+	"github.com/luskaner/ageServer/launcher-config-admin-agent/internal"
 )
 
 // Regression: after an undecodable action the loop used to `continue`, and

@@ -3,7 +3,7 @@ package ops
 import (
 	"errors"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 	"golang.org/x/sys/windows"
 )
 

@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/luskaner/ageLANServer/launcher-common/launcher"
+import "github.com/luskaner/ageServer/launcher-common/launcher"
 
 // Presenter draws a run on a terminal.
 //

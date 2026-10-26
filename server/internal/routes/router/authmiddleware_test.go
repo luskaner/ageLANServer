@@ -3,7 +3,7 @@ package router
 import (
 	"testing"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 func TestSafeString(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/luskaner/ageLANServer/common"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/common"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
 )
 
 func runStopAgent(_ []string) (err error, exitCode int) {

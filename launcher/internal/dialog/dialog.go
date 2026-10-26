@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
 )
 
 // The vocabulary belongs to the shared package, so a graphical frontend answers

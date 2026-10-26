@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	lipc "github.com/luskaner/ageLANServer/launcher-common/ipc"
+	lipc "github.com/luskaner/ageServer/launcher-common/ipc"
 )
 
 // Regression: RevertServer removed path.Join() (empty string) instead of the

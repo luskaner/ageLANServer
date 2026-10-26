@@ -3,7 +3,7 @@ package custom
 import (
 	"testing"
 
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+	commonExecutor "github.com/luskaner/ageServer/common/executor/exec"
 )
 
 func TestString(t *testing.T) {

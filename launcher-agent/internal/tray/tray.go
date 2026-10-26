@@ -35,8 +35,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/launcher-agent/internal"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 // Title is what the tooltip and the notification area attribute the icon to. It

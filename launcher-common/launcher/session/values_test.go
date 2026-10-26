@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
 	"github.com/spf13/pflag"
 )
 

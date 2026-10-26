@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
+	"github.com/luskaner/ageServer/common"
 )
 
 // The accessors and the validators must agree, because they answer the same

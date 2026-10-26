@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common/uuid"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	server2 "github.com/luskaner/ageLANServer/common/server"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/executor"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	server2 "github.com/luskaner/ageServer/common/server"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/executor"
+	"github.com/luskaner/ageServer/launcher-common/launcher/server"
 )
 
 func checkCertMatch(r launcher.Reporter, serverId uuid.UUID, gameId string, serverCertificate *x509.Certificate, hosts []string, rootCAs *x509.CertPool, fixable bool) (requiresFixing bool, exitCode int) {

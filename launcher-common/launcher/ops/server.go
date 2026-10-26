@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/uuid"
+	"github.com/luskaner/ageServer/common/uuid"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/luskaner/ageLANServer/common"
-	cmdServer "github.com/luskaner/ageLANServer/common/cmd/server"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
-	commonLogger "github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher"
-	"github.com/luskaner/ageLANServer/launcher-common/launcher/server"
+	"github.com/luskaner/ageServer/common"
+	cmdServer "github.com/luskaner/ageServer/common/cmd/server"
+	commonExecutor "github.com/luskaner/ageServer/common/executor/exec"
+	commonLogger "github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/launcher"
+	"github.com/luskaner/ageServer/launcher-common/launcher/server"
 	"github.com/spf13/pflag"
 )
 

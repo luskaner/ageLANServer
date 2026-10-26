@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 // Exercises the full switchPaths cycle through the exported API: Backup moves

@@ -3,7 +3,7 @@ package ops
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func TestGameRequiresBattleServer(t *testing.T) {

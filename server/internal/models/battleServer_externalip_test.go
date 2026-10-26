@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 func withExternalLookup(t *testing.T, url string, client *http.Client) {

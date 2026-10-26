@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 func writer(w *httptest.ResponseRecorder) *http.ResponseWriter {

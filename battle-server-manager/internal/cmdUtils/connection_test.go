@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/battleServer"
 )
 
 // Regression: the readiness probe inherited Config.Validate's 100ms default,

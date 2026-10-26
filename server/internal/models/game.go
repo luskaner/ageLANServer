@@ -3,7 +3,7 @@ package models
 import (
 	"net/http"
 
-	"github.com/luskaner/ageLANServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal"
 )
 
 type Game interface {

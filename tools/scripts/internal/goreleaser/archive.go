@@ -9,7 +9,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/goreleaser/goreleaser/v2/pkg/config"
-	"github.com/luskaner/ageLANServer/common/game"
+	"github.com/luskaner/ageServer/common/game"
 )
 
 func extChange(ext string) DestinationFn {

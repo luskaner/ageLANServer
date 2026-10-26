@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/logger"
-	launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
-	"github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/cmd"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor"
+	"github.com/luskaner/ageServer/common/logger"
+	launcherCommon "github.com/luskaner/ageServer/launcher-common"
+	"github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal/cmd"
 )
 
 var version = "development"

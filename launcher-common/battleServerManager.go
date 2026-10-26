@@ -3,9 +3,9 @@ package launcher_common
 import (
 	"io"
 
-	"github.com/luskaner/ageLANServer/common/cmd"
-	"github.com/luskaner/ageLANServer/common/cmd/bsManager"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/cmd/bsManager"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 var battleServerExecFn = func(options exec.Options) *exec.Result { return options.Exec() }

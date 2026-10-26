@@ -6,9 +6,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 func resetState(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	commonGame "github.com/luskaner/ageLANServer/common/game"
+	commonGame "github.com/luskaner/ageServer/common/game"
 )
 
 // Seeds the DNS-probe cache so generateDomains never performs network lookups.

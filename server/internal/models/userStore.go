@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 // StoredValue is a single persisted document: the schema version it was

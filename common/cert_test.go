@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/paths"
+	"github.com/luskaner/ageServer/common/paths"
 )
 
 func TestBytesToCertificateInvalidReturnsNil(t *testing.T) {

@@ -1,6 +1,6 @@
 package models
 
-import i "github.com/luskaner/ageLANServer/server/internal"
+import i "github.com/luskaner/ageServer/server/internal"
 
 type LeaderboardDefinitions interface {
 	Initialize(leaderboards i.A)

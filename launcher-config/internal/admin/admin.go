@@ -10,16 +10,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executables"
-	commonExecutor "github.com/luskaner/ageLANServer/common/executor"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/common/logger"
-	commonProcess "github.com/luskaner/ageLANServer/common/process"
-	"github.com/luskaner/ageLANServer/launcher-common/executor"
-	commonIpc "github.com/luskaner/ageLANServer/launcher-common/ipc"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executables"
+	commonExecutor "github.com/luskaner/ageServer/common/executor"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/logger"
+	commonProcess "github.com/luskaner/ageServer/common/process"
+	"github.com/luskaner/ageServer/launcher-common/executor"
+	commonIpc "github.com/luskaner/ageServer/launcher-common/ipc"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config/internal"
 )
 
 // deps groups the external effect points used by the admin client so tests can

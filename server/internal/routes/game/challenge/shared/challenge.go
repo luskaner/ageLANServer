@@ -1,7 +1,7 @@
 package shared
 
 import (
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 func GetChallengeProgressData() i.A {

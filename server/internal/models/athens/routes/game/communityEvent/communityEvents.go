@@ -8,7 +8,7 @@ import (
 
 	_ "time/tzdata"
 
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 const dayDuration = 24 * time.Hour

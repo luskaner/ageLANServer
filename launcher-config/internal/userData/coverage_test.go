@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 func TestIsolatedPathNonActive(t *testing.T) {

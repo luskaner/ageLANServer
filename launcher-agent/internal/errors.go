@@ -1,6 +1,6 @@
 package internal
 
-import launcherCommon "github.com/luskaner/ageLANServer/launcher-common"
+import launcherCommon "github.com/luskaner/ageServer/launcher-common"
 
 const (
 	ErrGameTimeoutStart = iota + launcherCommon.ErrLast

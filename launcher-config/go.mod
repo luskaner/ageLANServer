@@ -1,4 +1,4 @@
-module github.com/luskaner/ageLANServer/launcher-config
+module github.com/luskaner/ageServer/launcher-config
 
 go 1.27.0
 

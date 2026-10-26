@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/luskaner/ageLANServer/common"
-	launcherCommonHosts "github.com/luskaner/ageLANServer/common/hosts"
-	"github.com/luskaner/ageLANServer/common/logger"
-	"github.com/luskaner/ageLANServer/launcher-common/cmd/config/admin"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal/hosts"
+	"github.com/luskaner/ageServer/common"
+	launcherCommonHosts "github.com/luskaner/ageServer/common/hosts"
+	"github.com/luskaner/ageServer/common/logger"
+	"github.com/luskaner/ageServer/launcher-common/cmd/config/admin"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal/hosts"
 )
 
 func untrustCertificate() bool {

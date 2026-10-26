@@ -1,6 +1,6 @@
 package custom
 
-import commonExecutor "github.com/luskaner/ageLANServer/common/executor/exec"
+import commonExecutor "github.com/luskaner/ageServer/common/executor/exec"
 
 type Exec struct {
 	Executable string

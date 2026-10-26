@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/wss"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/wss"
 )
 
 func TestWebsocketUptimeAndString(t *testing.T) {

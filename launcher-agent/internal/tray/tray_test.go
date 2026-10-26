@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luskaner/ageLANServer/launcher-agent/internal"
+	"github.com/luskaner/ageServer/launcher-agent/internal"
 )
 
 // panickingIcon is a trayIcon that panics on every operation. It simulates a

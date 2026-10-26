@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/battleServer"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var waitInitTimeout = 10 * time.Second

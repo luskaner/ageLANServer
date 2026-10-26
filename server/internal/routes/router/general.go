@@ -6,10 +6,10 @@ import (
 	"runtime"
 
 	"github.com/gorilla/handlers"
-	"github.com/luskaner/ageLANServer/server/internal"
-	cacertPem "github.com/luskaner/ageLANServer/server/internal/routes/cacert.pem"
-	"github.com/luskaner/ageLANServer/server/internal/routes/shutdown"
-	"github.com/luskaner/ageLANServer/server/internal/routes/test"
+	"github.com/luskaner/ageServer/server/internal"
+	cacertPem "github.com/luskaner/ageServer/server/internal/routes/cacert.pem"
+	"github.com/luskaner/ageServer/server/internal/routes/shutdown"
+	"github.com/luskaner/ageServer/server/internal/routes/test"
 )
 
 type General struct {

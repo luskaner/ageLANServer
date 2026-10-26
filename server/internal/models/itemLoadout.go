@@ -5,7 +5,7 @@ import (
 	"maps"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	i "github.com/luskaner/ageLANServer/server/internal"
+	i "github.com/luskaner/ageServer/server/internal"
 )
 
 type ItemLoadout interface {

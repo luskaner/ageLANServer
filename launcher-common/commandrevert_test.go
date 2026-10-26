@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common/executor/exec"
+	"github.com/luskaner/ageServer/common/executor/exec"
 )
 
 func storeCommand(t *testing.T, cmd []string) {

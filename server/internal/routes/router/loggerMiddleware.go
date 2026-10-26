@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication"
-	"github.com/luskaner/ageLANServer/common/logger/serverCommunication/request"
-	"github.com/luskaner/ageLANServer/server/internal/logger"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication"
+	"github.com/luskaner/ageServer/common/logger/serverCommunication/request"
+	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
 type ResponseWriterWrapper struct {

@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common/logger"
-	commonUi "github.com/luskaner/ageLANServer/launcher-common/ui"
-	commonUserData "github.com/luskaner/ageLANServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/common/logger"
+	commonUi "github.com/luskaner/ageServer/launcher-common/ui"
+	commonUserData "github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 type Data struct {

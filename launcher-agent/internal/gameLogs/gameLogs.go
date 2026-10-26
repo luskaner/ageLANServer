@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/luskaner/ageLANServer/common/game"
-	"github.com/luskaner/ageLANServer/launcher-common/cmdlog"
-	"github.com/luskaner/ageLANServer/launcher-common/userData"
+	"github.com/luskaner/ageServer/common/game"
+	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/launcher-common/userData"
 )
 
 const elementSepDotGlob = "."

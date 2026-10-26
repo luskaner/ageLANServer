@@ -3,9 +3,9 @@ package cmd
 import (
 	"testing"
 
-	"github.com/luskaner/ageLANServer/common"
-	"github.com/luskaner/ageLANServer/common/executor/exec"
-	"github.com/luskaner/ageLANServer/launcher-config-admin/internal"
+	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/executor/exec"
+	"github.com/luskaner/ageServer/launcher-config-admin/internal"
 )
 
 // Split out of cmd_test.go: these two assert that the certificate flush is

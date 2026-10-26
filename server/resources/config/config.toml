@@ -6,6 +6,13 @@ Log = false
 # Incompatible with Authentication not set to 'disabled'.
 GeneratePlatformUserId = false
 
+# Authentication method to use. Accepted values:
+# required: authenticate the user with the official servers as it was, effectively, the same.
+# cached: authenticate with the official server at least once every 30 days (tied to user platform user id).
+# adaptive: resolve to 'cached' if internet is detected or 'disabled' otherwise.
+# disabled: no authentication as it worked before.
+Authentication = 'disabled'
+
 # Whether the server re-signs the catalogues it serves (itemDefinitions.json, itemBundleItems.json,
 # levelRewardsTable.json and the arrays ending in a signature) with its own key, instead of serving
 # the signatures already captured inside those files.
@@ -30,13 +37,6 @@ Enabled = true
 # instead of querying https://api.ipify.org/. Set to 'auto' (default) to auto-detect,
 # which requires Internet.Enabled = true.
 IP = 'auto'
-
-# Authentication method to use. Accepted values:
-# required: authenticate the user with the official servers as it was, effectively, the same.
-# cached: authenticate with the official server at least once every 30 days (tied to user platform user id).
-# adaptive: resolve to 'cached' if internet is detected or 'disabled' otherwise.
-# disabled: no authentication as it worked before.
-Authentication = 'disabled'
 
 [Games]
 # Games that the server will accept.
@@ -86,7 +86,7 @@ MulticastGroup = '239.31.97.8'
 Enabled = true
 
 # Folder where the files are stored. If 'auto', uses the system temp folder:
-# <TEMP>\ageLANServer\custom-files\<game>\ (Unix: /tmp/ageLANServer/...).
+# <TEMP>\ageServer\custom-files\<game>\ (Unix: /tmp/ageServer/...).
 Folder = 'auto'
 
 # Maximum size of a single file. Long matches and custom content can make a

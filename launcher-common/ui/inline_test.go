@@ -45,7 +45,7 @@ func TestSpanClassification(t *testing.T) {
 		{"Config.Dialog defaults to auto", []spanKind{spanKey}},
 		{"Use --output ascii instead", []spanKind{spanFlag}},
 		{"Run the launcher", []spanKind{spanComponent}},
-		{"found C:\\Program Files\\AgeLANServer", []spanKind{spanPath, spanPath}},
+		{"found C:\\Program Files\\AgeServer", []spanKind{spanPath, spanPath}},
 		{"read config.toml", []spanKind{spanPath}},
 		{"mapping 192.168.1.50:27015 now", []spanKind{spanPath}},
 		{"see https://example.com/x for more", []spanKind{spanPath}},
