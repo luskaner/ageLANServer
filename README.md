@@ -1,7 +1,7 @@
-# Age LAN Server
+# Age Server
 <img width="1024" height="572" alt="ageServer logo" src="https://github.com/user-attachments/assets/3a467da6-048c-460e-b78f-1fdf46629f70" />
 
-Age Server (formerly *Age LAN Server*, originally *AoE 2 DE LAN Server*) is a web server (with its launcher) that allows you to play multiplayer
+Age Server (formerly *Age Server*, originally *AoE 2 DE LAN Server*) is a web server (with its launcher) that allows you to play multiplayer
 lobbies without having an
 internet
 connection **to the game server**  ensuring the game multiplayer functionality is still available even if the official

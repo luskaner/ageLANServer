@@ -13,7 +13,7 @@ func TestBannerFitsTheConsole(t *testing.T) {
 	for _, columns := range []int{20, 40, 80, 200} {
 		for _, tier := range []GlyphTier{TierASCII, TierUnicode, TierEmoji} {
 			got := render(t, at(colorprofile.TrueColor, tier, columns), func() {
-				Banner("AGE LAN SERVER", "v1.4.0")
+				Banner("AGE SERVER", "v1.4.0")
 			})
 			if strings.TrimSpace(got) == "" {
 				t.Fatalf("columns %d tier %d printed nothing", columns, tier)
@@ -30,7 +30,7 @@ func TestBannerFitsTheConsole(t *testing.T) {
 // TierASCII may only use characters a Windows 7 console has in code page 437.
 func TestBannerIsPlainASCIIInTierASCII(t *testing.T) {
 	got := render(t, at(colorprofile.NoTTY, TierASCII, 80), func() {
-		Banner("AGE LAN SERVER", "v1.4.0")
+		Banner("AGE SERVER", "v1.4.0")
 	})
 	if !AllASCII(got) {
 		t.Errorf("the ASCII banner left the ASCII range: %q", got)
@@ -43,7 +43,7 @@ func TestBannerIsPlainASCIIInTierASCII(t *testing.T) {
 // A banner in a log file, or in a pipe, is noise: the width is unknown there.
 func TestBannerIsNotPrintedWithoutAColumnCount(t *testing.T) {
 	if got := render(t, at(colorprofile.NoTTY, TierASCII, 0), func() {
-		Banner("AGE LAN SERVER", "v1.4.0")
+		Banner("AGE SERVER", "v1.4.0")
 	}); got != "" {
 		t.Fatalf("got %q, want nothing", got)
 	}
@@ -51,11 +51,11 @@ func TestBannerIsNotPrintedWithoutAColumnCount(t *testing.T) {
 
 func TestBannerWithoutVersion(t *testing.T) {
 	got := render(t, at(colorprofile.NoTTY, TierASCII, 80), func() {
-		Banner("AGE LAN SERVER", "")
+		Banner("AGE SERVER", "")
 	})
 	lines := strings.Split(strings.TrimSuffix(got, "\n"), "\n")
 	// A leading blank line and the headline.
-	if len(lines) != 2 || !strings.Contains(lines[1], "AGE LAN SERVER") {
+	if len(lines) != 2 || !strings.Contains(lines[1], "AGE SERVER") {
 		t.Fatalf("want a blank line and one headline line, got %d:\n%s", len(lines), got)
 	}
 	if strings.Contains(strings.TrimSuffix(got, "\n"), "v1.4.0") {
@@ -86,7 +86,7 @@ func TestBannerIsNeverABox(t *testing.T) {
 
 func TestBannerIsNotDoubleIndented(t *testing.T) {
 	got := StripANSI(render(t, at(colorprofile.NoTTY, TierASCII, 80), func() {
-		Banner("AGE LAN SERVER", "v1.4.0")
+		Banner("AGE SERVER", "v1.4.0")
 	}))
 	for _, line := range strings.Split(strings.TrimSuffix(got, "\n"), "\n") {
 		if line == "" {
