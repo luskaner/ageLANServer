@@ -183,7 +183,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	// Only asked for when this run will actually sign: with Sign off the
 	// captured signatures in resources/responses go out untouched and no key
 	// is read at all, so an install without one is complete rather than broken.
-	if internal.SignConfigRuntime.Enabled {
+	// It reads cfg.Sign.Enabled and not internal.SignConfigRuntime.Enabled: the
+	// runtime copy is assigned further down, so reading it here made the check
+	// see the previous run's value (false on a fresh process) and never demand
+	// the key it was configured to demand.
+	if cfg.Sign.Enabled {
 		if keyErr := signingKeyPairCheckFn(certificatePairFolder); keyErr != nil {
 			logger.Fail("Failed to load the signing key pair")
 			logger.Fault("%v", keyErr)

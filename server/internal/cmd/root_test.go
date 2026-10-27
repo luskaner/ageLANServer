@@ -34,6 +34,7 @@ func resetState(t *testing.T) {
 	oldSigningKeyPairCheck := signingKeyPairCheckFn
 	oldCertPairFolder := certificatePairFolderFn
 	oldSign := internal.SignConfigRuntime.Enabled
+	oldInitGame := initializeGameFn
 	t.Cleanup(func() {
 		fileLockNewFn = oldNewPid
 		fileLockLockFn = oldLock
@@ -51,10 +52,19 @@ func resetState(t *testing.T) {
 		signingKeyPairCheckFn = oldSigningKeyPairCheck
 		certificatePairFolderFn = oldCertPairFolder
 		internal.SignConfigRuntime.Enabled = oldSign
+		initializeGameFn = oldInitGame
 	})
 	commonLogger.FileLogger = nil
 	values = &server.Values{
 		LogRootValues: &commonCmd.LogRootValues{},
+		// The embedded battle server is off and the game is stubbed out: these
+		// tests cover startup up to the step each one names, and a run that got
+		// past that step has to return instead of binding :443 and waiting for
+		// the stop signal.
+		StartBsIfMissing: "false",
+	}
+	initializeGameFn = func(string, []internal.BattleServer) error {
+		return errors.New("game initialisation is not part of this test")
 	}
 	commonLoggerInitFn = func(io.Writer) {}
 	commonLoggerCloseFn = func() {}
