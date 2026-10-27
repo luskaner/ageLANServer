@@ -122,27 +122,6 @@ is in maintenance or is eventually shutdown.
 
 </details>
 
-## Unimplemented features
-
-<details>
-<summary>List of unimplemented features</summary>
-
-- ❌ **Matchmaking**: does not make sense having a likely ephimeral server with limited users, use the official server
-  for
-  that.
-- ❌ **Achievements**: only the official server should be able to. Meeting the requirements of an achievement during a
-  match might cause issues (see [Troubleshooting](https://github.com/luskaner/ageServer/wiki/Troubleshooting)
-  for more details).
-- ❌ **Leaderboards**: will appear empty.
-- ❌ **Clans**: all players are outside clans. Browsing clan will appear empty and creating one will always result in
-  error.
-- ❌ **Lobby ban player**: will appear like it works but doesn't.
-- ❌ **Report/Block player**: will appear like it works but doesn't.
-
-*Note: Most of these do not apply to Age of Empires: Definitive Edition.*
-
-</details>
-
 ## Minimum system requirements
 
 ### Server
@@ -428,11 +407,7 @@ shall prevail over any additional restrictions when it comes to redistribution, 
 3. **Personal Use Only:**  
    This downloadable package is intended for **strictly personal use**. Commercial use or any use beyond personal
    purposes is prohibited unless express written consent is obtained from the provider.
-4. **Usage Environment (LAN):**  
-   The software must be used within a LAN (Local Area Network) environment, as long as the official game servers remain
-   available and operational. If the official servers are undergoing maintenance, become temporarily unavailable, or are
-   permanently withdrawn, this requirement becames void.
-5. **Limitation of Provider's Liability:**  
+4. **Limitation of Provider's Liability:**  
    These additional terms apply solely to the original downloadable package provided by the provider. The provider
    assumes no responsibility for any misuse of the software or for intellectual property infringements resulting from
    its use contrary to these terms. Any liability arising from the improper use of the software lies exclusively with
