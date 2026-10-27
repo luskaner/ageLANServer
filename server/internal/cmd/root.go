@@ -314,15 +314,16 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 				MaxTotalSize: internal.BattleServerReplaysMaxTotalSize,
 				Expiry:       internal.BattleServerReplaysExpiry,
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			startErr := inst.Start(ctx, certificatePairFolder, replayOpts)
+			// Not a timeout: the embedded server owns a context of its own and
+			// keeps running until inst.Stop, because the context it is started
+			// with is its lifetime (see embedded.Instance.Start). A startup
+			// budget here would cancel that lifetime as soon as Start returned.
+			startErr := inst.Start(context.Background(), certificatePairFolder, replayOpts)
 			if startErr != nil {
-				cancel()
 				logger.Fail("Failed to start embedded battle server for %s: %s", gameId, startErr)
 				exitCode = internal.ErrEmbeddedBattleServer
 				return
 			}
-			cancel()
 			embeddedInstances = append(embeddedInstances, inst)
 			if !hasExplicitStartIfMissing {
 				logger.Info("Auto-started embedded battle server for %s (StartIfMissing=%s, no external battle server found)", gameId, startIfMissing)

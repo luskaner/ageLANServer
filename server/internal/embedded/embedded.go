@@ -41,6 +41,11 @@ type Instance struct {
 	stopOnce  sync.Once
 	started   bool
 	startedMu sync.Mutex
+	// cancel ends the context the battle server was started with. It is the
+	// server's shutdown signal and it is owned here, not by the caller: the
+	// server treats its context as its lifetime, so it must not be the
+	// caller's startup context, which is cancelled as soon as Start returns.
+	cancel context.CancelFunc
 }
 
 func (opts *Options) Validate() error {
@@ -79,11 +84,17 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
+// Start launches the battle server and registers it in the battle server list.
+// ctx is a startup context: it is checked before anything is bound, and it is
+// not the server's lifetime, which lasts until Stop.
 func (m *Instance) Start(ctx context.Context, certificatePairFolder string, replayOpts ReplayOptions) error {
 	m.startedMu.Lock()
 	defer m.startedMu.Unlock()
 	if m.started {
 		return errors.New("already started")
+	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("start embedded battle server: %w", err)
 	}
 
 	if err := m.Opts.Validate(); err != nil {
@@ -134,15 +145,28 @@ func (m *Instance) Start(ctx context.Context, certificatePairFolder string, repl
 		}
 	}
 
+	// The battle server treats its context as its lifetime: when it is done,
+	// the listeners close and the dispatch loop returns. The ctx received here
+	// is the caller's startup context, and the server module cancels it as soon
+	// as Start returns (cmd/root.go), which used to leave the instance running
+	// on paper but deaf: the port was closed and no LobbyConnect was ever
+	// answered. Derive a context of our own, kept until Stop.
+	lifecycleCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	m.cancel = cancel
+
 	srv, err := battleserver.New(*cfg)
 	if err != nil {
+		cancel()
+		m.cancel = nil
 		if replayStore != nil {
 			replayStore.Close()
 		}
 		return fmt.Errorf("create battle server: %w", err)
 	}
 
-	if err := srv.Start(ctx); err != nil {
+	if err := srv.Start(lifecycleCtx); err != nil {
+		cancel()
+		m.cancel = nil
 		if replayStore != nil {
 			replayStore.Close()
 		}
@@ -199,6 +223,13 @@ func (m *Instance) Stop() {
 			if err := m.server.Stop(); err != nil {
 				logger.Warn("Stop embedded battle server %s: %s", m.Opts.Region, err)
 			}
+		}
+		// The listeners are closed, so the context watchers they leave behind
+		// can be released now. cancelling before Stop would close the port
+		// behind Stop's back and lose its error reporting.
+		if m.cancel != nil {
+			m.cancel()
+			m.cancel = nil
 		}
 		if m.replay != nil {
 			m.replay.Close()
