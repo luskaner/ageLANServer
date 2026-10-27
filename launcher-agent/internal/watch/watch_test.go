@@ -158,6 +158,7 @@ func testValues() *agent.Values {
 type watchOverrides struct {
 	waitUntilAnyProcessExistFnVal func(context.Context, []string, time.Duration, time.Duration) map[string]*os.Process
 	waitForProcessesToExitFnVal   func(context.Context, []*os.Process) bool
+	processesByNamesFnVal         func([]string) map[string]*os.Process
 	serverKillDoFnVal             func(string) error
 	configRevertFnVal             func(string, string, bool, io.Writer, func(*exec.Options), func([]string, bool, io.Writer, func(*exec.Options)) *exec.Result) bool
 	runRevertCommandFnVal         func(io.Writer, func(*exec.Options)) error
@@ -176,6 +177,7 @@ type watchOverrides struct {
 func applyWatchOverrides(o watchOverrides) func() {
 	origProcessFn := waitUntilAnyProcessExistFn
 	origWaitFn := waitForProcessesToExitFn
+	origByNamesFn := commonProcessProcessesByNamesFn
 	origKillFn := serverKillDoFn
 	origConfigRevert := configRevertFn
 	origRevertCommand := runRevertCommandFn
@@ -189,6 +191,9 @@ func applyWatchOverrides(o watchOverrides) func() {
 	}
 	if o.waitForProcessesToExitFnVal != nil {
 		waitForProcessesToExitFn = o.waitForProcessesToExitFnVal
+	}
+	if o.processesByNamesFnVal != nil {
+		commonProcessProcessesByNamesFn = o.processesByNamesFnVal
 	}
 	if o.serverKillDoFnVal != nil {
 		serverKillDoFn = o.serverKillDoFnVal
@@ -215,6 +220,7 @@ func applyWatchOverrides(o watchOverrides) func() {
 	return func() {
 		waitUntilAnyProcessExistFn = origProcessFn
 		waitForProcessesToExitFn = origWaitFn
+		commonProcessProcessesByNamesFn = origByNamesFn
 		serverKillDoFn = origKillFn
 		configRevertFn = origConfigRevert
 		runRevertCommandFn = origRevertCommand
@@ -704,5 +710,63 @@ func TestWaitUntilAnyProcessExistGivesUpWhenCancelled(t *testing.T) {
 	}
 	if elapsed > 20*time.Second {
 		t.Errorf("a cancelled search took %v, so it ran out the timeout instead", elapsed)
+	}
+}
+
+// A Steam title starts through a bootstrap that spawns the game and exits, and
+// the game is a new PID under one of the watched names. The session is the game,
+// not the bootstrap: ending it at the first exit reverted the configuration with
+// the game still open, which is what the 2026-10-27 age3 session shows.
+func TestWatchKeepsWaitingWhenTheGameHandsOffToANewProcess(t *testing.T) {
+	bootstrap := &os.Process{Pid: 4242}
+	game := &os.Process{Pid: 5353}
+	var waited []int
+	scans := 0
+	reverted := 0
+
+	defer applyWatchOverrides(watchOverrides{
+		waitUntilAnyProcessExistFnVal: func(_ context.Context, _ []string, _ time.Duration, _ time.Duration) map[string]*os.Process {
+			return map[string]*os.Process{"game.exe": bootstrap}
+		},
+		waitForProcessesToExitFnVal: func(_ context.Context, processes []*os.Process) bool {
+			for _, p := range processes {
+				waited = append(waited, p.Pid)
+			}
+			return true
+		},
+		processesByNamesFnVal: func(_ []string) map[string]*os.Process {
+			scans++
+			if scans == 1 {
+				return map[string]*os.Process{"game.exe": game}
+			}
+			return nil
+		},
+		serverKillDoFnVal: func(string) error { return nil },
+		configRevertFnVal: func(string, string, bool, io.Writer, func(*exec.Options), func([]string, bool, io.Writer, func(*exec.Options)) *exec.Result) bool {
+			reverted++
+			return true
+		},
+		runRevertCommandFnVal: noopRevertCommand,
+		loggerBufferFnVal:     runningLoggerBuffer,
+		gameLogsCopyFnVal:     func(string, string, string) {},
+	})()
+
+	values := testValues()
+	values.ServerExecutable = ""
+	values.ProcessNames = []string{"game.exe"}
+	exitCode := NewExitCode()
+	var once sync.Once
+
+	Watch(context.Background(), values, exitCode, &once)
+
+	want := []int{bootstrap.Pid, game.Pid}
+	if len(waited) != len(want) || waited[0] != want[0] || waited[1] != want[1] {
+		t.Fatalf("waited for PIDs %v, want %v: the session ended with the game still running", waited, want)
+	}
+	if exitCode.Get() != common.ErrSuccess {
+		t.Errorf("exit code = %d, want success", exitCode.Get())
+	}
+	if reverted != 1 {
+		t.Errorf("the configuration was reverted %d times, want exactly 1", reverted)
 	}
 }

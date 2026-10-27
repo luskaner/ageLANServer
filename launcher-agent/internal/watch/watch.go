@@ -260,17 +260,41 @@ func Watch(ctx context.Context, values *agent.Values, exitCode *ExitCode, cleanu
 	current := session(values.GameId, names, procPids)
 	internal.SetActivity(activityWaitingForGameEnd, current)
 	cmdlog.Step("Waiting for PIDs %v to end", procPids)
-	if !waitForProcessesToExitFn(ctx, processesList) {
-		if stopped(ctx) {
-			// Not a failure: the user asked for this, and the exit code that
-			// says so is recorded by the caller, which is the one place that can
-			// tell a stop apart from a teardown that reported an error.
-			cmdlog.Step("Stopped waiting for the game.")
+	for {
+		if !waitForProcessesToExitFn(ctx, processesList) {
+			if stopped(ctx) {
+				// Not a failure: the user asked for this, and the exit code that
+				// says so is recorded by the caller, which is the one place that can
+				// tell a stop apart from a teardown that reported an error.
+				cmdlog.Step("Stopped waiting for the game.")
+				return
+			}
+			cmdlog.Fail("Failed to wait.")
+			exitCode.SetIfSuccess(internal.ErrFailedWaitForProcess)
 			return
 		}
-		cmdlog.Fail("Failed to wait.")
-		exitCode.SetIfSuccess(internal.ErrFailedWaitForProcess)
-		return
+		// The processes found at the start are not the session. A Steam title
+		// starts through a bootstrap that spawns the game and exits, and the game
+		// is a new PID that carries one of the same names: ending the session at
+		// the first exit reverted the configuration with the game still open,
+		// which is exactly what the 2026-10-27 age3 session shows. The session
+		// ends when no process with a watched name is left, not when the ones
+		// seen at the start are gone.
+		remaining := commonProcessProcessesByNamesFn(values.ProcessNames)
+		if len(remaining) == 0 {
+			break
+		}
+		names = sortedProcessNames(remaining)
+		procPids = nil
+		processesList = nil
+		for _, name := range names {
+			p := remaining[name]
+			procPids = append(procPids, p.Pid)
+			processesList = append(processesList, p)
+		}
+		current = session(values.GameId, names, procPids)
+		internal.SetActivity(activityWaitingForGameEnd, current)
+		cmdlog.Step("The game handed off to new processes, waiting for PIDs %v to end", procPids)
 	}
 	if values.LogRoot != "" && values.BaseDataPath != "" {
 		internal.SetActivity(activityCopyingLogs, current)
