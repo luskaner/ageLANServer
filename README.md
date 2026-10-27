@@ -10,7 +10,7 @@ is in maintenance or is eventually shutdown.
 
 > [!IMPORTANT]
 > You will still need a custom launcher to bypass the online-only restriction that is imposed by the game to being
-> connected to the internet and Steam or Xbox Live, depending on the platform and version, to fully play offline. My
+> connected to the internet and Xbox Live or Steam, depending on the platform and version, to fully play offline. My
 > other [project](https://github.com/luskaner/ageServerLauncherCompanion) provides the files and information to
 > download a Steam Emulator and play 100% offline.
 
@@ -30,7 +30,7 @@ is in maintenance or is eventually shutdown.
 - ↕️ Restore game.
 - 📦 Data mods.
 - 🗣️ Lobby chatting.
-- 🎮 Crossplay Steam & Xbox.
+- 🎮 Crossplay Xbox & Steam.
 
 > [!TIP]
 > See more details
@@ -165,22 +165,21 @@ it will require admin rights elevation.**
 ### Client
 
 - Age of Empires: Definitive Edition
-  on [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on a compatible
-  Windows version*). Recommended version *100.2.31845.0* or later.
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on a compatible
+  Windows version*) or [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition).
+  Recommended version *100.2.31845.0* or later.
 - Age of Empires II: Definitive Edition
-  on [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
-  compatible Windows version*). Minimum a mid 2024 version or later.
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
+  compatible Windows version*) or [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition).
+  Minimum a mid 2024 version or later.
 - Age of Empires III: Definitive Edition
-  on [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
-  Windows version*). Recommended a late 2023 version or later.
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
+  Windows version*) or [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition).
+  Recommended a late 2023 version or later.
 - Age of Empires IV: Anniversary Edition
-  on [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition)
-  or [Xbox](https://www.xbox.com/games/store/age-of-empires-iv-anniversary-edition/9n94ncgm1q2n) (*only on a compatible
-  Windows version*). Recommended a 2025
-  version or later.
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iv-anniversary-edition/9n94ncgm1q2n) (*only on a compatible
+  Windows version*) or [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition).
+  Recommended a 2025 version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.
 
@@ -322,7 +321,7 @@ Afterward, it reverses any changes to allow the official launcher to connect to 
 3. *Windows Optional*: *You may need to add the launcher/server binaries to the exception list of your Antivirus*.
 4. *Windows Optional*: Unblock the `.exe` files as
    explained [here](https://www.tenforums.com/tutorials/5357-unblock-file-windows-10-a.html)
-5. If not using the Steam or Xbox launcher, **edit the `launcher/resources/config.<game_title>.toml` file** with a text
+5. If not using the Xbox or Steam launcher, **edit the `launcher/resources/config.<game_title>.toml` file** with a text
    editor (like Notepad)
    and modify the `Client.Executable` section to point to the game launcher path. In this case, you also need to modify
    `Client.Path` to point to the game's directory.

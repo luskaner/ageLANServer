@@ -15,6 +15,8 @@ system and reverting that configuration upon exit.
     - Intel (recommended).
     - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
 
+The Xbox/Microsoft Store game versions are supported only on compatible Windows versions.
+
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**
 
