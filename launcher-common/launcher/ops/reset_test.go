@@ -57,6 +57,8 @@ func TestResetKeepsTheReporter(t *testing.T) {
 // Teardown decides whether it has anything to do from what the run recorded, so a
 // run that changed nothing must not announce work it will not do.
 func TestResetMakesTeardownQuiet(t *testing.T) {
+	tempStores(t)
+	noAgent(t)
 	c := &Config{Report: launcher.Discard{}}
 	c.serverExe = "server.exe"
 	if !c.HasTeardownWork() {
@@ -73,6 +75,7 @@ func TestResetMakesTeardownQuiet(t *testing.T) {
 // needed; without the mark, a run that failed before the agent existed skipped it
 // silently, which is the case the option documents itself for.
 func TestRunningASetupCommandMarksThatARevertMayBeNeeded(t *testing.T) {
+	tempStores(t)
 	c := &Config{Report: launcher.Discard{}}
 	if c.RequiresRunningRevertCommand() {
 		t.Fatal("nothing has run, so nothing needs reverting")

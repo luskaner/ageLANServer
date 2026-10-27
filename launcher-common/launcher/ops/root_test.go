@@ -25,6 +25,16 @@ func tempStores(t *testing.T) {
 	})
 }
 
+// noAgent makes the agent probe answer "not running". The default probe reads
+// the machine's process table, so an agent left running by a launcher answered
+// for it and a Config with no state of its own still reported teardown work.
+func noAgent(t *testing.T) {
+	t.Helper()
+	orig := processFn
+	processFn = func(string) (string, *os.Process, error) { return "", nil, errors.New("not running") }
+	t.Cleanup(func() { processFn = orig })
+}
+
 func TestConfigSetGameId(t *testing.T) {
 	c := &Config{}
 	c.SetGameId("age2")
