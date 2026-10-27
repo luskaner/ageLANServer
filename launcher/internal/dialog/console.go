@@ -85,5 +85,5 @@ func printCandidates(servers []ServerCandidate) {
 		}).
 		Headers(headers...).
 		Rows(rows...)
-	fmt.Fprint(ui.Writer(), t.Render()+"\n")
+	_ = fmt.Fprint(ui.Writer(), t.Render()+"\n")
 }

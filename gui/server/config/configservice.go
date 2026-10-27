@@ -682,7 +682,7 @@ func writeConfigFile(path string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 
 	return replaceConfigFile(path, temporaryPath)
 }
@@ -702,7 +702,7 @@ func writeNewConfigFile(path string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := os.Rename(temporaryPath, path); err != nil {
 		return fmt.Errorf("create configuration file: %w", err)
 	}
@@ -723,12 +723,12 @@ func createTemporaryConfig(directory string, content []byte, permissions os.File
 		return "", fmt.Errorf("set temporary configuration permissions: %w", err)
 	}
 	if _, err := temporary.Write(content); err != nil {
-		temporary.Close()
-		os.Remove(temporaryPath)
+		_ = temporary.Close()
+		_ = os.Remove(temporaryPath)
 		return "", fmt.Errorf("write temporary configuration file: %w", err)
 	}
 	if err := temporary.Close(); err != nil {
-		os.Remove(temporaryPath)
+		_ = os.Remove(temporaryPath)
 		return "", fmt.Errorf("close temporary configuration file: %w", err)
 	}
 	return temporaryPath, nil
@@ -742,13 +742,13 @@ func replaceConfigFile(path string, temporaryPath string) error {
 	}
 	backupPath := backup.Name()
 	if err := backup.Close(); err != nil {
-		os.Remove(backupPath)
+		_ = os.Remove(backupPath)
 		return fmt.Errorf("close configuration backup: %w", err)
 	}
 	if err := os.Remove(backupPath); err != nil {
 		return fmt.Errorf("prepare configuration backup: %w", err)
 	}
-	defer os.Remove(backupPath)
+	defer func() { _ = os.Remove(backupPath) }()
 
 	if err := os.Rename(path, backupPath); err != nil {
 		return fmt.Errorf("create configuration backup: %w", err)

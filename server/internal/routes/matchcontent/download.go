@@ -27,7 +27,7 @@ func Download(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	_ = rc.Close()
+	defer func() { _ = rc.Close() }()
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"

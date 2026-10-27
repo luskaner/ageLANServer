@@ -47,7 +47,7 @@ func Initialize() {
 // dual is the shape of every renderer below.
 func dual(plain string, rendered string) {
 	commonLogger.PrefixPrintln("main", plain)
-	fmt.Fprintln(os.Stdout, rendered)
+	_, _ = fmt.Fprintln(os.Stdout, rendered)
 }
 
 // text applies fmt only when arguments were supplied, so a message with a stray
@@ -84,33 +84,33 @@ func Fault(format string, a ...any) { dual(text(format, a...), faultStyle(format
 // of the levels above: data, a stack trace, a file's contents.
 func Println(a ...any) {
 	commonLogger.PrefixPrintln("main", a...)
-	fmt.Fprintln(os.Stdout, fmt.Sprint(a...))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprint(a...))
 }
 
 // Printf is Println for a format string.
 func Printf(format string, a ...any) {
 	commonLogger.PrefixPrintf("main", format, a...)
-	fmt.Fprintf(os.Stdout, format+"\n", a...)
+	_, _ = fmt.Fprintf(os.Stdout, format+"\n", a...)
 }
 
 // Banner prints the program header.
 func Banner(program string, version string) {
 	line := fmt.Sprintf("=== %s %s ===", program, version)
-	fmt.Fprintln(os.Stdout, line)
+	_, _ = fmt.Fprintln(os.Stdout, line)
 	commonLogger.PrefixPrintln("main", line)
 }
 
 // Section starts a phase.
 func Section(title string) {
 	line := fmt.Sprintf("--- %s ---", title)
-	fmt.Fprintln(os.Stdout, line)
+	_, _ = fmt.Fprintln(os.Stdout, line)
 	commonLogger.PrefixPrintln("main", line)
 }
 
 // KV prints a key and its value as one sentence.
 func KV(indent int, key string, value string) {
 	line := fmt.Sprintf("%s%s: %s", indentString(indent), key, value)
-	fmt.Fprintln(os.Stdout, line)
+	_, _ = fmt.Fprintln(os.Stdout, line)
 	commonLogger.PrefixPrintln("main", line)
 }
 
@@ -118,7 +118,7 @@ func KV(indent int, key string, value string) {
 // plain line where it cannot.
 func Spinner(label string) *SpinnerHandle {
 	h := &SpinnerHandle{label: label, active: true}
-	fmt.Fprintf(os.Stdout, "  %s... ", label)
+	_, _ = fmt.Fprintf(os.Stdout, "  %s... ", label)
 	return h
 }
 
@@ -134,7 +134,7 @@ func (h *SpinnerHandle) Done(format string, a ...any) {
 	}
 	h.active = false
 	h.doneMsg = fmt.Sprintf(format, a...)
-	fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, okStyle(h.doneMsg))
+	_, _ = fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, okStyle(h.doneMsg))
 }
 
 func (h *SpinnerHandle) Fail(format string, a ...any) {
@@ -143,7 +143,7 @@ func (h *SpinnerHandle) Fail(format string, a ...any) {
 	}
 	h.active = false
 	h.doneMsg = fmt.Sprintf(format, a...)
-	fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, failStyle(h.doneMsg))
+	_, _ = fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, failStyle(h.doneMsg))
 }
 
 func (h *SpinnerHandle) Info(format string, a ...any) {
@@ -152,7 +152,7 @@ func (h *SpinnerHandle) Info(format string, a ...any) {
 	}
 	h.active = false
 	h.doneMsg = fmt.Sprintf(format, a...)
-	fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, infoStyle(h.doneMsg))
+	_, _ = fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, infoStyle(h.doneMsg))
 }
 
 func (h *SpinnerHandle) Stop() {
@@ -160,7 +160,7 @@ func (h *SpinnerHandle) Stop() {
 		return
 	}
 	h.active = false
-	fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, warnStyle("stopped"))
+	_, _ = fmt.Fprintf(os.Stdout, "\r  %s... %s\n", h.label, warnStyle("stopped"))
 }
 
 // ProgressHandle is a simple progress indicator.
@@ -174,19 +174,19 @@ func BeginProgress() *ProgressHandle {
 
 func (p *ProgressHandle) Set(percent int) {
 	// Simple progress - just print percentage
-	fmt.Fprintf(os.Stdout, "\rProgress: %d%%", percent)
+	_, _ = fmt.Fprintf(os.Stdout, "\rProgress: %d%%", percent)
 }
 
 func (p *ProgressHandle) Done() {
-	fmt.Fprintf(os.Stdout, "\rProgress: 100%% - Done\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\rProgress: 100%% - Done\n")
 }
 
 func (p *ProgressHandle) Fail() {
-	fmt.Fprintf(os.Stdout, "\rProgress: Failed\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\rProgress: Failed\n")
 }
 
 func ClearProgress() {
-	fmt.Fprint(os.Stdout, "\r                                    \r")
+	_, _ = fmt.Fprint(os.Stdout, "\r                                    \r")
 }
 
 // --- Style helpers ---

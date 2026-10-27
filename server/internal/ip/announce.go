@@ -42,6 +42,11 @@ func QueryConnections(ipAddr netip.Addr, multicastGroups mapset.Set[netip.Addr],
 		var pckConn *ipv4.PacketConn
 		if !multicastGroups.IsEmpty() {
 			pckConn = ipv4.NewPacketConn(conn)
+			defer func() {
+				if pckConn != nil {
+					_ = pckConn.Close()
+				}
+			}()
 			for multicastGroup := range multicastGroups.Iter() {
 				multicastAddr := &net.UDPAddr{
 					IP:   multicastGroup.AsSlice(),
