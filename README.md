@@ -130,7 +130,7 @@ is in maintenance or is eventually shutdown.
 
 - **Windows**: 7 or equivalent (10 or higher recommended).
 - **Linux**: kernel 3.2 (5.10 or higher recommended, see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Monterey v12 (Sonoma v14 or higher recommended).
+- **macOS**: Ventura v13 (Sequoia v15 or higher recommended).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system and configuration.
@@ -154,7 +154,7 @@ Note: For the full list see [minimum requirements for Go](https://go.dev/wiki/Mi
 - Linux with kernel 3.2 (5.10 or higher recommended):
     - x86-64 (recommended).
     - ARM64.
-- macOS Monterey v12 (Sonoma v14 or higher recommended):
+- macOS Ventura v13 (Sequoia v15 or higher recommended):
     - Intel (recommended).
     - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
 
@@ -165,20 +165,20 @@ it will require admin rights elevation.**
 ### Client
 
 - Age of Empires: Definitive Edition
-  on [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) (*only on a compatible
-  Windows version*) or [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition).
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-definitive-edition/9njwtjsvgvlj) or
+  [Steam](https://store.steampowered.com/app/1017900/Age_of_Empires_Definitive_Edition).
   Recommended version *100.2.31845.0* or later.
 - Age of Empires II: Definitive Edition
-  on [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) (*only on a
-  compatible Windows version*) or [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition).
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-ii-definitive-edition/9N42SSSX2MTG/0010) or
+  [Steam](https://store.steampowered.com/app/813780/Age_of_Empires_II_Definitive_Edition).
   Minimum a mid 2024 version or later.
 - Age of Empires III: Definitive Edition
-  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) (*only on a compatible
-  Windows version*) or [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition).
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iii-definitive-edition/9n1hf804qxn4) or
+  [Steam](https://store.steampowered.com/app/933110/Age_of_Empires_III_Definitive_Edition).
   Recommended a late 2023 version or later.
 - Age of Empires IV: Anniversary Edition
-  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iv-anniversary-edition/9n94ncgm1q2n) (*only on a compatible
-  Windows version*) or [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition).
+  on [Xbox](https://www.xbox.com/games/store/age-of-empires-iv-anniversary-edition/9n94ncgm1q2n) or
+  [Steam](https://store.steampowered.com/app/1466860/Age_of_Empires_IV_Anniversary_Edition).
   Recommended a 2025 version or later.
 - Age of Mythology: Retold
   on [Steam](https://store.steampowered.com/app/1934680/Age_of_Mythology_Retold). Recommended a 2025 version or later.

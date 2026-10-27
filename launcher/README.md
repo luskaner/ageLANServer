@@ -11,11 +11,9 @@ system and reverting that configuration upon exit.
 - Linux with kernel 3.2 (5.10 or higher recommended):
     - x86-64 (recommended).
     - ARM64.
-- macOS Monterey v12 (Sonoma v14 or higher recommended):
+- macOS Ventura v13 (Sequoia v15 or higher recommended):
     - Intel (recommended).
     - Apple Silicon. Required for AoE II: DE native Steam version in Launcher.
-
-The Xbox/Microsoft Store game versions are supported only on compatible Windows versions.
 
 **Note: If you allow it to handle the hosts file, local certificate, or an elevated custom game launcher, it will
 require admin rights elevation.**

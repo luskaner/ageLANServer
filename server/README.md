@@ -9,7 +9,7 @@ API requests. The server reimplements the minimum required API surface to allow 
 
 - **Windows**: 7 or equivalent (10 or higher recommended).
 - **Linux**: kernel 3.2 (5.10 or higher recommended, see [here](https://go.dev/wiki/Linux) for more details).
-- **macOS**: Monterey v12 (Sonoma v14 or higher recommended).
+- **macOS**: Ventura v13 (Sequoia v15 or higher recommended).
 
 Admin rights or firewall permission to listen on port 443 (https) will likely be required depending on the operating
 system.
