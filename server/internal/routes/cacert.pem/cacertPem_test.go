@@ -28,6 +28,8 @@ func (m *mockGame) Advertisements() models.Advertisements                 { retu
 func (m *mockGame) ChatChannels() models.ChatChannels                     { return nil }
 func (m *mockGame) Sessions() models.Sessions                             { return nil }
 func (m *mockGame) CustomFiles() models.CustomFiles                       { return nil }
+func (m *mockGame) Matchmaking() models.Matchmaking                       { return nil }
+func (m *mockGame) MatchHistory() models.MatchHistory                     { return nil }
 
 func TestCacertPemNotFoundWhenNoFolder(t *testing.T) {
 	// This test will call os.Executable which returns the test binary path, and CertificatePairFolder will create a folder
