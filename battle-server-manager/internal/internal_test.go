@@ -86,9 +86,9 @@ func TestErrorConstantsAreUnique(t *testing.T) {
 
 func TestConfigurationFields(t *testing.T) {
 	c := Configuration{
-		Region: "eu",
-		Name:   "TestServer",
-		Host:   "192.168.1.1",
+		Region:    "eu",
+		Name:      "TestServer",
+		Host:      "192.168.1.1",
 		CertsPath: "/certs",
 		Executable: Executable{
 			Path:      "/path/to/bs",

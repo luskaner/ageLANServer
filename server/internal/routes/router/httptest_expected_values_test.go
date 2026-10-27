@@ -207,7 +207,7 @@ func TestRouteExpectedValues_Httptest(t *testing.T) {
 
 			// cloud / msstore
 			{"getTempCredentials", game.AoE2, "GET", "/game/cloud/getTempCredentials?key=/cloudfiles/test", "", 2, nil}, // sin sig pero handler devuelve 2,t,"",key
-			{"getStoreTokens", game.AoE2, "GET", "/game/msstore/getStoreTokens", "", 0, nil}, // anonymous
+			{"getStoreTokens", game.AoE2, "GET", "/game/msstore/getStoreTokens", "", 0, nil},                            // anonymous
 		}
 
 		for _, tc := range cases {

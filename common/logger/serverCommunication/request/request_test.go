@@ -16,10 +16,10 @@ func TestNewWrite(t *testing.T) {
 			Body:    serverCommunication.Body{Body: []byte("hello")},
 			Headers: http.Header{"Content-Type": {"application/json"}},
 		},
-		Uptime:  serverCommunication.Uptime{Uptime: 5 * time.Second},
-		Sender:  serverCommunication.Sender{Sender: "127.0.0.1:1234"},
-		Url:     u,
-		Method:  "POST",
+		Uptime: serverCommunication.Uptime{Uptime: 5 * time.Second},
+		Sender: serverCommunication.Sender{Sender: "127.0.0.1:1234"},
+		Url:    u,
+		Method: "POST",
 	}
 	out := Out{
 		Base: Base{

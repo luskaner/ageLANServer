@@ -516,10 +516,10 @@ func TestComplex_InputValidation_Httptest(t *testing.T) {
 	_, sid := createUserAndSessionForGame(t, g, 76561198000000090, "inputUser")
 
 	cases := []struct {
-		name      string
-		method    string
-		path      string
-		validBody string
+		name        string
+		method      string
+		path        string
+		validBody   string
 		invalidBody string
 	}{
 		{"setAvatarMetadata", "POST", "/game/account/setAvatarMetadata", "metadata=valid", "metadata="},

@@ -1136,7 +1136,7 @@ func TestFlushRetriesDirtyKeysAndCleansOnSuccess(t *testing.T) {
 // TestFlushReturnsErrorWhenSomeKeysStillFail checks that Flush reports an
 // error if at least one key still cannot be written.
 func TestFlushReturnsErrorWhenSomeKeysStillFail(t *testing.T) {
-store := &failingUserStore{
+	store := &failingUserStore{
 		values: map[string]StoredValue{
 			"auth":  {Data: json.RawMessage(`{"name":"old"}`), Version: 0},
 			"items": {Data: json.RawMessage(`[]`), Version: 0},
@@ -1168,7 +1168,7 @@ store := &failingUserStore{
 
 // TestIsDirtyAndDirtyKeys reports the dirty state correctly.
 func TestIsDirtyAndDirtyKeys(t *testing.T) {
-store := &failingUserStore{
+	store := &failingUserStore{
 		values: map[string]StoredValue{
 			"auth":  {Data: json.RawMessage(`{"name":"x"}`), Version: 0},
 			"items": {Data: json.RawMessage(`[]`), Version: 0},

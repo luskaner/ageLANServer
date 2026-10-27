@@ -249,17 +249,17 @@ type emptySliceFlag struct {
 	val string
 }
 
-func (e *emptySliceFlag) String() string { return e.val }
+func (e *emptySliceFlag) String() string     { return e.val }
 func (e *emptySliceFlag) Set(s string) error { e.val = s; return nil }
-func (e *emptySliceFlag) Type() string { return "stringSlice" }
+func (e *emptySliceFlag) Type() string       { return "stringSlice" }
 
 // customSliceType wraps a string slice with a custom type name ending in "Slice"
 // to exercise the default branch in FlagSetToArgs.
 type customSliceType []string
 
-func (c *customSliceType) String() string   { return strings.Join(*c, ",") }
+func (c *customSliceType) String() string     { return strings.Join(*c, ",") }
 func (c *customSliceType) Set(s string) error { *c = strings.Split(s, ","); return nil }
-func (c *customSliceType) Type() string      { return "customSlice" }
+func (c *customSliceType) Type() string       { return "customSlice" }
 
 func TestFlagSetToArgsCustomSliceType(t *testing.T) {
 	fs := pflag.NewFlagSet("t", pflag.ContinueOnError)

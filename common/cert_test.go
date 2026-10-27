@@ -247,7 +247,7 @@ func TestCertificatePairFolder(t *testing.T) {
 func TestCertificatePairFolder_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	exe := filepath.Join(dir, "server.exe")
-	CertificatePairFolder(exe) // create
+	CertificatePairFolder(exe)           // create
 	folder := CertificatePairFolder(exe) // should not fail
 	if folder == "" {
 		t.Error("CertificatePairFolder should succeed when directory already exists")

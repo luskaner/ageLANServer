@@ -157,25 +157,44 @@ func TestLanServerIPIntegrationFailures(t *testing.T) {
 	}{
 		{"status not 200", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNotFound) }, gameTitle, uuid.Nil()},
 		{"missing version header", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.IdHeader, serverId.String()); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
+			w.Header().Set(common.IdHeader, serverId.String())
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
 		}, gameTitle, uuid.Nil()},
 		{"missing id header", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "2"); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
+			w.Header().Set(common.VersionHeader, "2")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
 		}, gameTitle, uuid.Nil()},
 		{"version too high", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "99"); w.Header().Set(common.IdHeader, serverId.String()); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
+			w.Header().Set(common.VersionHeader, "99")
+			w.Header().Set(common.IdHeader, serverId.String())
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
 		}, gameTitle, uuid.Nil()},
 		{"id mismatch", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "2"); w.Header().Set(common.IdHeader, serverId.String()); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
+			w.Header().Set(common.VersionHeader, "2")
+			w.Header().Set(common.IdHeader, serverId.String())
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
 		}, gameTitle, uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 		{"gameTitle mismatch", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "2"); w.Header().Set(common.IdHeader, serverId.String()); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: "wrong"})
+			w.Header().Set(common.VersionHeader, "2")
+			w.Header().Set(common.IdHeader, serverId.String())
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: "wrong"})
 		}, gameTitle, uuid.Nil()},
 		{"invalid json", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "2"); w.Header().Set(common.IdHeader, serverId.String()); w.WriteHeader(http.StatusOK); _, _ = w.Write([]byte("not json"))
+			w.Header().Set(common.VersionHeader, "2")
+			w.Header().Set(common.IdHeader, serverId.String())
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("not json"))
 		}, gameTitle, uuid.Nil()},
 		{"invalid id header", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set(common.VersionHeader, "2"); w.Header().Set(common.IdHeader, "not-a-uuid"); w.WriteHeader(http.StatusOK); _ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
+			w.Header().Set(common.VersionHeader, "2")
+			w.Header().Set(common.IdHeader, "not-a-uuid")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(AnnounceMessageDataSupportedLatest{GameTitle: gameTitle})
 		}, gameTitle, uuid.Nil()},
 	}
 	for _, tc := range cases {
@@ -253,11 +272,15 @@ func (m *mockResolverForServer) HostToIPs(host string) []net.IP {
 	}
 	return out
 }
-func (m *mockResolverForServer) IPToHosts(ip string) []string { return nil }
+func (m *mockResolverForServer) IPToHosts(ip string) []string               { return nil }
 func (m *mockResolverForServer) DirectHostToIP(host string) (string, error) { return "", nil }
-func (m *mockResolverForServer) DialTCP(network, address string, timeout time.Duration) (net.Conn, error) { return nil, nil }
+func (m *mockResolverForServer) DialTCP(network, address string, timeout time.Duration) (net.Conn, error) {
+	return nil, nil
+}
 func (m *mockResolverForServer) NetInterfaces() ([]net.Interface, error) { return nil, nil }
-func (m *mockResolverForServer) RunningNetworkInterfaces() (map[*net.Interface][]*net.IPNet, error) { return nil, nil }
+func (m *mockResolverForServer) RunningNetworkInterfaces() (map[*net.Interface][]*net.IPNet, error) {
+	return nil, nil
+}
 
 func TestCheckConnectionFromServerIntegration(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
@@ -324,7 +347,9 @@ func TestLanServerHostFailure(t *testing.T) {
 
 type errRoundTripper struct{}
 
-func (errRoundTripper) RoundTrip(*http.Request) (*http.Response, error) { return nil, errors.New("mock transport error") }
+func (errRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, errors.New("mock transport error")
+}
 
 func TestLanServerIPHeadDoError(t *testing.T) {
 	origBuildURL := buildURLFn

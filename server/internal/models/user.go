@@ -618,15 +618,15 @@ func EncodeStoredProfileInfo(p *StoredProfile, clientLibVersion uint16) i.A {
 	}
 	profileInfo = append(
 		profileInfo,
-		"",              // clanName: empty = no clan
-		p.StatGroupID,   // personalStatGroupID
-		p.XP,            // xp
-		p.Level,         // level
-		p.Region,        // leaderboardRegionID
-		nil,             // banInfo: not banned
-		platformUserID,  // platformUserID
-		accountType,     // 3 = Steam, 9 = Xbox
-		i.A{},           // linkedPlatformAccounts: empty = none
+		"",             // clanName: empty = no clan
+		p.StatGroupID,  // personalStatGroupID
+		p.XP,           // xp
+		p.Level,        // level
+		p.Region,       // leaderboardRegionID
+		nil,            // banInfo: not banned
+		platformUserID, // platformUserID
+		accountType,    // 3 = Steam, 9 = Xbox
+		i.A{},          // linkedPlatformAccounts: empty = none
 	)
 	return profileInfo
 }

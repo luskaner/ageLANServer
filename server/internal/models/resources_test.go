@@ -142,10 +142,12 @@ func responsesFor(t *testing.T, gameId string, files map[string]string) {
 // minus the parts initializeResponses does not touch.
 func catalogResources() *MainResources {
 	return &MainResources{
-		keyedFilenames:  mapset.NewSet[string]("itemDefinitions.json"),
-		keyedFiles:      map[string][]byte{},
-		nameToSignature: map[string]string{},
-		arrayFiles:      map[string]i.A{},
+		keyedFilenames:          mapset.NewSet[string]("itemDefinitions.json"),
+		keyedFiles:              map[string][]byte{},
+		keyedFilesCaptured:      map[string][]byte{},
+		nameToSignature:         map[string]string{},
+		nameToSignatureCaptured: map[string]string{},
+		arrayFiles:              map[string]i.A{},
 	}
 }
 

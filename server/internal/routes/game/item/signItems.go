@@ -2,6 +2,7 @@ package item
 
 import (
 	"net/http"
+	"strconv"
 
 	i "github.com/luskaner/ageServer/server/internal"
 	"github.com/luskaner/ageServer/server/internal/models"
@@ -21,8 +22,18 @@ type signItemsRequest struct {
 //
 // A list that does not parse is refused the same way: there is no item set to
 // speak of, so there is nothing to sign.
+//
+// If the requesting user's platform user ID is in SignConfigRuntime.PlatformUserIdExceptions,
+// the signing behavior is inverted: users in the exception list get the opposite
+// of the global Enabled setting.
 func SignItems(w http.ResponseWriter, r *http.Request) {
-	if !i.SignConfigRuntime.Enabled {
+	// Check if this user is in the exception list (reverse behavior)
+	invertSigning := isPlatformUserIdException(r)
+
+	// Global Enabled XOR invertSigning = effective signing for this user
+	effectiveEnabled := i.SignConfigRuntime.Enabled != invertSigning
+
+	if !effectiveEnabled {
 		i.JSON(&w, i.A{2, ""})
 		return
 	}
@@ -37,6 +48,26 @@ func SignItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.JSON(&w, i.A{0, signature})
+}
+
+// isPlatformUserIdException checks if the requesting user's platform user ID
+// is in the SignConfigRuntime.PlatformUserIdExceptions list.
+func isPlatformUserIdException(req *http.Request) bool {
+	userVal := req.Context().Value("user")
+	if userVal == nil {
+		return false
+	}
+	user, ok := userVal.(models.User)
+	if !ok {
+		return false
+	}
+	platformUserId := user.GetPlatformUserID()
+	for _, exception := range i.SignConfigRuntime.PlatformUserIdExceptions {
+		if exception == strconv.FormatUint(platformUserId, 10) {
+			return true
+		}
+	}
+	return false
 }
 
 // requestedItemIds returns the itemIDs value verbatim, whether it arrived in the

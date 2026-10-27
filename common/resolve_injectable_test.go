@@ -9,11 +9,11 @@ import (
 
 // mockResolver is a test double that implements Resolver without any I/O.
 type mockResolver struct {
-	hostToIPs   func(host string) []net.IP
-	ipToHosts   func(ip string) []string
-	directHost  func(host string) (string, error)
-	dialTCP     func(network, address string, timeout time.Duration) (net.Conn, error)
-	netIfaces   func() ([]net.Interface, error)
+	hostToIPs     func(host string) []net.IP
+	ipToHosts     func(ip string) []string
+	directHost    func(host string) (string, error)
+	dialTCP       func(network, address string, timeout time.Duration) (net.Conn, error)
+	netIfaces     func() ([]net.Interface, error)
 	runningIfaces func() (map[*net.Interface][]*net.IPNet, error)
 }
 
@@ -57,11 +57,11 @@ func (m *mockResolver) RunningNetworkInterfaces() (map[*net.Interface][]*net.IPN
 // mockConn satisfies net.Conn for dial mocks.
 type mockConn struct{}
 
-func (m *mockConn) Read(b []byte) (n int, err error)  { return 0, nil }
-func (m *mockConn) Write(b []byte) (n int, err error) { return len(b), nil }
-func (m *mockConn) Close() error                      { return nil }
-func (m *mockConn) LocalAddr() net.Addr               { return &net.TCPAddr{} }
-func (m *mockConn) RemoteAddr() net.Addr              { return &net.TCPAddr{} }
+func (m *mockConn) Read(b []byte) (n int, err error)   { return 0, nil }
+func (m *mockConn) Write(b []byte) (n int, err error)  { return len(b), nil }
+func (m *mockConn) Close() error                       { return nil }
+func (m *mockConn) LocalAddr() net.Addr                { return &net.TCPAddr{} }
+func (m *mockConn) RemoteAddr() net.Addr               { return &net.TCPAddr{} }
 func (m *mockConn) SetDeadline(t time.Time) error      { return nil }
 func (m *mockConn) SetReadDeadline(t time.Time) error  { return nil }
 func (m *mockConn) SetWriteDeadline(t time.Time) error { return nil }

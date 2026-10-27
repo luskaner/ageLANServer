@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	osExecutableFn            = os.Executable
-	certificatePairFolderFn   = common.CertificatePairFolder
-	certificatePairsFn        = common.CertificatePairs
+	osExecutableFn             = os.Executable
+	certificatePairFolderFn    = common.CertificatePairFolder
+	certificatePairsFn         = common.CertificatePairs
 	generateCertificatePairsFn = internal.GenerateCertificatePairs
 )

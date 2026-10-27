@@ -23,6 +23,7 @@ type Values struct {
 	AnnouncePort           int
 	AnnounceMulticast      string
 	AnnounceMulticastGroup string
+	StartBsIfMissing       string
 }
 
 func SingleFlagSet(version string, configPaths []string, runFn func(*pflag.FlagSet) (err error, exitCode int)) (values *Values, singleFs *cmd.SingleFlagSet) {
@@ -44,5 +45,6 @@ func SingleFlagSet(version string, configPaths []string, runFn func(*pflag.FlagS
 	cmd.LogRootCommand(flags, &values.LogRoot)
 	flags.BoolVarP(&values.GeneratePlatformUserId, "generatePlatformUserId", "g", false, "Generate the Platform User Id based on the user's IP.")
 	flags.StringVar(&values.Id, "id", "", "Server instance ID to identify it.")
+	flags.StringVar(&values.StartBsIfMissing, "startBsIfMissing", "", "Embedded battle server StartIfMissing mode for all enabled games (true, false, required)")
 	return
 }

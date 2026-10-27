@@ -40,7 +40,7 @@ func TestUnmarshalTextRejections(t *testing.T) {
 		"gg1d4fae-7dec-11d0-a765-00a0c91e6bf6",  // non-hex
 		"{f81d4fae-7dec-11d0-a765-00a0c91e6bf6", // unbalanced brace
 		"urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf", // urn + truncated
-		"urn:uuid:{" + canon + "}", // combined urn+braces (rejected, same as stdlib)
+		"urn:uuid:{" + canon + "}",                     // combined urn+braces (rejected, same as stdlib)
 	}
 	for _, form := range invalid {
 		var got UUID

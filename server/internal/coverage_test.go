@@ -70,10 +70,10 @@ func TestNumberToBool(t *testing.T) {
 func TestConfigurationGetGameHosts(t *testing.T) {
 	cfg := &Configuration{
 		Games: Games{
-			Age1: Game{Hosts: []string{"a1"}},
-			Age2: Game{Hosts: []string{"a2"}},
-			Age3: Game{Hosts: []string{"a3"}},
-			Age4: Game{Hosts: []string{"a4"}},
+			Age1:   Game{Hosts: []string{"a1"}},
+			Age2:   Game{Hosts: []string{"a2"}},
+			Age3:   Game{Hosts: []string{"a3"}},
+			Age4:   Game{Hosts: []string{"a4"}},
 			Athens: Game{Hosts: []string{"ath"}},
 		},
 	}
@@ -157,9 +157,9 @@ func TestSplitDomain(t *testing.T) {
 // -------------------------------------------------------------------
 
 type mockWriter struct {
-	buf bytes.Buffer
+	buf          bytes.Buffer
 	failOnPrefix bool
-	failOnWrite bool
+	failOnWrite  bool
 }
 
 func (m *mockWriter) Write(p []byte) (int, error) {
@@ -508,9 +508,9 @@ type mockResponseWriter struct {
 	status int
 }
 
-func (m *mockResponseWriter) Header() http.Header { return m.header }
+func (m *mockResponseWriter) Header() http.Header         { return m.header }
 func (m *mockResponseWriter) Write(p []byte) (int, error) { return m.body.Write(p) }
-func (m *mockResponseWriter) WriteHeader(statusCode int) { m.status = statusCode }
+func (m *mockResponseWriter) WriteHeader(statusCode int)  { m.status = statusCode }
 
 // -------------------------------------------------------------------
 // errors
@@ -587,8 +587,8 @@ func TestRngAndRootSignal(t *testing.T) {
 func TestGetGameBattleServersAllGames(t *testing.T) {
 	cfg := &Configuration{
 		Games: Games{
-			Age3: Game{BattleServers: []BattleServer{{Base: battleServer.Base{Region: "r3"}}}},
-			Age4: Game{BattleServers: []BattleServer{{Base: battleServer.Base{Region: "r4"}}}},
+			Age3:   Game{BattleServers: []BattleServer{{Base: battleServer.Base{Region: "r3"}}}},
+			Age4:   Game{BattleServers: []BattleServer{{Base: battleServer.Base{Region: "r4"}}}},
 			Athens: Game{BattleServers: []BattleServer{{Base: battleServer.Base{Region: "ath"}}}},
 		},
 	}

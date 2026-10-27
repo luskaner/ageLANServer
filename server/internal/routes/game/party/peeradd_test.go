@@ -17,7 +17,7 @@ func TestPreExistingPeerNotEvictedOnRollback(t *testing.T) {
 	var addedUserIds []int32
 
 	users := []struct {
-		id      int32
+		id       int32
 		willFail bool // simulate Charlie failing to join
 	}{
 		{id: 2, willFail: false}, // Bob: already exists → skip

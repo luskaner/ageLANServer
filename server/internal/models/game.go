@@ -178,7 +178,7 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	}
 	// Backfill profiles from existing user data files
 	if game.matchHistory != nil {
-			userDataDir := ""
+		userDataDir := ""
 		if game.resources != nil {
 			if rd, ok := interface{}(game.resources).(interface{ ResourcesFolder() string }); ok {
 				if r := rd.ResourcesFolder(); r != "" {
