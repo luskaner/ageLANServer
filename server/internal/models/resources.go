@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -39,13 +40,15 @@ type Resources interface {
 }
 
 type MainResources struct {
-	keyedFilenames  mapset.Set[string]
-	chatChannels    map[string]*MainChatChannel
-	loginData       []i.A
-	arrayFiles      map[string]i.A
-	keyedFiles      map[string][]byte
-	nameToSignature map[string]string
-	cloudFiles      CloudFiles
+	keyedFilenames          mapset.Set[string]
+	chatChannels            map[string]*MainChatChannel
+	loginData               []i.A
+	arrayFiles              map[string]i.A
+	keyedFiles              map[string][]byte // The currently active version (signed or captured)
+	keyedFilesCaptured      map[string][]byte // The captured (unsigned) version
+	nameToSignature         map[string]string // Signature for the currently active version
+	nameToSignatureCaptured map[string]string // Signature for the captured version
+	cloudFiles              CloudFiles
 }
 
 func (r *MainResources) Initialize(gameId string, opts *ResourcesOpts) {
@@ -57,7 +60,9 @@ func (r *MainResources) Initialize(gameId string, opts *ResourcesOpts) {
 	}
 	r.arrayFiles = make(map[string]i.A)
 	r.keyedFiles = make(map[string][]byte)
+	r.keyedFilesCaptured = make(map[string][]byte)
 	r.nameToSignature = make(map[string]string)
+	r.nameToSignatureCaptured = make(map[string]string)
 	r.keyedFilenames = opts.KeyedFilenames
 	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
@@ -126,6 +131,10 @@ func (r *MainResources) initializeResponses(gameId string) {
 			var sig signature
 			err = json.Unmarshal(data, &sig)
 			if err == nil && sig.Value != "" {
+				// Always store the captured (unsigned) version
+				r.keyedFilesCaptured[name] = data
+				r.nameToSignatureCaptured[name] = sig.Value
+
 				if i.SignConfigRuntime.Enabled {
 					// Re-sign instead of trusting the captured signature. The crc32
 					// is taken over the body with the dataSignature value emptied,
@@ -179,16 +188,33 @@ func (r *MainResources) initializeCloud(gameId string) {
 // an internal error instead of an empty 200: the caller would have no way to
 // tell a broken install from an empty catalogue, and the client would just log
 // a verification failure the server never accounted for.
+//
+// If the requesting user's platform user ID is in SignConfigRuntime.PlatformUserIdExceptions,
+// the signing behavior is inverted: users in the exception list get the opposite
+// of the global Enabled setting.
 func (r *MainResources) ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool) {
+	// Check if this user is in the exception list (reverse behavior)
+	invertSigning := isPlatformUserIdException(req)
+
 	var serverSignature string
 	var response any
 	if keyedResponse {
-		body, loaded := r.keyedFiles[name]
+		// For keyed responses, choose between signed and captured version based on exceptions
+		var body []byte
+		var loaded bool
+		if invertSigning != i.SignConfigRuntime.Enabled {
+			// Inverted: use captured version
+			body, loaded = r.keyedFilesCaptured[name]
+			serverSignature = r.nameToSignatureCaptured[name]
+		} else {
+			// Normal: use active version (signed if Enabled, captured if not)
+			body, loaded = r.keyedFiles[name]
+			serverSignature = r.nameToSignature[name]
+		}
 		if !loaded || len(body) == 0 {
 			http.Error(*w, "signed asset was not loaded: "+name, http.StatusInternalServerError)
 			return
 		}
-		serverSignature = r.nameToSignature[name]
 		if serverSignature == "" {
 			http.Error(*w, "signed asset carries no signature: "+name, http.StatusInternalServerError)
 			return
@@ -248,4 +274,24 @@ func userDataFileStem(steam bool, platformUserid string) string {
 		return "STEAM_" + platformUserid
 	}
 	return "XBOX_" + platformUserid
+}
+
+// isPlatformUserIdException checks if the requesting user's platform user ID
+// is in the SignConfigRuntime.PlatformUserIdExceptions list.
+func isPlatformUserIdException(req *http.Request) bool {
+	userVal := req.Context().Value("user")
+	if userVal == nil {
+		return false
+	}
+	user, ok := userVal.(User)
+	if !ok {
+		return false
+	}
+	platformUserId := user.GetPlatformUserID()
+	for _, exception := range i.SignConfigRuntime.PlatformUserIdExceptions {
+		if exception == strconv.FormatUint(platformUserId, 10) {
+			return true
+		}
+	}
+	return false
 }

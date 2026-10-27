@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/luskaner/ageServer/common/game"
@@ -10,6 +11,33 @@ import (
 )
 
 var BattleServersStore = make(map[string][]BattleServer)
+
+// EmbeddedBattleServersStore holds embedded battle servers per game, keyed by region.
+var EmbeddedBattleServersStore = make(map[string]map[string]BattleServer)
+var embeddedStoreMu sync.RWMutex
+
+// RegisterEmbeddedBattleServer adds an embedded battle server to the store.
+// It returns an error if a server with the same region already exists (from config or manager).
+func RegisterEmbeddedBattleServer(gameId, region string, bs BattleServer) error {
+	embeddedStoreMu.Lock()
+	defer embeddedStoreMu.Unlock()
+
+	if EmbeddedBattleServersStore[gameId] == nil {
+		EmbeddedBattleServersStore[gameId] = make(map[string]BattleServer)
+	}
+	if _, exists := EmbeddedBattleServersStore[gameId][region]; exists {
+		return fmt.Errorf("embedded battle server for region %q already exists", region)
+	}
+	if _, exists := BattleServersStore[gameId]; exists {
+		for _, existing := range BattleServersStore[gameId] {
+			if existing.Region() == region {
+				return fmt.Errorf("battle server for region %q already exists (external or manager-discovered)", region)
+			}
+		}
+	}
+	EmbeddedBattleServersStore[gameId][region] = bs
+	return nil
+}
 
 func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer) error {
 	var battleServers []BattleServer
@@ -27,6 +55,14 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 			Base: bs.Base,
 		})
 	}
+
+	// Append embedded battle servers for this game.
+	embeddedStoreMu.RLock()
+	for _, bs := range EmbeddedBattleServersStore[gameId] {
+		battleServers = append(battleServers, bs)
+	}
+	embeddedStoreMu.RUnlock()
+
 	if len(battleServers) == 0 {
 		switch gameId {
 		case game.AoE2:

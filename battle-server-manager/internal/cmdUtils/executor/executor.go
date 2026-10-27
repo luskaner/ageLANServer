@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/executor/exec"
 	"github.com/luskaner/ageServer/common/game"
 	commonLogger "github.com/luskaner/ageServer/common/logger"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 func ExecuteBattleServer(gameId string, path string, region string, name string, ports []int, certFile string,

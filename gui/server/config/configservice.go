@@ -256,6 +256,11 @@ func configurationDocument(content []byte, configuration Configuration) ([]byte,
 		{"CustomFiles", "MaxFileSize", tomlString(configuration.CustomFiles.MaxFileSize)},
 		{"CustomFiles", "MaxTotalSize", tomlString(configuration.CustomFiles.MaxTotalSize)},
 		{"CustomFiles", "Expiry", tomlString(configuration.CustomFiles.Expiry)},
+		{"BattleServerReplays", "Enabled", strconv.FormatBool(configuration.BattleServerReplays.Enabled)},
+		{"BattleServerReplays", "Folder", tomlString(configuration.BattleServerReplays.Folder)},
+		{"BattleServerReplays", "MaxFileSize", tomlString(configuration.BattleServerReplays.MaxFileSize)},
+		{"BattleServerReplays", "MaxTotalSize", tomlString(configuration.BattleServerReplays.MaxTotalSize)},
+		{"BattleServerReplays", "Expiry", tomlString(configuration.BattleServerReplays.Expiry)},
 	}
 	// The server reads Authentication at the root level. The shipped template
 	// used to keep it under [Internet], so an existing copy there is kept in
@@ -280,6 +285,12 @@ func configurationDocument(content []byte, configuration Configuration) ([]byte,
 		updated, err = rewriteBattleServers(updated, gameID, gameBattleServers(&configuration, gameID))
 		if err != nil {
 			return nil, fmt.Errorf("edit Games.%s.BattleServers: %w", gameID, err)
+		}
+	}
+	for _, gameID := range supportedGameIDs() {
+		updated, err = rewriteEmbeddedBattleServer(updated, gameID, gameEmbeddedBattleServer(&configuration, gameID))
+		if err != nil {
+			return nil, fmt.Errorf("edit Games.%s.EmbeddedBattleServer: %w", gameID, err)
 		}
 	}
 	return updated, nil
@@ -416,11 +427,11 @@ func serverDefaults() Configuration {
 		},
 		Games: GamesConfiguration{
 			Enabled: []string{},
-			Age1:    GameConfig{Hosts: []string{"0.0.0.0"}},
-			Age2:    GameConfig{Hosts: []string{"0.0.0.0"}},
-			Age3:    GameConfig{Hosts: []string{"0.0.0.0"}},
-			Age4:    GameConfig{Hosts: []string{"0.0.0.0"}},
-			Athens:  GameConfig{Hosts: []string{"0.0.0.0"}},
+			Age1:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age1-embedded", IPv4: "auto"}},
+			Age2:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age2-embedded", IPv4: "auto"}},
+			Age3:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age3-embedded", IPv4: "auto"}},
+			Age4:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age4-embedded", IPv4: "auto"}},
+			Athens:  GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "athens-embedded", IPv4: "auto"}},
 		},
 		Announcement: AnnouncementConfig{
 			Enabled:        true,
@@ -430,6 +441,13 @@ func serverDefaults() Configuration {
 		},
 		CustomFiles: CustomFilesConfiguration{
 			Enabled:      true,
+			Folder:       "auto",
+			MaxFileSize:  "32MB",
+			MaxTotalSize: "256MB",
+			Expiry:       "12h",
+		},
+		BattleServerReplays: BattleServerReplaysConfiguration{
+			Enabled:      false,
 			Folder:       "auto",
 			MaxFileSize:  "32MB",
 			MaxTotalSize: "256MB",
@@ -840,6 +858,8 @@ func validateConfiguration(config *Configuration) []ValidationError {
 		}
 	}
 	validationErrors = append(validationErrors, validateCustomFiles(config)...)
+	validationErrors = append(validationErrors, validateBattleServerReplays(config)...)
+	validationErrors = append(validationErrors, validateEmbeddedBattleServers(config)...)
 
 	for index := range validationErrors {
 		if validationErrors[index].Severity == "" {
@@ -928,6 +948,140 @@ func validateCustomFiles(config *Configuration) []ValidationError {
 			Field:   "CustomFiles.Expiry",
 			Message: "Must be greater than zero",
 		})
+	}
+	return validationErrors
+}
+
+// validateBattleServerReplays checks the storage limits only while the feature
+// is enabled: when disabled the server never uses those values.
+func validateBattleServerReplays(config *Configuration) []ValidationError {
+	if !config.BattleServerReplays.Enabled {
+		return nil
+	}
+	var validationErrors []ValidationError
+	if strings.TrimSpace(config.BattleServerReplays.Folder) == "" {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.Folder",
+			Message: "Must not be empty",
+		})
+	}
+
+	maxFileSize, fileSizeErr := parseByteSize(config.BattleServerReplays.MaxFileSize)
+	maxTotalSize, totalSizeErr := parseByteSize(config.BattleServerReplays.MaxTotalSize)
+	fileSizeValid := true
+	totalSizeValid := true
+	if fileSizeErr != nil {
+		fileSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.MaxFileSize",
+			Message: "Must be a size such as 32MB",
+		})
+	} else if maxFileSize <= 0 {
+		fileSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.MaxFileSize",
+			Message: "Must be greater than zero",
+		})
+	}
+	if totalSizeErr != nil {
+		totalSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.MaxTotalSize",
+			Message: "Must be a size such as 256MB",
+		})
+	} else if maxTotalSize <= 0 {
+		totalSizeValid = false
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.MaxTotalSize",
+			Message: "Must be greater than zero",
+		})
+	}
+	if fileSizeValid && totalSizeValid && maxFileSize > maxTotalSize {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.MaxFileSize",
+			Message: "Must not exceed the total size limit",
+		})
+	}
+
+	if _, err := time.ParseDuration(strings.TrimSpace(config.BattleServerReplays.Expiry)); err != nil {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "BattleServerReplays.Expiry",
+			Message: "Must be a duration such as 12h or 30m, or 0/negative to keep forever",
+		})
+	}
+	// Expiry <= 0 means keep forever (no TTL-based expiration)
+	return validationErrors
+}
+
+// validateEmbeddedBattleServers checks the embedded battle server configuration
+// for each game.
+func validateEmbeddedBattleServers(config *Configuration) []ValidationError {
+	var validationErrors []ValidationError
+	for _, gameID := range supportedGameIDs() {
+		ebs := gameEmbeddedBattleServer(config, gameID)
+		if ebs == nil {
+			continue
+		}
+		// Only validate if user has explicitly configured the embedded battle server
+		// (at least one field is non-zero/non-empty). If all defaults, skip validation.
+		hasExplicitConfig := ebs.Region != "" || ebs.Name != "" || ebs.IPv4 != "" ||
+			ebs.BsPort != 0 || ebs.WebSocketPort != 0 || ebs.OutOfBandPort != 0 ||
+			ebs.SimulationPeriod != 0 || ebs.LogLevel != ""
+		if !hasExplicitConfig {
+			continue
+		}
+		if strings.TrimSpace(ebs.Region) == "" {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.Region", gameID),
+				Message: "Must not be empty",
+			})
+		}
+		if strings.TrimSpace(ebs.IPv4) == "" {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.IPv4", gameID),
+				Message: "Must not be empty (use 'auto' or an IPv4 address)",
+			})
+		} else if ebs.IPv4 != "auto" {
+			if parsed, err := netip.ParseAddr(ebs.IPv4); err != nil || !parsed.Is4() {
+				validationErrors = append(validationErrors, ValidationError{
+					Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.IPv4", gameID),
+					Message: "Must be 'auto' or an IPv4 address",
+				})
+			}
+		}
+		if ebs.BsPort < 0 || ebs.BsPort > 65535 {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.BsPort", gameID),
+				Message: "Must be between 0 and 65535",
+			})
+		}
+		if ebs.WebSocketPort < 0 || ebs.WebSocketPort > 65535 {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.WebSocketPort", gameID),
+				Message: "Must be between 0 and 65535",
+			})
+		}
+		if ebs.OutOfBandPort < 0 || ebs.OutOfBandPort > 65535 {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.OutOfBandPort", gameID),
+				Message: "Must be between 0 and 65535",
+			})
+		}
+		if ebs.SimulationPeriod < 0 {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.SimulationPeriod", gameID),
+				Message: "Must be non-negative (0 uses game default)",
+			})
+		}
+		validLevels := map[string]bool{
+			"none": true, "error": true, "warning": true, "notice": true, "info": true, "debug": true,
+		}
+		if ebs.LogLevel != "" && !validLevels[strings.ToLower(ebs.LogLevel)] {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.LogLevel", gameID),
+				Message: "Must be one of none, error, warning, notice, info, debug",
+			})
+		}
 	}
 	return validationErrors
 }
@@ -1186,6 +1340,48 @@ func gameBattleServers(config *Configuration, gameID string) []BattleServerConfi
 	}
 }
 
+// gameEmbeddedBattleServer returns the embedded battle server configuration for a supported game.
+func gameEmbeddedBattleServer(config *Configuration, gameID string) *EmbeddedBattleServerConfig {
+	switch gameID {
+	case "age1":
+		return &config.Games.Age1.EmbeddedBattleServer
+	case "age2":
+		return &config.Games.Age2.EmbeddedBattleServer
+	case "age3":
+		return &config.Games.Age3.EmbeddedBattleServer
+	case "age4":
+		return &config.Games.Age4.EmbeddedBattleServer
+	case "athens":
+		return &config.Games.Athens.EmbeddedBattleServer
+	default:
+		return nil
+	}
+}
+
+// rewriteEmbeddedBattleServer rewrites the embedded battle server of one game
+// as a single inline table [Games.<game>.EmbeddedBattleServer]. When disabled or
+// empty, the definition is removed.
+func rewriteEmbeddedBattleServer(content []byte, gameID string, ebs *EmbeddedBattleServerConfig) ([]byte, error) {
+	section := "Games." + gameID
+	updated, _, err := removeDocumentValue(content, section, "EmbeddedBattleServer")
+	if err != nil {
+		return nil, err
+	}
+	updated, err = removeArrayTableBlocks(updated, section+".EmbeddedBattleServer")
+	if err != nil {
+		return nil, err
+	}
+	// Also remove inline table blocks [Games.<game>.EmbeddedBattleServer]
+	updated, err = removeInlineTableBlocks(updated, section+".EmbeddedBattleServer")
+	if err != nil {
+		return nil, err
+	}
+	if ebs == nil {
+		return updated, nil
+	}
+	return insertInlineTable(updated, section, embeddedBattleServerDocumentValue(gameID, ebs))
+}
+
 // rewriteBattleServers rewrites the battle servers of one game in the
 // documented shape, an array of tables ([[Games.<game>.BattleServers]]). Older
 // documents holding the inline `BattleServers = [...]` key are migrated.
@@ -1256,6 +1452,39 @@ func removeArrayTableBlocks(content []byte, path string) ([]byte, error) {
 	var spans []span
 	for index, table := range tables {
 		if table.path != path || !table.arrayTable {
+			continue
+		}
+		end := len(content)
+		if index+1 < len(tables) {
+			end = tables[index+1].offset
+		}
+		spans = append(spans, span{start: table.offset, end: end})
+	}
+	for index := len(spans) - 1; index >= 0; index-- {
+		start, end := spans[index].start, spans[index].end
+		updated := make([]byte, 0, len(content)-(end-start))
+		updated = append(updated, content[:start]...)
+		updated = append(updated, content[end:]...)
+		content = updated
+	}
+	return content, nil
+}
+
+// removeInlineTableBlocks removes every [path] block of a document (inline tables).
+// A block runs from its header to the next table header (or the end of the document),
+// so its keys and comments go with it.
+func removeInlineTableBlocks(content []byte, path string) ([]byte, error) {
+	tables, err := documentTables(content)
+	if err != nil {
+		return nil, err
+	}
+	type span struct {
+		start int
+		end   int
+	}
+	var spans []span
+	for index, table := range tables {
+		if table.path != path || table.arrayTable {
 			continue
 		}
 		end := len(content)
@@ -1350,6 +1579,84 @@ func battleServersDocumentValue(gameID string, servers []BattleServerConfig) str
 // out-of-band (observer) port.
 func gameSupportsOutOfBandPort(gameID string) bool {
 	return gameID != "age1"
+}
+
+// embeddedBattleServerDocumentValue formats the embedded battle server of a game
+// as a single inline TOML table the server documents.
+func embeddedBattleServerDocumentValue(gameID string, ebs *EmbeddedBattleServerConfig) string {
+	var builder strings.Builder
+	builder.WriteString("[Games.")
+	builder.WriteString(gameID)
+	builder.WriteString(".EmbeddedBattleServer]\n")
+	builder.WriteString("StartIfMissing = ")
+	builder.WriteString(tomlString(ebs.StartIfMissing))
+	builder.WriteByte('\n')
+	builder.WriteString("Region = ")
+	builder.WriteString(tomlString(ebs.Region))
+	builder.WriteByte('\n')
+	if ebs.Name != "" {
+		builder.WriteString("Name = ")
+		builder.WriteString(tomlString(ebs.Name))
+		builder.WriteByte('\n')
+	}
+	builder.WriteString("IPv4 = ")
+	builder.WriteString(tomlString(ebs.IPv4))
+	builder.WriteByte('\n')
+	builder.WriteString("BsPort = ")
+	builder.WriteString(strconv.Itoa(ebs.BsPort))
+	builder.WriteByte('\n')
+	builder.WriteString("WebSocketPort = ")
+	builder.WriteString(strconv.Itoa(ebs.WebSocketPort))
+	builder.WriteByte('\n')
+	// AoE: DE has no out-of-band port; omit the key for age1
+	if gameID != "age1" {
+		builder.WriteString("OutOfBandPort = ")
+		builder.WriteString(strconv.Itoa(ebs.OutOfBandPort))
+		builder.WriteByte('\n')
+	}
+	builder.WriteString("SimulationPeriod = ")
+	builder.WriteString(strconv.Itoa(ebs.SimulationPeriod))
+	builder.WriteByte('\n')
+	if ebs.LogLevel != "" {
+		builder.WriteString("LogLevel = ")
+		builder.WriteString(tomlString(ebs.LogLevel))
+		builder.WriteByte('\n')
+	}
+	return builder.String()
+}
+
+// insertInlineTable adds a single inline table at the end of a named table,
+// before the table header that follows it.
+func insertInlineTable(content []byte, section string, block string) ([]byte, error) {
+	tables, err := documentTables(content)
+	if err != nil {
+		return nil, err
+	}
+	sectionIndex := -1
+	for index, table := range tables {
+		if table.path == section && !table.arrayTable {
+			sectionIndex = index
+			break
+		}
+	}
+	if sectionIndex == -1 {
+		return nil, fmt.Errorf("section %s not found", section)
+	}
+	insertAt := len(content)
+	if sectionIndex+1 < len(tables) {
+		insertAt = tables[sectionIndex+1].offset
+	}
+	updated := make([]byte, 0, len(content)+len(block)+2)
+	updated = append(updated, content[:insertAt]...)
+	if insertAt > 0 && content[insertAt-1] != '\n' {
+		updated = append(updated, '\n')
+	}
+	updated = append(updated, block...)
+	if len(block) > 0 && block[len(block)-1] != '\n' {
+		updated = append(updated, '\n')
+	}
+	updated = append(updated, content[insertAt:]...)
+	return updated, nil
 }
 
 // resolveIPv4 returns the IPv4 addresses resolved from a host value.

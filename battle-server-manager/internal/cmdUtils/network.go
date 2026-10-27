@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common/cmdlog"
 )
 
 var (

@@ -17,13 +17,13 @@ import (
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/luskaner/ageServer/common/cmd/bsManager"
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/executables"
 	commonExecutor "github.com/luskaner/ageServer/common/executor"
 	"github.com/luskaner/ageServer/common/game"
 	commonLogger "github.com/luskaner/ageServer/common/logger"
 	"github.com/luskaner/ageServer/common/paths"
 	"github.com/luskaner/ageServer/common/process"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 	"github.com/spf13/pflag"
 )
 

@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/cmd"
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/fileLock"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var Version string

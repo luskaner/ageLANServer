@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/executables"
 	"github.com/luskaner/ageServer/common/game"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var (

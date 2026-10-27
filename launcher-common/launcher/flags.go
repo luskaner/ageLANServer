@@ -163,7 +163,7 @@ func defaultLayers() map[string]any {
 		"Server.Host":                               netip.IPv4Unspecified().String(),
 		"Server.AnnouncePorts":                      []int{common.AnnouncePort},
 		"Server.AnnounceMulticastGroups":            []string{common.AnnounceMulticastGroup},
-		"Server.BattleServerManager.Run":            "true",
+		"Server.BattleServerManager.Run":            "false",
 		"Server.BattleServerManager.Executable":     autoValue,
 		"Server.BattleServerManager.ExecutableArgs": []string{"-e", "{Game}", "-r"},
 	}

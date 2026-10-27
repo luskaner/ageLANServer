@@ -17,4 +17,6 @@ const (
 	ErrInvalidAuthentication
 	ErrSigningKey
 	ErrCustomFiles
+	ErrEmbeddedBattleServer
+	ErrBattleServerReplays
 )

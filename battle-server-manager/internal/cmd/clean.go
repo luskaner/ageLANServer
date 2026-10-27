@@ -5,7 +5,7 @@ import (
 
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/cmd"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/spf13/pflag"
 )
 

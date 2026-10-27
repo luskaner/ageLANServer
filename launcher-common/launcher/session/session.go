@@ -451,8 +451,9 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	configSetGameIdFn(gameId)
 	serverValues := map[string]string{
-		"Game": gameId,
-		"Id":   uuid.New().String(),
+		"Game":             gameId,
+		"Id":               uuid.New().String(),
+		"StartBsIfMissing": "true",
 	}
 	var serverArgsValues *cmdServer.Values
 	var serverFlags *pflag.FlagSet

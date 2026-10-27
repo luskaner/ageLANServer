@@ -209,6 +209,28 @@ the [`responses`](resources/responses) base directory.
 See [Battle Servers](./BattleServers.md) for how to set up and start manually-configured Online-like Battle-servers.
 See [Battle Server Manager](../battle-server-manager) for how to do so automatically.
 
+### Embedded Battle Server
+
+The server can run a battle server internally (embedded) instead of as a separate process. This is configured per game
+under `Games.<game>.EmbeddedBattleServer` in `config.toml`. See [Battle Servers](./BattleServers.md#embedded-battle-server)
+for details.
+
+When started, the embedded battle server starts on server startup and stops on shutdown. It appears in the game's battle
+server list like any external battle server.
+
+**StartIfMissing** (default: `"true"`): Controls when the embedded battle server auto-starts if no external battle server
+is configured (via `[[Games.<game>.BattleServers]]`) and none is detected by the battle-server-manager. Accepted values:
+- `"true"` (default): always start if missing
+- `"false"`: never auto-start
+- `"required"`: start if missing for age4/athens, otherwise false
+
+No explicit configuration is needed - it will use sensible defaults. To disable, set `StartIfMissing = "false"` in
+`[Games.<game>.EmbeddedBattleServer]` or configure an external battle server.
+
+Replay recording for embedded battle servers is configured under `[BattleServerReplays]` and mirrors the `[CustomFiles]`
+settings for folder, size limits, and expiry. Set `Expiry` to `0` or a negative value (e.g., `-1`) to keep replay files
+forever (no TTL-based expiration).
+
 ## Command Line
 
 CLI is available with similar options as the configuration. You can see the available options with

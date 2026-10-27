@@ -28,11 +28,13 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageServer/common"
+	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/luskaner/ageServer/common/cmd"
 	commonLogger "github.com/luskaner/ageServer/common/logger"
 	"github.com/luskaner/ageServer/common/paths"
 	"github.com/luskaner/ageServer/launcher-common/ui"
 	"github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/embedded"
 	"github.com/luskaner/ageServer/server/internal/logger"
 	"github.com/luskaner/ageServer/server/internal/models"
 	"github.com/luskaner/ageServer/server/internal/models/initializer"
@@ -214,8 +216,120 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		exitCode = internal.ErrCustomFiles
 		return
 	}
+	if err = applyBattleServerReplaysConfig(cfg); err != nil {
+		logger.Fail("Invalid BattleServerReplays configuration: %s", err)
+		exitCode = internal.ErrBattleServerReplays
+		return
+	}
 	var servers []*http.Server
 	internal.InitializeStopSignal()
+
+	// Start embedded battle servers for each game before initializing the game.
+	// Auto-enable embedded battle server if no other battle server (config or discovered) exists.
+	var embeddedInstances []*embedded.Instance
+	for gameId := range gameSet.Iter() {
+		// Check if there are any configured battle servers in config.toml
+		configBattleServers := cfg.GetGameBattleServers(gameId)
+		// Check if there are any battle servers discovered by battle-server-manager
+		discoveredBattleServers, discErr := battleServer.Configs(gameId, true, true)
+		if discErr != nil {
+			logger.Fail("Failed to read discovered battle servers for %s: %s", gameId, discErr)
+			exitCode = internal.ErrEmbeddedBattleServer
+			return
+		}
+
+		hasExternalBattleServer := len(configBattleServers) > 0 || len(discoveredBattleServers) > 0
+		ebs := cfg.GetGameEmbeddedBattleServer(gameId)
+
+		// StartIfMissing controls auto-start behavior when no external battle server exists.
+		// Values: "true" (default), "false", "required" (true for age4/athens, false for others).
+		// First check CLI flag (applies to all games), then config file.
+		startIfMissing := strings.ToLower(strings.TrimSpace(values.StartBsIfMissing))
+		hasExplicitStartIfMissing := strings.TrimSpace(values.StartBsIfMissing) != ""
+
+		// If not set via CLI, check config file
+		if !hasExplicitStartIfMissing {
+			startIfMissing = strings.ToLower(strings.TrimSpace(ebs.StartIfMissing))
+			hasExplicitStartIfMissing = strings.TrimSpace(ebs.StartIfMissing) != ""
+		}
+
+		if !hasExplicitStartIfMissing {
+			startIfMissing = "true"
+		}
+
+		// Evaluate StartIfMissing value
+		shouldAutoStart := false
+		switch startIfMissing {
+		case "true":
+			shouldAutoStart = true
+		case "false":
+			shouldAutoStart = false
+		case "required":
+			// Required games: age4 and athens (AoM)
+			switch gameId {
+			case game.AoE4, game.AoM:
+				shouldAutoStart = true
+			default:
+				shouldAutoStart = false
+			}
+		default:
+			logger.Warn("Unknown StartIfMissing value %q for %s, defaulting to true", ebs.StartIfMissing, gameId)
+			shouldAutoStart = true
+		}
+
+		shouldStart := shouldAutoStart && !hasExternalBattleServer
+
+		if shouldStart {
+			// Use configured values or defaults matching battle-server-manager
+			region := ebs.Region
+			if region == "" {
+				region = "Server"
+			}
+			name := ebs.Name
+			if name == "" {
+				name = "Server"
+			}
+			ipv4 := ebs.IPv4
+			if ipv4 == "" {
+				ipv4 = "auto"
+			}
+
+			inst := &embedded.Instance{
+				Opts: embedded.Options{
+					GameID:           gameId,
+					Region:           region,
+					Name:             name,
+					IPv4:             ipv4,
+					BsPort:           ebs.BsPort,
+					WebSocketPort:    ebs.WebSocketPort,
+					OutOfBandPort:    ebs.OutOfBandPort,
+					SimulationPeriod: ebs.SimulationPeriod,
+					LogLevel:         ebs.LogLevel,
+				},
+			}
+			replayOpts := embedded.ReplayOptions{
+				Enabled:      internal.BattleServerReplaysEnabled,
+				Folder:       internal.BattleServerReplaysFolder,
+				MaxFileSize:  internal.BattleServerReplaysMaxFileSize,
+				MaxTotalSize: internal.BattleServerReplaysMaxTotalSize,
+				Expiry:       internal.BattleServerReplaysExpiry,
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			startErr := inst.Start(ctx, certificatePairFolder, replayOpts)
+			if startErr != nil {
+				cancel()
+				logger.Fail("Failed to start embedded battle server for %s: %s", gameId, startErr)
+				exitCode = internal.ErrEmbeddedBattleServer
+				return
+			}
+			cancel()
+			embeddedInstances = append(embeddedInstances, inst)
+			if !hasExplicitStartIfMissing {
+				logger.Info("Auto-started embedded battle server for %s (StartIfMissing=%s, no external battle server found)", gameId, startIfMissing)
+			}
+		}
+	}
+
 	for gameId := range gameSet.Iter() {
 		ui.Section("Game " + gameId)
 		hosts := cfg.GetGameHosts(gameId)
@@ -352,6 +466,11 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 	}
 	wg.Wait()
 
+	// Stop embedded battle servers.
+	for _, inst := range embeddedInstances {
+		inst.Stop()
+	}
+
 	logger.Step("Flushing pending user data...")
 	flushCtx, flushCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer flushCancel()
@@ -376,26 +495,32 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 	k := koanf.New(".")
 	defaults := map[string]any{
-		"Log":                            false,
-		"GeneratePlatformUserId":         false,
-		"Sign.Enabled":                   false,
-		"Sign.PlatformUserIdExceptions":  []string{},
-		"Authentication":                 "disabled",
-		"Internet.Enabled":               true,
-		"Internet.IP":                    "auto",
-		"Announcement.Enabled":           true,
-		"Announcement.Multicast":         true,
-		"Announcement.MulticastGroup":    common.AnnounceMulticastGroup,
-		"Announcement.Port":              common.AnnouncePort,
-		"Games.Enabled":                  []string{},
-		"CustomFiles.Enabled":            true,
-		"CustomFiles.Folder":             "auto",
-		"CustomFiles.MaxFileSize":        "32MB",
-		"CustomFiles.MaxTotalSize":       "256MB",
-		"CustomFiles.Expiry":             "12h",
+		"Log":                              false,
+		"GeneratePlatformUserId":           false,
+		"Sign.Enabled":                     false,
+		"Sign.PlatformUserIdExceptions":    []string{},
+		"Authentication":                   "disabled",
+		"Internet.Enabled":                 true,
+		"Internet.IP":                      "auto",
+		"Announcement.Enabled":             true,
+		"Announcement.Multicast":           true,
+		"Announcement.MulticastGroup":      common.AnnounceMulticastGroup,
+		"Announcement.Port":                common.AnnouncePort,
+		"Games.Enabled":                    []string{},
+		"CustomFiles.Enabled":              true,
+		"CustomFiles.Folder":               "auto",
+		"CustomFiles.MaxFileSize":          "32MB",
+		"CustomFiles.MaxTotalSize":         "256MB",
+		"CustomFiles.Expiry":               "12h",
+		"BattleServerReplays.Enabled":      false,
+		"BattleServerReplays.Folder":       "auto",
+		"BattleServerReplays.MaxFileSize":  "32MB",
+		"BattleServerReplays.MaxTotalSize": "256MB",
+		"BattleServerReplays.Expiry":       "12h",
 	}
 	for g := range game.SupportedGames.Iter() {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
+		defaults[fmt.Sprintf("Games.%s.EmbeddedBattleServer.StartIfMissing", g)] = "true"
 	}
 	bindings := map[string]string{
 		"log":                    "Log",
@@ -502,4 +627,41 @@ func parseByteSize(value string) (int64, error) {
 		}
 	}
 	return strconv.ParseInt(value, 10, 64)
+}
+
+// applyBattleServerReplaysConfig validates the BattleServerReplays section and publishes
+// the resolved values in the internal runtime globals. Sizes accept the usual
+// B/KB/MB/GB suffixes; the TTL is a Go duration such as 12h or 5m.
+func applyBattleServerReplaysConfig(cfg *internal.Configuration) error {
+	internal.BattleServerReplaysEnabled = cfg.BattleServerReplays.Enabled
+	internal.BattleServerReplaysFolder = cfg.BattleServerReplays.Folder
+	if !cfg.BattleServerReplays.Enabled {
+		return nil
+	}
+	maxFileSize, err := parseByteSize(cfg.BattleServerReplays.MaxFileSize)
+	if err != nil {
+		return fmt.Errorf("MaxFileSize: %w", err)
+	}
+	maxTotalSize, err := parseByteSize(cfg.BattleServerReplays.MaxTotalSize)
+	if err != nil {
+		return fmt.Errorf("MaxTotalSize: %w", err)
+	}
+	if maxFileSize <= 0 {
+		return fmt.Errorf("MaxFileSize must be greater than zero")
+	}
+	if maxTotalSize <= 0 {
+		return fmt.Errorf("MaxTotalSize must be greater than zero")
+	}
+	if maxFileSize > maxTotalSize {
+		return fmt.Errorf("MaxFileSize (%d) must not exceed MaxTotalSize (%d)", maxFileSize, maxTotalSize)
+	}
+	expiry, err := time.ParseDuration(strings.TrimSpace(cfg.BattleServerReplays.Expiry))
+	if err != nil {
+		return fmt.Errorf("Expiry: %w", err)
+	}
+	// Expiry <= 0 means keep forever (no TTL-based expiration)
+	internal.BattleServerReplaysMaxFileSize = maxFileSize
+	internal.BattleServerReplaysMaxTotalSize = maxTotalSize
+	internal.BattleServerReplaysExpiry = expiry
+	return nil
 }

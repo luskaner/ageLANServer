@@ -15,9 +15,34 @@ type BattleServer struct {
 	battleServer.Base `koanf:",squash"`
 }
 
+// EmbeddedBattleServer configures a battle server that runs inside the ageLAN
+// server process instead of as a separate BattleServer executable. It mirrors
+// the options the external battle-server manager passes on the command line.
+type EmbeddedBattleServer struct {
+	// StartIfMissing controls when the embedded battle server starts if no
+	// other battle server (configured or discovered) exists for this game.
+	// Accepted values:
+	//   "true" (default): always start if missing
+	//   "false": never auto-start
+	//   "required": start if missing for age4/athens, otherwise false
+	StartIfMissing string
+	Region         string
+	Name           string
+	IPv4           string
+	BsPort         int
+	WebSocketPort  int
+	OutOfBandPort  int
+	// SimulationPeriod is in milliseconds. Zero selects the game's default:
+	// 25 for age1, 50 for age3/athens and 125 for age2/age4.
+	SimulationPeriod float64
+	// LogLevel is one of none, error, warning, notice, info or debug.
+	LogLevel string
+}
+
 type Game struct {
-	Hosts         []string
-	BattleServers []BattleServer
+	Hosts                []string
+	BattleServers        []BattleServer
+	EmbeddedBattleServer EmbeddedBattleServer
 }
 
 type Games struct {
@@ -46,6 +71,17 @@ type CustomFiles struct {
 	Expiry       string
 }
 
+// BattleServerReplays configures the optional recording of the data the
+// embedded battle server receives for a match. It mirrors CustomFiles: sizes and
+// the TTL are kept as strings and validated once at startup.
+type BattleServerReplays struct {
+	Enabled      bool
+	Folder       string
+	MaxFileSize  string
+	MaxTotalSize string
+	Expiry       string
+}
+
 type SignConfig struct {
 	// Enabled makes the server re-sign the catalogues it serves instead of
 	// replaying the signatures captured alongside them in resources/responses.
@@ -66,6 +102,7 @@ type Configuration struct {
 	Announcement           Announcement
 	Games                  Games
 	CustomFiles            CustomFiles
+	BattleServerReplays    BattleServerReplays
 	Sign                   SignConfig
 }
 
@@ -100,5 +137,22 @@ func (cfg *Configuration) GetGameBattleServers(gameId string) []BattleServer {
 		return cfg.Games.Athens.BattleServers
 	default:
 		return nil
+	}
+}
+
+func (cfg *Configuration) GetGameEmbeddedBattleServer(gameId string) EmbeddedBattleServer {
+	switch gameId {
+	case "age1":
+		return cfg.Games.Age1.EmbeddedBattleServer
+	case "age2":
+		return cfg.Games.Age2.EmbeddedBattleServer
+	case "age3":
+		return cfg.Games.Age3.EmbeddedBattleServer
+	case "age4":
+		return cfg.Games.Age4.EmbeddedBattleServer
+	case "athens":
+		return cfg.Games.Athens.EmbeddedBattleServer
+	default:
+		return EmbeddedBattleServer{}
 	}
 }

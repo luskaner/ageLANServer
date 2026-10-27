@@ -9,7 +9,7 @@ import (
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/luskaner/ageServer/common/cmd/bsManager"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
+	"github.com/luskaner/ageServer/common/cmdlog"
 )
 
 var (

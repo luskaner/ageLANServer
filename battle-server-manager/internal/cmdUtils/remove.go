@@ -7,8 +7,8 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/luskaner/ageServer/common/battleServer"
+	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/process"
-	"github.com/luskaner/ageServer/launcher-common/cmdlog"
 )
 
 var (

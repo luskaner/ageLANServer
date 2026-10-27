@@ -54,10 +54,11 @@ Executable = 'auto'
 # The arguments to pass to the server executable if starting it. Execute the server help flag for available arguments.
 # {Game} will be replaced by the game name. Default, only start the server for the given name.
 # {Id} will be replaced by a random unique server id (UUID v4).
+# {StartBsIfMissing} will be replaced by the embedded battle server StartIfMissing mode for all enabled games (true, false, required).
 # When 'Config.Log' is true '-l', '--flatLog', '--logRoot' and '--deterministic' arguments will be passed.
 # Windows: Path names need to use double backslashes within single quotes or be within double quotes.
 # Note: You may use environment variables.
-ExecutableArgs = ['-e', '{Game}', '--id', '{Id}']
+ExecutableArgs = ['-e', '{Game}', '--id', '{Id}', '--startBsIfMissing', '{StartBsIfMissing}']
 # The host of the server to connect to if Start = false, if Start = true/auto this will be ignored
 # The host may be a DNS name or Ipv4 IP. 0.0.0.0 means every local interface IP.
 # Note: See the server config to set the interface to bind to.
@@ -76,7 +77,7 @@ AnnounceMulticastGroups = ['239.31.97.8']
 # 'true'.
 # 'false'.
 # Note: by default the manager will only start a new instance if one is not already running for the given game.
-Run = 'true'
+Run = 'false'
 # The process to start the battle-server-manager,
 # if 'auto', it will be try to execute the server binary in this directory order:
 # 1. './battle-server-manager/'

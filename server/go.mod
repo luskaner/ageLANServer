@@ -8,11 +8,14 @@ require (
 	github.com/gorilla/schema v1.4.1
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
 	github.com/knadh/koanf/v2 v2.3.6
+	github.com/luskaner/ageBattleServer v0.0.0
 	github.com/lxzan/gws v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.59.0
 	modernc.org/sqlite v1.34.5
 )
+
+replace github.com/luskaner/ageBattleServer => F:/ageBattleServer
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
