@@ -57,6 +57,10 @@ Depending on the module you want to debug, you will need to run the correspondin
 1. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
 2. Run ```task build```.
 
+To build binaries only for the current machine's operating system and architecture, run
+```task build-current```. On Windows, this selects Windows 7-compatible binaries for versions
+older than 10 and Windows 10 binaries for version 10 or later.
+
 ### Release
 
 1. Install [gpg2](https://docs.releng.linuxfoundation.org/en/latest/gpg.html) if needed.

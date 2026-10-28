@@ -19,6 +19,18 @@ func overrideWindowsName(name string, os OperatingSystem, arch Architecture) str
 }
 
 func Generate() error {
+	return generate(nil)
+}
+
+func GenerateCurrent() error {
+	windowsOS, err := currentWindowsOS()
+	if err != nil {
+		return err
+	}
+	return generate(windowsOS)
+}
+
+func generate(currentWindowsOS OperatingSystem) error {
 	// Server Archive
 	serverArchive := NewArchive("server", Targets3264, nil)
 	serverArchive.AddDocFiles("docs", nil, nil, "LICENSE", "server/README.md", "server/BattleServers.md")
@@ -78,5 +90,8 @@ func Generate() error {
 	fullArchive := NewMergedArchive("full", overrideWindowsName, fullServerArchive, fullLauncherArchive, fullBattleServerManager)
 	fullArchive.RemoveFiles("LICENSE")
 	fullArchive.AddDocFiles("docs", nil, nil, "LICENSE", "README.md")
+	if currentWindowsOS != nil {
+		return GenerateCurrentConfig(currentWindowsOS, serverArchive, battleServerManagerArchive, launcherArchive, fullArchive)
+	}
 	return GenerateConfig(serverArchive, battleServerManagerArchive, launcherArchive, fullArchive)
 }

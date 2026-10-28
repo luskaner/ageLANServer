@@ -3,7 +3,10 @@ package goreleaser
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestGenerateSuccess(t *testing.T) {
@@ -17,6 +20,118 @@ func TestGenerateSuccess(t *testing.T) {
 	}
 	if _, err := os.Stat(".goreleaser.yaml"); err != nil {
 		t.Fatalf("goreleaser.yaml not created: %v", err)
+	}
+}
+
+func TestGenerateCurrentExcludesWindows7Builds(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	archive := NewArchive("server", Targets3264, nil)
+	archive.AddMainBinary(NewBinary("./server", Targets3264))
+	if err := GenerateCurrentConfig(OSWindowsModern, archive); err != nil {
+		t.Fatalf("GenerateCurrentConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID   string `yaml:"id"`
+			Tool string `yaml:"tool"`
+		} `yaml:"builds"`
+		UniversalBinaries []struct {
+			ID string `yaml:"id"`
+		} `yaml:"universal_binaries"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+	hasWindows10Amd64 := false
+	for _, build := range project.Builds {
+		if strings.Contains(build.ID, "_win7_") {
+			t.Errorf("Windows 10 current config includes Windows 7 target %q", build.ID)
+		}
+		if build.ID == "server_win10_amd64" {
+			hasWindows10Amd64 = true
+		}
+	}
+	if !hasWindows10Amd64 {
+		t.Error("current build config does not include Windows 10 amd64")
+	}
+	if len(project.UniversalBinaries) > 0 {
+		t.Error("current build config includes universal binaries for other platforms")
+	}
+}
+
+func TestGenerateCurrentLegacyWindowsBuilds(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	oldArgs := osArgs
+	osArgs = []string{"generateGoreleaserConfig", `C:\legacy-go`}
+	defer func() { osArgs = oldArgs }()
+
+	archive := NewArchive("server", Targets3264, nil)
+	archive.AddMainBinary(NewBinary("./server", Targets3264))
+	if err := GenerateCurrentConfig(OSWindowsLegacy, archive); err != nil {
+		t.Fatalf("GenerateCurrentConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID   string `yaml:"id"`
+			Main string `yaml:"main"`
+			Tool string `yaml:"tool"`
+		} `yaml:"builds"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+	hasWindows7Amd64 := false
+	hasLegacyConfigHelper := false
+	for _, build := range project.Builds {
+		if build.ID == "server_win7_amd64" && build.Tool == (WindowsLegacy{}).Tool() {
+			hasWindows7Amd64 = true
+		}
+		if build.Main == "./config-helper" && build.Tool == (WindowsLegacy{}).Tool() {
+			hasLegacyConfigHelper = true
+		}
+		if strings.Contains(build.ID, "_win10_") {
+			t.Errorf("legacy Windows current config includes Windows 10 target %q", build.ID)
+		}
+	}
+	if !hasWindows7Amd64 {
+		t.Error("legacy Windows current config does not include the Windows 7 amd64 build")
+	}
+	if !hasLegacyConfigHelper {
+		t.Error("legacy Windows current config does not include a legacy config-helper build")
+	}
+}
+
+func TestWindowsReleaseTarget(t *testing.T) {
+	if got := windowsReleaseTarget(6); got != OSWindowsLegacy {
+		t.Errorf("Windows 6 target = %v, want Windows 7-compatible target", got)
+	}
+	if got := windowsReleaseTarget(10); got != OSWindowsModern {
+		t.Errorf("Windows 10 target = %v, want Windows 10 target", got)
 	}
 }
 

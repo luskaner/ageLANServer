@@ -26,29 +26,49 @@ func universalBinaries(binaries []config.Build) []config.UniversalBinary {
 }
 
 func GenerateConfig(archives ...*Archive) error {
+	return generateConfig(nil, archives...)
+}
+
+func GenerateCurrentConfig(currentWindowsOS OperatingSystem, archives ...*Archive) error {
+	return generateConfig(currentWindowsOS, archives...)
+}
+
+func generateConfig(currentWindowsOS OperatingSystem, archives ...*Archive) error {
 	project := config.Project{
 		Version: 2,
 	}
 	for _, a := range archives {
 		archiveBuilds := a.Builds(OSMacOS)
+		if currentWindowsOS != nil {
+			archiveBuilds = slices.DeleteFunc(archiveBuilds, func(build config.Build) bool {
+				return slices.Contains(build.Goos, currentWindowsOS.Goos()) &&
+					build.Tool != currentWindowsOS.Tool()
+			})
+		}
 		project.Builds = append(project.Builds, archiveBuilds...)
 		project.Archives = append(project.Archives, a.Archives(archiveBuilds)...)
 	}
 	main := "./config-helper"
-	for target, archs := range *Targets64Windows {
+	windowsTargets := Targets64Windows
+	if currentWindowsOS == OSWindowsLegacy {
+		windowsTargets = NewBinaryTargets()
+		windowsTargets.AddTarget(OSWindowsLegacy, ArchAmd64)
+	}
+	for target, archs := range *windowsTargets {
 		for arch := range archs {
 			binary := filepath.Join("bin", fmt.Sprintf("%s_%s", main, arch.Goarch()))
 			id := fmt.Sprintf("%s_%s_%s", binary, target.Goos(), arch.Goarch())
-			project.Builds = append(
-				project.Builds,
-				config.Build{
-					ID:     id,
-					Goos:   []string{target.Goos()},
-					Goarch: []string{arch.Goarch()},
-					Main:   main,
-					Binary: binary,
-				},
-			)
+			build := config.Build{
+				ID:     id,
+				Goos:   []string{target.Goos()},
+				Goarch: []string{arch.Goarch()},
+				Main:   main,
+				Binary: binary,
+			}
+			if tool := target.Tool(); tool != "" {
+				build.Tool = tool
+			}
+			project.Builds = append(project.Builds, build)
 		}
 	}
 	for i, arch := range project.Archives {
@@ -86,6 +106,9 @@ func GenerateConfig(archives ...*Archive) error {
 		}
 	}
 	project.UniversalBinaries = universalBinaries(project.Builds)
+	if currentWindowsOS != nil {
+		project.UniversalBinaries = nil
+	}
 
 	project.Checksum = config.Checksum{
 		NameTemplate: `{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt`,

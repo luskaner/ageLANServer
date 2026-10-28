@@ -9,11 +9,20 @@ tasks:
     internal: true
     cmds:
       - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}"
+  build-goreleaser-cfg-current:
+    internal: true
+    cmds:
+      - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}" current
   build:
     deps:
       - build-goreleaser-cfg
     cmds:
       - goreleaser build --clean --snapshot
+  build-current:
+    deps:
+      - build-goreleaser-cfg-current
+    cmds:
+      - goreleaser build --clean --snapshot --single-target
   release:
     deps:
       - build-goreleaser-cfg
