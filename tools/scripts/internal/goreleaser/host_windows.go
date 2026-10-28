@@ -30,7 +30,7 @@ func currentWindowsOS() (OperatingSystem, error) {
 		return nil, fmt.Errorf("RtlGetVersion failed with NTSTATUS %#x", uint32(status))
 	}
 	target := windowsReleaseTarget(info.majorVersion)
-	if target == OSWindowsLegacy && target.Tool() == "" {
+	if target == OSWindowsLegacy && (len(osArgs) < 2 || osArgs[1] == "") {
 		return nil, fmt.Errorf("GOROOT_LEGACY must point to a Windows 7-compatible Go installation when building on Windows versions older than 10")
 	}
 	return target, nil
