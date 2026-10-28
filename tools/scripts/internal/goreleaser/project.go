@@ -26,11 +26,24 @@ func universalBinaries(binaries []config.Build) []config.UniversalBinary {
 }
 
 func GenerateConfig(archives ...*Archive) error {
+	return generateConfig(false, archives...)
+}
+
+func GenerateCurrentConfig(archives ...*Archive) error {
+	return generateConfig(true, archives...)
+}
+
+func generateConfig(currentOnly bool, archives ...*Archive) error {
 	project := config.Project{
 		Version: 2,
 	}
 	for _, a := range archives {
 		archiveBuilds := a.Builds(OSMacOS)
+		if currentOnly {
+			archiveBuilds = slices.DeleteFunc(archiveBuilds, func(build config.Build) bool {
+				return strings.Contains(build.ID, "_"+OSWindowsLegacy.Name()+"_")
+			})
+		}
 		project.Builds = append(project.Builds, archiveBuilds...)
 		project.Archives = append(project.Archives, a.Archives(archiveBuilds)...)
 	}
@@ -86,6 +99,9 @@ func GenerateConfig(archives ...*Archive) error {
 		}
 	}
 	project.UniversalBinaries = universalBinaries(project.Builds)
+	if currentOnly {
+		project.UniversalBinaries = nil
+	}
 
 	project.Checksum = config.Checksum{
 		NameTemplate: `{{ .ProjectName }}_{{ .RawVersion }}_checksums.txt`,

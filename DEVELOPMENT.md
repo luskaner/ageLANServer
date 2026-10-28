@@ -57,7 +57,8 @@ Depending on the module you want to debug, you will need to run the correspondin
 1. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
 2. Run ```task build```.
 
-To build binaries only for the current machine's operating system and architecture, run
+To build binaries only for the current machine's operating system and architecture, without
+the legacy Windows 7 targets, run
 ```task build-current```.
 
 ### Release

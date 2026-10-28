@@ -3,7 +3,10 @@ package goreleaser
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestGenerateSuccess(t *testing.T) {
@@ -17,6 +20,51 @@ func TestGenerateSuccess(t *testing.T) {
 	}
 	if _, err := os.Stat(".goreleaser.yaml"); err != nil {
 		t.Fatalf("goreleaser.yaml not created: %v", err)
+	}
+}
+
+func TestGenerateCurrentExcludesWindows7Builds(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := GenerateCurrent(); err != nil {
+		t.Fatalf("GenerateCurrent failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID string `yaml:"id"`
+		} `yaml:"builds"`
+		UniversalBinaries []struct {
+			ID string `yaml:"id"`
+		} `yaml:"universal_binaries"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+	hasWindows10Amd64 := false
+	for _, build := range project.Builds {
+		if strings.Contains(build.ID, "_win7_") {
+			t.Errorf("current build config includes legacy Windows target %q", build.ID)
+		}
+		if build.ID == "server_win10_amd64" {
+			hasWindows10Amd64 = true
+		}
+	}
+	if !hasWindows10Amd64 {
+		t.Error("current build config does not include Windows 10 amd64")
+	}
+	if len(project.UniversalBinaries) > 0 {
+		t.Error("current build config includes universal binaries for other platforms")
 	}
 }
 
