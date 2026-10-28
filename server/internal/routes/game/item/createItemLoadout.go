@@ -39,7 +39,7 @@ func CreateItemLoadout(w http.ResponseWriter, r *http.Request) {
 			itemIds.Add(id)
 		}
 	}
-	if itemIds.Cardinality() > 0 {
+	if !itemIds.IsEmpty() {
 		_ = u.GetItems().WithReadOnly(func(data *map[int32]*models.MainItem) error {
 			ok = itemIds.IsSubset(mapset.NewThreadUnsafeSetFromMapKeys(*data))
 			return nil

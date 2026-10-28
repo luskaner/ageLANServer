@@ -287,7 +287,7 @@ func ResolveUnspecifiedIps() (ips []string) {
 func Matches(addr1 string, addr2 string) bool {
 	addr2Ips := HostOrIpToIpsSet(addr2)
 	addr1Ips := HostOrIpToIpsSet(addr1)
-	return addr2Ips.Intersect(addr1Ips).Cardinality() > 0
+	return !addr2Ips.Intersect(addr1Ips).IsEmpty()
 }
 
 func IpToHosts(ip string) mapset.Set[string] {

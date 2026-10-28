@@ -425,7 +425,7 @@ func (a *Archive) Builds(mergedOSes ...OperatingSystem) []config.Build {
 			}
 			osPathMainBuilds[operatingSystem][path][binary.main] = []config.Build{}
 			for architecture, instructionSets := range architectures {
-				if instructionSets.Cardinality() > 0 {
+				if !instructionSets.IsEmpty() {
 					for intructionSet := range instructionSets.Iter() {
 						osPathMainBuilds[operatingSystem][path][binary.main] = append(osPathMainBuilds[operatingSystem][path][binary.main], build(path, binary.main, operatingSystem, architecture, intructionSet))
 					}
@@ -522,7 +522,7 @@ func (a *Archive) Archives(builds []config.Build) []config.Archive {
 	binaryIdsArchives := make(map[string][]config.Archive)
 	for operatingSystem, architectures := range *a.targets {
 		for architecture, instructionSets := range architectures {
-			if instructionSets.Cardinality() == 0 {
+			if instructionSets.IsEmpty() {
 				if currentArchive := archive(a.name, a.overrideOsName, operatingSystem, architecture, "", builds, a.files); currentArchive != nil {
 					id := keyFromStrings(currentArchive.IDs)
 					if _, exists := binaryIdsArchives[id]; !exists {

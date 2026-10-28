@@ -351,8 +351,8 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 		if battlesServers, ok := models.BattleServersStore[gameId]; ok && len(battlesServers) > 0 {
 			logger.Info("Battle Servers:")
-			for _, battleServer := range battlesServers {
-				logger.Detail("%s", battleServer.String())
+			for _, bs := range battlesServers {
+				logger.Detail("%s", bs.String())
 			}
 		}
 		var writer io.Writer

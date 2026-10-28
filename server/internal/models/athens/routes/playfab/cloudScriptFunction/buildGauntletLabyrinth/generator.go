@@ -114,7 +114,7 @@ func computePositions(previousNodes []int, numberOfNodes int) []int {
 			if positions.Cardinality() != i {
 				continue
 			}
-			acumPositions.Append(positions.ToSlice()...)
+			acumPositions.AppendFrom(positions)
 		}
 		for j := windowLen; j > 0 && finalPositions.Cardinality() < numberOfNodes; j-- {
 			var currentPositions []int
