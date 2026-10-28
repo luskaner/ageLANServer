@@ -14,6 +14,11 @@ tasks:
       - build-goreleaser-cfg
     cmds:
       - goreleaser build --clean --snapshot
+  build-current:
+    deps:
+      - build-goreleaser-cfg
+    cmds:
+      - goreleaser build --clean --snapshot --single-target
   release:
     deps:
       - build-goreleaser-cfg
