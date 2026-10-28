@@ -9,6 +9,8 @@ package cmd
 import (
 	"context"
 
+	"os"
+
 	"github.com/luskaner/ageServer/common"
 	commonCmd "github.com/luskaner/ageServer/common/cmd"
 	"github.com/luskaner/ageServer/launcher-common/launcher"
@@ -17,7 +19,6 @@ import (
 	"github.com/luskaner/ageServer/launcher-common/ui"
 	"github.com/luskaner/ageServer/launcher/internal/dialog"
 	"github.com/spf13/pflag"
-	"os"
 )
 
 // Version is set from main and shown in the session summary.
@@ -64,8 +65,8 @@ func configure() {
 	session.Configure(session.Setup{
 		Version: Version,
 		Report:  report,
-		NewDialog: func(mode string) launcher.Resolution {
-			resolution := dialog.New(mode)
+		NewDialog: func(enable bool) launcher.Resolution {
+			resolution := dialog.New(enable)
 			// The console backend prints its questions through the same sinks as
 			// everything else, so they reach the log file too.
 			dialog.SetOutput(dialog.Output{Println: report.Println, Printf: report.Printf})

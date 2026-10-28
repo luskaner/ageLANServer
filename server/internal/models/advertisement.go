@@ -580,7 +580,6 @@ func (adv *MainAdvertisement) UnsafeEncode(gameId string, clientLibVersion uint1
 		0,                           // observermax, can it be 0 so it means without limit?
 		i.NewBoolMappedNumberFromBool(adv.observers.enabled), // observers enabled (bool as 0/1)
 		adv.observers.delay, // observer delay
-		// TODO: Ensure if the order of password and the next is correct
 		i.NewBoolMappedNumberFromBool(adv.observers.password != ""), // observers password set (bool as 0/1)
 		i.NewBoolMappedNumberFromBool(adv.lan),                      // lan (bool as 0/1)
 		startTime,                                                   // match start time (nil if not started)

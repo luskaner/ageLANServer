@@ -42,7 +42,6 @@ func TestSpanClassification(t *testing.T) {
 		{"servers were found", nil},
 		{"Configuration is ready", nil},
 		{"Server.Executable is not set", []spanKind{spanKey}},
-		{"Config.Dialog defaults to auto", []spanKind{spanKey}},
 		{"Use --output ascii instead", []spanKind{spanFlag}},
 		{"Run the launcher", []spanKind{spanComponent}},
 		{"found C:\\Program Files\\AgeServer", []spanKind{spanPath, spanPath}},

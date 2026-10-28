@@ -78,7 +78,7 @@ func (c *Config) RunBattleServerManager(executable string, flags *pflag.FlagSet,
 					}
 				}
 			}
-			c.report().Warn("A Battle Server already existed or could not determine which one was started, kill %s in task manager as needed.", battleServer.Executable)
+			c.report().Warn("A standalone Battle Server already existed or could not determine which one was started, kill %s in task manager as needed.", battleServer.Executable)
 		}
 		return common.ErrSuccess
 	}

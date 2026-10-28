@@ -24,12 +24,6 @@ type (
 	Resolution      = launcher.Resolution
 )
 
-const (
-	ModeAuto  = launcher.ModeAuto
-	ModeTrue  = launcher.ModeTrue
-	ModeFalse = launcher.ModeFalse
-)
-
 // label is the compact summary of a candidate, falling back to the full
 // description when no compact one was provided.
 //
@@ -74,8 +68,8 @@ func sinks() Output {
 
 // New resolves mode ("auto", "true" or "false") to a dialog backend. It never
 // returns a nil Dialog.
-func New(mode string) Resolution {
-	if mode == ModeTrue || mode == ModeAuto {
+func New(enable bool) Resolution {
+	if enable {
 		if availableOnce() {
 			return Resolution{Dialog: zenityDialog{}, Name: zenityDialog{}.Name()}
 		}
@@ -83,9 +77,6 @@ func New(mode string) Resolution {
 		// unavailable on Linux/BSD when qarma/zenity/matedialog are missing
 		// from PATH, and someone who explicitly asked for graphical dialogs
 		// must not be locked out by that.
-		if mode == ModeAuto {
-			return consoleResolution("")
-		}
 		return consoleResolution("Graphical dialogs are not available in this system, using the console instead.")
 	}
 	return consoleResolution("")

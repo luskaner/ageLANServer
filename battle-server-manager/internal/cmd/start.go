@@ -84,7 +84,7 @@ func runStart(args []string) (err error, exitCode int) {
 		if values.NoErrExisting {
 			return
 		}
-		cmdlog.Fail("A Battle Server is already running, use --force to start another one")
+		cmdlog.Fail("A standalone Battle Server is already running, use --force to start another one")
 		exitCode = internal.ErrAlreadyRunning
 		return
 	}
@@ -108,12 +108,12 @@ func runStart(args []string) (err error, exitCode int) {
 		}
 	}
 	if lowerRegion := strings.ToLower(region); names.ContainsOne(lowerRegion) || regions.ContainsOne(lowerRegion) {
-		cmdlog.Fail("A Battle Server with the name/region %s already exists", region)
+		cmdlog.Fail("A standalone Battle Server with the name/region %s already exists", region)
 		exitCode = internal.ErrAlreadyExists
 		return
 	}
 	if lowerName := strings.ToLower(name); names.ContainsOne(lowerName) || regions.ContainsOne(lowerName) {
-		cmdlog.Fail("A Battle Server with the name/region %s already exists", name)
+		cmdlog.Fail("A standalone Battle Server with the name/region %s already exists", name)
 		exitCode = internal.ErrAlreadyExists
 		return
 	}
@@ -214,14 +214,12 @@ func runStart(args []string) (err error, exitCode int) {
 		return
 	}
 	saveConfig := battleServer.Config{
-		Base: battleServer.Base{
-			Region:        region,
-			Name:          name,
-			IPv4:          ip,
-			BsPort:        allPorts[0],
-			WebSocketPort: allPorts[1],
-		},
-		PID: pid,
+		Region:        region,
+		Name:          name,
+		IPv4:          ip,
+		BsPort:        allPorts[0],
+		WebSocketPort: allPorts[1],
+		PID:           pid,
 	}
 	if allPorts[2] != -1 {
 		saveConfig.OutOfBandPort = allPorts[2]

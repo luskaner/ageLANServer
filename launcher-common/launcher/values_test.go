@@ -23,12 +23,6 @@ func TestTheAccessorsAndTheValidatorsAgree(t *testing.T) {
 		unexpected int
 	}{
 		{
-			name:       "dialog",
-			offered:    func() []string { return AutoTrueFalseValues().ToSlice() },
-			validate:   func(v string) int { return ValidateDialogValue(Discard{}, v) },
-			unexpected: ErrInvalidDialog,
-		},
-		{
 			name:       "serverStart",
 			offered:    func() []string { return AutoTrueFalseValues().ToSlice() },
 			validate:   func(v string) int { return ValidateServerStartValue(Discard{}, v) },

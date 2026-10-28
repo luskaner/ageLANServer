@@ -230,7 +230,7 @@ func TestAvailableOnceEvaluatedAtMostOnce(t *testing.T) {
 
 	calls := 0
 	availableOnce = sync.OnceValue(func() bool { calls++; return true })
-	if New(ModeAuto).Name != "zenity" || New(ModeAuto).Name != "zenity" {
+	if New(true).Name != "zenity" || New(true).Name != "zenity" {
 		t.Fatal("auto with available dialogs must resolve to zenity")
 	}
 	if calls != 1 {
@@ -239,7 +239,7 @@ func TestAvailableOnceEvaluatedAtMostOnce(t *testing.T) {
 
 	calls = 0
 	availableOnce = func() bool { calls++; return true }
-	if New(ModeFalse).Name != "console" {
+	if New(false).Name != "console" {
 		t.Error("false must always resolve to the console")
 	}
 	if calls != 0 {

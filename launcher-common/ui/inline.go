@@ -116,7 +116,7 @@ var identifierNames = []string{
 	"Server.Stop",
 	"Client.Executable",
 	"Client.Isolation.Path",
-	"Config.Dialog",
+	"Config.CanUseDialogs",
 	"Config.Log",
 	"localCert",
 	"caStoreCert",

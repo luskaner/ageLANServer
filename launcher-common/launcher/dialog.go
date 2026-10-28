@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-// Mode values accepted by Config.Dialog and --dialog.
+// Mode values accepted by Config.CanUseDialogs and --dialog.
 const (
 	ModeAuto  = "auto"
 	ModeTrue  = "true"

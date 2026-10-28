@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luskaner/ageServer/launcher-common/launcher"
 	"github.com/luskaner/ageServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageServer/launcher-common/launcher/session"
 )
@@ -62,7 +61,7 @@ func TestConsoleConfiguresItselfWithTheSession(t *testing.T) {
 // something and gets nothing answers on the terminal rather than nowhere.
 func TestConsoleOffersAWorkingDialog(t *testing.T) {
 	configure()
-	resolution := session.Current().NewDialog(launcher.ModeFalse)
+	resolution := session.Current().NewDialog(false)
 	if resolution.Dialog == nil {
 		t.Fatal("no backend for ModeFalse")
 	}

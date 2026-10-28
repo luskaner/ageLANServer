@@ -92,17 +92,6 @@ func TestValidationRequiredTrueFalse(t *testing.T) {
 	}
 }
 
-func TestValidationDialogValue(t *testing.T) {
-	for _, mode := range []string{ModeAuto, ModeTrue, ModeFalse} {
-		if ec := ValidateDialogValue(Discard{}, mode); ec != common.ErrSuccess {
-			t.Errorf("for dialog=%s, expected success, got %d", mode, ec)
-		}
-	}
-	if ec := ValidateDialogValue(Discard{}, "xxx"); ec != ErrInvalidDialog {
-		t.Errorf("expected %d for an invalid dialog mode, got %d", ErrInvalidDialog, ec)
-	}
-}
-
 // A rejected value has to say which values would have worked. A frontend showing
 // the same message the console does is the whole point of moving these here, and
 // a message without the options is a dead end.

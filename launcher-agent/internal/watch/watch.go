@@ -34,7 +34,7 @@ const (
 	activityWaitingForGameEnd = "Waiting for the game to end"
 	activityCopyingLogs       = "Copying the game logs"
 	activityStoppingServer    = "Stopping the server"
-	activityStoppingBattle    = "Stopping the battle server"
+	activityStoppingBattle    = "Stopping the standalone battle server"
 	activityRevertCommand     = "Running the revert command"
 	activityReverting         = "Reverting the configuration"
 )

@@ -50,8 +50,7 @@ func (e *ExitError) Unwrap() error { return e.Err }
 // error. A caller that only wants the code can ignore the message and let the
 // frontend decide how to say it.
 func ExitCode(err error) (int, bool) {
-	var ee *ExitError
-	if errors.As(err, &ee) {
+	if ee, ok := errors.AsType[*ExitError](err); ok {
 		return ee.Code, true
 	}
 	return 0, false
@@ -118,8 +117,7 @@ func LoadConfig(fs *pflag.FlagSet, v Values, r Reporter) (*Configuration, Loaded
 		// A missing file is not a failure: not every game ships a config of its
 		// own. Anything else is, and it is the one case where the file being
 		// read is the most useful thing to name.
-		var fileErr *common.KoanfFileLoadError
-		if !errors.As(err, &fileErr) {
+		if _, ok := errors.AsType[*common.KoanfFileLoadError](err); !ok {
 			return nil, loaded, &ExitError{Code: ErrGameConfigParse, Err: err, Game: true, Path: deref(v.GameConfigFile)}
 		}
 	} else {
@@ -229,14 +227,6 @@ func RequiredTrueFalseValues() mapset.Set[string] { return values(ModeTrue, Mode
 //
 // Each one reads the same accessor its frontend read when it offered the values,
 // so the two cannot disagree about what an option accepts.
-
-func ValidateDialogValue(r Reporter, dialogMode string) (exitCode int) {
-	if validValues := AutoTrueFalseValues(); !validValues.Contains(dialogMode) {
-		r.Fail("Invalid value for dialog (%s): %s", list(validValues), dialogMode)
-		return ErrInvalidDialog
-	}
-	return common.ErrSuccess
-}
 
 func ValidateCanTrustCertificate(r Reporter, canTrustCertificate string) (exitCode int) {
 	if validValues := CanTrustCertificateValues(); !validValues.Contains(canTrustCertificate) {

@@ -67,7 +67,7 @@ func BindFlags(fs *pflag.FlagSet, v Values) error {
 	configPaths := ConfigPaths()
 	fs.StringVar(v.ConfigFile, "config", "", fmt.Sprintf(`config file (default config.toml in %s directories)`, strings.Join(configPaths, ", ")))
 	fs.StringVar(v.GameConfigFile, "gameConfig", "", fmt.Sprintf(`Game config file (default config.game.toml in %s directories)`, strings.Join(configPaths, ", ")))
-	fs.StringP("dialog", "d", autoValue, `Whether to ask the interactive questions (which server to use, and whether to start one) in a graphical window instead of in the console, "auto" uses graphical dialogs if they are available in the system, "false" always asks in the console. It always falls back to the console if graphical dialogs are unavailable.`)
+	fs.BoolP("canUseDialogs", "d", true, `Whether to ask the interactive questions (which server to use, and whether to start one) in a graphical window instead of in the console, "false" always asks in the console. It always falls back to the console if graphical dialogs are unavailable.`)
 	fs.StringVar(v.Output, "output", autoValue, `How much to decorate the console output with, "auto" picks whatever the terminal can show without turning characters into boxes, "color" asks for colour but still degrades to plain text if the console cannot do it, "ascii" guarantees plain ASCII text. It also reads the AGE_LANSERVER_OUTPUT environment variable.`)
 	fs.Bool("log", false, "Whether to log more info to a file. Enable it for errors.")
 	fs.Bool("internet", true, "Whether or not the launcher may use the internet to look up official domains. If false, only the statically known domains will be used for the hosts file, certificates and logs. If true and there is no internet connectivity the launcher will still work with the statically known domains.")
@@ -140,7 +140,7 @@ func BindFlags(fs *pflag.FlagSet, v Values) error {
 // configuration instead of an empty struct full of zero values.
 func defaultLayers() map[string]any {
 	defaults := map[string]any{
-		"Config.Dialog":                             autoValue,
+		"Config.CanUseDialogs":                      true,
 		"Config.CanAddHost":                         "true",
 		"Config.Certificate.CanTrustInPc":           "local",
 		"Config.Certificate.CanTrustInGame":         true,
@@ -182,7 +182,7 @@ func defaultLayers() map[string]any {
 // until a run behaves differently from what the help promised.
 func flagBindings() map[string]string {
 	return map[string]string{
-		"dialog":                        "Config.Dialog",
+		"canUseDialogs":                 "Config.CanUseDialogs",
 		"canAddHost":                    "Config.CanAddHost",
 		"canTrustCertificate":           "Config.Certificate.CanTrustInPc",
 		"canBroadcastBattleServer":      "Config.CanBroadcastBattleServer",

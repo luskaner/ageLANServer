@@ -224,9 +224,6 @@ func (b *ConfigBuilder) BuildConfig() (*battleserver.Config, error) {
 	if b.Region == "" {
 		return nil, fmt.Errorf("region is required")
 	}
-	if b.Name == "" {
-		b.Name = "Embedded Battle Server"
-	}
 	if b.IPv4 == "" {
 		b.IPv4 = "auto"
 	}

@@ -103,7 +103,7 @@ type Setup struct {
 	// The session installs whatever it returns with launcher.SetDialog before
 	// asking anything, so a test cannot inject a fake backend through the
 	// registry alone: it has to own the whole resolver.
-	NewDialog func(mode string) launcher.Resolution
+	NewDialog func(enable bool) launcher.Resolution
 	// Stdin is what a console backend reads its answers from. A frontend that
 	// asks in its own window leaves it nil and its backend ignores it.
 	Stdin io.Reader
@@ -165,11 +165,11 @@ func option(v *string) string {
 // a direct call so that a test can own the whole backend: the session installs
 // whatever this returns, so a fake injected only through launcher.SetDialog would
 // be replaced before the first question.
-var dialogNewFn = func(mode string) launcher.Resolution {
+var dialogNewFn = func(enable bool) launcher.Resolution {
 	if setup.NewDialog == nil {
 		return launcher.Resolution{}
 	}
-	return setup.NewDialog(mode)
+	return setup.NewDialog(enable)
 }
 
 // report is the Reporter for the session's own lines, which is the frontend's
@@ -375,11 +375,7 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 		teardown(false)
 		exitCode = int(atomicExitCode.Load())
 	}()
-	if ec := launcher.ValidateDialogValue(reportOrDiscard(), cfg.Config.Dialog); ec != common.ErrSuccess {
-		atomicExitCode.Store(int32(ec))
-		return
-	}
-	dialogResolution := dialogNewFn(cfg.Config.Dialog)
+	dialogResolution := dialogNewFn(cfg.Config.CanUseDialogs)
 	launcher.SetDialog(dialogResolution.Dialog)
 	// Registered after the teardown defer so, by LIFO, it runs before it.
 	defer launcher.ResetDialog()
@@ -871,14 +867,14 @@ func Run(ctx context.Context, fs *pflag.FlagSet) (err error, exitCode int) {
 			serverArgsValues.Deterministic = true
 		}
 		battleServerRequired := configBattleServerRequiredFn(executer)
-		if battleServerManagerRun == "false" && battleServerRequired {
+		if battleServerRequired && serverArgsValues.StartBsIfMissing == "false" && battleServerManagerRun == "false" {
 			reportOrDiscard().Warn("This game needs a Battle Server to be started but you don't allow to start one, make sure you have one running and the server configured.")
 		}
 		runBattleServerManager := battleServerManagerRun == "true" || (battleServerManagerRun == "required" && battleServerRequired)
 		if cfg.Server.Start == launcher.ModeAuto && !cfg.Server.StartWithoutConfirmation {
 			str := "No servers were found, proceeding to"
 			if runBattleServerManager {
-				str += " start a battle server (if needed) and then"
+				str += " start a standalone battle server (if needed) and then"
 			}
 			str += " start the server."
 			if !launcher.ActiveDialog().ConfirmStartServer(str, promptInput()) {

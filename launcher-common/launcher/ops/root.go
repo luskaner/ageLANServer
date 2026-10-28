@@ -142,7 +142,7 @@ func (c *Config) Revert() {
 		}
 	}
 	if c.battleServerRegion != "" && c.battleServerExe != "" {
-		c.report().Step("Stopping battle server via battle-server-manager...")
+		c.report().Step("Stopping standalone battle server via battle-server-manager...")
 		_ = commonLogger.FileLogger.Buffer("battle-server-manager_remove", func(writer io.Writer) {
 			if result := launcherCommon.RemoveBattleServerRegion(c.battleServerExe, c.gameId, c.battleServerRegion, writer, func(options *exec.Options) {
 				commonLogger.Println("battle-server-manager_remove", options.String())

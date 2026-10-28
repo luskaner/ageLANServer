@@ -1,56 +1,8 @@
 package dialog
 
 import (
-	"sync"
 	"testing"
 )
-
-func TestNewResolvesMode(t *testing.T) {
-	origAvailableOnce := availableOnce
-	t.Cleanup(func() { availableOnce = origAvailableOnce })
-
-	for _, tc := range []struct {
-		mode       string
-		available  bool
-		wantName   string
-		wantReason string
-	}{
-		{ModeFalse, false, "console", ""},
-		{ModeFalse, true, "console", ""},
-		{ModeTrue, true, "zenity", ""},
-		{ModeTrue, false, "console", "Graphical dialogs are not available in this system, using the console instead."},
-		{ModeAuto, true, "zenity", ""},
-		{ModeAuto, false, "console", ""},
-	} {
-		available := tc.available
-		availableOnce = sync.OnceValue(func() bool { return available })
-		res := New(tc.mode)
-		if res.Name != tc.wantName {
-			t.Errorf("mode %q available %t: name = %q, want %q", tc.mode, tc.available, res.Name, tc.wantName)
-		}
-		if res.Reason != tc.wantReason {
-			t.Errorf("mode %q available %t: reason = %q, want %q", tc.mode, tc.available, res.Reason, tc.wantReason)
-		}
-		if res.Dialog == nil {
-			t.Errorf("mode %q available %t: nil dialog", tc.mode, tc.available)
-		} else if res.Dialog.Name() != tc.wantName {
-			t.Errorf("mode %q available %t: dialog.Name() = %q, want %q", tc.mode, tc.available, res.Dialog.Name(), tc.wantName)
-		}
-	}
-}
-
-// Regression: an unvalidated mode must still resolve to a usable backend, the
-// console, instead of a nil Dialog that would panic on the first prompt.
-func TestNewUnknownModeFallsBackToConsole(t *testing.T) {
-	origAvailableOnce := availableOnce
-	t.Cleanup(func() { availableOnce = origAvailableOnce })
-	availableOnce = sync.OnceValue(func() bool { return false })
-
-	res := New("xxx")
-	if res.Name != "console" || res.Dialog == nil {
-		t.Fatalf("unknown mode = %+v, want the console backend", res)
-	}
-}
 
 func TestActiveDefaultsToConsole(t *testing.T) {
 	Reset()

@@ -157,7 +157,7 @@ func validLauncherConfig() *launcher.Configuration {
 	c := &launcher.Configuration{}
 	c.Config.Certificate.CanTrustInPc = "local"
 	c.Config.CanBroadcastBattleServer = "auto"
-	c.Config.Dialog = "auto"
+	c.Config.CanUseDialogs = true
 	c.Server.Start = "auto"
 	c.Server.Stop = "auto"
 	c.Server.BattleServerManager.Run = "true"
@@ -620,7 +620,7 @@ type runRootOverrides struct {
 	dnsConnectivityFnVal              func() bool
 	configRunStopAgentFnVal           func() *commonExecutor.Result
 	waitForProcessFnVal               func(context.Context, *os.Process, *time.Duration) bool
-	dialogNewFnVal                    func(string) launcher.Resolution
+	dialogNewFnVal                    func(bool) launcher.Resolution
 }
 
 func applyOverrides(t *testing.T, o runRootOverrides) func() {
@@ -883,7 +883,7 @@ func applyOverrides(t *testing.T, o runRootOverrides) func() {
 	} else {
 		// Confirm by default so the tests keep reaching the server start path,
 		// which is what they were written for.
-		dialogNewFn = func(string) launcher.Resolution {
+		dialogNewFn = func(bool) launcher.Resolution {
 			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "fake"}
 		}
 	}
@@ -1581,34 +1581,6 @@ func (c *countingLocker) Unlock() error {
 
 func (c *countingLocker) calls() int32 { return atomic.LoadInt32(&c.calls32) }
 
-// An invalid dialog mode must abort before anything is started or reverted on
-// the user's behalf.
-func TestRunRootInvalidDialogValue(t *testing.T) {
-	startServerCalls := 0
-	restore := applyOverrides(t, runRootOverrides{
-		gameId:        "age2",
-		isAdmin:       false,
-		gameSupported: true,
-		cfg: func() *launcher.Configuration {
-			c := validLauncherConfig()
-			c.Config.Dialog = "xxx"
-			return c
-		},
-		configStartServerFnVal: func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string) {
-			startServerCalls++
-			return common.ErrSuccess, "127.0.0.1"
-		},
-	})
-	defer restore()
-	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	if _, exitCode := Run(context.Background(), fs); exitCode != launcher.ErrInvalidDialog {
-		t.Fatalf("got %d, want %d", exitCode, launcher.ErrInvalidDialog)
-	}
-	if startServerCalls != 0 {
-		t.Errorf("the server was started %d times with an invalid dialog mode", startServerCalls)
-	}
-}
-
 // A "true" mode on a system without graphical dialogs must warn and continue on
 // the console, never abort.
 func TestRunRootUsesConsoleWhenDialogsUnavailable(t *testing.T) {
@@ -1619,12 +1591,12 @@ func TestRunRootUsesConsoleWhenDialogsUnavailable(t *testing.T) {
 		gameSupported: true,
 		cfg: func() *launcher.Configuration {
 			c := validLauncherConfig()
-			c.Config.Dialog = launcher.ModeTrue
+			c.Config.CanUseDialogs = true
 			return c
 		},
-		dialogNewFnVal: func(mode string) launcher.Resolution {
-			if mode != launcher.ModeTrue {
-				t.Errorf("dialog.New called with %q, want %q", mode, launcher.ModeTrue)
+		dialogNewFnVal: func(enable bool) launcher.Resolution {
+			if !enable {
+				t.Errorf("dialog.New called with %t, want %t", enable, true)
 			}
 			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console", Reason: reason}
 		},
@@ -1658,7 +1630,7 @@ func TestRunRootServerStartCanceled(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) launcher.Resolution {
+		dialogNewFnVal: func(bool) launcher.Resolution {
 			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 		configStartServerFnVal: func(string, *pflag.FlagSet, *cmdServer.Values, bool) (int, string) {
@@ -1686,7 +1658,7 @@ func TestRunRootServerStartConfirmed(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) launcher.Resolution {
+		dialogNewFnVal: func(bool) launcher.Resolution {
 			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 		configStartServerFnVal: func(_ string, _ *pflag.FlagSet, v *cmdServer.Values, b bool) (int, string) {
@@ -1723,7 +1695,7 @@ func TestRunRootServerStartWithoutConfirmationSkipsDialog(t *testing.T) {
 			c.Server.StartWithoutConfirmation = true
 			return c
 		},
-		dialogNewFnVal: func(string) launcher.Resolution {
+		dialogNewFnVal: func(bool) launcher.Resolution {
 			return launcher.Resolution{Dialog: dlg, Name: "fake"}
 		},
 	})
@@ -1746,7 +1718,7 @@ func TestRunRootHeaderHasNoDuplicates(t *testing.T) {
 		gameId:        "age2",
 		isAdmin:       false,
 		gameSupported: true,
-		dialogNewFnVal: func(string) launcher.Resolution {
+		dialogNewFnVal: func(bool) launcher.Resolution {
 			return launcher.Resolution{Dialog: &fakeDialog{confirm: true}, Name: "console"}
 		},
 	})
