@@ -11,12 +11,13 @@ func main() {
 	if len(os.Args) > 2 && !currentOnly {
 		panic("unsupported target: " + os.Args[2])
 	}
-	generate := goreleaser.Generate
 	if currentOnly {
-		generate = goreleaser.GenerateCurrent
+		if err := goreleaser.GenerateCurrent(); err != nil {
+			panic(err)
+		}
+		return
 	}
-	err := generate()
-	if err != nil {
+	if err := goreleaser.Generate(); err != nil {
 		panic(err)
 	}
 }
