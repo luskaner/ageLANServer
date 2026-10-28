@@ -11,7 +11,7 @@ import (
 	"time"
 	"unsafe"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/ebitengine/purego"
 	"golang.org/x/sys/unix"
 )

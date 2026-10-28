@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common/battleServer"
 	"github.com/luskaner/ageServer/common/cmdlog"
 	"github.com/luskaner/ageServer/common/process"

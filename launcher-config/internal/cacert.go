@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common"
 	launcherCommonCert "github.com/luskaner/ageServer/common/game/cert"
 	"github.com/luskaner/ageServer/common/logger"

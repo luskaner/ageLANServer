@@ -1,7 +1,7 @@
 package age2
 
 import (
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common/game"
 	"github.com/luskaner/ageServer/server/internal/models"
 )

@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	i "github.com/luskaner/ageServer/server/internal"
 )
 

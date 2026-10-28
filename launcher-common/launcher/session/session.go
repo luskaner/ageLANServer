@@ -19,7 +19,9 @@ import (
 
 	"github.com/luskaner/ageServer/common/uuid"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	"slices"
+
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common"
 	commonCmd "github.com/luskaner/ageServer/common/cmd"
 	"github.com/luskaner/ageServer/common/cmd/bsManager"
@@ -41,7 +43,6 @@ import (
 	"github.com/luskaner/ageServer/launcher-common/launcher/ops/logger"
 	"github.com/luskaner/ageServer/launcher-common/launcher/server"
 	"github.com/spf13/pflag"
-	"slices"
 )
 
 // Package session performs a launcher session: the whole thing a launch does,

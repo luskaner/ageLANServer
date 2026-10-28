@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/pelletier/go-toml/v2 v2.4.3
-	github.com/wailsapp/wails/v3 v3.0.0-beta.30
+	github.com/wailsapp/wails/v3 v3.0.0
 )
 
 require (
@@ -14,5 +14,6 @@ require (
 	github.com/godbus/dbus/v5 v5.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 )

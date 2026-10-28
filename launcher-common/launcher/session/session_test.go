@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/spf13/pflag"
 
 	"github.com/luskaner/ageServer/common"

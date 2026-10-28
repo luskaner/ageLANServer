@@ -3,7 +3,7 @@ package leaderboard
 import (
 	"net/http"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common/game"
 	i "github.com/luskaner/ageServer/server/internal"
 	"github.com/luskaner/ageServer/server/internal/logger"

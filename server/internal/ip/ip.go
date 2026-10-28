@@ -3,7 +3,7 @@ package ip
 import (
 	"net/netip"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common"
 )
 

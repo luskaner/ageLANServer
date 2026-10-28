@@ -9,7 +9,7 @@ import (
 
 	"github.com/luskaner/ageServer/common/uuid"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v3"
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/cmd"
 	cmdServer "github.com/luskaner/ageServer/common/cmd/server"
