@@ -9,9 +9,18 @@ tasks:
     internal: true
     cmds:
       - go run tools/scripts/cmd/generateGoreleaserConfig.go "{{ .GOROOT_LEGACY }}"
+  build-goreleaser-cfg-windows:
+    internal: true
+    cmds:
+      - go run tools/scripts/cmd/generateGoreleaserConfig.go "{{ .GOROOT_LEGACY }}" windows
   build:
     deps:
       - build-goreleaser-cfg
+    cmds:
+      - goreleaser build --clean --snapshot
+  build-windows:
+    deps:
+      - build-goreleaser-cfg-windows
     cmds:
       - goreleaser build --clean --snapshot
   release:

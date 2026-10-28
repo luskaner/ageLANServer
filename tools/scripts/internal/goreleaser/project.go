@@ -25,7 +25,7 @@ func universalBinaries(binaries []config.Build) []config.UniversalBinary {
 	return result
 }
 
-func GenerateConfig(archives ...*Archive) error {
+func GenerateConfig(windowsOnly bool, archives ...*Archive) error {
 	project := config.Project{
 		Version: 2,
 	}
@@ -50,6 +50,17 @@ func GenerateConfig(archives ...*Archive) error {
 				},
 			)
 		}
+	}
+	if windowsOnly {
+		project.Builds = slices.DeleteFunc(project.Builds, func(build config.Build) bool {
+			return build.Tool != "" ||
+				!slices.Contains(build.Goos, OSWindowsModern.Goos()) ||
+				!slices.Contains(build.Goarch, ArchAmd64.Goarch()) ||
+				strings.HasPrefix(build.Binary, "server/") ||
+				strings.HasPrefix(build.Binary, "launcher/") ||
+				strings.HasPrefix(build.Binary, "battle-server-manager/")
+		})
+		project.Archives = nil
 	}
 	for i, arch := range project.Archives {
 		if strings.Contains(arch.ID, "win") {

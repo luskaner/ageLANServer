@@ -15,8 +15,8 @@
 Copy `.env.example` to `.env` and set:
 
 * ```GPG_FINGERPRINT``` to the fingerprint of the key. Required only for `task release`.
-* ```GOROOT_LEGACY``` to the legacy go installation path. Required for `task build` and
-  `task release`.
+* ```GOROOT_LEGACY``` to the legacy go installation path. Required for `task build`,
+  `task build-windows`, and `task release`.
 
 ### Debug
 
@@ -38,6 +38,8 @@ Depending on the module you want to debug, you will need to run the correspondin
 
 1. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
 2. Run ```task build```.
+
+To build only the Windows release binaries, run ```task build-windows```.
 
 ### Release
 
