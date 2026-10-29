@@ -124,8 +124,11 @@ Expiry = '12h'
 # BsPort = 0
 # WebSocketPort = 0
 # OutOfBandPort = 0
-# SimulationPeriod = 0
 # LogLevel = 'info'
+#
+# The simulation period is not configurable here: each game always runs with
+# its own default (25 ms for AoE: DE, 50 for AoE III: DE and AoM: RT, 125 for
+# AoE II: DE and AoE IV: AE).
 
 # CONFIGURING BATTLE SERVER REPLAYS
 # When enabled, the embedded battle server writes the recorded game data to

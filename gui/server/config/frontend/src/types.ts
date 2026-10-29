@@ -1,6 +1,25 @@
+export interface EmbeddedBattleServerConfig {
+  StartIfMissing: string;
+  Region: string;
+  Name: string;
+  IPv4: string;
+  BsPort: number;
+  WebSocketPort: number;
+  OutOfBandPort: number;
+  LogLevel: string;
+}
+
+/**
+ * What the server uses for a game when the document leaves the embedded battle
+ * server out. Comes from Go (`ConfigService.EmbeddedBattleServerDefaults`), so
+ * the editor shows the real values instead of keeping a second copy of them.
+ */
+export type EmbeddedBattleServerDefaults = EmbeddedBattleServerConfig;
+
 export interface GameHostsConfig {
   Hosts: string[];
   BattleServers: BattleServerConfig[];
+  EmbeddedBattleServer: EmbeddedBattleServerConfig;
 }
 
 export interface BattleServerConfig {
@@ -47,6 +66,14 @@ export interface CustomFilesConfig {
   Expiry: string;
 }
 
+export interface BattleServerReplaysConfig {
+  Enabled: boolean;
+  Folder: string;
+  MaxFileSize: string;
+  MaxTotalSize: string;
+  Expiry: string;
+}
+
 export interface AppConfig {
   Log: boolean;
   GeneratePlatformUserId: boolean;
@@ -56,6 +83,7 @@ export interface AppConfig {
   Games: GamesConfig;
   Announcement: AnnouncementConfig;
   CustomFiles: CustomFilesConfig;
+  BattleServerReplays: BattleServerReplaysConfig;
 }
 
 export interface ValidationErrors {
@@ -93,6 +121,11 @@ export function fieldLabel(field: string): string {
   if (field === 'CustomFiles.MaxFileSize') return 'Maximum file size';
   if (field === 'CustomFiles.MaxTotalSize') return 'Total size limit';
   if (field === 'CustomFiles.Expiry') return 'File expiry';
+  if (field === 'BattleServerReplays.Enabled') return 'Replay recording';
+  if (field === 'BattleServerReplays.Folder') return 'Replay folder';
+  if (field === 'BattleServerReplays.MaxFileSize') return 'Maximum replay size';
+  if (field === 'BattleServerReplays.MaxTotalSize') return 'Replay total size limit';
+  if (field === 'BattleServerReplays.Expiry') return 'Replay expiry';
   if (field.startsWith('Games.Enabled')) return 'Enabled games';
   if (field.startsWith('Sign.PlatformUserIdExceptions')) return 'Platform user ID exceptions';
 
@@ -101,6 +134,12 @@ export function fieldLabel(field: string): string {
 
   const battleServers = /^Games\.([^.]+)\.BattleServers$/.exec(field);
   if (battleServers) return `Battle servers of ${GAME_NAMES.get(battleServers[1]) ?? battleServers[1]}`;
+
+  const battleServerList = /^Games\.([^.]+)\.BattleServers\.(\d+)$/.exec(field);
+  if (battleServerList) {
+    const gameName = GAME_NAMES.get(battleServerList[1]) ?? battleServerList[1];
+    return `Battle server ${parseInt(battleServerList[2], 10) + 1} of ${gameName}`;
+  }
 
   const battleServer = /^Games\.([^.]+)\.BattleServers\.(\d+)\.(.+)$/.exec(field);
   if (battleServer) {
@@ -118,10 +157,60 @@ export function fieldLabel(field: string): string {
     return `Battle server ${idx} ${labelMap[fieldName] ?? fieldName} of ${gameName}`;
   }
 
+  // Embedded battle server fields
+  if (isEmbeddedBattleServerField(field)) {
+    return embeddedBattleServerFieldLabel(field);
+  }
+
   // A rule pointing at something this map does not know yet: the name of its
   // last step, spread out into words, so nothing technical reaches the user.
   const words = field.split('.').filter((segment) => !/^\d+$/.test(segment));
   return (words[words.length - 1] ?? field).replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
+const embeddedBattleServerFields = new Set([
+  'StartIfMissing',
+  'Region',
+  'Name',
+  'IPv4',
+  'BsPort',
+  'WebSocketPort',
+  'OutOfBandPort',
+  'LogLevel',
+]);
+
+export function isEmbeddedBattleServerField(field: string): boolean {
+  const match = /^Games\.([^.]+)\.EmbeddedBattleServer\.(.+)$/.exec(field);
+  if (!match) return false;
+  return embeddedBattleServerFields.has(match[2]);
+}
+
+export function embeddedBattleServerFieldLabel(field: string): string {
+  const match = /^Games\.([^.]+)\.EmbeddedBattleServer\.(.+)$/.exec(field);
+  if (!match) return field;
+  const gameName = GAME_NAMES.get(match[1]) ?? match[1];
+  const fieldName = match[2];
+  const labelMap: Record<string, string> = {
+    StartIfMissing: 'Start if missing',
+    Region: 'Region',
+    Name: 'Name',
+    IPv4: 'IPv4 address',
+    BsPort: 'Battle server port',
+    WebSocketPort: 'WebSocket port',
+    OutOfBandPort: 'Out-of-band port',
+    LogLevel: 'Log level',
+  };
+  return `${labelMap[fieldName] ?? fieldName} of embedded battle server for ${gameName}`;
+}
+
+/**
+ * A Go service error as the user should read it. Wails prefixes a rejected
+ * binding call with "Binding call failed: Bound method returned an error:",
+ * which says nothing the user can act on.
+ */
+export function errorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw.replace(/^Binding call failed:\s*(?:Bound method returned an error:\s*)?/i, '');
 }
 
 /**

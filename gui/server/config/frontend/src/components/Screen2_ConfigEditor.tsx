@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActionIcon,
-    Alert,
     AppShell,
     Box,
     Burger,
@@ -10,6 +9,7 @@ import {
     Input,
     List,
     Menu,
+    Modal,
     NavLink,
     NumberInput,
     Radio,
@@ -39,6 +39,7 @@ import {
     IconFolderOpen,
     IconId,
     IconLogs,
+    IconMovie,
     IconNetwork,
     IconPlus,
     IconSettings,
@@ -48,11 +49,13 @@ import {
     IconTrash,
     IconWorld,
 } from '@tabler/icons-react';
-import { AppConfig, AVAILABLE_GAMES, ValidationErrors, fieldLabel, humanMessage } from '../types';
+import { AppConfig, AVAILABLE_GAMES, EmbeddedBattleServerDefaults, ValidationErrors, errorMessage, fieldLabel, humanMessage } from '../types';
 import { AutoManualCard } from './AutoManualCard';
 import { FolderPickerInput } from './FolderPickerInput';
 import { GameSection } from './GameSection';
 import { IPv4Input } from './IPv4Input';
+import { InfoBar } from './InfoBar';
+import { SectionHeading } from './SectionHeading';
 import { SettingCard } from './SettingCard';
 import { SwitchSettingCard } from './SwitchSettingCard';
 import { UnitInput, UnitInputUnit } from './UnitInput';
@@ -61,6 +64,17 @@ function toServiceConfiguration(config: AppConfig): Configuration {
     const game = (gameId: string) => ({
         Hosts: config.Games[gameId]?.Hosts ?? [],
         BattleServers: config.Games[gameId]?.BattleServers ?? [],
+        EmbeddedBattleServer: config.Games[gameId]?.EmbeddedBattleServer ?? {
+            StartIfMissing: 'true',
+            Region: '',
+            Name: '',
+            IPv4: 'auto',
+            BsPort: 0,
+            WebSocketPort: 0,
+            OutOfBandPort: 0,
+            SimulationPeriod: 0,
+            LogLevel: '',
+        },
     });
     return {
         Log: config.Log,
@@ -78,16 +92,24 @@ function toServiceConfiguration(config: AppConfig): Configuration {
         },
         Announcement: config.Announcement,
         CustomFiles: config.CustomFiles,
+        BattleServerReplays: config.BattleServerReplays ?? {
+            Enabled: false,
+            Folder: 'auto',
+            MaxFileSize: '32MB',
+            MaxTotalSize: '256MB',
+            Expiry: '12h',
+        },
     };
 }
 type GameSectionKey = `game:${string}`;
-type StaticSectionKey = 'general' | 'internet' | 'announcement' | 'customFiles' | 'sign';
+type StaticSectionKey = 'general' | 'internet' | 'announcement' | 'customFiles' | 'replays' | 'sign';
 type SectionKey = StaticSectionKey | GameSectionKey;
 const SECTION_LABELS: Record<StaticSectionKey, { title: string; subtitle: string }> = {
     general: { title: 'General', subtitle: 'Basic server configuration options.' },
     internet: { title: 'Internet', subtitle: 'Internet access and the address the server announces.' },
     announcement: { title: 'Announcement', subtitle: 'Configure LAN discovery and announcement settings.' },
     customFiles: { title: 'Custom files', subtitle: 'Storage of the savegames and replays uploaded by the game.' },
+    replays: { title: 'Replays', subtitle: 'Recording of the match data the embedded battle server receives.' },
     sign: { title: 'Sign', subtitle: 'Configure catalogue signing and platform user exceptions.' },
 };
 function isGameSection(section: SectionKey): section is GameSectionKey {
@@ -98,7 +120,7 @@ function sectionInfo(section: SectionKey): { title: string; subtitle: string } {
         const game = AVAILABLE_GAMES.find((candidate) => `game:${candidate.id}` === section);
         return {
             title: game?.name ?? 'Game',
-            subtitle: 'Hosts and battle servers for this game.',
+            subtitle: 'Hosts, battle servers and the embedded battle server for this game.',
         };
     }
     return SECTION_LABELS[section];
@@ -137,6 +159,7 @@ const AUTH_OPTIONS = [
     if (field.startsWith('Internet.')) return 'internet';
     if (field.startsWith('Announcement.')) return 'announcement';
     if (field.startsWith('CustomFiles.')) return 'customFiles';
+    if (field.startsWith('BattleServerReplays.')) return 'replays';
     if (field.startsWith('Sign.')) return 'sign';
     return 'general';
 }
@@ -167,6 +190,7 @@ const AUTH_OPTIONS = [
 interface Screen2Props {
     initialConfig: AppConfig;
     backendValidationErrors: ValidationError[];
+    embeddedDefaults?: Record<string, EmbeddedBattleServerDefaults | undefined> | undefined;
     fileName: string;
     isNew: boolean;
     onSaved: (file: ConfigFile) => void;
@@ -175,6 +199,7 @@ interface Screen2Props {
 export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
     initialConfig,
     backendValidationErrors,
+    embeddedDefaults,
     fileName,
     isNew,
     onSaved,
@@ -331,6 +356,18 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
     const showErrorToast = (message: string) => {
         notifications.show({ message, color: 'red', icon: <IconAlertTriangle size={20} />, autoClose: 6000 });
     };
+    // The webview has no window.confirm (the native prompt is never shown, so
+    // it always answers "no"): overwriting a file is confirmed with the app's
+    // own dialog. The promise keeps the save code reading top to bottom.
+    const [confirmRequest, setConfirmRequest] = useState<{ message: string; resolve: (ok: boolean) => void } | null>(
+        null,
+    );
+    const askConfirmation = (message: string) =>
+        new Promise<boolean>((resolve) => setConfirmRequest({ message, resolve }));
+    const answerConfirmation = (confirmed: boolean) => {
+        confirmRequest?.resolve(confirmed);
+        setConfirmRequest(null);
+    };
     const handleSave = async () => {
         if (hasErrors) return;
         try {
@@ -351,13 +388,9 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                 onSaved(created);
                 showSuccessToast('Configuration created successfully.');
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                if (
-                    !message.includes('confirmation required') ||
-                    !window.confirm('The selected file already exists. Overwrite it?')
-                ) {
-                    throw error;
-                }
+                if (!errorMessage(error).includes('confirmation required')) throw error;
+                // Declining the overwrite is a decision, not a failure.
+                if (!(await askConfirmation('The selected file already exists. Overwrite it?'))) return;
                 const created = await ConfigService.CreateConfigFile(
                     destination,
                     toServiceConfiguration(form.values),
@@ -368,8 +401,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                 showSuccessToast('Configuration overwritten successfully.');
             }
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            showErrorToast(`Error saving configuration: ${message}`);
+            showErrorToast(`Error saving configuration: ${errorMessage(error)}`);
         }
     };
     const handleSaveAs = async () => {
@@ -388,13 +420,9 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                 onSaved(saved);
                 showSuccessToast('Configuration saved successfully to the new location.');
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                if (
-                    !message.includes('confirmation required') ||
-                    !window.confirm('The selected file already exists. Overwrite it?')
-                ) {
-                    throw error;
-                }
+                if (!errorMessage(error).includes('confirmation required')) throw error;
+                // Declining the overwrite is a decision, not a failure.
+                if (!(await askConfirmation('The selected file already exists. Overwrite it?'))) return;
                 const saved = await ConfigService.SaveConfigurationAs(
                     fileName,
                     destination,
@@ -406,19 +434,39 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                 showSuccessToast('Configuration overwritten successfully.');
             }
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            showErrorToast(`Error saving configuration: ${message}`);
+            showErrorToast(`Error saving configuration: ${errorMessage(error)}`);
         }
     };
     const authLabel = AUTH_OPTIONS.find((option) => option.value === config.Authentication)?.label ?? 'Disabled';
+    // The exceptions are a list, so the card summarises how many there are
+    // instead of printing every id on the row.
+    const exceptionCount = (config.Sign.PlatformUserIdExceptions ?? []).length;
+    const exceptionsValue =
+        exceptionCount === 0 ? 'None' : `${exceptionCount} ${exceptionCount === 1 ? 'exception' : 'exceptions'}`;
     const section = sectionInfo(activeSection);
     const navItems: Array<{ key: StaticSectionKey; label: string; icon: React.ReactNode }> = [
         { key: 'general', label: 'General', icon: <IconSettings size={18} stroke={1.6} /> },
         { key: 'internet', label: 'Internet', icon: <IconWorld size={18} stroke={1.6} /> },
         { key: 'announcement', label: 'Announcement', icon: <IconSpeakerphone size={18} stroke={1.6} /> },
         { key: 'customFiles', label: 'Custom files', icon: <IconFiles size={18} stroke={1.6} /> },
+        { key: 'replays', label: 'Replays', icon: <IconMovie size={18} stroke={1.6} /> },
         { key: 'sign', label: 'Sign', icon: <IconSignature size={18} stroke={1.6} /> },
-    ]; // WinUI 3 navigation items: rounded rows inset from the pane edges, with
+    ];
+    // A page whose whole feature hangs on one switch carries it next to the
+    // title, the way a game page carries the game's, so the page itself only
+    // lists the settings that switch turns on.
+    const headerToggle = (() => {
+        switch (activeSection) {
+            case 'announcement':
+                return { ...switchProps('Announcement.Enabled'), ariaLabel: 'LAN announcement' };
+            case 'customFiles':
+                return { ...switchProps('CustomFiles.Enabled'), ariaLabel: 'Custom files' };
+            case 'replays':
+                return { ...switchProps('BattleServerReplays.Enabled'), ariaLabel: 'Replay recording' };
+            default:
+                return null;
+        }
+    })(); // WinUI 3 navigation items: rounded rows inset from the pane edges, with
     // a subtle highlight on hover and when selected instead of an accent
     // fill. The states cannot go through the styles prop (it only supports
     // flat properties), so they live in this small stylesheet.
@@ -469,7 +517,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             aria-label={sidebarOpened ? 'Hide sidebar' : 'Show sidebar'}
                         />
                         <Box style={{ minWidth: 0 }}>
-                            <Title order={4}>{section.title}</Title>
+                            <Title order={3}>{section.title}</Title>
                             <Text size="xs" c="dimmed" truncate>
                                 {section.subtitle}
                             </Text>
@@ -486,23 +534,31 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 withThumbIndicator={false}
                             />
                         )}
-                        {isNew ? (
+                        {headerToggle && (
+                            <Switch
+                                checked={headerToggle.checked}
+                                onChange={(event) => {
+                                    headerToggle.onChange(event.currentTarget.checked);
+                                    requestValidation();
+                                }}
+                                label={headerToggle.checked ? 'Enabled' : 'Disabled'}
+                                labelPosition="left"
+                                aria-label={headerToggle.ariaLabel}
+                                withThumbIndicator={false}
+                            />
+                        )}
+                        <Button.Group>
                             <Button
                                 leftSection={<IconDeviceFloppy size={16} />}
                                 onClick={handleSave}
                                 disabled={hasErrors}
                             >
-                                Save
+                                {/* A new document has no path yet: saving always
+                                    asks for the destination, so the button says
+                                    what it will do. */}
+                                {isNew ? 'Save as…' : 'Save'}
                             </Button>
-                        ) : (
-                            <Button.Group>
-                                <Button
-                                    leftSection={<IconDeviceFloppy size={16} />}
-                                    onClick={handleSave}
-                                    disabled={hasErrors}
-                                >
-                                    Save
-                                </Button>
+                            {!isNew && (
                                 <Menu position="bottom-end" width={190}>
                                     <Menu.Target>
                                         <Button px={8} aria-label="More save options" disabled={hasErrors}>
@@ -511,12 +567,12 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                     </Menu.Target>
                                     <Menu.Dropdown>
                                         <Menu.Item leftSection={<IconDeviceFloppy size={16} />} onClick={handleSaveAs}>
-                                            Save as├ö├ç┬¬
+                                            Save as…
                                         </Menu.Item>
                                     </Menu.Dropdown>
                                 </Menu>
-                            </Button.Group>
-                        )}
+                            )}
+                        </Button.Group>
                     </Group>
                 </Group>
             </AppShell.Header>
@@ -544,7 +600,9 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     <NavLink
                         label="Games"
                         leftSection={<IconDeviceGamepad2 size={18} stroke={1.6} />}
-                        active={Boolean(activeGame)}
+                        // Only the game itself is the selected item: the group
+                        // stays a plain, expanded container so the pane never
+                        // shows two selections at once.
                         opened={gamesOpened}
                         onClick={gamesHandlers.toggle}
                         className={winuiNavItemClass}
@@ -612,14 +670,16 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     } as React.CSSProperties
                 }
             >
-                <Stack gap="md">
+                {/* The window can be far wider than a setting row reads well:
+                    the content keeps a desktop-app column, so a card never
+                    grows into a full-width strip with its control at the far
+                    end. */}
+                <Stack gap="md" maw={1080}>
                     {errorEntries.length > 0 && (
-                        <Alert
-                            color="yellow"
-                            variant="light"
-                            icon={<IconAlertTriangle size={20} />}
-                            title={`${errorEntries.length} validation ${errorEntries.length === 1 ? 'error' : 'errors'}`}
-                        >
+                        <InfoBar severity="error">
+                            <Text size="sm" fw={600} mb={6}>
+                                {errorEntries.length} validation {errorEntries.length === 1 ? 'error' : 'errors'}
+                            </Text>
                             <List size="sm" spacing={4}>
                                 {errorEntries.map(([field, message]) => (
                                     <List.Item key={`${field}-${message}`}>
@@ -637,7 +697,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                     </List.Item>
                                 ))}
                             </List>
-                        </Alert>
+                        </InfoBar>
                     )}
                     {/* SECTION 1: GENERAL */}
                     {activeSection === 'general' && (
@@ -715,11 +775,16 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             config={config}
                             errors={allErrors}
                             warnings={allWarnings}
+                            embeddedDefaults={embeddedDefaults?.[activeGame.id]}
+                            disabled={!config.Games.Enabled.includes(activeGame.id)}
                             onHostChange={handleGameHostChange}
                             onAddHost={handleAddGameHost}
                             onRemoveHost={handleRemoveGameHost}
                             onChangeBattleServers={(gameId, servers) =>
                                 form.setFieldValue(`Games.${gameId}.BattleServers`, servers)
+                            }
+                            onChangeEmbeddedBattleServer={(gameId, embedded) =>
+                                form.setFieldValue(`Games.${gameId}.EmbeddedBattleServer`, embedded)
                             }
                             onCommit={requestValidation}
                         />
@@ -727,20 +792,13 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     {/* SECTION 4: ANNOUNCEMENT */}
                     {activeSection === 'announcement' && (
                         <Stack gap="sm">
-                            <SwitchSettingCard
-                                icon={<IconSpeakerphone size={20} stroke={1.6} />}
-                                title="LAN announcement"
-                                description="Respond to automatic discovery queries on the local LAN."
-                                error={allErrors['Announcement.Enabled']}
-                                ariaLabel="LAN announcement"
-                                {...switchProps('Announcement.Enabled')}
-                            />
                             <SettingCard
                                 icon={<IconNetwork size={20} stroke={1.6} />}
                                 title="Announcement port"
                                 description="UDP port for announcing the server to launchers (default: 31978)."
                                 error={allErrors['Announcement.Port']}
                                 warning={allWarnings['Announcement.Port']}
+                                disabled={!config.Announcement.Enabled}
                                 control={
                                     <NumberInput
                                         min={1}
@@ -755,12 +813,10 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                     />
                                 }
                             />
-                            <Text size="sm" fw={600} mt="md">
-                                Multicast
-                            </Text>
+                            <SectionHeading spaced>Multicast</SectionHeading>
                             <SwitchSettingCard
                                 icon={<IconBroadcast size={20} stroke={1.6} />}
-                                title="Multicast"
+                                title="Multicast announcements"
                                 description="Respond to discovery queries at the multicast address."
                                 error={allErrors['Announcement.MulticastGroup']}
                                 ariaLabel="Multicast"
@@ -771,25 +827,21 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 expanded={multicastExpanded}
                                 onToggle={multicastExpandedHandlers.toggle}
                                 details={
-                                    <Group wrap="nowrap" justify="space-between" gap="md">
-                                        <Box style={{ minWidth: 0 }}>
-                                            <Text size="sm" fw={500}>
-                                                Multicast group
-                                            </Text>
-                                            <Text size="xs" c="dimmed" mt={2}>
-                                                IPv4 multicast group for responding to announcements (default:
-                                                239.31.97.8; class D range 224.0.0.0 ├ö├ç├┤ 239.255.255.255).
-                                            </Text>
-                                        </Box>
-                                        <IPv4Input
-                                            onChange={(value) =>
-                                                form.setFieldValue('Announcement.MulticastGroup', value)
-                                            }
-                                            value={config.Announcement.MulticastGroup} // The group is only used while multicast is on
-                                            // (and multicast needs the announcement).
-                                            disabled={!config.Announcement.Enabled || !config.Announcement.Multicast}
-                                        />
-                                    </Group>
+                                    <SettingCard
+                                        variant="inline"
+                                        title="Multicast group"
+                                        description="IPv4 multicast group for responding to announcements (default: 239.31.97.8; class D range 224.0.0.0 – 239.255.255.255)."
+                                        control={
+                                            <IPv4Input
+                                                onChange={(value) =>
+                                                    form.setFieldValue('Announcement.MulticastGroup', value)
+                                                }
+                                                value={config.Announcement.MulticastGroup} // The group is only used while multicast is on
+                                                // (and multicast needs the announcement).
+                                                disabled={!config.Announcement.Enabled || !config.Announcement.Multicast}
+                                            />
+                                        }
+                                    />
                                 }
                             />
                         </Stack>
@@ -797,14 +849,6 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     {/* SECTION 5: CUSTOM FILES */}
                     {activeSection === 'customFiles' && (
                         <Stack gap="sm">
-                            <SwitchSettingCard
-                                icon={<IconFiles size={20} stroke={1.6} />}
-                                title="Custom files"
-                                description="Serve the endpoints the game uses to upload and download multiplayer savegames and replays."
-                                error={allErrors['CustomFiles.Enabled']}
-                                ariaLabel="Custom files"
-                                {...switchProps('CustomFiles.Enabled')}
-                            />
                             <AutoManualCard
                                 icon={<IconFolder size={20} stroke={1.6} />}
                                 title="Storage folder"
@@ -822,6 +866,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Maximum file size"
                                 description="Largest single file accepted, in megabytes or gigabytes (default: 32MB)."
                                 error={allErrors['CustomFiles.MaxFileSize']}
+                                disabled={!config.CustomFiles.Enabled}
                                 control={
                                     <UnitInput
                                         value={config.CustomFiles.MaxFileSize}
@@ -838,6 +883,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="Total size limit"
                                 description="Maximum accumulated size per game. When exceeded, the oldest files are evicted first (default: 256MB)."
                                 error={allErrors['CustomFiles.MaxTotalSize']}
+                                disabled={!config.CustomFiles.Enabled}
                                 control={
                                     <UnitInput
                                         value={config.CustomFiles.MaxTotalSize}
@@ -854,6 +900,7 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                                 title="File expiry"
                                 description="How long a file is kept since its upload, in hours or days (default: 12h)."
                                 error={allErrors['CustomFiles.Expiry']}
+                                disabled={!config.CustomFiles.Enabled}
                                 control={
                                     <UnitInput
                                         value={config.CustomFiles.Expiry}
@@ -867,26 +914,101 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                             />
                         </Stack>
                     )}
-                    {/* SECTION 6: SIGN */}
+                    {/* SECTION 6: REPLAYS */}
+                    {activeSection === 'replays' && (
+                        <Stack gap="sm">
+                            <AutoManualCard
+                                icon={<IconFolder size={20} stroke={1.6} />}
+                                title="Storage folder"
+                                description="Folder where the replays are stored. Automatic uses the user data folder of the server (<resources>/userData/<game>/replays)."
+                                error={allErrors['BattleServerReplays.Folder']}
+                                value={config.BattleServerReplays.Folder}
+                                onChange={(value) => form.setFieldValue('BattleServerReplays.Folder', value)}
+                                onCommit={requestValidation}
+                                disabled={!config.BattleServerReplays.Enabled}
+                            >
+                                {(manual) => <FolderPickerInput {...manual} onSelect={requestValidation} />}
+                            </AutoManualCard>
+                            <SettingCard
+                                icon={<IconFile size={20} stroke={1.6} />}
+                                title="Maximum replay size"
+                                description="Largest single .replay file kept, in megabytes or gigabytes (default: 32MB)."
+                                error={allErrors['BattleServerReplays.MaxFileSize']}
+                                disabled={!config.BattleServerReplays.Enabled}
+                                control={
+                                    <UnitInput
+                                        value={config.BattleServerReplays.MaxFileSize}
+                                        onChange={(value) => form.setFieldValue('BattleServerReplays.MaxFileSize', value)}
+                                        units={SIZE_UNITS}
+                                        ariaLabel="Maximum replay size"
+                                        onCommit={requestValidation}
+                                        disabled={!config.BattleServerReplays.Enabled}
+                                    />
+                                }
+                            />
+                            <SettingCard
+                                icon={<IconDatabase size={20} stroke={1.6} />}
+                                title="Total size limit"
+                                description="Maximum accumulated size per game. When exceeded, the oldest replays are evicted first (default: 256MB)."
+                                error={allErrors['BattleServerReplays.MaxTotalSize']}
+                                disabled={!config.BattleServerReplays.Enabled}
+                                control={
+                                    <UnitInput
+                                        value={config.BattleServerReplays.MaxTotalSize}
+                                        onChange={(value) => form.setFieldValue('BattleServerReplays.MaxTotalSize', value)}
+                                        units={SIZE_UNITS}
+                                        ariaLabel="Replay total size limit"
+                                        onCommit={requestValidation}
+                                        disabled={!config.BattleServerReplays.Enabled}
+                                    />
+                                }
+                            />
+                            <SettingCard
+                                icon={<IconClock size={20} stroke={1.6} />}
+                                title="Replay expiry"
+                                description="How long a replay is kept since its last write, in hours or days (default: 12h). 0 keeps them forever."
+                                error={allErrors['BattleServerReplays.Expiry']}
+                                disabled={!config.BattleServerReplays.Enabled}
+                                control={
+                                    <UnitInput
+                                        value={config.BattleServerReplays.Expiry}
+                                        onChange={(value) => form.setFieldValue('BattleServerReplays.Expiry', value)}
+                                        units={EXPIRY_UNITS}
+                                        ariaLabel="Replay expiry"
+                                        onCommit={requestValidation}
+                                        disabled={!config.BattleServerReplays.Enabled}
+                                    />
+                                }
+                            />
+                        </Stack>
+                    )}
+                    {/* SECTION 7: SIGN */}
                     {activeSection === 'sign' && (
                         <Stack gap="sm">
                             <SwitchSettingCard
                                 icon={<IconSignature size={20} stroke={1.6} />}
-                                title="Re-sign catalogues"
-                                description="Sign the catalogues with this server's key instead of the captured signatures. Only for clients that trust this server's signing key."
+                                title="Sign catalogues"
+                                description="Sign the catalogues with this server's key instead of the captured signatures, for every user. Only for clients that trust this server's signing key."
                                 error={allErrors['Sign.Enabled']}
-                                ariaLabel="Re-sign catalogues"
+                                ariaLabel="Sign catalogues"
                                 {...switchProps('Sign.Enabled')}
                             />
                             <SettingCard
                                 icon={<IconId size={20} stroke={1.6} />}
                                 title="Platform user ID exceptions"
-                                description="Platform user IDs for which signing is disabled even when enabled. One ID per line."
+                                // The list is the opposite of the switch, exactly
+                                // as the template documents it.
+                                description={
+                                    config.Sign.Enabled
+                                        ? 'Users listed here keep the captured signatures. One ID per line.'
+                                        : 'Users listed here get this server’s signatures while everyone else keeps the captured ones. One ID per line.'
+                                }
+                                value={exceptionsValue}
                                 error={allErrors['Sign.PlatformUserIdExceptions']}
                                 expanded={exceptionsExpanded}
                                 onToggle={exceptionsExpandedHandlers.toggle}
                                 details={
-                                    <div style={{ width: '100%' }}>
+                                    <div style={{ width: '100%', maxWidth: 560 }}>
                                         <Stack gap="xs" style={{ width: '100%' }}>
                                             {(config.Sign.PlatformUserIdExceptions ?? []).map((id, index) => (
                                                 <Stack key={index} gap={4}>
@@ -942,6 +1064,29 @@ export const Screen2_ConfigEditor: React.FC<Screen2Props> = ({
                     )}
                 </Stack>
             </AppShell.Main>
+            <Modal
+                opened={confirmRequest !== null}
+                onClose={() => answerConfirmation(false)}
+                title="Overwrite file"
+                centered
+                radius="md"
+                overlayProps={{ backgroundOpacity: 0.45, blur: 3 }}
+                classNames={{
+                    content: 'app-modal-content',
+                    header: 'app-modal-header',
+                    title: 'app-modal-title',
+                }}
+            >
+                <Stack gap="md">
+                    <Text size="sm">{confirmRequest?.message}</Text>
+                    <Group justify="flex-end" gap="sm">
+                        <Button variant="default" onClick={() => answerConfirmation(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={() => answerConfirmation(true)}>Overwrite</Button>
+                    </Group>
+                </Stack>
+            </Modal>
         </AppShell>
     );
 };

@@ -17,7 +17,8 @@ type BattleServer struct {
 
 // EmbeddedBattleServer configures a battle server that runs inside the ageLAN
 // server process instead of as a separate BattleServer executable. It mirrors
-// the options the external battle-server manager passes on the command line.
+// the options the external battle-server manager passes on the command line,
+// except the simulation period: the game's own default is always used.
 type EmbeddedBattleServer struct {
 	// StartIfMissing controls when the embedded battle server starts if no
 	// other battle server (configured or discovered) exists for this game.
@@ -32,9 +33,6 @@ type EmbeddedBattleServer struct {
 	BsPort         int
 	WebSocketPort  int
 	OutOfBandPort  int
-	// SimulationPeriod is in milliseconds. Zero selects the game's default:
-	// 25 for age1, 50 for age3/athens and 125 for age2/age4.
-	SimulationPeriod float64
 	// LogLevel is one of none, error, warning, notice, info or debug.
 	LogLevel string
 }

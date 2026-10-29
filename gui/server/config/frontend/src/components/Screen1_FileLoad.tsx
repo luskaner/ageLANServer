@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Button, Center, Code, List, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Alert, Button, Center, Code, List, Paper, Stack, Text, Title } from '@mantine/core';
 import {
     IconAlertCircle,
     IconFilePlus,
@@ -24,9 +24,7 @@ export const Screen1_FileLoad: React.FC<Screen1Props> = ({ onSelectConfig, onCre
         <Center mih="100vh" p="xl">
             <Stack w="100%" maw={520} gap="lg">
                 <Stack gap={6} align="center">
-                    <ThemeIcon size={64} radius="xl" variant="light">
-                        <IconFileText size={34} stroke={1.5} />
-                    </ThemeIcon>
+                    <IconFileText size={48} stroke={1.4} className="hero-icon" />
                     <Title order={2} ta="center">
                         Load configuration file
                     </Title>
@@ -39,7 +37,7 @@ export const Screen1_FileLoad: React.FC<Screen1Props> = ({ onSelectConfig, onCre
                     id="config-dropzone"
                     data-file-drop-target
                     withBorder
-                    radius="lg"
+                    radius="md"
                     p="xl"
                     className="dropzone"
                     onClick={() => onSelectConfig?.()}
