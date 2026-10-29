@@ -734,11 +734,30 @@ func TestValidateConfigurationBattleServers(t *testing.T) {
 	config := serverDefaults()
 	config.Games.Enabled = []string{"age4"}
 	config.Games.Age4.Hosts = []string{"127.0.0.1"}
+	// The embedded battle server counts: with the default StartIfMissing the
+	// server starts it and AoE IV is fine without a [[Games.age4.BattleServers]].
 	issues := errorValidationIssues(validateConfiguration(&config))
-	if len(issues) != 1 || issues[0].Field != "Games.age4.BattleServers" {
-		t.Fatalf("an enabled game without battle servers was not reported: %#v", issues)
+	if len(issues) != 0 {
+		t.Fatalf("a game covered by the embedded battle server was reported: %#v", issues)
 	}
 
+	config.Games.Age4.EmbeddedBattleServer.StartIfMissing = "false"
+	// The battle-server-manager may still find one, so this only advises.
+	advised := false
+	for _, issue := range validateConfiguration(&config) {
+		if issue.Field != "Games.age4.BattleServers" {
+			continue
+		}
+		if issue.Severity != severityWarning {
+			t.Fatalf("the advisory was not a warning: %#v", issue)
+		}
+		advised = true
+	}
+	if !advised {
+		t.Fatal("an enabled game with neither battle servers nor a starting embedded one was not advised")
+	}
+
+	config.Games.Age4.EmbeddedBattleServer.StartIfMissing = "true"
 	config.Games.Age4.BattleServers = []BattleServerConfig{
 		{Region: "local", IPv4: "auto", BsPort: 30009, WebSocketPort: 30010, OutOfBandPort: 30011},
 		{Region: "local", IPv4: "not-an-address", BsPort: 0, WebSocketPort: 70000, OutOfBandPort: -1},
@@ -976,5 +995,298 @@ func TestCreateConfigFileRequiresOverwriteConfirmation(t *testing.T) {
 	}
 	if string(content) != "existing" {
 		t.Fatalf("existing content changed after rejected creation: %q", content)
+	}
+}
+
+// The embedded battle server table is optional: a document that does not have
+// it must not gain one, and a table with a non-default value is written with
+// only the keys that carry one.
+func TestEmbeddedBattleServerTable(t *testing.T) {
+	original := []byte(`[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+	configuration.Games.Age2.Hosts = []string{"0.0.0.0"}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "EmbeddedBattleServer") {
+		t.Fatalf("a default embedded battle server was written out:\n%s", updated)
+	}
+
+	// A value the server would not resolve by itself has to reach the document.
+	configuration.Games.Age2.EmbeddedBattleServer.StartIfMissing = "false"
+	updated, err = configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if !strings.Contains(string(updated), "[Games.age2.EmbeddedBattleServer]\nStartIfMissing = 'false'\n") {
+		t.Fatalf("the embedded battle server table was not written:\n%s", updated)
+	}
+	// Keys the server resolves on its own stay out while they are empty.
+	for _, key := range []string{"Region", "Name", "IPv4", "LogLevel"} {
+		if strings.Contains(string(updated), key+" = ") {
+			t.Fatalf("%s was written although it is empty:\n%s", key, updated)
+		}
+	}
+
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if parsed.Games.Age2.EmbeddedBattleServer.StartIfMissing != "false" {
+		t.Fatalf("unexpected embedded StartIfMissing: %#v", parsed.Games.Age2.EmbeddedBattleServer)
+	}
+
+	// And going back to the server's own answer removes it again.
+	configuration.Games.Age2.EmbeddedBattleServer.StartIfMissing = "true"
+	updated, err = configurationDocument(updated, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "EmbeddedBattleServer") {
+		t.Fatalf("the default table was kept:\n%s", updated)
+	}
+}
+
+// The editor edits the tables it knows key by key, so the comments a user wrote
+// inside them survive a save.
+func TestConfigurationDocumentKeepsCommentsInEditedTables(t *testing.T) {
+	original := []byte(`[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[[Games.age2.BattleServers]]
+# Description of this server.
+Region = 'lan' # keep the region comment
+IPv4 = 'auto'
+BsPort = 30003
+WebSocketPort = 30004
+OutOfBandPort = 30005
+Extra = 'keep me' # a key this editor does not know
+
+# This comment closes the game and must stay.
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+	configuration.Games.Age2.BattleServers = []BattleServerConfig{
+		{Region: "lan", IPv4: "auto", BsPort: 30013, WebSocketPort: 30014, OutOfBandPort: 30015},
+	}
+	configuration.Games.Age2.EmbeddedBattleServer.Region = "embedded"
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	for _, want := range []string{
+		"# Description of this server.",
+		"Region = 'lan' # keep the region comment",
+		"Extra = 'keep me' # a key this editor does not know",
+		"# This comment closes the game and must stay.",
+	} {
+		if !strings.Contains(string(updated), want) {
+			t.Fatalf("%q was lost:\n%s", want, updated)
+		}
+	}
+	if !strings.Contains(string(updated), "BsPort = 30013") {
+		t.Fatalf("the port was not updated:\n%s", updated)
+	}
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if !reflect.DeepEqual(parsed.Games.Age2.BattleServers, configuration.Games.Age2.BattleServers) {
+		t.Fatalf("unexpected battle servers: %#v", parsed.Games.Age2.BattleServers)
+	}
+	if parsed.Games.Age2.EmbeddedBattleServer.Region != "embedded" {
+		t.Fatalf("unexpected embedded battle server: %#v", parsed.Games.Age2.EmbeddedBattleServer)
+	}
+}
+
+// An existing embedded battle server table is edited in place too.
+func TestConfigurationDocumentKeepsCommentsInEmbeddedTable(t *testing.T) {
+	original := []byte(`[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[Games.age2.EmbeddedBattleServer]
+# Pinned so clients always find it.
+StartIfMissing = 'true' # start it when nothing else answers
+Region = 'old'
+IPv4 = 'auto'
+BsPort = 0
+WebSocketPort = 0
+OutOfBandPort = 0
+
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+	configuration.Games.Age2.EmbeddedBattleServer.Region = "new"
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	for _, want := range []string{
+		"# Pinned so clients always find it.",
+		"StartIfMissing = 'true' # start it when nothing else answers",
+		"Region = 'new'",
+	} {
+		if !strings.Contains(string(updated), want) {
+			t.Fatalf("%q was lost:\n%s", want, updated)
+		}
+	}
+}
+
+// Removing every battle server of a game drops the blocks, not the comment that
+// closes the game after them.
+func TestConfigurationDocumentKeepsCommentsAfterRemovedBlocks(t *testing.T) {
+	original := []byte(`[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+[[Games.age2.BattleServers]]
+Region = 'lan'
+IPv4 = 'auto'
+BsPort = 30003
+WebSocketPort = 30004
+OutOfBandPort = 30005
+
+# This comment closes the game and must stay.
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	if strings.Contains(string(updated), "[[Games.age2.BattleServers]]") {
+		t.Fatalf("the block was not removed:\n%s", updated)
+	}
+	if !strings.Contains(string(updated), "# This comment closes the game and must stay.") {
+		t.Fatalf("the trailing comment was removed with the block:\n%s", updated)
+	}
+}
+
+// A table the document does not have is added next to its siblings, so the
+// document keeps reading in order after a save.
+func TestConfigurationDocumentAddsMissingGameNextToTheOthers(t *testing.T) {
+	original := []byte(`[Games]
+Enabled = ['age2']
+
+[Games.age2]
+Hosts = ['0.0.0.0']
+
+# Closing comment.
+[Announcement]
+Enabled = true
+Multicast = false
+Port = 31978
+MulticastGroup = '239.31.97.8'
+`)
+	configuration := serverDefaults()
+	configuration.Games.Enabled = []string{"age2"}
+
+	updated, err := configurationDocument(original, configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	text := string(updated)
+	announcement := strings.Index(text, "[Announcement]")
+	if announcement < 0 {
+		t.Fatalf("the announcement table was lost:\n%s", updated)
+	}
+	for _, game := range []string{"[Games.age1]", "[Games.age3]", "[Games.age4]", "[Games.athens]"} {
+		at := strings.Index(text, game)
+		if at < 0 {
+			t.Fatalf("%s was not added:\n%s", game, updated)
+		}
+		if at > announcement {
+			t.Fatalf("%s was appended after the other tables:\n%s", game, updated)
+		}
+	}
+	if _, err := parseConfiguration(updated); err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+}
+
+// Every comment the official template carries must survive a save that changes
+// values across the document.
+func TestConfigurationDocumentKeepsEveryTemplateComment(t *testing.T) {
+	templatePath, err := templateConfigPath()
+	if err != nil {
+		t.Fatalf("templateConfigPath returned an error: %v", err)
+	}
+	content, err := os.ReadFile(templatePath)
+	if err != nil {
+		t.Fatalf("read template: %v", err)
+	}
+	configuration, err := parseConfiguration(content)
+	if err != nil {
+		t.Fatalf("parse template: %v", err)
+	}
+	configuration.Log = true
+	configuration.Announcement.Port = 32100
+	configuration.CustomFiles.MaxFileSize = "64MB"
+	configuration.Games.Enabled = []string{"age2", "age4"}
+	configuration.Games.Age2.BattleServers = []BattleServerConfig{
+		{Region: "local", Name: "Local", IPv4: "auto", BsPort: 30003, WebSocketPort: 30004, OutOfBandPort: 30005},
+	}
+	configuration.Games.Age2.EmbeddedBattleServer.Region = "embedded"
+	configuration.Games.Age2.EmbeddedBattleServer.LogLevel = "info"
+
+	updated, err := configurationDocument(content, *configuration)
+	if err != nil {
+		t.Fatalf("configurationDocument returned an error: %v", err)
+	}
+	for _, line := range strings.Split(string(content), "\n") {
+		comment := strings.TrimSpace(line)
+		if !strings.HasPrefix(comment, "#") {
+			continue
+		}
+		if !strings.Contains(string(updated), comment) {
+			t.Fatalf("the template comment %q was lost:\n%s", comment, updated)
+		}
+	}
+	parsed, err := parseConfiguration(updated)
+	if err != nil {
+		t.Fatalf("updated document could not be parsed: %v\n%s", err, updated)
+	}
+	if !parsed.Log || parsed.Announcement.Port != 32100 || parsed.CustomFiles.MaxFileSize != "64MB" {
+		t.Fatalf("the changed values did not round-trip: %#v", parsed)
+	}
+	if len(parsed.Games.Age2.BattleServers) != 1 || parsed.Games.Age2.BattleServers[0].Region != "local" {
+		t.Fatalf("unexpected battle servers: %#v", parsed.Games.Age2.BattleServers)
+	}
+	if parsed.Games.Age2.EmbeddedBattleServer.Region != "embedded" {
+		t.Fatalf("unexpected embedded battle server: %#v", parsed.Games.Age2.EmbeddedBattleServer)
 	}
 }

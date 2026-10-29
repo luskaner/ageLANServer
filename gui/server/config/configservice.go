@@ -427,11 +427,16 @@ func serverDefaults() Configuration {
 		},
 		Games: GamesConfiguration{
 			Enabled: []string{},
-			Age1:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age1-embedded", IPv4: "auto"}},
-			Age2:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age2-embedded", IPv4: "auto"}},
-			Age3:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age3-embedded", IPv4: "auto"}},
-			Age4:    GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "age4-embedded", IPv4: "auto"}},
-			Athens:  GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true", Region: "athens-embedded", IPv4: "auto"}},
+			// The embedded battle server is optional: the server only defaults
+			// StartIfMissing (see initConfig in server/internal/cmd/root.go) and
+			// fills the region and name with "Server" at runtime. Inventing a
+			// region here would make the editor show a value the server never
+			// uses, and write it on the next save.
+			Age1:   GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true"}},
+			Age2:   GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true"}},
+			Age3:   GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true"}},
+			Age4:   GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true"}},
+			Athens: GameConfig{Hosts: []string{"0.0.0.0"}, EmbeddedBattleServer: EmbeddedBattleServerConfig{StartIfMissing: "true"}},
 		},
 		Announcement: AnnouncementConfig{
 			Enabled:        true,
@@ -476,7 +481,7 @@ func replaceDocumentValue(content []byte, targetSection string, key string, repl
 	for parser.NextExpression() {
 		expression := parser.Expression()
 		switch expression.Kind {
-		case unstable.Table:
+		case unstable.Table, unstable.ArrayTable:
 			section = nodePath(expression)
 		case unstable.KeyValue:
 			if section == targetSection && nodeKey(expression) == key {
@@ -618,11 +623,32 @@ func ensureDocumentValue(content []byte, targetSection string, key string, repla
 		}
 	}
 	if sectionIndex == -1 {
-		// The table is missing too: append it with its first key.
+		// The table is missing too. It goes next to its siblings ([Games.age3]
+		// with the other games), before whatever closes that group, so the
+		// document keeps reading in order; when the group is missing as well it
+		// is appended at the end.
+		block := "[" + targetSection + "]\n" + line
+		if dot := strings.LastIndex(targetSection, "."); dot >= 0 {
+			parent := targetSection[:dot+1]
+			last := -1
+			for index, table := range tables {
+				if strings.HasPrefix(table.path, parent) {
+					last = index
+				}
+			}
+			if last >= 0 {
+				end := len(content)
+				if last+1 < len(tables) {
+					end = tables[last+1].offset
+				}
+				insertAt := blockCutEnd(content, tableBlock{start: tables[last].offset, end: end})
+				return insertDocumentLine(content, insertAt, block), nil
+			}
+		}
 		if len(content) > 0 && content[len(content)-1] != '\n' {
 			content = append(content, '\n')
 		}
-		return append(content, []byte("\n["+targetSection+"]\n"+line)...), nil
+		return append(content, []byte("\n"+block)...), nil
 	}
 	// Insert the key at the end of its table, before the next header.
 	insertAt := len(content)
@@ -1014,35 +1040,27 @@ func validateBattleServerReplays(config *Configuration) []ValidationError {
 }
 
 // validateEmbeddedBattleServers checks the embedded battle server configuration
-// for each game.
+// for each game. Every key is optional: the server fills Region and Name with
+// "Server", reads an empty IPv4 as "auto" and an empty StartIfMissing as "true"
+// (server/internal/cmd/root.go), so only values it would reject are reported.
 func validateEmbeddedBattleServers(config *Configuration) []ValidationError {
 	var validationErrors []ValidationError
+	validStartIfMissing := map[string]bool{"": true, "true": true, "false": true, "required": true}
 	for _, gameID := range supportedGameIDs() {
 		ebs := gameEmbeddedBattleServer(config, gameID)
 		if ebs == nil {
 			continue
 		}
-		// Only validate if user has explicitly configured the embedded battle server
-		// (at least one field is non-zero/non-empty). If all defaults, skip validation.
-		hasExplicitConfig := ebs.Region != "" || ebs.Name != "" || ebs.IPv4 != "" ||
-			ebs.BsPort != 0 || ebs.WebSocketPort != 0 || ebs.OutOfBandPort != 0 ||
-			ebs.SimulationPeriod != 0 || ebs.LogLevel != ""
-		if !hasExplicitConfig {
-			continue
-		}
-		if strings.TrimSpace(ebs.Region) == "" {
+		if !validStartIfMissing[strings.ToLower(strings.TrimSpace(ebs.StartIfMissing))] {
 			validationErrors = append(validationErrors, ValidationError{
-				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.Region", gameID),
-				Message: "Must not be empty",
+				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.StartIfMissing", gameID),
+				Message: "Must be one of true, false or required",
 			})
 		}
-		if strings.TrimSpace(ebs.IPv4) == "" {
-			validationErrors = append(validationErrors, ValidationError{
-				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.IPv4", gameID),
-				Message: "Must not be empty (use 'auto' or an IPv4 address)",
-			})
-		} else if ebs.IPv4 != "auto" {
-			if parsed, err := netip.ParseAddr(ebs.IPv4); err != nil || !parsed.Is4() {
+		// An empty region is not a mistake: the server announces the embedded
+		// battle server as "Server" when the document leaves it out.
+		if address := strings.TrimSpace(ebs.IPv4); address != "" && address != "auto" {
+			if parsed, err := netip.ParseAddr(address); err != nil || !parsed.Is4() {
 				validationErrors = append(validationErrors, ValidationError{
 					Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.IPv4", gameID),
 					Message: "Must be 'auto' or an IPv4 address",
@@ -1065,12 +1083,6 @@ func validateEmbeddedBattleServers(config *Configuration) []ValidationError {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.OutOfBandPort", gameID),
 				Message: "Must be between 0 and 65535",
-			})
-		}
-		if ebs.SimulationPeriod < 0 {
-			validationErrors = append(validationErrors, ValidationError{
-				Field:   fmt.Sprintf("Games.%s.EmbeddedBattleServer.SimulationPeriod", gameID),
-				Message: "Must be non-negative (0 uses game default)",
 			})
 		}
 		validLevels := map[string]bool{
@@ -1207,9 +1219,27 @@ func validateGameHosts(config *Configuration) []ValidationError {
 	return validationErrors
 }
 
+// embeddedBattleServerStarts reports whether the server would start the
+// embedded battle server for a game that has no battle server of its own. It is
+// the evaluation server/internal/cmd/root.go does, minus the servers the
+// battle-server-manager may discover at runtime, which a configuration editor
+// cannot know: an unknown value is read as "true" there, after a warning.
+func embeddedBattleServerStarts(gameID string, ebs *EmbeddedBattleServerConfig) bool {
+	switch strings.ToLower(strings.TrimSpace(ebs.StartIfMissing)) {
+	case "false":
+		return false
+	case "required":
+		return gameID == "age4" || gameID == "athens"
+	default:
+		return true
+	}
+}
+
 // validateGameBattleServers checks the battle servers of every enabled game.
-// The server refuses to start an enabled AoE IV or AoM: RT without one, so it
-// is an error there; the other games fall back to a LAN battle server.
+// AoE IV and AoM: RT cannot run without a battle server, but the embedded one
+// counts: it is started before the game is initialized and registered with the
+// others (models.InitializeBattleServers), so a game without [[...BattleServers]]
+// is only an error when the embedded one will not start either.
 func validateGameBattleServers(config *Configuration) []ValidationError {
 	var validationErrors []ValidationError
 	enabled := make(map[string]bool, len(config.Games.Enabled))
@@ -1223,10 +1253,17 @@ func validateGameBattleServers(config *Configuration) []ValidationError {
 		servers := gameBattleServers(config, gameID)
 		if len(servers) == 0 {
 			if gameID == "age4" || gameID == "athens" {
-				validationErrors = append(validationErrors, ValidationError{
-					Field:   fmt.Sprintf("Games.%s.BattleServers", gameID),
-					Message: "Requires at least one battle server",
-				})
+				ebs := gameEmbeddedBattleServer(config, gameID)
+				if ebs == nil || !embeddedBattleServerStarts(gameID, ebs) {
+					// The battle-server-manager may still find one on this PC
+					// at startup, which a configuration editor cannot see, so
+					// this is an advisory and not a blocking error.
+					validationErrors = append(validationErrors, ValidationError{
+						Field:    fmt.Sprintf("Games.%s.BattleServers", gameID),
+						Message:  "Needs a battle server: neither this document nor the embedded one provides one, so the battle-server-manager has to find it",
+						Severity: severityWarning,
+					})
+				}
 			}
 			continue
 		}
@@ -1358,48 +1395,197 @@ func gameEmbeddedBattleServer(config *Configuration, gameID string) *EmbeddedBat
 	}
 }
 
+// embeddedLogLevelDefault is the level the battle server logs at when the
+// configuration leaves LogLevel out: it only overrides its own logger when the
+// value is not empty, and that logger starts at debug.
+const embeddedLogLevelDefault = "debug"
+
+// EmbeddedBattleServerDefaults is what the server uses for a game when the
+// document leaves the embedded battle server out. It is not what
+// serverDefaults decodes: the server fills Region and Name with "Server" at
+// startup (server/internal/cmd/root.go) and resolves the rest at runtime, so
+// these are the values the editor shows as placeholders and hints.
+type EmbeddedBattleServerDefaults struct {
+	StartIfMissing string `json:"StartIfMissing"`
+	Region         string `json:"Region"`
+	Name           string `json:"Name"`
+	IPv4           string `json:"IPv4"`
+	BsPort         int    `json:"BsPort"`
+	WebSocketPort  int    `json:"WebSocketPort"`
+	OutOfBandPort  int    `json:"OutOfBandPort"`
+	LogLevel       string `json:"LogLevel"`
+}
+
+// EmbeddedBattleServerDefaults exposes those values for every supported game,
+// so the editor never has to carry a second copy of them.
+func (s *ConfigService) EmbeddedBattleServerDefaults() map[string]EmbeddedBattleServerDefaults {
+	defaults := make(map[string]EmbeddedBattleServerDefaults, len(supportedGameIDs()))
+	for _, gameID := range supportedGameIDs() {
+		defaults[gameID] = EmbeddedBattleServerDefaults{
+			StartIfMissing: "true",
+			Region:         "Server",
+			Name:           "Server",
+			IPv4:           "auto",
+			// 0 in the document: the battle server picks a free port.
+			BsPort:         0,
+			WebSocketPort:  0,
+			OutOfBandPort:  0,
+			LogLevel:       embeddedLogLevelDefault,
+		}
+	}
+	return defaults
+}
+
+// embeddedBattleServerDefaults is the embedded battle server a game gets when
+// the document has no [Games.<game>.EmbeddedBattleServer] table: the editor
+// reads it through serverDefaults, so it can tell "still the default" from
+// "configured here".
+func embeddedBattleServerDefaults(gameID string) EmbeddedBattleServerConfig {
+	games := serverDefaults().Games
+	switch gameID {
+	case "age1":
+		return games.Age1.EmbeddedBattleServer
+	case "age2":
+		return games.Age2.EmbeddedBattleServer
+	case "age3":
+		return games.Age3.EmbeddedBattleServer
+	case "age4":
+		return games.Age4.EmbeddedBattleServer
+	case "athens":
+		return games.Athens.EmbeddedBattleServer
+	default:
+		return EmbeddedBattleServerConfig{}
+	}
+}
+
+// embeddedBattleServerIsDefault reports whether the table only repeats the
+// values the server already uses without it. Writing those out would add a
+// block to every game on the first save, and move the document away from the
+// commented example the server ships.
+//
+// The empty spellings the server resolves on its own compare equal to what
+// they resolve to: an empty IPv4 is "auto" and an empty StartIfMissing is
+// "true" (see the startIfMissing evaluation in server/internal/cmd/root.go).
+func embeddedBattleServerIsDefault(gameID string, ebs *EmbeddedBattleServerConfig) bool {
+	got := *ebs
+	want := embeddedBattleServerDefaults(gameID)
+	if strings.TrimSpace(got.IPv4) == "" {
+		got.IPv4 = "auto"
+	}
+	if strings.TrimSpace(want.IPv4) == "" {
+		want.IPv4 = "auto"
+	}
+	if strings.TrimSpace(got.StartIfMissing) == "" {
+		got.StartIfMissing = "true"
+	}
+	if strings.TrimSpace(want.StartIfMissing) == "" {
+		want.StartIfMissing = "true"
+	}
+	return got == want
+}
+
 // rewriteEmbeddedBattleServer rewrites the embedded battle server of one game
 // as a single inline table [Games.<game>.EmbeddedBattleServer]. When disabled or
 // empty, the definition is removed.
+//
+// An existing table is edited key by key, so the comments it holds (and any key
+// this editor does not know about) stay where the user wrote them.
 func rewriteEmbeddedBattleServer(content []byte, gameID string, ebs *EmbeddedBattleServerConfig) ([]byte, error) {
 	section := "Games." + gameID
+	path := section + ".EmbeddedBattleServer"
+
 	updated, _, err := removeDocumentValue(content, section, "EmbeddedBattleServer")
 	if err != nil {
 		return nil, err
 	}
-	updated, err = removeArrayTableBlocks(updated, section+".EmbeddedBattleServer")
+	// An older document may hold the setting as an array of tables; it is not
+	// the documented shape, so every one of them goes.
+	arrayBlocks, err := tableBlocks(updated, path, true)
 	if err != nil {
 		return nil, err
 	}
-	// Also remove inline table blocks [Games.<game>.EmbeddedBattleServer]
-	updated, err = removeInlineTableBlocks(updated, section+".EmbeddedBattleServer")
+	updated = removeTableBlocks(updated, arrayBlocks)
+
+	blocks, err := tableBlocks(updated, path, false)
 	if err != nil {
 		return nil, err
 	}
-	if ebs == nil {
-		return updated, nil
+	if ebs == nil || embeddedBattleServerIsDefault(gameID, ebs) {
+		return removeTableBlocks(updated, blocks), nil
 	}
-	return insertInlineTable(updated, section, embeddedBattleServerDocumentValue(gameID, ebs))
+	if len(blocks) == 0 {
+		return insertInlineTable(updated, section, embeddedBattleServerDocumentValue(gameID, ebs))
+	}
+	rewritten, err := writeTableKeys(updated[blocks[0].start:blocks[0].end], path, embeddedBattleServerEntries(gameID, ebs))
+	if err != nil {
+		return nil, err
+	}
+	updated = splice(updated, blocks[0].start, blocks[0].end, rewritten)
+	if len(blocks) > 1 {
+		// Only one table describes the setting: the duplicates go, with the
+		// offsets they have after the first one was rewritten.
+		remaining, err := tableBlocks(updated, path, false)
+		if err != nil {
+			return nil, err
+		}
+		if len(remaining) > 1 {
+			updated = removeTableBlocks(updated, remaining[1:])
+		}
+	}
+	return updated, nil
 }
 
 // rewriteBattleServers rewrites the battle servers of one game in the
 // documented shape, an array of tables ([[Games.<game>.BattleServers]]). Older
 // documents holding the inline `BattleServers = [...]` key are migrated.
 // With no servers, every definition of that game is removed.
+//
+// The blocks that already describe a server are edited key by key instead of
+// being recreated, so their comments and any extra key stay in place; only the
+// blocks the document has too many of are dropped.
 func rewriteBattleServers(content []byte, gameID string, servers []BattleServerConfig) ([]byte, error) {
 	section := "Games." + gameID
+	path := section + ".BattleServers"
+
 	updated, _, err := removeDocumentValue(content, section, "BattleServers")
 	if err != nil {
 		return nil, err
 	}
-	updated, err = removeArrayTableBlocks(updated, section+".BattleServers")
+	blocks, err := tableBlocks(updated, path, true)
 	if err != nil {
 		return nil, err
+	}
+	// Servers the document has no block for are gone: drop the extra blocks
+	// from the bottom, so the offsets above them stay valid.
+	if len(blocks) > len(servers) {
+		updated = removeTableBlocks(updated, blocks[len(servers):])
+		blocks = blocks[:len(servers)]
+	}
+	// Rewrite the surviving blocks from the bottom up, for the same reason.
+	for index := len(blocks) - 1; index >= 0; index-- {
+		block := updated[blocks[index].start:blocks[index].end]
+		rewritten, err := writeTableKeys(block, path, battleServerEntries(gameID, servers[index]))
+		if err != nil {
+			return nil, err
+		}
+		updated = splice(updated, blocks[index].start, blocks[index].end, rewritten)
 	}
 	if len(servers) == 0 {
 		return updated, nil
 	}
-	return insertArrayTables(updated, section, battleServersDocumentValue(gameID, servers))
+	extra := servers[len(blocks):]
+	if len(extra) == 0 {
+		return updated, nil
+	}
+	// The servers the document did not describe yet go after the last block of
+	// the game, before the comments that close it.
+	block := battleServersDocumentValue(gameID, extra)
+	if len(blocks) == 0 {
+		return insertArrayTables(updated, section, block)
+	}
+	last := blocks[len(blocks)-1]
+	at := last.start + lastKeyValueEnd(updated[last.start:last.end], path)
+	return splice(updated, at, at, []byte("\n"+block)), nil
 }
 
 // removeDocumentValue removes a key assigned inside a named table, together
@@ -1437,70 +1623,199 @@ func removeDocumentValue(content []byte, targetSection string, key string) ([]by
 	return content, false, nil
 }
 
-// removeArrayTableBlocks removes every [[path]] block of a document. A block
-// runs from its header to the next table header (or the end of the document),
-// so its keys and comments go with it.
-func removeArrayTableBlocks(content []byte, path string) ([]byte, error) {
-	tables, err := documentTables(content)
-	if err != nil {
-		return nil, err
-	}
-	type span struct {
-		start int
-		end   int
-	}
-	var spans []span
-	for index, table := range tables {
-		if table.path != path || !table.arrayTable {
-			continue
-		}
-		end := len(content)
-		if index+1 < len(tables) {
-			end = tables[index+1].offset
-		}
-		spans = append(spans, span{start: table.offset, end: end})
-	}
-	for index := len(spans) - 1; index >= 0; index-- {
-		start, end := spans[index].start, spans[index].end
-		updated := make([]byte, 0, len(content)-(end-start))
-		updated = append(updated, content[:start]...)
-		updated = append(updated, content[end:]...)
-		content = updated
-	}
-	return content, nil
+// tableBlock is a table header and the byte range it owns: from the header to
+// where the next table starts (or the end of the document).
+type tableBlock struct {
+	start int
+	end   int
 }
 
-// removeInlineTableBlocks removes every [path] block of a document (inline tables).
-// A block runs from its header to the next table header (or the end of the document),
-// so its keys and comments go with it.
-func removeInlineTableBlocks(content []byte, path string) ([]byte, error) {
+// tableBlocks lists the blocks of one path in document order.
+func tableBlocks(content []byte, path string, arrayTable bool) ([]tableBlock, error) {
 	tables, err := documentTables(content)
 	if err != nil {
 		return nil, err
 	}
-	type span struct {
-		start int
-		end   int
-	}
-	var spans []span
+	var blocks []tableBlock
 	for index, table := range tables {
-		if table.path != path || table.arrayTable {
+		if table.path != path || table.arrayTable != arrayTable {
 			continue
 		}
 		end := len(content)
 		if index+1 < len(tables) {
 			end = tables[index+1].offset
 		}
-		spans = append(spans, span{start: table.offset, end: end})
+		blocks = append(blocks, tableBlock{start: table.offset, end: end})
 	}
-	for index := len(spans) - 1; index >= 0; index-- {
-		start, end := spans[index].start, spans[index].end
-		updated := make([]byte, 0, len(content)-(end-start))
-		updated = append(updated, content[:start]...)
-		updated = append(updated, content[end:]...)
-		content = updated
+	return blocks, nil
+}
+
+// documentLine is one line of a range of a document, with where it starts.
+type documentLine struct {
+	start int
+	text  string
+}
+
+// linesOf splits a range of a document into trimmed lines.
+func linesOf(content []byte, start, end int) []documentLine {
+	var lines []documentLine
+	for index := start; index < end; {
+		lineEnd := end
+		if next := bytes.IndexByte(content[index:end], '\n'); next >= 0 {
+			lineEnd = index + next + 1
+		}
+		lines = append(lines, documentLine{
+			start: index,
+			text:  strings.TrimSpace(string(content[index:lineEnd])),
+		})
+		index = lineEnd
 	}
-	return content, nil
+	return lines
+}
+
+// blockCutEnd narrows where a block ends so the comments that follow it stay: a
+// run of comment lines separated from the block by a blank line describes what
+// comes next, not the block being removed.
+func blockCutEnd(content []byte, block tableBlock) int {
+	lines := linesOf(content, block.start, block.end)
+	last := len(lines) - 1
+	for last >= 0 && lines[last].text == "" {
+		last--
+	}
+	if last < 0 || !strings.HasPrefix(lines[last].text, "#") {
+		return block.end
+	}
+	first := last
+	for first > 0 && strings.HasPrefix(lines[first-1].text, "#") {
+		first--
+	}
+	if first == 0 || lines[first-1].text != "" {
+		return block.end
+	}
+	return lines[first].start
+}
+
+// removeTableBlocks removes blocks from a document, bottom first, keeping the
+// comments that close them when those belong to what follows.
+func removeTableBlocks(content []byte, blocks []tableBlock) []byte {
+	for index := len(blocks) - 1; index >= 0; index-- {
+		content = splice(content, blocks[index].start, blockCutEnd(content, blocks[index]), nil)
+	}
+	return content
+}
+
+// splice replaces the bytes in [start, end) of a document.
+func splice(content []byte, start, end int, replacement []byte) []byte {
+	updated := make([]byte, 0, len(content)-(end-start)+len(replacement))
+	updated = append(updated, content[:start]...)
+	updated = append(updated, replacement...)
+	updated = append(updated, content[end:]...)
+	return updated
+}
+
+// tableEntry is one key of a table block the editor writes. An empty Value
+// means the key must not be in the document.
+type tableEntry struct {
+	Key   string
+	Value string
+}
+
+// hasDocumentValue reports whether a named table assigns a key.
+func hasDocumentValue(content []byte, targetSection string, key string) (bool, error) {
+	parser := &unstable.Parser{KeepComments: true}
+	parser.Reset(content)
+	section := ""
+	for parser.NextExpression() {
+		expression := parser.Expression()
+		switch expression.Kind {
+		case unstable.Table, unstable.ArrayTable:
+			section = nodePath(expression)
+		case unstable.KeyValue:
+			if section == targetSection && nodeKey(expression) == key {
+				return true, nil
+			}
+		}
+	}
+	if err := parser.Error(); err != nil {
+		return false, fmt.Errorf("invalid TOML: %w", err)
+	}
+	return false, nil
+}
+
+// lastKeyValueEnd is where the last key of a table block ends, the newline
+// included: a key added to the block goes there, before the comments that close
+// it.
+func lastKeyValueEnd(block []byte, path string) int {
+	parser := &unstable.Parser{KeepComments: true}
+	parser.Reset(block)
+	section := ""
+	end := 0
+	lineEnd := func(offset, length uint32) int {
+		position := int(offset) + int(length)
+		for position < len(block) && block[position] != '\n' {
+			position++
+		}
+		if position < len(block) {
+			position++
+		}
+		return position
+	}
+	for parser.NextExpression() {
+		expression := parser.Expression()
+		switch expression.Kind {
+		case unstable.Table, unstable.ArrayTable:
+			section = nodePath(expression)
+			if end == 0 {
+				end = lineEnd(expression.Raw.Offset, expression.Raw.Length)
+			}
+		case unstable.KeyValue:
+			if section == path {
+				end = lineEnd(expression.Raw.Offset, expression.Raw.Length)
+			}
+		}
+	}
+	return end
+}
+
+// writeTableKeys rewrites the keys of one table block in place: a key that is
+// there keeps its line and the comment at its end, a missing one is appended
+// after the last key, and a key with an empty value is removed. The header, the
+// comments and the keys this editor does not know are left untouched.
+func writeTableKeys(block []byte, path string, entries []tableEntry) ([]byte, error) {
+	updated := block
+	var missing []tableEntry
+	for _, entry := range entries {
+		found, err := hasDocumentValue(updated, path, entry.Key)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			if entry.Value != "" {
+				missing = append(missing, entry)
+			}
+			continue
+		}
+		if entry.Value == "" {
+			updated, _, err = removeDocumentValue(updated, path, entry.Key)
+		} else {
+			updated, err = replaceDocumentValue(updated, path, entry.Key, entry.Value)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(missing) == 0 {
+		return updated, nil
+	}
+	var builder strings.Builder
+	for _, entry := range missing {
+		builder.WriteString(entry.Key)
+		builder.WriteString(" = ")
+		builder.WriteString(entry.Value)
+		builder.WriteByte('\n')
+	}
+	at := lastKeyValueEnd(updated, path)
+	return splice(updated, at, at, []byte(builder.String())), nil
 }
 
 // insertArrayTables adds array-of-tables blocks at the end of a named table,
@@ -1581,27 +1896,91 @@ func gameSupportsOutOfBandPort(gameID string) bool {
 	return gameID != "age1"
 }
 
+// battleServerEntries is the key set one [[Games.<game>.BattleServers]] block
+// holds, in the documented order. A key the document keeps but the editor does
+// not need is removed.
+func battleServerEntries(gameID string, server BattleServerConfig) []tableEntry {
+	entries := []tableEntry{
+		{Key: "Region", Value: tomlString(server.Region)},
+		{Key: "Name"},
+		{Key: "IPv4", Value: tomlString(server.IPv4)},
+		{Key: "BsPort", Value: strconv.Itoa(server.BsPort)},
+		{Key: "WebSocketPort", Value: strconv.Itoa(server.WebSocketPort)},
+		{Key: "OutOfBandPort"},
+	}
+	if server.Name != "" {
+		entries[1].Value = tomlString(server.Name)
+	}
+	if gameSupportsOutOfBandPort(gameID) {
+		entries[5].Value = strconv.Itoa(server.OutOfBandPort)
+	}
+	return entries
+}
+
+// embeddedBattleServerEntries is the key set [Games.<game>.EmbeddedBattleServer]
+// holds, in the documented order.
+func embeddedBattleServerEntries(gameID string, ebs *EmbeddedBattleServerConfig) []tableEntry {
+	entries := []tableEntry{
+		{Key: "StartIfMissing"},
+		{Key: "Region"},
+		{Key: "Name"},
+		{Key: "IPv4"},
+		{Key: "BsPort", Value: strconv.Itoa(ebs.BsPort)},
+		{Key: "WebSocketPort", Value: strconv.Itoa(ebs.WebSocketPort)},
+		{Key: "OutOfBandPort"},
+		{Key: "LogLevel"},
+	}
+	if ebs.StartIfMissing != "" {
+		entries[0].Value = tomlString(ebs.StartIfMissing)
+	}
+	if ebs.Region != "" {
+		entries[1].Value = tomlString(ebs.Region)
+	}
+	if ebs.Name != "" {
+		entries[2].Value = tomlString(ebs.Name)
+	}
+	if ebs.IPv4 != "" {
+		entries[3].Value = tomlString(ebs.IPv4)
+	}
+	if gameSupportsOutOfBandPort(gameID) {
+		entries[6].Value = strconv.Itoa(ebs.OutOfBandPort)
+	}
+	if ebs.LogLevel != "" {
+		entries[7].Value = tomlString(ebs.LogLevel)
+	}
+	return entries
+}
+
 // embeddedBattleServerDocumentValue formats the embedded battle server of a game
-// as a single inline TOML table the server documents.
+// as a single inline TOML table the server documents. Keys the server resolves
+// on its own are only written when they carry a value, so an empty Region keeps
+// meaning "Server" and an empty IPv4 keeps meaning "auto" instead of being
+// pinned to a spelling the user never chose.
 func embeddedBattleServerDocumentValue(gameID string, ebs *EmbeddedBattleServerConfig) string {
 	var builder strings.Builder
 	builder.WriteString("[Games.")
 	builder.WriteString(gameID)
 	builder.WriteString(".EmbeddedBattleServer]\n")
-	builder.WriteString("StartIfMissing = ")
-	builder.WriteString(tomlString(ebs.StartIfMissing))
-	builder.WriteByte('\n')
-	builder.WriteString("Region = ")
-	builder.WriteString(tomlString(ebs.Region))
-	builder.WriteByte('\n')
+	if ebs.StartIfMissing != "" {
+		builder.WriteString("StartIfMissing = ")
+		builder.WriteString(tomlString(ebs.StartIfMissing))
+		builder.WriteByte('\n')
+	}
+	if ebs.Region != "" {
+		builder.WriteString("Region = ")
+		builder.WriteString(tomlString(ebs.Region))
+		builder.WriteByte('\n')
+	}
 	if ebs.Name != "" {
 		builder.WriteString("Name = ")
 		builder.WriteString(tomlString(ebs.Name))
 		builder.WriteByte('\n')
 	}
-	builder.WriteString("IPv4 = ")
-	builder.WriteString(tomlString(ebs.IPv4))
-	builder.WriteByte('\n')
+	if ebs.IPv4 != "" {
+		builder.WriteString("IPv4 = ")
+		builder.WriteString(tomlString(ebs.IPv4))
+		builder.WriteByte('\n')
+	}
 	builder.WriteString("BsPort = ")
 	builder.WriteString(strconv.Itoa(ebs.BsPort))
 	builder.WriteByte('\n')
@@ -1614,9 +1993,6 @@ func embeddedBattleServerDocumentValue(gameID string, ebs *EmbeddedBattleServerC
 		builder.WriteString(strconv.Itoa(ebs.OutOfBandPort))
 		builder.WriteByte('\n')
 	}
-	builder.WriteString("SimulationPeriod = ")
-	builder.WriteString(strconv.Itoa(ebs.SimulationPeriod))
-	builder.WriteByte('\n')
 	if ebs.LogLevel != "" {
 		builder.WriteString("LogLevel = ")
 		builder.WriteString(tomlString(ebs.LogLevel))
@@ -1646,13 +2022,24 @@ func insertInlineTable(content []byte, section string, block string) ([]byte, er
 	if sectionIndex+1 < len(tables) {
 		insertAt = tables[sectionIndex+1].offset
 	}
-	updated := make([]byte, 0, len(content)+len(block)+2)
-	updated = append(updated, content[:insertAt]...)
-	if insertAt > 0 && content[insertAt-1] != '\n' {
-		updated = append(updated, '\n')
+	updated := make([]byte, 0, len(content)+len(block)+4)
+	prefix := content[:insertAt]
+	updated = append(updated, prefix...)
+	// The document keeps one blank line between tables, and the block is one:
+	// match that on both sides instead of gluing it to its neighbours.
+	if len(prefix) > 0 {
+		if prefix[len(prefix)-1] != '\n' {
+			updated = append(updated, '\n')
+		}
+		if len(prefix) < 2 || prefix[len(prefix)-2] != '\n' {
+			updated = append(updated, '\n')
+		}
 	}
 	updated = append(updated, block...)
 	if len(block) > 0 && block[len(block)-1] != '\n' {
+		updated = append(updated, '\n')
+	}
+	if insertAt < len(content) && content[insertAt] != '\n' {
 		updated = append(updated, '\n')
 	}
 	updated = append(updated, content[insertAt:]...)

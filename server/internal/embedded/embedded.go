@@ -20,15 +20,14 @@ import (
 )
 
 type Options struct {
-	GameID           string
-	Region           string
-	Name             string
-	IPv4             string
-	BsPort           int
-	WebSocketPort    int
-	OutOfBandPort    int
-	SimulationPeriod float64
-	LogLevel         string
+	GameID        string
+	Region        string
+	Name          string
+	IPv4          string
+	BsPort        int
+	WebSocketPort int
+	OutOfBandPort int
+	LogLevel      string
 }
 
 type Instance struct {
@@ -72,9 +71,6 @@ func (opts *Options) Validate() error {
 	if opts.OutOfBandPort < 0 || opts.OutOfBandPort > 65535 {
 		return fmt.Errorf("OutOfBandPort must be 0..65535")
 	}
-	if opts.SimulationPeriod < 0 {
-		return fmt.Errorf("SimulationPeriod must be >= 0")
-	}
 	validLevels := map[string]bool{
 		"none": true, "error": true, "warning": true, "notice": true, "info": true, "debug": true,
 	}
@@ -107,7 +103,9 @@ func (m *Instance) Start(ctx context.Context, certificatePairFolder string, repl
 		return err
 	}
 
-	// Build config using battleconfig.ConfigBuilder
+	// Build config using battleconfig.ConfigBuilder. The simulation period is
+	// not configurable here: leaving it at 0 makes the builder use the game's
+	// own default (common/battleconfig.SimulationPeriodDefaults).
 	builder := &battleconfig.ConfigBuilder{
 		GameID: m.Opts.GameID,
 		Region: m.Opts.Region,
@@ -118,10 +116,9 @@ func (m *Instance) Start(ctx context.Context, certificatePairFolder string, repl
 			WebSocketPort: m.Opts.WebSocketPort,
 			OutOfBandPort: m.Opts.OutOfBandPort,
 		},
-		SimulationPeriod: m.Opts.SimulationPeriod,
-		LogLevel:         m.Opts.LogLevel,
-		CertFile:         certFile,
-		KeyFile:          keyFile,
+		LogLevel: m.Opts.LogLevel,
+		CertFile: certFile,
+		KeyFile:  keyFile,
 	}
 
 	cfg, err := builder.BuildConfig()

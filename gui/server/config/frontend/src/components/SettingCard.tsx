@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Card, Collapse, Group, Input, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
+import { Box, Card, Collapse, Group, Input, Text, UnstyledButton } from '@mantine/core';
 import { IconAlertTriangle, IconChevronDown } from '@tabler/icons-react';
 
 export interface SettingCardProps {
-    /** Icon shown in the leading ThemeIcon box. */
+    /** Icon shown at the start of the row, in the same weight as any other. */
     icon?: React.ReactNode;
     title: string;
     description?: string;
@@ -27,13 +27,29 @@ export interface SettingCardProps {
     warning?: string;
     /** Disabled cards keep their details closed and cannot be expanded. */
     disabled?: boolean;
+    /**
+     * `card` (default) is the settings surface. `inline` draws the same row
+     * without the surface, for a setting that lives inside another card: a card
+     * is never nested in another card.
+     */
+    variant?: 'card' | 'inline';
 }
 
 /**
- * Translucent card for a single setting over the window's Mica backdrop: icon,
- * title/description and a control on the right. Rows can be expandable
- * (`onToggle` + `details`), hold extra content (`children`) and show a
- * card-level validation `error`.
+ * Width of the leading icon column. The messages and the details below the row
+ * line up with the title through it, so every row indents its content the same
+ * way whether it is a card or not.
+ */
+const ICON_COLUMN = 20;
+const INDENT = `calc(${ICON_COLUMN}px + 2 * var(--mantine-spacing-md))`;
+
+/**
+ * One setting, in the shape Windows 11 gives its settings: a layer-filled card
+ * with a hairline stroke, the icon, the title and its description, and the
+ * control at the end of the row. Rows can be expandable (`onToggle` +
+ * `details`), hold extra content (`children`) and show a card-level validation
+ * `error`. With `variant="inline"` it loses the surface and becomes a row of
+ * the card that contains it.
  */
 export const SettingCard: React.FC<SettingCardProps> = ({
     icon,
@@ -49,21 +65,32 @@ export const SettingCard: React.FC<SettingCardProps> = ({
     invalid,
     warning,
     disabled = false,
+    variant = 'card',
 }) => {
     // A disabled setting has nothing to reveal: its row no longer toggles the
     // details and the chevron is gone, so the collapsible cannot be opened.
     const expandable = Boolean(onToggle) && !disabled;
     const open = expandable && expanded;
+    const inline = variant === 'inline';
     const row = (
-        <Group wrap="nowrap" justify="space-between" gap="md" px="md" py="sm">
+        <Group wrap="nowrap" justify="space-between" gap="md" px={inline ? 0 : 'md'} py="sm">
             <Group wrap="nowrap" gap="md" style={{ flex: 1, minWidth: 0 }}>
                 {icon && (
-                    <ThemeIcon variant="light" size={38} radius="md">
+                    <Box
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            width: ICON_COLUMN,
+                            height: ICON_COLUMN,
+                        }}
+                    >
                         {icon}
-                    </ThemeIcon>
+                    </Box>
                 )}
                 <Box style={{ minWidth: 0 }}>
-                    <Text size="sm" fw={500}>
+                    <Text size="sm" fw={600}>
                         {title}
                     </Text>
                     {description && (
@@ -75,7 +102,7 @@ export const SettingCard: React.FC<SettingCardProps> = ({
             </Group>
             <Group gap="sm" wrap="nowrap">
                 {value && (
-                    <Text size="sm">
+                    <Text size="sm" style={{ textAlign: 'right' }}>
                         {value}
                     </Text>
                 )}
@@ -86,6 +113,7 @@ export const SettingCard: React.FC<SettingCardProps> = ({
                         stroke={1.6}
                         style={{
                             flexShrink: 0,
+                            color: 'var(--mantine-color-dimmed)',
                             transition: 'transform 150ms ease',
                             transform: open ? 'rotate(180deg)' : undefined,
                         }}
@@ -94,34 +122,22 @@ export const SettingCard: React.FC<SettingCardProps> = ({
             </Group>
         </Group>
     );
-
-    return (
-        <Card
-            withBorder
-            radius="md"
-            p={0}
-            className="app-card"
-            style={{
-                backgroundColor: 'var(--app-card-bg, rgba(255, 255, 255, 0.06))',
-                borderColor: error || invalid
-                    ? 'var(--mantine-color-error)'
-                    : 'var(--app-card-border, transparent)',
-            }}
-        >
+    const body = (
+        <>
             {expandable ? (
-                <UnstyledButton className="app-card-row" w="100%" onClick={onToggle} aria-expanded={open}>
+                <UnstyledButton
+                    className={inline ? 'app-row' : 'app-card-row'}
+                    w="100%"
+                    onClick={onToggle}
+                    aria-expanded={open}
+                >
                     {row}
                 </UnstyledButton>
             ) : (
                 row
             )}
             {error && (
-                <Input.Error
-                    pb="sm"
-                    my={0}
-                    pr="md"
-                    pl={icon ? 'calc(38px + 2 * var(--mantine-spacing-md))' : 'md'}
-                >
+                <Input.Error pb="sm" my={0} pr={inline ? 0 : 'md'} pl={icon ? INDENT : 0}>
                     {error}
                 </Input.Error>
             )}
@@ -131,8 +147,8 @@ export const SettingCard: React.FC<SettingCardProps> = ({
                     wrap="nowrap"
                     align="flex-start"
                     pb="sm"
-                    pr="md"
-                    pl={icon ? 'calc(38px + 2 * var(--mantine-spacing-md))' : 'md'}
+                    pr={inline ? 0 : 'md'}
+                    pl={icon ? INDENT : 0}
                 >
                     <IconAlertTriangle
                         size={14}
@@ -145,17 +161,33 @@ export const SettingCard: React.FC<SettingCardProps> = ({
                 </Group>
             )}
             {children && (
-                <Box px="md" pb="sm">
+                <Box px={inline ? 0 : 'md'} pb="sm">
                     {children}
                 </Box>
             )}
             {details && (
                 <Collapse expanded={open}>
-                    <Box pt="sm" pb="md" pr="md" pl="calc(38px + 2 * var(--mantine-spacing-md))">
+                    <Box pt="sm" pb="md" pr={inline ? 0 : 'md'} pl={icon ? INDENT : 0}>
                         {details}
                     </Box>
                 </Collapse>
             )}
+        </>
+    );
+
+    if (inline) return body;
+
+    return (
+        <Card
+            withBorder
+            radius="md"
+            p={0}
+            className={disabled ? 'app-card app-card--disabled' : 'app-card'}
+            style={{
+                borderColor: error || invalid ? 'var(--mantine-color-error)' : 'var(--app-card-border)',
+            }}
+        >
+            {body}
         </Card>
     );
 };

@@ -8,29 +8,29 @@ tasks:
   build-goreleaser-cfg:
     internal: true
     cmds:
-      - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}"
-  build-goreleaser-cfg-current:
+      - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}" current
+  build-goreleaser-cfg-all:
     internal: true
     cmds:
-      - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}" current
+      - go tool generateGoreleaserConfig "{{ .GOROOT_LEGACY }}"
   build:
     deps:
       - build-goreleaser-cfg
     cmds:
-      - goreleaser build --clean --snapshot
-  build-current:
-    deps:
-      - build-goreleaser-cfg-current
-    cmds:
       - goreleaser build --clean --snapshot --single-target
+  build-all:
+    deps:
+      - build-goreleaser-cfg-all
+    cmds:
+      - goreleaser build --clean --snapshot
   release:
     deps:
-      - build-goreleaser-cfg
+      - build-goreleaser-cfg-all
     cmds:
       - goreleaser release --clean --snapshot --fail-fast
   release-no-sign:
     deps:
-      - build-goreleaser-cfg
+      - build-goreleaser-cfg-all
     cmds:
       - goreleaser release --clean --snapshot --fail-fast --skip=sign
 includes:

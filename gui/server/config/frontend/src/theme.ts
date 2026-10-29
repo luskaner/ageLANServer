@@ -96,7 +96,9 @@ export function createAppTheme(accent: string = DEFAULT_ACCENT) {
         colors: { accent: accentRamp(/^#[0-9a-f]{6}$/i.test(accent) ? accent : DEFAULT_ACCENT) },
         fontFamily: FONT_FAMILY,
         headings: { fontFamily: FONT_FAMILY },
-        defaultRadius: 'md',
+        // WinUI 3 rounds controls, inputs and settings cards with the same
+        // 4 px (ControlCornerRadius); only flyouts and dialogs use 8 px.
+        defaultRadius: 'sm',
         cursorType: 'pointer',
         // Leave animations out when the desktop asks for reduced motion.
         respectReducedMotion: true,

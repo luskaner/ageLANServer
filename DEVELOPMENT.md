@@ -55,11 +55,11 @@ Depending on the module you want to debug, you will need to run the correspondin
 ### Build
 
 1. Make sure you have CGO disabled with ```go env -w CGO_ENABLED=0```
-2. Run ```task build```.
+2. Run ```task build``` to build for the current platform only.
 
-To build binaries only for the current machine's operating system and architecture, run
-```task build-current```. On Windows, this selects Windows 7-compatible binaries for versions
-older than 10 and Windows 10 binaries for version 10 or later.
+To build binaries for all supported platforms, run
+```task build-all```. On Windows, this includes Windows 7-compatible binaries (requires GOROOT_LEGACY)
+and Windows 10+ binaries (amd64, arm64).
 
 ### Release
 

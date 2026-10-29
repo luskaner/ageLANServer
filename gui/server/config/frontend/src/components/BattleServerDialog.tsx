@@ -156,6 +156,7 @@ export const BattleServerDialog: React.FC<BattleServerDialogProps> = ({
                     </Input.Wrapper>
                 )}
                 <AutoManualCard
+                    variant="inline"
                     icon={<IconNetwork size={20} stroke={1.6} />}
                     title="IPv4 address"
                     description="Address the clients use to reach the battle server. Automatic uses the address the client uses to reach the server."

@@ -53,7 +53,6 @@ type EmbeddedBattleServerConfig struct {
 	BsPort           int    `toml:"BsPort" json:"BsPort"`
 	WebSocketPort    int    `toml:"WebSocketPort" json:"WebSocketPort"`
 	OutOfBandPort    int    `toml:"OutOfBandPort" json:"OutOfBandPort"`
-	SimulationPeriod int    `toml:"SimulationPeriod" json:"SimulationPeriod"`
 	LogLevel         string `toml:"LogLevel" json:"LogLevel"`
 }
 

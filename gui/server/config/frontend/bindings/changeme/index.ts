@@ -11,9 +11,12 @@ export {
 export type {
     AnnouncementConfig,
     BattleServerConfig,
+    BattleServerReplaysConfiguration,
     ConfigFile,
     Configuration,
     CustomFilesConfiguration,
+    EmbeddedBattleServerConfig,
+    EmbeddedBattleServerDefaults,
     GameConfig,
     GamesConfiguration,
     InternetConfiguration,

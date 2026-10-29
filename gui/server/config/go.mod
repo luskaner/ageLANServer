@@ -7,6 +7,8 @@ require (
 	github.com/wailsapp/wails/v3 v3.0.0
 )
 
+replace github.com/wailsapp/wails/v3 => github.com/luskaner/wails/v3 v3.0.0
+
 require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/coder/websocket v1.8.15 // indirect

@@ -18,6 +18,19 @@ export interface BattleServerConfig {
 }
 
 /**
+ * BattleServerReplaysConfiguration configures the optional recording of the
+ * data the embedded battle server receives for a match. It mirrors CustomFiles:
+ * sizes and the TTL are kept as strings and validated once at startup.
+ */
+export interface BattleServerReplaysConfiguration {
+    "Enabled": boolean;
+    "Folder": string;
+    "MaxFileSize": string;
+    "MaxTotalSize": string;
+    "Expiry": string;
+}
+
+/**
  * ConfigFile is the bridge between Go and the React editor.
  */
 export interface ConfigFile {
@@ -36,6 +49,7 @@ export interface Configuration {
     "Games": GamesConfiguration;
     "Announcement": AnnouncementConfig;
     "CustomFiles": CustomFilesConfiguration;
+    "BattleServerReplays": BattleServerReplaysConfiguration;
 }
 
 /**
@@ -51,9 +65,39 @@ export interface CustomFilesConfiguration {
     "Expiry": string;
 }
 
+export interface EmbeddedBattleServerConfig {
+    "StartIfMissing": string;
+    "Region": string;
+    "Name": string;
+    "IPv4": string;
+    "BsPort": number;
+    "WebSocketPort": number;
+    "OutOfBandPort": number;
+    "LogLevel": string;
+}
+
+/**
+ * EmbeddedBattleServerDefaults is what the server uses for a game when the
+ * document leaves the embedded battle server out. It is not what
+ * serverDefaults decodes: the server fills Region and Name with "Server" at
+ * startup (server/internal/cmd/root.go) and resolves the rest at runtime, so
+ * these are the values the editor shows as placeholders and hints.
+ */
+export interface EmbeddedBattleServerDefaults {
+    "StartIfMissing": string;
+    "Region": string;
+    "Name": string;
+    "IPv4": string;
+    "BsPort": number;
+    "WebSocketPort": number;
+    "OutOfBandPort": number;
+    "LogLevel": string;
+}
+
 export interface GameConfig {
     "Hosts": string[] | null;
     "BattleServers": BattleServerConfig[] | null;
+    "EmbeddedBattleServer": EmbeddedBattleServerConfig;
 }
 
 export interface GamesConfiguration {

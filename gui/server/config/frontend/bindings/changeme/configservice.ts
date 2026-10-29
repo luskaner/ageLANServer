@@ -17,6 +17,14 @@ export function CreateConfigFile(path: string, configuration: $models.Configurat
 }
 
 /**
+ * EmbeddedBattleServerDefaults exposes those values for every supported game,
+ * so the editor never has to carry a second copy of them.
+ */
+export function EmbeddedBattleServerDefaults(): $CancellablePromise<{ [_ in string]?: $models.EmbeddedBattleServerDefaults } | null> {
+    return $Call.ByID(2197065258);
+}
+
+/**
  * OpenConfigFile tries the default configuration paths and returns the file's
  * path and raw contents. When there is no default file it returns no file and
  * the load screen stays in place: the native picker only opens when the user

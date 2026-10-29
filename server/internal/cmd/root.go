@@ -300,15 +300,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 
 			inst := &embedded.Instance{
 				Opts: embedded.Options{
-					GameID:           gameId,
-					Region:           region,
-					Name:             name,
-					IPv4:             ipv4,
-					BsPort:           ebs.BsPort,
-					WebSocketPort:    ebs.WebSocketPort,
-					OutOfBandPort:    ebs.OutOfBandPort,
-					SimulationPeriod: ebs.SimulationPeriod,
-					LogLevel:         ebs.LogLevel,
+					GameID:        gameId,
+					Region:        region,
+					Name:          name,
+					IPv4:          ipv4,
+					BsPort:        ebs.BsPort,
+					WebSocketPort: ebs.WebSocketPort,
+					OutOfBandPort: ebs.OutOfBandPort,
+					LogLevel:      ebs.LogLevel,
 				},
 			}
 			replayOpts := embedded.ReplayOptions{
