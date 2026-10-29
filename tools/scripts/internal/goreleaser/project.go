@@ -34,15 +34,24 @@ func GenerateCurrentConfig(currentWindowsOS OperatingSystem, archives ...*Archiv
 }
 
 func generateConfig(currentWindowsOS OperatingSystem, archives ...*Archive) error {
+	currentOS := currentOS()
+	currentArch := currentArch()
+	if currentWindowsOS != nil {
+		currentOS = currentWindowsOS
+		currentArch = currentWindowsArch()
+	}
+
 	project := config.Project{
 		Version: 2,
 	}
 	for _, a := range archives {
-		archiveBuilds := a.Builds(OSMacOS)
-		if currentWindowsOS != nil {
+		archiveBuilds := a.Builds() // Get all builds, then filter
+		if currentOS != nil {
 			archiveBuilds = slices.DeleteFunc(archiveBuilds, func(build config.Build) bool {
-				return slices.Contains(build.Goos, currentWindowsOS.Goos()) &&
-					build.Tool != currentWindowsOS.Tool()
+				// Build IDs use OS.Name() (e.g., "linux", "mac", "win7", "win10")
+				osName := currentOS.Name()
+				return !strings.Contains(build.ID, "_"+osName+"_") ||
+					!slices.Contains(build.Goarch, currentArch.Goarch())
 			})
 		}
 		project.Builds = append(project.Builds, archiveBuilds...)
@@ -53,6 +62,20 @@ func generateConfig(currentWindowsOS OperatingSystem, archives ...*Archive) erro
 	if currentWindowsOS == OSWindowsLegacy {
 		windowsTargets = NewBinaryTargets()
 		windowsTargets.AddTarget(OSWindowsLegacy, ArchAmd64)
+	}
+	// Filter config-helper builds to only current target
+	if currentOS != nil {
+		filteredWindowsTargets := NewBinaryTargets()
+		for target, archs := range *windowsTargets {
+			if target.Goos() == currentOS.Goos() {
+				for arch := range archs {
+					if arch.Goarch() == currentArch.Goarch() {
+						filteredWindowsTargets.AddTarget(target, arch)
+					}
+				}
+			}
+		}
+		windowsTargets = filteredWindowsTargets
 	}
 	for target, archs := range *windowsTargets {
 		for arch := range archs {
@@ -106,7 +129,7 @@ func generateConfig(currentWindowsOS OperatingSystem, archives ...*Archive) erro
 		}
 	}
 	project.UniversalBinaries = universalBinaries(project.Builds)
-	if currentWindowsOS != nil {
+	if currentOS != nil {
 		project.UniversalBinaries = nil
 	}
 

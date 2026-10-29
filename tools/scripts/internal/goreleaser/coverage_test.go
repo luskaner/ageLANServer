@@ -212,3 +212,154 @@ func TestOverrideWindowsName(t *testing.T) {
 		t.Fatalf("got %q", name2)
 	}
 }
+
+func TestGenerateCurrentLinux(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	archive := NewArchive("server", Targets3264, nil)
+	archive.AddMainBinary(NewBinary("./server", Targets3264))
+	if err := GenerateCurrentConfig(OSLinux, archive); err != nil {
+		t.Fatalf("GenerateCurrentConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID string `yaml:"id"`
+		} `yaml:"builds"`
+		UniversalBinaries []struct {
+			ID string `yaml:"id"`
+		} `yaml:"universal_binaries"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should only have builds for current Linux arch (amd64 in test env)
+	hasLinuxAmd64 := false
+	for _, build := range project.Builds {
+		if strings.Contains(build.ID, "_linux_") && !strings.Contains(build.ID, "_linux_amd64") {
+			t.Errorf("Linux current config includes non-amd64 target %q", build.ID)
+		}
+		if build.ID == "server_linux_amd64" {
+			hasLinuxAmd64 = true
+		}
+	}
+	if !hasLinuxAmd64 {
+		t.Error("current build config does not include Linux amd64")
+	}
+	if len(project.UniversalBinaries) > 0 {
+		t.Error("current build config includes universal binaries for other platforms")
+	}
+}
+
+func TestGenerateCurrentMacOS(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	archive := NewArchive("server", Targets3264, nil)
+	archive.AddMainBinary(NewBinary("./server", Targets3264))
+	if err := GenerateCurrentConfig(OSMacOS, archive); err != nil {
+		t.Fatalf("GenerateCurrentConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID string `yaml:"id"`
+		} `yaml:"builds"`
+		UniversalBinaries []struct {
+			ID string `yaml:"id"`
+		} `yaml:"universal_binaries"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should only have builds for current macOS arch (amd64 in test env)
+	hasMacOSAmd64 := false
+	for _, build := range project.Builds {
+		if strings.Contains(build.ID, "_mac_") && !strings.Contains(build.ID, "_mac_amd64") {
+			t.Errorf("macOS current config includes non-amd64 target %q", build.ID)
+		}
+		if build.ID == "server_mac_amd64" {
+			hasMacOSAmd64 = true
+		}
+	}
+	if !hasMacOSAmd64 {
+		t.Error("current build config does not include macOS amd64")
+	}
+	if len(project.UniversalBinaries) > 0 {
+		t.Error("current build config includes universal binaries for other platforms")
+	}
+}
+
+func TestGenerateCurrentWindowsArm64(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(orig)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	archive := NewArchive("server", Targets3264, nil)
+	archive.AddMainBinary(NewBinary("./server", Targets3264))
+	if err := GenerateCurrentConfig(OSWindowsModern, archive); err != nil {
+		t.Fatalf("GenerateCurrentConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(".goreleaser.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var project struct {
+		Builds []struct {
+			ID string `yaml:"id"`
+		} `yaml:"builds"`
+		UniversalBinaries []struct {
+			ID string `yaml:"id"`
+		} `yaml:"universal_binaries"`
+	}
+	if err := yaml.Unmarshal(data, &project); err != nil {
+		t.Fatal(err)
+	}
+
+	// Windows Modern supports amd64 and arm64, but current should only build one
+	// The test runs on amd64, so it should only have amd64
+	hasWindows10Amd64 := false
+	for _, build := range project.Builds {
+		if strings.Contains(build.ID, "_win10_") && !strings.Contains(build.ID, "_win10_amd64") {
+			t.Errorf("Windows 10 current config includes non-amd64 target %q", build.ID)
+		}
+		if build.ID == "server_win10_amd64" {
+			hasWindows10Amd64 = true
+		}
+	}
+	if !hasWindows10Amd64 {
+		t.Error("current build config does not include Windows 10 amd64")
+	}
+	if len(project.UniversalBinaries) > 0 {
+		t.Error("current build config includes universal binaries for other platforms")
+	}
+}

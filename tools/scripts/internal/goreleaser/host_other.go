@@ -3,5 +3,5 @@
 package goreleaser
 
 func currentWindowsOS() (OperatingSystem, error) {
-	return nil, nil
+	return currentOS(), nil
 }

@@ -35,3 +35,7 @@ func currentWindowsOS() (OperatingSystem, error) {
 	}
 	return target, nil
 }
+
+func currentWindowsArch() Architecture {
+	return currentArch()
+}
