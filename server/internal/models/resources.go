@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/luskaner/ageServer/common"
 	"github.com/luskaner/ageServer/common/paths"
 	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/pelletier/go-toml/v2"
 )
 
 var ResponsesFolder = filepath.Join(paths.ResourcesDir, "responses")
@@ -29,11 +31,26 @@ type signature struct {
 	Value string `json:"dataSignature"`
 }
 
+// newsEntry is one [id] table of a game's news.toml. The table key is the id
+// sent to the client; the remaining fields are forwarded as received.
+type newsEntry struct {
+	Category    string `toml:"category"`
+	Title       string `toml:"title"`
+	Subtitle    string `toml:"subtitle"`
+	Text        string `toml:"text"`
+	ImageURL    string `toml:"image_url"`
+	Body        string `toml:"body"`
+	Metadata    string `toml:"metadata"`
+	DateVisible string `toml:"date_visible"`
+	DateExpiry  string `toml:"date_expiry"`
+}
+
 type Resources interface {
 	Initialize(gameId string, opts *ResourcesOpts)
 	ReturnSignedAsset(name string, w *http.ResponseWriter, req *http.Request, keyedResponse bool)
 	LoginData() []i.A
 	ChatChannels() map[string]*MainChatChannel
+	News() []i.A
 	ArrayFiles() map[string]i.A
 	SignedAssets() map[string][]byte
 	CloudFiles() CloudFiles
@@ -43,6 +60,7 @@ type MainResources struct {
 	keyedFilenames          mapset.Set[string]
 	chatChannels            map[string]*MainChatChannel
 	loginData               []i.A
+	news                    []i.A
 	arrayFiles              map[string]i.A
 	keyedFiles              map[string][]byte // The currently active version (signed or captured)
 	keyedFilesCaptured      map[string][]byte // The captured (unsigned) version
@@ -67,6 +85,7 @@ func (r *MainResources) Initialize(gameId string, opts *ResourcesOpts) {
 	r.initializeUserData(gameId)
 	r.initializeLogin(gameId)
 	r.initializeChatChannels(gameId)
+	r.initializeNews(gameId)
 	r.initializeResponses(gameId)
 	r.initializeCloud(gameId)
 }
@@ -77,6 +96,10 @@ func (r *MainResources) LoginData() []i.A {
 
 func (r *MainResources) ChatChannels() map[string]*MainChatChannel {
 	return r.chatChannels
+}
+
+func (r *MainResources) News() []i.A {
+	return r.news
 }
 
 func (r *MainResources) ArrayFiles() map[string]i.A {
@@ -99,6 +122,49 @@ func (r *MainResources) initializeChatChannels(gameId string) {
 	err = json.Unmarshal(data, &r.chatChannels)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func (r *MainResources) initializeNews(gameId string) {
+	data, err := os.ReadFile(filepath.Join(paths.ConfigsPath, gameId, "news.toml"))
+	if err != nil {
+		return
+	}
+	var entries map[string]newsEntry
+	if err = toml.Unmarshal(data, &entries); err != nil {
+		panic(fmt.Errorf("cannot parse news.toml for game %s: %w", gameId, err))
+	}
+	ids := make([]string, 0, len(entries))
+	for id := range entries {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		left, leftErr := strconv.Atoi(ids[i])
+		right, rightErr := strconv.Atoi(ids[j])
+		if leftErr == nil && rightErr == nil {
+			return left < right
+		}
+		return ids[i] < ids[j]
+	})
+	r.news = make([]i.A, 0, len(entries))
+	for _, id := range ids {
+		entry := entries[id]
+		newsID := any(id)
+		if numericID, err := strconv.Atoi(id); err == nil {
+			newsID = numericID
+		}
+		r.news = append(r.news, i.A{
+			newsID,
+			entry.Category,
+			entry.Title,
+			entry.Subtitle,
+			entry.Text,
+			entry.ImageURL,
+			entry.Body,
+			entry.Metadata,
+			entry.DateVisible,
+			entry.DateExpiry,
+		})
 	}
 }
 

@@ -83,6 +83,11 @@ Some options
 are
 easy to understand while others might require researching.
 
+### News
+
+The news returned by `/game/news/getNews` are defined per game in `resources/config/<game>/news.toml`.
+See [News](./news.md) for the file format and how to add items.
+
 ### Custom files
 
 The `/api/MatchContent/` endpoints serve multiplayer savegames and replays: the host uploads the file, the
