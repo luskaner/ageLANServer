@@ -39,6 +39,7 @@ import (
 	"github.com/luskaner/ageServer/server/internal/models"
 	"github.com/luskaner/ageServer/server/internal/models/initializer"
 	"github.com/luskaner/ageServer/server/internal/routes/router"
+	serverweb "github.com/luskaner/ageServer/server/internal/web"
 )
 
 var configPaths = []string{paths.ConfigsPath, "."}
@@ -146,6 +147,13 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 		_ = fileLockUnlockFn(lock)
 	}()
+	staticBattleServers, err := models.InitializeStaticBattleServerStore(filepath.Join(paths.ResourcesDir, "userData", "web"))
+	if err != nil {
+		logger.Fail("Failed to open static battle-server database: %s", err)
+		exitCode = internal.ErrGame
+		return
+	}
+	closables = append(closables, staticBattleServers)
 	if internal.Id, err = uuidParseFn(values.Id); err != nil {
 		logger.Fail("Invalid server instance ID")
 		exitCode = internal.ErrInvalidId
@@ -241,8 +249,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			exitCode = internal.ErrEmbeddedBattleServer
 			return
 		}
+		staticBattleServers, staticErr := models.StaticBattleServers(gameId)
+		if staticErr != nil {
+			logger.Fail("Failed to read static battle servers for %s: %s", gameId, staticErr)
+			exitCode = internal.ErrEmbeddedBattleServer
+			return
+		}
 
-		hasExternalBattleServer := len(configBattleServers) > 0 || len(discoveredBattleServers) > 0
+		hasExternalBattleServer := len(configBattleServers) > 0 || len(discoveredBattleServers) > 0 || len(staticBattleServers) > 0
 		ebs := cfg.GetGameEmbeddedBattleServer(gameId)
 
 		// StartIfMissing controls auto-start behavior when no external battle server exists.
@@ -334,6 +348,27 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		}
 	}
 
+	var dashboard *serverweb.Server
+	if cfg.Web.Enabled {
+		dashboard, err = serverweb.New(serverweb.Options{
+			Config:     cfg.Web,
+			ConfigFile: usedFile,
+			Games:      initializer.Games,
+			GameHosts:  gameHosts(cfg, gameSet),
+			Version:    Version,
+			DataDir:    filepath.Join(paths.ResourcesDir, "userData", "web"),
+		})
+		if err != nil {
+			logger.Fail("Failed to initialize web dashboard: %s", err)
+			exitCode = internal.ErrStartServer
+			return
+		}
+		closables = append(closables, dashboard)
+		for _, address := range dashboard.Addresses() {
+			logger.Detail("Web dashboard: %s", address)
+		}
+	}
+
 	for gameId := range gameSet.Iter() {
 		ui.Section("Game " + gameId)
 		hosts := cfg.GetGameHosts(gameId)
@@ -393,6 +428,9 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 		general := &router.General{Writer: writer}
 		mux := general.InitializeRoutes(gameId, router.HostMiddleware(gameId, writer))
 		mux = router.TitleMiddleware(gameId, mux)
+		if dashboard != nil {
+			mux = dashboard.HandlerWithFallback(mux)
+		}
 		if root != nil {
 			var f *os.File
 			if f, err = root.Open(filePrefix + "communication_log"); err != nil {
@@ -468,6 +506,14 @@ func runRoot(fs *pflag.FlagSet) (err error, exitCode int) {
 			logger.Ok("Server %s stopped", s.Addr)
 		})
 	}
+	if dashboard != nil {
+		wg.Go(func() {
+			if err = dashboard.Shutdown(ctx); err != nil {
+				logger.Fail("Dashboard forced to shutdown: %s", err)
+			}
+			logger.Ok("Dashboard stopped")
+		})
+	}
 	wg.Wait()
 
 	// Stop embedded battle servers.
@@ -521,6 +567,9 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		"BattleServerReplays.MaxFileSize":  "32MB",
 		"BattleServerReplays.MaxTotalSize": "256MB",
 		"BattleServerReplays.Expiry":       "12h",
+		"Web.Enabled":                      true,
+		"Web.PublicTitle":                  "Community Server",
+		"Web.SnapshotSeconds":              2,
 	}
 	for g := range game.SupportedGames.Iter() {
 		defaults[fmt.Sprintf("Games.%s.Hosts", g)] = []string{netip.IPv4Unspecified().String()}
@@ -560,6 +609,14 @@ func initConfig(fs *pflag.FlagSet) (*internal.Configuration, string) {
 		os.Exit(common.ErrConfigParse)
 	}
 	return &c, usedFile
+}
+
+func gameHosts(cfg *internal.Configuration, games mapset.Set[string]) map[string][]string {
+	hosts := make(map[string][]string, games.Cardinality())
+	for gameID := range games.Iter() {
+		hosts[gameID] = cfg.GetGameHosts(gameID)
+	}
+	return hosts
 }
 
 // applyCustomFilesConfig validates the CustomFiles section and publishes the

@@ -1,0 +1,2 @@
+{{define "content"}}<section class="panel"><div class="section-title"><h2>Leaderboard</h2><span class="muted">{{.LadderTot}} profiles · IDs distinguish accounts with the same alias</span></div>
+<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Profile ID</th><th>Rating</th><th>Games</th><th>Wins</th><th>Losses</th><th>Level</th></tr></thead><tbody id="live-leaderboard">{{template "frag-leaderboard" .}}</tbody></table></div></section>{{end}}

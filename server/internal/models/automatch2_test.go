@@ -1,6 +1,10 @@
 package models
 
-import "testing"
+import (
+	"testing"
+
+	i "github.com/luskaner/ageServer/server/internal"
+)
 
 func TestNormalizeMapName(t *testing.T) {
 	tests := []struct {
@@ -90,6 +94,50 @@ func testMapCandidates() []automatchMapCandidate {
 		{ID: 9, Name: "FourLakes.rms"},
 		{ID: 11, Name: "goldenpit.rms2"},
 		{ID: 13, Name: "hideout.rms2"},
+	}
+}
+
+func TestChooseMapUsesConfiguredCatalogMapForOneVsOne(t *testing.T) {
+	store := NewMapPoolStore(t.TempDir())
+	store.gameID = "age2"
+	if err := store.Set(MapPool{
+		GameID:  "age2",
+		QueueID: AutomatchQueueID(),
+		Mode:    MapPoolModeRotation,
+		Maps: []MapPoolEntry{
+			{MapID: 70, Name: "Ghost_Lake.rms", Weight: 1, Enabled: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	mapPoolRegistryMu.Lock()
+	previous := mapPoolRegistry["age2"]
+	mapPoolRegistry["age2"] = store
+	mapPoolRegistryMu.Unlock()
+	t.Cleanup(func() {
+		_ = store.Close()
+		mapPoolRegistryMu.Lock()
+		if previous == nil {
+			delete(mapPoolRegistry, "age2")
+		} else {
+			mapPoolRegistry["age2"] = previous
+		}
+		mapPoolRegistryMu.Unlock()
+	})
+
+	resources := &fakeResources{arrayFiles: map[string]i.A{
+		"automatchMaps.json": i.A{0, []any{
+			[]any{1, "Arabia.rms", 2, 2, 6},
+			[]any{70, "Ghost_Lake.rms", 2, 2, 2},
+		}},
+	}}
+	game := &MainGame{title: "age2", resources: resources}
+	matchmaking := &MainMatchmaking{game: game}
+	queue := automatchQueue{ID: 6, MaxPlayers: 2, LeaderboardID: 6}
+	mapName, mapID := matchmaking.chooseMap(queue, &automatchQueueEntry{}, &automatchQueueEntry{})
+	if mapName != "Ghost_Lake.rms" || mapID != 70 {
+		t.Fatalf("chosen map = %q (%d), want configured map Ghost_Lake.rms (70)", mapName, mapID)
 	}
 }
 

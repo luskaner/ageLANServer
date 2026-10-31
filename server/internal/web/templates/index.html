@@ -1,0 +1,33 @@
+{{define "content"}}
+<section class="realm-banner">
+  <div><p class="eyebrow">THE REALM IS OPEN</p><h2>{{.Config.PublicTitle}}</h2><p>Live activity, matchmaking and battle-server status for your community.</p></div>
+  <a class="button gold-button" href="/players">Meet the players</a>
+</section>
+<section class="cards">
+  <article class="card"><span>Games</span><strong>{{len .Snapshot.Games}}</strong><small>Available realms</small></article>
+  <article class="card"><span>Open lobbies</span><strong data-live-count="lobbies">{{len .Game.Lobbies}}</strong><small>Waiting for players</small></article>
+  <article class="card"><span>Online players</span><strong data-live-count="players">{{len .Game.Players}}</strong><small>Currently connected</small></article>
+  <article class="card"><span>Players in queue</span><strong data-live-count="queue">{{len .Game.Queue}}</strong><small>Looking for a match</small></article>
+</section>
+<section class="panel"><div class="section-title"><div><p class="eyebrow">SERVER OVERVIEW</p><h2>Realm status</h2></div><span class="badge">ONLINE</span></div>
+  <dl class="details"><dt>Uptime</dt><dd>{{duration .Snapshot.Uptime}}</dd>
+  <dt>LAN addresses</dt><dd>{{range .Snapshot.Addresses}}<a class="address" href="{{.}}">{{.}}</a>{{end}}</dd>
+  <dt>Games</dt><dd>{{range .Snapshot.Games}}<a class="tag" href="/?game={{.Game}}">{{.Game}}</a>{{end}}</dd></dl>
+</section>
+<section class="panel"><div class="section-title"><div><p class="eyebrow">GAME CONNECTIONS</p><h2>Battle servers</h2></div><a href="/battle-servers">View all →</a></div>
+  <div class="battle-server-grid" id="live-battle-servers">{{range .Game.BattleServerDetails}}
+    <article class="battle-server-card"><div class="section-title"><strong>{{.Name}}</strong><span class="status-pill" data-status="{{.Status}}"><i></i>{{.Status}}</span></div>
+      <p>{{.Region}} · {{.Source}}</p><code>{{.IPv4}} · {{.BsPort}} / {{.WebSocketPort}}{{if .OutOfBandPort}} / {{.OutOfBandPort}}{{end}}</code>
+    </article>
+  {{else}}<p class="empty">No battle servers are currently loaded.</p>{{end}}</div>
+</section>
+<section class="panel"><div class="section-title"><h2>Automatch queue</h2><a href="/queue">Full queue →</a></div>
+  <div class="table-wrap"><table><thead><tr><th>Player</th><th>Profile</th><th>IP</th><th>Relay</th><th>Waiting</th></tr></thead><tbody id="live-queue">{{template "frag-queue" .}}</tbody></table></div>
+</section>
+<section class="panel"><div class="section-title"><h2>Open lobbies</h2><a href="/lobbies">All lobbies →</a></div>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Host</th><th>Map</th><th>Type</th><th>Players</th><th>Host IP</th><th>Observers</th><th>Relay</th></tr></thead><tbody id="live-lobbies">{{template "frag-lobbies" .}}</tbody></table></div>
+</section>
+<section class="panel"><div class="section-title"><h2>Live matches</h2></div>
+  <div id="live-matches">{{range .Game.LiveMatches}}<div class="match-card"><span class="icon-label"><img class="map-icon" src="{{.MapIcon}}" alt="" onerror="this.onerror=null;this.src='/static/images/map-placeholder.svg'"><strong>{{.DisplayMapName}}</strong></span><span>{{.State}}</span><span>{{range $i, $p := .Players}}{{if $i}} vs. {{end}}<a href="/players/{{$p.ProfileID}}?game={{$.GameID}}">{{$p.Alias}}</a> ({{$p.IP}}){{end}}</span></div>{{else}}<p class="empty">No active automatch games.</p>{{end}}</div>
+</section>
+{{end}}

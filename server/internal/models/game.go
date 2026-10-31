@@ -46,6 +46,12 @@ type MatchHistory interface {
 	// ApplyResult stores a reported result and returns the updated ratings and
 	// whether this call moved them.
 	ApplyResult(m MatchResult) (map[int32]*PlayerRating, bool)
+	// RecentMatches returns the newest reported matches of every profile,
+	// newest first.
+	RecentMatches(limit int) []MatchResult
+	// FindMatch returns one reported match with its players.
+	FindMatch(matchID int64) (MatchResult, bool)
+	GetProfilePerformance(profileID int32) (maps, civilizations []MatchPerformance, err error)
 }
 
 func G(r *http.Request) Game {
@@ -146,6 +152,9 @@ func CreateMainGame(gameId string, opts *CreateMainGameOpts) Game {
 	game.sessions.Initialize()
 	game.customFiles.Initialize(gameId, opts.Instances.CustomFilesOpts)
 	game.matchHistory = NewMatchHistoryStoreForGame(gameId)
+	// The map pool lives in the same database as the ladder: both the dashboard
+	// and chooseMap read it from here.
+	registerMapPools(gameId, NewMapPoolStoreForGame(gameId))
 	if mainUsers, ok := game.users.(*MainUsers); ok && mainUsers != nil {
 		history := game.matchHistory
 		mainUsers.SetRatingSource(func(profileID int32) int32 {

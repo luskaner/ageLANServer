@@ -13,6 +13,15 @@ GeneratePlatformUserId = false
 # disabled: no authentication as it worked before.
 Authentication = 'disabled'
 
+# PUBLIC WEB DASHBOARD
+# The dashboard shares the game's HTTPS listeners on port 443 and is served
+# on the same configured interfaces. Open /admin/setup once to create an admin
+# password; its salted hash is stored in resources/userData/web/web.db.
+[Web]
+Enabled = true
+PublicTitle = 'Community Server'
+SnapshotSeconds = 2
+
 # Whether the server re-signs the catalogues it serves (itemDefinitions.json, itemBundleItems.json,
 # levelRewardsTable.json and the arrays ending in a signature) with its own key, instead of serving
 # the signatures already captured inside those files.

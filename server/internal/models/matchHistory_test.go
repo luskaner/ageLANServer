@@ -127,6 +127,32 @@ func TestApplyResultKeepsPendingMap(t *testing.T) {
 	}
 }
 
+func TestProfilePerformanceAggregatesMapsAndCivilizations(t *testing.T) {
+	store := newTestStore(t)
+	results := []MatchResult{
+		{MatchID: 201, MapName: "Arabia.rms", Players: []int32{10, 20}, Teams: []int32{0, 1}, Results: []int32{1, 0}, Races: []int32{2, 5}},
+		{MatchID: 202, MapName: "Arabia.rms", Players: []int32{10, 30}, Teams: []int32{0, 1}, Results: []int32{0, 1}, Races: []int32{2, 7}},
+		{MatchID: 203, MapName: "Arena.rms", Players: []int32{10, 40}, Teams: []int32{0, 1}, Results: []int32{1, 0}, Races: []int32{0, 9}},
+	}
+	for _, result := range results {
+		store.ApplyResult(result)
+	}
+
+	maps, civilizations, err := store.GetProfilePerformance(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(maps) != 2 || maps[0].Name != "Arabia.rms" || maps[0].Games != 2 || maps[0].Wins != 1 {
+		t.Fatalf("map performance = %+v", maps)
+	}
+	if len(civilizations) != 2 || civilizations[0].Name != "2" || civilizations[0].Games != 2 || civilizations[0].Wins != 1 {
+		t.Fatalf("civilization performance = %+v", civilizations)
+	}
+	if civilizations[1].Name != "0" || civilizations[1].Games != 1 || civilizations[1].Wins != 1 {
+		t.Fatalf("Aztec performance = %+v", civilizations[1])
+	}
+}
+
 func TestCustomMatchDoesNotChangeRating(t *testing.T) {
 	store := newTestStore(t)
 	_, rated := store.ApplyResult(MatchResult{
