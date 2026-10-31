@@ -1,0 +1,3 @@
+{{define "content"}}<section class="realm-banner compact-banner"><div><p class="eyebrow">CUSTOM ROOMS AND RANKED SESSIONS</p><h2>Rooms in the realm</h2><p>Ranked matchmaking advertisements are labeled separately from custom rooms. Observer availability comes from each host's game settings.</p></div></section>
+<section class="panel"><div class="section-title"><h2>Current lobbies</h2><span class="muted">{{len .Game.Lobbies}} total</span></div>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Host</th><th>Map</th><th>Type</th><th>Players</th><th>Host IP</th><th>Observers</th><th>Relay</th></tr></thead><tbody id="live-lobbies">{{template "frag-lobbies" .}}</tbody></table></div></section>{{end}}

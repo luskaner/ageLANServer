@@ -1,0 +1,25 @@
+{{define "content"}}
+<section class="panel admin-shell"><div class="section-title"><div><p class="eyebrow">KEEP THE REALM IN ORDER</p><h2>Server administration</h2></div><form method="post" action="/admin/logout"><button class="button secondary" type="submit">Sign out</button></form></div>
+<p>Manage live activity, loaded battle servers, matchmaking and server settings. Configuration and static-server edits require a restart.</p>
+<div id="admin-status" class="notice" role="status">Loading administration data…</div>
+<nav class="admin-section-nav" role="tablist" aria-label="Administration sections">
+  <button type="button" role="tab" id="admin-tab-live" aria-controls="admin-live" aria-selected="true" data-admin-tab="live">Live activity</button>
+  <button type="button" role="tab" id="admin-tab-battles" aria-controls="admin-battles" aria-selected="false" data-admin-tab="battles">Battle servers</button>
+  <button type="button" role="tab" id="admin-tab-matchmaking" aria-controls="admin-matchmaking" aria-selected="false" data-admin-tab="matchmaking">Matchmaking</button>
+  <button type="button" role="tab" id="admin-tab-config" aria-controls="admin-config" aria-selected="false" data-admin-tab="config">Configuration</button>
+  <button type="button" role="tab" id="admin-tab-security" aria-controls="admin-security" aria-selected="false" data-admin-tab="security">Security</button>
+</nav>
+<div class="admin-sections">
+ <section id="admin-live" class="admin-section" role="tabpanel" aria-labelledby="admin-tab-live" data-admin-panel="live"><div class="section-title"><div><p class="eyebrow">NOW PLAYING</p><h3>Live server state</h3></div></div><div id="admin-games"></div></section>
+ <section id="admin-battles" class="admin-section" role="tabpanel" aria-labelledby="admin-tab-battles" data-admin-panel="battles" hidden><div class="section-title"><div><p class="eyebrow">SERVER REGISTRY</p><h3>Battle servers</h3></div></div>
+  <h4>Currently loaded and monitored</h4><div id="admin-active-battleservers"></div>
+  <h4>Persistent static servers</h4><p>Static remote entries are stored in the database and loaded at server startup. New or removed entries take effect after restart.</p>
+  <label>Game<select id="battle-game"></select></label><div id="battle-servers"></div>
+  <form id="battle-form" class="stack"><label>Region identifier<input name="region" required></label><label>Name<input name="name"></label><label>IPv4 address<input name="ipv4" required placeholder="192.168.1.20"></label><label>Battle server port<input name="bsPort" type="number" min="1" max="65535" required></label><label>WebSocket port<input name="webSocketPort" type="number" min="1" max="65535" required></label><label>Out-of-band port<input name="outOfBandPort" type="number" min="0" max="65535" value="0"></label><button type="submit">Add static battle server</button></form>
+ </section>
+ <section id="admin-matchmaking" class="admin-section" role="tabpanel" aria-labelledby="admin-tab-matchmaking" data-admin-panel="matchmaking" hidden><div class="section-title"><div><p class="eyebrow">MAP ROTATION</p><h3>Matchmaking map pool</h3></div></div><p class="small">Choose from every unique two-player map in the game's map catalog. Once saved, selected maps are published as 1v1 options and used by matchmaking; without a custom pool the game's default 1v1 map set remains active.</p><label>Game<select id="pool-game"></select></label><label>Mode<select id="pool-mode"><option value="random">Random</option><option value="rotation">Rotation</option><option value="weighted">Weighted random</option></select></label><div id="pool-maps"></div><div class="action-row"><button id="pool-save">Save pool</button><button id="pool-reset" class="secondary">Reset to defaults</button></div></section>
+ <section id="admin-config" class="admin-section" role="tabpanel" aria-labelledby="admin-tab-config" data-admin-panel="config" hidden><div class="section-title"><div><p class="eyebrow">SERVER RULES</p><h3>Gameplay configuration</h3></div></div><div id="config-fields"></div><button id="config-save">Save config changes</button></section>
+ <section id="admin-security" class="admin-section" role="tabpanel" aria-labelledby="admin-tab-security" data-admin-panel="security" hidden><div class="section-title"><div><p class="eyebrow">ACCOUNT SECURITY</p><h3>Change admin password</h3></div></div><form id="password-form" class="stack"><label>Current password<input name="current" type="password" required></label><label>New password<input name="new" type="password" minlength="8" required></label><button type="submit">Update password</button></form></section>
+</div></section>
+<script>window.ageServerAdmin = true;</script>
+{{end}}

@@ -1,0 +1,36 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>{{.Title}} · {{.Config.PublicTitle}}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/medieval.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/static/royal-shield.svg" alt=""><span>{{.Config.PublicTitle}}</span></a>
+    <nav>
+      <a href="/">Overview</a><a href="/lobbies">Lobbies</a><a href="/queue">Queue</a><a href="/matches">Matches</a>
+      <a href="/leaderboard">Leaderboard</a><a href="/players">Players</a><a href="/maps">Maps</a><a href="/battle-servers">Battle servers</a>
+      <a href="/admin">Admin</a>
+    </nav>
+    <span class="live"><i></i> LIVE</span>
+  </header>
+  <main class="container">
+    <div class="page-heading"><div><p class="eyebrow">COMMUNITY SERVER</p><h1>{{.Title}}</h1></div>
+      <span class="live-state"><i></i> Live realm</span></div>
+    {{template "content" .}}
+  </main>
+  <footer class="footer">
+    <p>{{.Config.PublicTitle}} · <a href="/api/info">Public server API</a></p>
+    <p>Age of Empires II: Definitive Edition © Microsoft Corporation. {{.Config.PublicTitle}} was created under Microsoft's
+      <a href="https://www.xbox.com/en-us/developers/rules" rel="noopener noreferrer">Game Content Usage Rules</a>
+      using assets from Age of Empires II: Definitive Edition, and it is not endorsed by or affiliated with Microsoft.
+      Civilization emblems and map thumbnails: <a href="https://github.com/SiegeEngineers/aoe2cm2" rel="noopener noreferrer">AoE2 Captains Mode</a>.
+    </p>
+  </footer>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>{{end}}

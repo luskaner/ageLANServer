@@ -76,6 +76,57 @@ directory.
 The few configuration options are available in the [`config.toml`](resources/config/config.toml) file. The file is
 self-explanatory and should be easy to understand.
 
+### Public dashboard and administration
+
+The public dashboard shares the game's HTTPS listener on port `443` and is available on the same configured
+interfaces. Open one of the `https://<server-ip>/` addresses printed at startup. It publishes live lobbies,
+players and their IP addresses, the automatch queue, active and recent matches, the leaderboard, map pool,
+battle-server endpoints and TCP reachability, and server status. Treat it as LAN-visible information because it
+includes player IPs.
+The dashboard uses the certificate selected for the game's listener handling that IP.
+
+Open `/admin/setup` on the first run to create the administrator password. The dashboard stores only a salted
+password hash and session settings in `resources/userData/web/web.db`. The admin panel can edit gameplay-related
+server configuration, close lobbies, remove queued players, and change the map pool used by both matchmaking and
+the public site. Configuration edits require a server restart.
+
+The 1v1 map-pool editor lists each unique two-player map in the game's automatch catalog, including maps whose
+resource entries are associated with other queues. Saving a pool publishes its selected maps as 1v1 options and
+restricts matchmaking to them; resetting the pool restores the game's original 1v1 map set.
+
+
+The public `/battle-servers` page and the administration panel list every battle server currently loaded for each
+game: static entries, configured entries, Battle Server Manager registrations and embedded servers. The status
+probe opens both the battle-server and WebSocket TCP ports from the host; it indicates TCP reachability only and
+does not guarantee that clients can connect from their networks. Results are cached briefly to avoid repeatedly
+probing ports on every live dashboard update.
+
+Static remote battle servers can be added and removed in the admin panel using their fixed IPv4 address and ports.
+They are stored in the same `web.db` and are included every time the server initializes that game's battle-server
+list, independently of Battle Server Manager discovery. Changes to this list apply after restarting the server.
+Manager-discovered servers continue to be loaded as before.
+
+#### Dashboard routes
+
+Public pages:
+
+- `/`, `/lobbies`, `/queue`, `/matches`, `/leaderboard`, `/players`, `/maps`, `/battle-servers`, `/lobby/{id}`
+
+Public JSON and live updates:
+
+- `/api/info`, `/api/health`, `/api/lobbies`, `/api/lobbies/{id}`, `/api/queue`
+- `/api/matches`, `/api/matches/{id}`, `/api/leaderboard`, `/api/players`, `/api/maps`, `/api/battle-servers`, `/api/events`
+- `/fragments/{lobbies|queue|matches|leaderboard|players|maps}` and `/static/...`
+
+Administration:
+
+- Pages: `/admin`, `/admin/setup`, `/admin/login`, `/admin/logout`
+- APIs: `/admin/api/state`, `/admin/api/pool` (`GET`, `PUT`), `/admin/api/pool/reset`,
+  `/admin/api/pool/cursor`, `/admin/api/config` (`GET`, `POST`), `/admin/api/config/raw`,
+  `/admin/api/password`, `/admin/api/battle-servers` (`GET`, `POST`),
+  `/admin/api/battle-servers/{game}/{region}` (`DELETE`), `/admin/api/matches`,
+  `/admin/api/lobbies/{id}/close`, `/admin/api/queue/{user}/kick`
+
 ### Login
 
 The configuration file sent to the client upon login is `login.json` inside the game subdirectory in `resources/config`.

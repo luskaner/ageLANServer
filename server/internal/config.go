@@ -92,6 +92,13 @@ type SignConfig struct {
 	PlatformUserIdExceptions []string
 }
 
+// Web configures the public dashboard and its administrator account.
+type Web struct {
+	Enabled         bool
+	PublicTitle     string
+	SnapshotSeconds int
+}
+
 type Configuration struct {
 	Log                    bool
 	GeneratePlatformUserId bool
@@ -102,6 +109,7 @@ type Configuration struct {
 	CustomFiles            CustomFiles
 	BattleServerReplays    BattleServerReplays
 	Sign                   SignConfig
+	Web                    Web
 }
 
 func (cfg *Configuration) GetGameHosts(gameId string) []string {
