@@ -3,7 +3,7 @@
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
-  const admin = Boolean(window.ageServerAdmin);
+  const admin = Boolean(document.querySelector("[data-admin-tab]"));
   let csrf = "";
   let games = [];
   let config = null;

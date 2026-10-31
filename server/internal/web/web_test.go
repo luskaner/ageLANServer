@@ -168,6 +168,11 @@ func TestPublicPagesAndAdminPasswordLifecycle(t *testing.T) {
 		!bytes.Contains(adminPage.Body.Bytes(), []byte(`data-admin-panel="battles" hidden`)) {
 		t.Fatalf("admin page did not render its grouped sections: %d: %s", adminPage.Code, adminPage.Body.String())
 	}
+	appScript := httptest.NewRecorder()
+	server.Handler().ServeHTTP(appScript, httptest.NewRequest(http.MethodGet, "/static/app.js", nil))
+	if appScript.Code != http.StatusOK || !bytes.Contains(appScript.Body.Bytes(), []byte(`document.querySelector("[data-admin-tab]")`)) {
+		t.Fatal("admin tab initialization must be based on the rendered tab controls")
+	}
 
 	stateResponse := httptest.NewRecorder()
 	request = httptest.NewRequest(http.MethodGet, "/admin/api/state", nil)
