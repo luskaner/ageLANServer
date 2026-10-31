@@ -78,17 +78,34 @@ self-explanatory and should be easy to understand.
 
 ### Public dashboard and administration
 
-The public dashboard shares the game's HTTPS listener on port `443` and is available on the same configured
-interfaces. Open one of the `https://<server-ip>/` addresses printed at startup. It publishes live lobbies,
-players and their IP addresses, the automatch queue, active and recent matches, the leaderboard, map pool,
-battle-server endpoints and TCP reachability, and server status. Treat it as LAN-visible information because it
-includes player IPs.
-The dashboard uses the certificate selected for the game's listener handling that IP.
+The public dashboard is optional and shares the game's HTTPS listener on port `443`, using the same configured
+interfaces and the certificate selected for the game's listener handling that IP. To set it up on a new install:
 
-Open `/admin/setup` on the first run to create the administrator password. The dashboard stores only a salted
-password hash and session settings in `resources/userData/web/web.db`. The admin panel can edit gameplay-related
-server configuration, close lobbies, remove queued players, and change the map pool used by both matchmaking and
-the public site. Configuration edits require a server restart.
+1. In [`config.toml`](resources/config/config.toml), enable `[Web]` with `Enabled = true`. Set `PublicTitle` to a
+   temporary name if desired; the first-run setup page lets you choose the final public name. If the dashboard is
+   not wanted, set `Enabled = false`.
+2. Start the server normally and open one of the `https://<server-ip>/` addresses printed at startup. From the
+   server PC, `https://127.0.0.1/` can also be used. Allow port `443` through the host firewall for the devices
+   that should access the site.
+3. Visit `https://<server-ip>/admin/setup` once. Choose a recognizable community/site name (up to 64 characters)
+   and an administrator password of at least 8 characters, then confirm the password. This setup is available only
+   while no admin password has been created. Afterwards, sign in at `/admin/login`.
+4. To change the site name later, sign in and open **Admin → Configuration**. To change the shield/logo, replace
+   [`royal-shield.svg`](internal/web/static/royal-shield.svg) with your own appropriately licensed SVG before
+   building the server executable; static web assets are embedded in the build.
+
+The chosen site name is used as the web and public API identity and is saved with the admin data in
+`resources/userData/web/web.db`; the password is stored as a salted hash, not plaintext. Give the site a name and
+logo that identify your own community, not the source project or repository. Back up `web.db` if you need to
+preserve the setup across installations.
+
+The public dashboard publishes live lobbies, player names and IP addresses, the automatch queue, active and recent
+matches, the leaderboard, map pool, battle-server endpoints and TCP reachability, and server status. Treat it as
+LAN-visible information and only allow access from networks you trust; exposing port `443` beyond your LAN also
+exposes this information beyond your LAN.
+
+The admin panel can edit gameplay-related server configuration, close lobbies, remove queued players, and change
+the map pool used by both matchmaking and the public site. Configuration edits require a server restart.
 
 The 1v1 map-pool editor lists each unique two-player map in the game's automatch catalog, including maps whose
 resource entries are associated with other queues. Saving a pool publishes its selected maps as 1v1 options and
