@@ -368,6 +368,7 @@ func (f *fakeResources) Initialize(string, *ResourcesOpts) {
 func (f *fakeResources) ReturnSignedAsset(string, *http.ResponseWriter, *http.Request, bool) {}
 func (f *fakeResources) LoginData() []i.A                                                    { return f.loginData }
 func (f *fakeResources) ChatChannels() map[string]*MainChatChannel                           { return f.chatChannels }
+func (f *fakeResources) News() []i.A                                                         { return nil }
 func (f *fakeResources) ArrayFiles() map[string]i.A                                          { return f.arrayFiles }
 func (f *fakeResources) SignedAssets() map[string][]byte                                     { return f.signedAssets }
 func (f *fakeResources) CloudFiles() CloudFiles {
