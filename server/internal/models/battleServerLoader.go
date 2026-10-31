@@ -55,6 +55,21 @@ func InitializeBattleServers(gameId string, configBattleServers []i.BattleServer
 			Base: bs.Base,
 		})
 	}
+	staticBattleServers, err := LoadStaticBattleServers(gameId)
+	if err != nil {
+		return fmt.Errorf("load static battle servers for %s: %w", gameId, err)
+	}
+	existingRegions := make(map[string]struct{}, len(battleServers))
+	for _, bs := range battleServers {
+		existingRegions[bs.Region()] = struct{}{}
+	}
+	for _, bs := range staticBattleServers {
+		if _, exists := existingRegions[bs.Region()]; exists {
+			return fmt.Errorf("static battle server region %q for %s conflicts with a configured or manager-discovered server", bs.Region(), gameId)
+		}
+		existingRegions[bs.Region()] = struct{}{}
+		battleServers = append(battleServers, bs)
+	}
 
 	// Append embedded battle servers for this game.
 	embeddedStoreMu.RLock()

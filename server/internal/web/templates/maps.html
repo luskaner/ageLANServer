@@ -1,0 +1,3 @@
+{{define "content"}}<section class="panel"><div class="section-title"><h2>Automatch map pool</h2>{{if .Game.MapPool}}<span class="badge">{{.Game.MapPool.Mode}}</span>{{else}}<span class="muted">Default rotation</span>{{end}}</div>
+{{if .Game.MapPool}}<p>Queue {{.Game.MapPool.QueueID}} · Rotation cursor {{.Game.MapPool.Cursor}} · Updated {{time .Game.MapPool.UpdatedAt}}</p>{{end}}
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Map</th><th>Max players</th><th>Leaderboard</th></tr></thead><tbody id="live-maps">{{template "frag-maps" .}}</tbody></table></div></section>{{end}}

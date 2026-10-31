@@ -91,6 +91,9 @@ func localTestIPv4(t *testing.T) net.IP {
 				fallback = ip4
 				continue
 			}
+			if ip4.IsLinkLocalUnicast() {
+				continue
+			}
 			return ip4
 		}
 	}
@@ -117,8 +120,37 @@ func TestQueryConnectionsWithMulticast(t *testing.T) {
 	if err != nil {
 		t.Fatalf("multicast failed: %v", err)
 	}
+	if len(conns) != 1 {
+		t.Fatalf("multicast listener count = %d, want 1", len(conns))
+	}
+	testQueryConnectionResponds(t, conns[0], localIP)
 	for _, c := range conns {
 		c.Close()
+	}
+}
+
+func testQueryConnectionResponds(t *testing.T, conn *net.UDPConn, localIP net.IP) {
+	t.Helper()
+	ListenQueryConnections([]*net.UDPConn{conn})
+
+	client, err := net.ListenUDP("udp4", &net.UDPAddr{IP: localIP})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	if err = client.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = client.WriteToUDP([]byte(common.AnnounceHeader), conn.LocalAddr().(*net.UDPAddr)); err != nil {
+		t.Fatalf("send announcement query: %v", err)
+	}
+	response := make([]byte, len(common.AnnounceHeader)+36)
+	n, _, err := client.ReadFromUDP(response)
+	if err != nil {
+		t.Fatalf("read announcement response: %v", err)
+	}
+	if n != len(response) || string(response[:len(common.AnnounceHeader)]) != common.AnnounceHeader {
+		t.Fatalf("invalid announcement response: %q", response[:n])
 	}
 }
 

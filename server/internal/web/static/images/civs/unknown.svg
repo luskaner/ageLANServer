@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Unknown civilization">
+  <path d="M32 3 55 12v18c0 14-9 24-23 31C18 54 9 44 9 30V12z" fill="#302b20" stroke="#c6a45e" stroke-width="3"/>
+  <path d="M32 15v20m0 8v2" stroke="#e5d19c" stroke-width="5" stroke-linecap="round"/>
+</svg>

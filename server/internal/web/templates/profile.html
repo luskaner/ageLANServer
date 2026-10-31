@@ -1,0 +1,24 @@
+{{define "content"}}
+<section class="player-intro">
+  <div><p class="eyebrow">PLAYER PROFILE · {{.GameID}}</p><h2>{{.PlayerProfile.Alias}}</h2><p>Profile {{.PlayerProfile.ProfileID}} · Level {{level .PlayerProfile.Level}}</p></div>
+  <strong>{{.PlayerProfile.Rating}}<small> ranked rating</small></strong>
+</section>
+<section class="cards">
+  <article class="card"><span>Ranked games</span><strong>{{.PlayerProfile.Games}}</strong><small>{{.PlayerProfile.Wins}} wins · {{.PlayerProfile.Losses}} losses</small></article>
+  <article class="card"><span>Best civilization</span><strong>{{if .PlayerProfile.BestCivilization}}<span class="icon-label"><img class="civilization-icon" src="{{.PlayerProfile.BestCivilizationIcon}}" alt="" onerror="this.onerror=null;this.src='/static/images/civs/unknown.svg'">{{.PlayerProfile.BestCivilization}}</span>{{else}}—{{end}}</strong><small>Based on recorded results</small></article>
+  <article class="card"><span>Best map</span><strong>{{if .PlayerProfile.BestMap}}<span class="icon-label"><img class="map-icon" src="{{.PlayerProfile.BestMapIcon}}" alt="" onerror="this.onerror=null;this.src='/static/images/map-placeholder.svg'">{{.PlayerProfile.BestMap}}</span>{{else}}—{{end}}</strong><small>Based on recorded results</small></article>
+  <article class="card"><span>Experience</span><strong>{{.PlayerProfile.XP}}</strong><small>Profile XP</small></article>
+</section>
+<section class="panel"><div class="section-title"><h2>Civilizations</h2><span class="muted">Recorded games and win rate</span></div>
+<div class="table-wrap"><table><thead><tr><th>Civilization</th><th>Games</th><th>Wins</th><th>Losses</th><th>Win rate</th></tr></thead><tbody>
+{{range .PlayerProfile.Civilizations}}<tr><td><span class="icon-label"><img class="civilization-icon" src="{{.Icon}}" alt="" onerror="this.onerror=null;this.src='/static/images/civs/unknown.svg'">{{.Name}}</span></td><td>{{.Games}}</td><td>{{.Wins}}</td><td>{{.Losses}}</td><td>{{.WinRate}}%</td></tr>{{else}}<tr><td colspan="5" class="empty">No civilization results recorded.</td></tr>{{end}}
+</tbody></table></div></section>
+<section class="panel"><div class="section-title"><h2>Maps</h2><span class="muted">Recorded games and win rate</span></div>
+<div class="table-wrap"><table><thead><tr><th>Map</th><th>Games</th><th>Wins</th><th>Losses</th><th>Win rate</th></tr></thead><tbody>
+{{range .PlayerProfile.Maps}}<tr><td><span class="icon-label"><img class="map-icon" src="{{.Icon}}" alt="" onerror="this.onerror=null;this.src='/static/images/map-placeholder.svg'">{{.Name}}</span></td><td>{{.Games}}</td><td>{{.Wins}}</td><td>{{.Losses}}</td><td>{{.WinRate}}%</td></tr>{{else}}<tr><td colspan="5" class="empty">No map results recorded.</td></tr>{{end}}
+</tbody></table></div></section>
+<section class="panel"><div class="section-title"><h2>Recent matches</h2></div>
+<div class="table-wrap"><table><thead><tr><th>Map</th><th>Players and civilizations</th><th>Finished</th><th>Duration</th></tr></thead><tbody>
+{{range .PlayerProfile.RecentMatches}}<tr><td><span class="icon-label"><img class="map-icon" src="{{.MapIcon}}" alt="" onerror="this.onerror=null;this.src='/static/images/map-placeholder.svg'">{{.DisplayMapName}}</span></td><td>{{range $i, $p := .PlayerInfo}}{{if $i}} · {{end}}<a href="/players/{{$p.ProfileID}}?game={{$.GameID}}">{{$p.Alias}}</a> — <span class="icon-label"><img class="civilization-icon" src="{{$p.CivilizationIcon}}" alt="" onerror="this.onerror=null;this.src='/static/images/civs/unknown.svg'">{{$p.Civilization}}</span> <span class="badge">{{if $p.Won}}Winner{{else}}Defeated{{end}}</span>{{end}}</td><td>{{time .FinishedAt}}</td><td>{{duration .DurationSeconds}}</td></tr>{{else}}<tr><td colspan="4" class="empty">No recorded matches.</td></tr>{{end}}
+</tbody></table></div></section>
+{{end}}

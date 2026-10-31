@@ -1,0 +1,2 @@
+{{define "content"}}<section class="panel"><div class="section-title"><h2>Recent matches</h2><span class="muted">{{.Game.Game}}</span></div>
+<div class="table-wrap"><table><thead><tr><th>Match</th><th>Map</th><th>Players, civilizations and result</th><th>Finished</th><th>Duration</th></tr></thead><tbody id="live-matches-table">{{template "frag-matches" .}}</tbody></table></div></section>{{end}}

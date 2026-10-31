@@ -7,6 +7,7 @@ import (
 	"github.com/luskaner/ageServer/common/game"
 	"github.com/luskaner/ageServer/common/uuid"
 	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/events"
 	"github.com/luskaner/ageServer/server/internal/routes/game/advertisement/shared"
 )
 
@@ -40,6 +41,8 @@ type Advertisement interface {
 	UnsafeGetStartTime() int64
 	UnsafeGetState() int8
 	UnsafeGetDescription() string
+	UnsafeGetMapName() string
+	UnsafeGetMaxPlayers() int
 	GetRelayRegion() string
 	GetParty() int32
 	UnsafeGetVisible() bool
@@ -131,6 +134,9 @@ type Advertisements interface {
 	UnsafeFirstAdvertisement(matches func(adv Advertisement) bool) Advertisement
 	LockedFindAdvertisementsEncoded(gameId string, clientLibVersion uint16, length int, offset int, preMatchesLocking bool, matches func(adv Advertisement) bool) i.A
 	GetUserAdvertisement(userId int32) Advertisement
+	// Snapshot returns every advertisement as a plain value, for read-only
+	// consumers such as the web dashboard.
+	Snapshot(gameId string) []PublicLobby
 }
 
 type MainAdvertisements struct {
@@ -183,6 +189,16 @@ func (adv *MainAdvertisement) GetId() int32 {
 // UnsafeGetDescription requires advertisement read lock
 func (adv *MainAdvertisement) UnsafeGetDescription() string {
 	return adv.description
+}
+
+// UnsafeGetMapName requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetMapName() string {
+	return adv.mapName
+}
+
+// UnsafeGetMaxPlayers requires advertisement read lock
+func (adv *MainAdvertisement) UnsafeGetMaxPlayers() int {
+	return int(adv.maxPlayers)
 }
 
 func (adv *MainAdvertisement) GetRelayRegion() string {
@@ -347,6 +363,15 @@ func (advs *MainAdvertisements) Store(advFrom *shared.AdvertisementHostRequest, 
 			return false
 		})
 	}
+	if storedAdv != nil {
+		events.Publish("lobby.created", gameId, map[string]any{
+			"id":         storedAdv.GetId(),
+			"ip":         storedAdv.GetIp(),
+			"host":       storedAdv.UnsafeGetHostId(),
+			"map":        adv.mapName,
+			"maxPlayers": int(adv.maxPlayers),
+		})
+	}
 	return storedAdv
 }
 
@@ -471,6 +496,7 @@ func (advs *MainAdvertisements) UnsafeRemovePeer(advertisementId int32, userId i
 // UnsafeDelete requires advertisement write lock
 func (advs *MainAdvertisements) UnsafeDelete(adv Advertisement) {
 	advs.store.Delete(adv.GetId())
+	events.Publish("lobby.removed", "", map[string]any{"id": adv.GetId()})
 }
 
 // UnsafeUpdateState is only safe if advertisement has not been added yet

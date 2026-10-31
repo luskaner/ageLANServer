@@ -10,6 +10,7 @@ import (
 	"time"
 
 	i "github.com/luskaner/ageServer/server/internal"
+	"github.com/luskaner/ageServer/server/internal/events"
 	"github.com/luskaner/ageServer/server/internal/logger"
 )
 
@@ -30,6 +31,14 @@ const (
 	automatchQueueMaxPlayers          = 2
 	automatchQueueTeamSize            = 1
 )
+
+// AutomatchQueueID returns the canonical automatch queue id (1v1 Random Map),
+// which is also the id of the pool the dashboard edits.
+func AutomatchQueueID() int32 { return automatchQueueID }
+
+// AutomatchQueueLeaderboardID returns the ladder id the canonical queue plays
+// on.
+func AutomatchQueueLeaderboardID() int32 { return automatchQueueLeaderboardID }
 
 // LeaderboardForQueue maps an automatch queue to the ladder that the client
 // queries for it. Queue id 6 is the 1v1 random map automatch queue, whose
@@ -163,6 +172,9 @@ type Matchmaking interface {
 	SetPlatformSessionID(userID int32, matchID int32, platformSessionID uint64) bool
 	HostFailed(hostID int32, pollID int32)
 	RemoveUser(userID int32)
+	// Snapshot returns a copy of the queue and the live matches, for read-only
+	// consumers such as the web dashboard.
+	Snapshot() MatchmakingSnapshot
 }
 
 type MainMatchmaking struct {
@@ -799,6 +811,16 @@ func (mm *MainMatchmaking) createMatchLocked(host, joiner *automatchQueueEntry, 
 		mm.expireMatch(matchID)
 	})
 
+	if mm.game != nil {
+		events.Publish("match.created", mm.game.Title(), map[string]any{
+			"id":      matchID,
+			"queue":   queue.ID,
+			"map":     mapName,
+			"mapId":   mapID,
+			"players": []int32{host.UserID, joiner.UserID},
+		})
+	}
+
 	return nil
 }
 
@@ -1045,6 +1067,51 @@ func (mm *MainMatchmaking) chooseMap(queue automatchQueue, host, joiner *automat
 		return "Arabia.rms", 1
 	}
 
+	// Restrict the queue to the pool the admin configured, if any. The pool is
+	// stored in the same database as the ladder, so the dashboard and the
+	// matchmaking loop always see the same configuration.
+	var pool *MapPoolStore
+	if gameID := mm.game.Title(); gameID != "" {
+		pool = MapPools(gameID)
+	}
+	if pool != nil && queue.MaxPlayers == 2 {
+		if _, configured := pool.Get(queue.ID); configured {
+			if resources != nil {
+				if maps, ok := resources.ArrayFiles()["automatchMaps.json"]; ok {
+					candidates = candidates[:0]
+					for _, available := range AutomatchMapsForPlayers(maps, queue.LeaderboardID, queue.MaxPlayers) {
+						candidates = append(candidates, automatchMapCandidate{
+							ID:   available.ID,
+							Name: available.Name,
+						})
+					}
+				}
+			}
+		}
+	}
+	if pool != nil {
+		if ids, names := pool.AllowedMaps(queue.ID); ids != nil {
+			restricted := make([]automatchMapCandidate, 0, len(candidates))
+			for _, candidate := range candidates {
+				if _, ok := ids[candidate.ID]; ok {
+					restricted = append(restricted, candidate)
+					continue
+				}
+				if _, ok := names[normalizeMapName(candidate.Name)]; ok {
+					restricted = append(restricted, candidate)
+				}
+			}
+			if len(restricted) > 0 {
+				candidates = restricted
+			} else {
+				logger.Printf(
+					"automatch2: the configured pool of queue %d matches none of the available maps; using every map\n",
+					queue.ID,
+				)
+			}
+		}
+	}
+
 	allowed, fallback := selectableMaps(candidates, host, joiner)
 	if fallback {
 		logger.Printf(
@@ -1053,6 +1120,26 @@ func (mm *MainMatchmaking) chooseMap(queue automatchQueue, host, joiner *automat
 			joiner.VetoMapNames,
 			len(allowed),
 		)
+	}
+
+	if pool != nil {
+		selectable := make([]AvailableMap, 0, len(allowed))
+		for _, candidate := range allowed {
+			selectable = append(selectable, AvailableMap{ID: candidate.ID, Name: candidate.Name})
+		}
+		if chosen, ok := pool.PickSelection(queue.ID, selectable); ok {
+			logger.Printf(
+				"automatch2: map selected from pool mode=%s map=%s id=%d allowed=%d/%d hostVetoes=%v joinerVetoes=%v\n",
+				poolMode(pool, queue.ID),
+				chosen.Name,
+				chosen.ID,
+				len(allowed),
+				len(candidates),
+				host.VetoMapNames,
+				joiner.VetoMapNames,
+			)
+			return chosen.Name, chosen.ID
+		}
 	}
 
 	var chosen automatchMapCandidate

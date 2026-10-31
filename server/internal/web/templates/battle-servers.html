@@ -1,0 +1,18 @@
+{{define "content"}}
+<section class="realm-banner compact-banner"><div><p class="eyebrow">REALM CONNECTIONS</p><h2>Battle-server registry</h2><p>All battle servers currently loaded by the game server, including persistent entries and Battle Server Manager registrations.</p></div></section>
+<nav class="realm-tabs" aria-label="Select game">{{range .Games}}<a href="/battle-servers?game={{.}}" class="{{if eq . $.GameID}}selected{{end}}">{{.}}</a>{{end}}</nav>
+<section class="cards">
+  <article class="card"><span>Loaded servers</span><strong>{{len .Game.BattleServerDetails}}</strong><small>{{.Game.Game}} realm</small></article>
+  <article class="card"><span>Reachable now</span><strong>{{activeBattleServers .Game.BattleServerDetails}}</strong><small>Both TCP ports accepted a connection</small></article>
+  <article class="card"><span>Static entries</span><strong>{{staticBattleServers .Game.BattleServerDetails}}</strong><small>Persisted in the server database</small></article>
+  <article class="card"><span>Discovery</span><strong>Live</strong><small>Manager/configured registrations</small></article>
+</section>
+<section class="panel"><div class="section-title"><div><p class="eyebrow">LIVE INVENTORY</p><h2>Battle servers for {{.Game.Game}}</h2></div><span class="muted">Health check refreshes automatically</span></div>
+  <p class="health-note">Reachability is checked by opening TCP connections to the battle and WebSocket ports from this server. This does not guarantee that the server is reachable from every player network.</p>
+  <div class="battle-server-grid" id="live-battle-servers">{{range .Game.BattleServerDetails}}
+    <article class="battle-server-card"><div class="section-title"><div><p class="eyebrow">{{.Region}} · {{.Source}}</p><h3>{{.Name}}</h3></div><span class="status-pill" data-status="{{.Status}}"><i></i>{{.Status}}</span></div>
+      <dl class="details"><dt>Address</dt><dd><code>{{.IPv4}}</code></dd><dt>Battle port</dt><dd><code>{{.BsPort}}</code></dd><dt>WebSocket</dt><dd><code>{{.WebSocketPort}}</code></dd><dt>Out-of-band</dt><dd><code>{{if .OutOfBandPort}}{{.OutOfBandPort}}{{else}}Not configured{{end}}</code></dd></dl>
+      {{if .CheckedAt}}<small class="small">Last checked {{time .CheckedAt}}</small>{{else}}<small class="small">Initial connection check in progress…</small>{{end}}
+    </article>
+  {{else}}<div class="empty-state"><span>⚔</span><h3>No battle servers loaded</h3><p>Start Battle Server Manager or add a static remote server in the admin panel.</p></div>{{end}}</div>
+</section>{{end}}

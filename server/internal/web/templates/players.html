@@ -1,0 +1,3 @@
+{{define "content"}}<section class="player-intro"><div><p class="eyebrow">COMMUNITY ROSTER</p><h2>Adventurers in the realm</h2><p>Open a player profile for match history, favorite civilizations and map performance.</p></div><strong data-live-count="players">{{len .Game.Players}}<small> online</small></strong></section>
+<section class="panel"><div class="section-title"><h2>Online players</h2><span class="muted">Live roster · {{.Game.Game}}</span></div>
+<div class="table-wrap"><table><thead><tr><th>Player</th><th>Profile</th><th>Level</th><th>Rating</th><th>IP</th><th>Status</th></tr></thead><tbody id="live-players">{{template "frag-players" .}}</tbody></table></div></section>{{end}}

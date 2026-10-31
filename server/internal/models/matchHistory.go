@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -63,6 +64,12 @@ type MatchPlayer struct {
 	RatingBefore int32 `json:"ratingBefore"`
 	RatingAfter  int32 `json:"ratingAfter"`
 	RatingDelta  int32 `json:"ratingDelta"`
+}
+
+type MatchPerformance struct {
+	Name  string
+	Games int
+	Wins  int
 }
 
 // PlayerRating is a profile's standing on one ladder.
@@ -183,7 +190,7 @@ func migrate(db *sql.DB) error {
 			profile_id    INTEGER NOT NULL,
 			team_id       INTEGER NOT NULL DEFAULT 0,
 			result        INTEGER NOT NULL DEFAULT -1,
-			race_id       INTEGER NOT NULL DEFAULT 0,
+			race_id       INTEGER NOT NULL DEFAULT -1,
 			xp_gained     INTEGER NOT NULL DEFAULT 0,
 			rating_before INTEGER NOT NULL DEFAULT 0,
 			rating_after  INTEGER NOT NULL DEFAULT 0,
@@ -342,7 +349,7 @@ func (s *MatchHistoryStore) ApplyResult(m MatchResult) (map[int32]*PlayerRating,
 	}
 
 	for i, profile := range m.Players {
-		team, result, race, xp := int32(0), int32(-1), int32(0), int32(0)
+		team, result, race, xp := int32(0), int32(-1), int32(-1), int32(0)
 		if i < len(m.Teams) {
 			team = m.Teams[i]
 		}
@@ -686,6 +693,116 @@ func (s *MatchHistoryStore) GetRecentForProfiles(profiles []int32, limit int) []
 
 func (s *MatchHistoryStore) GetRecentForProfile(profileID int32, limit int) []MatchResult {
 	return s.GetRecentForProfiles([]int32{profileID}, limit)
+}
+
+func (s *MatchHistoryStore) GetProfilePerformance(profileID int32) (maps, civilizations []MatchPerformance, err error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return nil, nil, errors.New("match history database is not open")
+	}
+
+	maps, err = profilePerformanceQuery(s.db, profileID, `m.map_name`, `m.map_name <> ''`)
+	if err != nil {
+		return nil, nil, err
+	}
+	civilizations, err = profilePerformanceQuery(s.db, profileID, `CAST(p.race_id AS TEXT)`, `p.race_id >= 0`)
+	if err != nil {
+		return nil, nil, err
+	}
+	return maps, civilizations, nil
+}
+
+func profilePerformanceQuery(db *sql.DB, profileID int32, field, predicate string) ([]MatchPerformance, error) {
+	query := fmt.Sprintf(
+		`SELECT %s, COUNT(*), SUM(CASE WHEN p.result = 1 THEN 1 ELSE 0 END)
+		 FROM match_players p
+		 JOIN matches m ON m.match_id = p.match_id
+		 WHERE p.profile_id = ? AND m.reported = 1 AND p.result IN (0, 1) AND %s
+		 GROUP BY %s
+		 ORDER BY COUNT(*) DESC, SUM(CASE WHEN p.result = 1 THEN 1 ELSE 0 END) DESC, %s`,
+		field, predicate, field, field,
+	)
+	rows, err := db.Query(query, profileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var stats []MatchPerformance
+	for rows.Next() {
+		var stat MatchPerformance
+		if err = rows.Scan(&stat.Name, &stat.Games, &stat.Wins); err != nil {
+			return nil, err
+		}
+		stats = append(stats, stat)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+// RecentMatches returns the newest reported matches of every profile, newest
+// first. It is what the public dashboard lists.
+func (s *MatchHistoryStore) RecentMatches(limit int) []MatchResult {
+	if limit <= 0 || limit > 200 {
+		limit = 20
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return nil
+	}
+	rows, err := s.db.Query(
+		`SELECT match_id, map_id, map_name, leaderboard_id, queue_type, winner_team, started_at, finished_at
+		 FROM matches WHERE reported = 1
+		 ORDER BY finished_at DESC, match_id DESC
+		 LIMIT ?`, limit,
+	)
+	if err != nil {
+		return nil
+	}
+	var matches []MatchResult
+	for rows.Next() {
+		m, err := scanMatch(rows)
+		if err != nil {
+			continue
+		}
+		matches = append(matches, m)
+	}
+	// Close the cursor before the nested per-match queries: the pool has a
+	// single connection.
+	_ = rows.Close()
+	for i := range matches {
+		matches[i] = s.loadPlayersLocked(matches[i])
+	}
+	return matches
+}
+
+// FindMatch returns one reported match with its players.
+func (s *MatchHistoryStore) FindMatch(matchID int64) (MatchResult, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.db == nil {
+		return MatchResult{}, false
+	}
+	rows, err := s.db.Query(
+		`SELECT match_id, map_id, map_name, leaderboard_id, queue_type, winner_team, started_at, finished_at
+		 FROM matches WHERE match_id = ? AND reported = 1`, matchID,
+	)
+	if err != nil {
+		return MatchResult{}, false
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return MatchResult{}, false
+	}
+	match, err := scanMatch(rows)
+	if err != nil {
+		return MatchResult{}, false
+	}
+	_ = rows.Close()
+	return s.loadPlayersLocked(match), true
 }
 
 func scanMatch(rows *sql.Rows) (MatchResult, error) {
